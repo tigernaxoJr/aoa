@@ -111,6 +111,47 @@ if (skillErrors.length) {
   console.log('✓ skills/product-video/SKILL.md frontmatter')
 }
 
+// Skill links: relative links in skills/product-video/*.md and workflow.json `guide` fields
+// must point to existing files and anchors (`<a id="...">`).
+// Files listed in PENDING are planned but not yet written; links to them only warn.
+const PENDING = new Set(['rendering-guide.md'])
+const skillDir = join(rootDir, 'skills', 'product-video')
+const skillDocs = new Map(
+  readdirSync(skillDir)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => [f, readFileSync(join(skillDir, f), 'utf8')]),
+)
+const anchorsOf = (text) => new Set([...text.matchAll(/<a id="([^"]+)"><\/a>/g)].map((m) => m[1]))
+const linkErrors = []
+const pendingRefs = new Set()
+const checkLink = (from, target) => {
+  const [file, anchor] = target.split('#')
+  if (!skillDocs.has(file)) {
+    if (PENDING.has(file)) pendingRefs.add(`${from} → ${target}`)
+    else linkErrors.push(`${from} → ${target}: file not found`)
+    return
+  }
+  if (anchor && !anchorsOf(skillDocs.get(file)).has(anchor)) {
+    linkErrors.push(`${from} → ${target}: anchor not found`)
+  }
+}
+for (const [file, text] of skillDocs) {
+  for (const [, target] of text.matchAll(/\]\(([^)\s]+)\)/g)) {
+    if (/^[a-z]+:/i.test(target)) continue // external URL
+    checkLink(file, target.startsWith('#') ? `${file}${target}` : target)
+  }
+}
+for (const step of [...workflow.steps, ...workflow.operations]) {
+  if (step.guide) checkLink(`workflow.json:${step.id}`, step.guide.replace(/^skills\/product-video\//, ''))
+}
+if (linkErrors.length) {
+  failures += linkErrors.length
+  for (const e of linkErrors) console.error(`✗ skill link ${e}`)
+} else {
+  console.log('✓ skill links')
+}
+for (const ref of pendingRefs) console.warn(`! pending ${ref}`)
+
 if (failures) {
   console.error(`\n${failures} check(s) failed`)
   process.exit(1)

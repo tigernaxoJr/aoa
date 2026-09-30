@@ -469,7 +469,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 |---|---|---|---|
 | `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態與是否過期 | 否 |
 | `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
-| `capture.mjs <id>` | `visual.capture` | `assets/capture.*` | 否 |
+| `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖） | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4` | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
 | `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt` | 否 |
@@ -571,6 +571,7 @@ skills/product-video/
 安裝方式：Agent 下載 `/api/skills/product-video.zip` 解壓到專案 `.claude/skills/`（或使用者層級 skills 目錄）。
 
 - `SKILL.md` 負責「判斷目前狀態」與「初始化新專案」（此時專案內尚無 `AGENTS.md`）；初始化之後的規則以專案 `AGENTS.md` 為準，SKILL 不重複規則。
+- `workflow.md`（各步驟做法，含 `brief/product-brief.md` 與 `brief/style.json` 的格式）、`script-guide.md`（分鏡與旁白寫作）以 `<a id="…">` 明確錨點供 `workflow.json` 的 `guide` 引用；`npm run test:specs` 檢查所有 Skill 內部連結與錨點。
 - `SKILL.md` 中的網站網址寫成 `{{SITE_URL}}`，由 `build-api.mjs` 打包時替換。
 - 範本 `video.project.json` 使用可通過 Schema 的佔位值（全 0 UUID、`updatedAt` 為 1970-01-01），init 時由 Agent 替換。
 
