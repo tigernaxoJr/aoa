@@ -1,5 +1,6 @@
 // Validates specs/examples: every file in valid/ must pass, every file in invalid/ must fail.
 // The schema kind is taken from the file suffix (*.project.json / *.scene.json).
+// Also validates specs/workflow.json and cross-checks it against the status enums.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,7 +12,7 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
 const ajv = new Ajv2020({ allErrors: true, strict: true, strictTypes: false, strictRequired: false })
 addFormats(ajv)
-for (const name of ['common', 'project', 'scene']) {
+for (const name of ['common', 'project', 'scene', 'workflow']) {
   ajv.addSchema(readJson(join(specsDir, `${name}.schema.json`)))
 }
 const validators = {
@@ -43,8 +44,45 @@ for (const expectValid of [true, false]) {
   }
 }
 
+const fail = (msg) => {
+  failures++
+  console.error(`✗ workflow.json: ${msg}`)
+}
+const workflow = readJson(join(specsDir, 'workflow.json'))
+const validateWorkflow = ajv.getSchema('workflow.schema.json')
+if (!validateWorkflow(workflow)) {
+  for (const e of validateWorkflow.errors) fail(`${e.instancePath || '/'} ${e.message}`)
+} else {
+  const statusEnums = {
+    project: ajv.getSchema('project.schema.json#/$defs/projectStatus').schema.enum,
+    scene: ajv.getSchema('scene.schema.json#/$defs/sceneStatus').schema.enum,
+  }
+  const all = [...workflow.steps, ...workflow.operations]
+  const seen = { id: new Set(), command: new Set() }
+  const before = failures
+  for (const step of all) {
+    for (const key of ['id', 'command']) {
+      if (seen[key].has(step[key])) fail(`duplicate ${key} ${step[key]}`)
+      seen[key].add(step[key])
+    }
+    for (const gate of step.requires?.gates ?? []) {
+      if (!workflow.gates[gate]) fail(`${step.id} requires unknown gate ${gate}`)
+    }
+    for (const action of step.actions) {
+      for (const t of action.transitions ?? []) {
+        for (const value of [...(t.from ?? []), t.to]) {
+          if (!statusEnums[t.target].includes(value)) {
+            fail(`${step.id}.${action.id}: ${value} is not a ${t.target} status`)
+          }
+        }
+      }
+    }
+  }
+  if (failures === before) console.log(`✓ workflow.json (${all.length} steps/operations)`)
+}
+
 if (failures) {
-  console.error(`\n${failures} example(s) did not behave as expected`)
+  console.error(`\n${failures} check(s) failed`)
   process.exit(1)
 }
-console.log('\nall examples behave as expected')
+console.log('\nall checks passed')

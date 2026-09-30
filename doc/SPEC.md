@@ -100,10 +100,12 @@ my-video-project/
 ├── .claude/
 │   ├── skills/product-video/   # 從網站下載的 Skill（可選，亦可線上讀取）
 │   └── commands/               # Slash commands（見 §8.3）
-├── schemas/                    # 從網站同步的 JSON Schema（離線驗證用）
+├── schemas/                    # 從網站同步的協議檔（離線使用）
 │   ├── common.schema.json
 │   ├── project.schema.json
-│   └── scene.schema.json
+│   ├── scene.schema.json
+│   ├── workflow.schema.json
+│   └── workflow.json
 ├── brief/
 │   ├── product-brief.md        # 產品分析結果
 │   └── style.json              # 風格分析結果（可選）
@@ -361,35 +363,16 @@ GET /api/templates/product-video/manifest.json
 
 ### 6.1 `workflow.json`
 
-```json
-{
-  "specVersion": "1.0.0",
-  "steps": [
-    { "id": "init",          "command": "/video-init",
-      "input": ["productUrl | sourceCodePath | description"],
-      "output": ["video.project.json", "package.json", "AGENTS.md"],
-      "sets": { "project.status": "initialized" } },
-    { "id": "analyze",       "command": "/video-analyze",
-      "input": ["project.sources"],
-      "output": ["brief/product-brief.md", "brief/style.json?"],
-      "sets": { "project.status": "analyzed" } },
-    { "id": "storyboard",    "command": "/video-storyboard",
-      "input": ["brief/product-brief.md", "brief/style.json?"],
-      "output": ["scenes/*/scene.json", "scenes/*/script.md"],
-      "sets": { "project.status": "script_generated", "scene.status": "draft" },
-      "checkpoint": "user_review" },
-    { "id": "build_scene",   "command": "/video-scene <id>", "perScene": true,
-      "input": ["scenes/<dir>/scene.json", "scenes/<dir>/script.md"],
-      "output": ["scenes/<dir>/assets/*", "scenes/<dir>/output/scene.mp4"],
-      "sets": { "scene.status": "rendered" },
-      "checkpoint": "user_review" },
-    { "id": "assemble",      "command": "/video-assemble",
-      "input": ["all scenes rendered|approved, not stale"],
-      "output": ["output/final.mp4"],
-      "sets": { "project.status": "completed" } }
-  ]
-}
-```
+原始檔：產品 repo 的 `specs/workflow.json`（格式由 `specs/workflow.schema.json` 定義），發佈為 `/api/workflow.json`，並隨範本同步到專案的 `schemas/workflow.json`。
+
+| 區塊 | 內容 |
+|---|---|
+| `gates` | 執行特定腳本前必須取得的使用者確認：`rendererLicense`（擋 `render:scene`、`assemble`）、`onlineTtsConsent`（擋 `tts`）。含說明內容、記錄欄位與拒絕時的處理 |
+| `steps` | 主流程 `init` → `analyze` → `storyboard` → `build_scene` → `assemble`。每步定義 `command`、`scope`（project / scene）、`requires`（允許的 project / scene 狀態、gates）、`skipWhen`、`reads` / `writes`、有序的 `actions`（含狀態轉換）、`checkpoint`、`guide`（Skill 章節） |
+| `operations` | 隨時可執行的操作：`sync`、`status`、`approve`、`translate` |
+| `derivedProjectStatus` | 由 scene 狀態推導 `project.status` 的規則；`state.mjs` 每次寫入 scene 後重算 |
+
+`npm run test:specs` 會驗證 workflow.json 符合 schema，並交叉檢查所有狀態轉換值皆為合法的 project / scene 狀態、引用的 gate 皆已定義、指令不重複。
 
 ### 6.2 步驟細節
 
@@ -491,6 +474,17 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
 | `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt` | 否 |
 
+`state.mjs` 介面（Agent 使用方式見範本 `AGENTS.md` §4）：
+
+| 用法 | 效果 |
+|---|---|
+| `npm run state -- <project\|scene-id> --status <status>` | 設定狀態（檢查轉換是否合法） |
+| `npm run state -- <scene-id> --rendered` | 計算 `inputHash`，寫入 `render`，狀態 `rendered`，`attempts` 歸零，清除 `error` |
+| `npm run state -- <scene-id> --failed <step> "<message>" [--hint "<hint>"]` | 狀態 `failed`，寫入 `error`，`attempts` + 1 |
+| `npm run state -- <target> --patch-file <path>` | 套用 JSON Patch（RFC 6902）。不用 JSON Merge Patch，因為它以 `null` 表示刪除，無法把 `durationSec` 設為 `null` |
+
+所有用法皆自動更新 `updatedAt` / `updatedBy`，寫入前驗證，失敗則不寫入。新建 `scene.json` 是唯一可直接寫檔的情況（尚無其他寫入者），寫完須執行 `npm run validate`。
+
 **產出類腳本只產生檔案，不改 JSON；狀態一律由 Agent 決定並經 `state.mjs` 寫回**，確保狀態寫入集中、可追蹤且不互相覆蓋。
 
 `validate.mjs` 檢查項目：JSON Schema 合法；`scenes` id 唯一、`dir` 存在；`render.outputFile` 等路徑位於專案內且檔案存在（當狀態聲稱已渲染時）；`inputHash` 一致性；所有路徑不得跳出專案根目錄。
@@ -589,6 +583,7 @@ skills/product-video/
 | `/video-sync` | 找出 stale scene 並重做 + assemble |
 | `/video-assemble` | assemble |
 | `/video-status` | 執行 `npm run status` 並摘要 |
+| `/video-approve <id>` | 將 `rendered` 的 scene 設為 `approved` |
 | `/video-translate <locale>` | 複製專案並翻譯為指定語言（§4.4） |
 
 指令檔內容僅為薄包裝：指向 Skill 中對應章節，避免規則重複維護。
@@ -704,6 +699,8 @@ agent-video-platform/
 │   ├── common.schema.json
 │   ├── project.schema.json
 │   ├── scene.schema.json
+│   ├── workflow.schema.json
+│   ├── workflow.json
 │   └── examples/{valid,invalid}/   # npm run test:specs
 ├── skills/product-video/           # Skill 原始檔
 ├── templates/product-video/        # 專案範本（含 scripts/、src/、AGENTS.md、.claude/commands/）
