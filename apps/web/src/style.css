@@ -19,6 +19,18 @@
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:hover:bg-slate-800;
   }
+  .step-no {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-sky-800 dark:bg-sky-900 dark:text-sky-200;
+  }
+  .step-done {
+    @apply bg-emerald-600 text-white dark:bg-emerald-600 dark:text-white;
+  }
+  .link {
+    @apply text-sky-700 underline-offset-2 hover:underline dark:text-sky-400;
+  }
+  .cmd {
+    @apply flex items-center justify-between gap-2 rounded-lg bg-slate-100 px-3 py-2 font-mono text-sm dark:bg-slate-800;
+  }
   .card {
     @apply rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900;
   }

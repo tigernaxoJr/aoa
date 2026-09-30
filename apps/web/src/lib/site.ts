@@ -5,6 +5,9 @@ export const api = (path: string) => `${SITE_URL}/api/${path}`
 
 export interface SourceInput {
   productUrl: string
+  /** Name of a folder the user picked (browsers never reveal its full path). */
+  sourceFolder: string
+  /** A path the user typed instead of picking. */
   sourceCodePath: string
   description: string
 }
@@ -12,16 +15,32 @@ export interface SourceInput {
 /** Escapes double quotes so the text can sit inside a double-quoted shell argument. */
 const quote = (s: string) => s.replace(/"/g, '\\"')
 
-/**
- * The launch command: needs no installed Skill, works for any agent that can read a URL.
- * Only the sources the user filled in are mentioned.
- */
-export function launchCommand(src: SourceInput) {
+function sources(src: SourceInput) {
   const parts: string[] = []
-  if (src.productUrl.trim()) parts.push(`產品網址 ${src.productUrl.trim()}`)
-  if (src.sourceCodePath.trim()) parts.push(`原始碼 ${src.sourceCodePath.trim()}`)
+  if (src.productUrl.trim()) parts.push(`產品網址：${src.productUrl.trim()}`)
+  if (src.sourceFolder.trim()) parts.push(`產品原始碼在我電腦上名為「${src.sourceFolder.trim()}」的資料夾（請幫我找到它；找不到就問我）`)
+  else if (src.sourceCodePath.trim()) parts.push(`產品原始碼：${src.sourceCodePath.trim()}`)
   if (src.description.trim()) parts.push(`產品說明：${src.description.trim().replace(/\s+/g, ' ')}`)
-  const what = parts.length ? `，來源：${parts.join('；')}` : ''
+  return parts
+}
+
+/**
+ * The message a user pastes into their agent (SPEC §9.2). Needs no installed Skill and assumes no
+ * IT knowledge: the agent runs every command itself and explains any step the user must do.
+ */
+export function launchMessage(src: SourceInput) {
+  const parts = sources(src)
+  return [
+    `請讀取 ${api('agent-guide.md')}，依照裡面的步驟幫我製作產品介紹影片。`,
+    ...parts.map((p) => `・${p}`),
+    '我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。',
+  ].join('\n')
+}
+
+/** The same request as a one-line terminal command, for people who use a shell. */
+export function launchCommand(src: SourceInput) {
+  const parts = sources(src)
+  const what = parts.length ? `，${parts.join('；')}` : ''
   return `claude "${quote(`讀取 ${api('agent-guide.md')}，製作產品介紹影片${what}`)}"`
 }
 

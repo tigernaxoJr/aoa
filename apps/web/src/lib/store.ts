@@ -124,7 +124,7 @@ export async function write(action: (root: FileSystemDirectoryHandle, state: Pro
 // Test hook: lets automated tests open an OPFS directory without the native folder picker.
 declare global {
   interface Window {
-    __avp?: { open(handle: FileSystemDirectoryHandle): Promise<void> }
+    __avp?: { open(handle: FileSystemDirectoryHandle): Promise<void>; pickSource?(handle: FileSystemDirectoryHandle): Promise<void> }
   }
 }
 window.__avp = { open: (handle) => openHandle(handle, false) }

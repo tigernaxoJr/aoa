@@ -390,7 +390,7 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 
 **Step 1 — init**
 1. 下載並解壓專案範本；填入 `video.project.json` 的 `sources` 與 `format`。
-2. `npm install`；檢查 `ffmpeg -version`、Playwright 瀏覽器、TTS 工具是否可用，缺少時告知使用者安裝方式，不自行以系統權限安裝。
+2. 由 Agent 執行 `npm install`（含 FFmpeg）；檢查 Node.js、瀏覽器（Playwright Chromium 或系統 Chrome / Edge）、TTS 工具。缺少時用白話說明並取得同意，同意後可代為執行一般安裝（如 `winget` / `brew`），不使用系統管理員權限；無法代為安裝時給點擊式步驟。
 3. 確認渲染器授權（§7.6）與 TTS 連網同意（§7.4），寫入 `project.rendererLicense` / `project.tts.consent`。
 4. 同步 `schemas/`，執行 `npm run validate`。
 
@@ -586,6 +586,7 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 8. 生成素材只放在 `assets/`、`scenes/*/assets/`；輸出只放在 `output/`、`scenes/*/output/`。
 9. 不上傳任何使用者資料到遠端；使用線上服務（如 edge-tts）前需告知。
 10. 失敗時保留現場，不刪既有檔案；寫入 `status: failed` 與 `error`，同一 scene 自動重試不超過 2 次，之後回報使用者並說明重試方式。
+11. 假設使用者不懂電腦操作：指令一律由 Agent 執行，不要求使用者開終端機或打指令；使用者以白話下指示，由 Agent 對應到工作流程步驟；需要使用者動手時給逐步、點擊式說明。
 
 ### 8.2 Skill 套件
 
@@ -658,7 +659,11 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.2 畫面
 
-1. **Source**：產品網址、原始碼資料夾、產品描述 → 產生給 Agent 的啟動指令（一鍵複製，例如 `claude "讀取 <SITE_URL>/api/agent-guide.md，為 https://example.com 製作產品介紹影片"`，見 §8.3）。
+1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）：
+   1. 打開 Agent：沒有的話下載 Claude 桌面版並登入；開新對話時選一個存放影片的資料夾（例如「文件」）。
+   2. 產品資訊：產品網址、原始碼資料夾（以資料夾選擇器挑選，讀取 `package.json` / README 帶入說明與網址；瀏覽器無法取得完整路徑，因此只傳資料夾名稱，由 Agent 尋找）、產品說明。至少一項；輸入內容保存在 `localStorage`。
+   3. 複製一段白話訊息貼給 Agent：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
+   4. Agent 建好專案後，選擇該專案資料夾開啟工作台。
 2. **Workflow**：五步驟進度條，顯示目前 project 狀態與下一步建議指令。
 3. **Scene Board**：scene 卡片看板（標題、purpose、時長、狀態徽章、縮圖），可拖曳排序。
 4. **Scene Editor**：編輯 `script.md`、視覺描述、voice、強制時長；鎖定/核准按鈕；以 `<video>` 從 handle 讀 blob 預覽 `scene.mp4`。

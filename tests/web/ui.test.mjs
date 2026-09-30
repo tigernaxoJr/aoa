@@ -141,14 +141,54 @@ async function openApp(t, p, hash = '') {
   return { page, read, writeFile }
 }
 
-test('home page builds the launch command from the product sources', async (t) => {
+test('home page walks a non-technical user to a plain-language message for the agent', async (t) => {
   if (!browser) return t.skip('no browser available')
-  const page = await browser.newPage()
-  t.after(() => page.close())
+  const context = await browser.newContext()
+  t.after(() => context.close())
+  const page = await context.newPage()
   await page.goto(`${origin}${BASE}/`)
+  assert.match(await page.getByTestId('step-run').textContent(), /請先在步驟 2 填入/, 'no message before any source')
+
+  await page.getByTestId('agent-ready').click()
   await page.getByPlaceholder('https://example.com').fill('https://acme.test')
-  const command = await page.getByTestId('launch-command').textContent()
-  assert.equal(command, `claude "讀取 ${origin}${BASE}/api/agent-guide.md，製作產品介紹影片，來源：產品網址 https://acme.test"`)
+  const message = await page.getByTestId('launch-message').textContent()
+  assert.equal(
+    message,
+    `請讀取 ${origin}${BASE}/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
+  )
+  const visible = await page.locator('main').innerText()
+  assert.doesNotMatch(visible, /終端機中開啟|npm install|cd /, 'the main path never asks for a terminal')
+  assert.equal(await page.getByTestId('launch-command').isVisible(), false, 'the terminal command stays folded away')
+})
+
+test('guided start: picking the source folder prefills from package.json / README and passes only its name', async (t) => {
+  if (!browser) return t.skip('no browser available')
+  const context = await browser.newContext()
+  t.after(() => context.close())
+  const page = await context.newPage()
+  await page.goto(`${origin}${BASE}/`)
+  await page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory()
+    await root.removeEntry('acme-app', { recursive: true }).catch(() => {})
+    const dir = await root.getDirectoryHandle('acme-app', { create: true })
+    const put = async (name, text) => {
+      const w = await (await dir.getFileHandle(name, { create: true })).createWritable()
+      await w.write(text)
+      await w.close()
+    }
+    await put('package.json', JSON.stringify({ name: 'acme-deploy', homepage: 'https://acme.test' }))
+    await put('README.md', '# Acme\n\n[![build](https://x/badge.svg)](https://x)\n\nAcme 讓你**一鍵部署**網站，不用設定伺服器。\n\n## 安裝\n')
+    await window.__avp.pickSource(dir)
+  })
+  assert.equal(await page.getByTestId('source-folder').getByText('acme-app').count(), 1)
+  assert.match(await page.getByTestId('source-filled').textContent(), /說明與網址/)
+  const message = await page.getByTestId('launch-message').textContent()
+  assert.match(message, /・產品網址：https:\/\/acme\.test/)
+  assert.match(message, /・產品原始碼在我電腦上名為「acme-app」的資料夾（請幫我找到它；找不到就問我）/)
+  assert.match(message, /・產品說明：acme-deploy：Acme 讓你一鍵部署網站，不用設定伺服器。/)
+
+  await page.reload()
+  assert.equal(await page.getByTestId('launch-message').textContent(), message, 'inputs survive a reload')
 })
 
 test('opened project shows scenes; browser inputHash matches the Node scripts', async (t) => {
