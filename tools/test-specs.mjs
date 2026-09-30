@@ -114,7 +114,7 @@ if (skillErrors.length) {
 // Skill links: relative links in skills/product-video/*.md and workflow.json `guide` fields
 // must point to existing files and anchors (`<a id="...">`).
 // Files or file#anchor targets listed in PENDING are planned but not yet written; links to them only warn.
-const PENDING = new Set(['rendering-guide.md#assemble'])
+const PENDING = new Set()
 const skillDir = join(rootDir, 'skills', 'product-video')
 const skillDocs = new Map(
   readdirSync(skillDir)

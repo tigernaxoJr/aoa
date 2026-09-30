@@ -93,3 +93,37 @@ Remotion 無法下載瀏覽器時（例如離線），會改用 Playwright 的�
 配色、字型、字級都在 `src/lib/motion.js` 的 `THEME` 與 `styles()`；Remotion 版面在 `src/SceneVideo.tsx`，html-capture 版面在 `src/html/player.js`。兩個渲染器都會用到的改動，要同時改這兩個檔案。
 
 `src/` 不納入 `inputHash`，所以改了 `src/` 之後，已渲染的 scene 不會自動被標為過期。只有在使用者要求時才改 `src/`；改完後告訴使用者哪些 scene 需要重做，經同意後對這些 scene 執行 `npm run state -- <id> --status stale`，再依第 1 節重做。`approved` 或 `locked` 的 scene 必須由使用者明確指定才重做。
+
+---
+
+## <a id="assemble"></a>8. 合成最終影片
+
+用於 `/video-assemble`。所有 scene 都必須是 `rendered` 或 `approved`，而且渲染後輸入沒有變動。
+
+```bash
+npm run status                                   # 確認沒有未完成或過期的 scene
+npm run assemble                                 # → output/final.mp4、output/final.srt
+npm run state -- project --status completed
+```
+
+`assemble` 發現有 scene 未就緒時，會列出 scene id 與原因（狀態、缺輸出、輸入已變更）並停止，不產生任何檔案。把列出的 scene 依第 1 節重做，或執行 `/video-sync`。
+
+### 合成內容
+
+| 項目 | 來源 | 行為 |
+|---|---|---|
+| 順序 | `video.project.json` 的 `scenes` | 依陣列順序串接 |
+| 轉場 | 各 scene 的 `visual.transitionIn` | `fade`、`slide-left`、`slide-right`、`wipe`、`zoom` 與前一個 scene 重疊 0.5 秒（scene 很短時縮短）；`none` 直接切換；第一個 scene 的轉場不使用。聲音在轉場期間交叉淡化 |
+| 字幕 | 各 scene 的 `assets/captions.json` | 依 scene 在成片中的起點位移，寫成 `output/final.srt`；跨到下一個 scene 的字幕會被截斷 |
+| 燒入字幕 | `captions.mode: burn` | 另外把字幕畫進影片；`captions.style` 的 `fontSize` 以成片像素為單位，`position` 為 `bottom` / `middle` / `top` |
+| BGM | `audio.bgm` | 循環播放到影片結束，音量 `bgmVolume`，頭尾各淡入淡出 1 秒；`ducking: true` 時旁白出現處自動壓低 |
+
+- `captions.mode: none` 不產生 `final.srt`。
+- `audio.bgm` 指定的檔案不存在時，略過 BGM 並警告，不算失敗。BGM 由使用者自備，不要替使用者下載音樂。
+- 字幕樣式、BGM、scene 順序都只影響合成：修改它們只需重新 `npm run assemble`，不需要重做 scene。
+- 轉場會讓成片比各 scene 加總短（每個轉場 0.5 秒）。旁白預設留有 0.5 秒尾音，轉場只會蓋到這段靜音；若 scene 用 `durationSec` 強制秒數且旁白講到最後一刻，轉場會蓋到旁白結尾，這時把該 scene 下一個的 `transitionIn` 改為 `none`。
+- 合成失敗時，既有的 `output/final.mp4` 不會被刪除或覆蓋。
+
+### 完成
+
+回報 `output/final.mp4` 的路徑與總長度（`assemble` 最後一行會印出），以及有無字幕檔、BGM。`assemble` 印出的 `warning:`（例如缺少字幕、找不到 BGM）要一併告訴使用者。

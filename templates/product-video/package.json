@@ -12,6 +12,7 @@
     "tts": "node scripts/tts.mjs",
     "capture": "node scripts/capture.mjs",
     "render:scene": "node scripts/render-scene.mjs",
+    "assemble": "node scripts/assemble.mjs",
     "preview": "remotion studio src/index.ts"
   },
   "dependencies": {

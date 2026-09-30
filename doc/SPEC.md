@@ -408,7 +408,7 @@ GET /api/templates/product-video/manifest.json
 
 **Step 5 — assemble**
 1. 檢查所有 scene 為 `rendered` 或 `approved` 且 `inputHash` 相符；否則列出需重做的 scene 並停止。
-2. 依 `video.project.json.scenes` 順序以 FFmpeg concat（或 Remotion 整體合成以套用 scene 間轉場）。
+2. 依 `video.project.json.scenes` 順序以 FFmpeg 串接（兩種 renderer 相同）：有 `transitionIn` 的 scene 以 `xfade` 與前一個 scene 重疊 0.5 秒（不超過兩者各自長度的一半，並對齊整幀），聲音同時以 `acrossfade` 交叉淡化；`none` 直接串接。每個 scene 的聲音先補齊或截到其視訊長度，避免音畫漂移。
 3. **字幕**：合併各 scene 的 `assets/captions.json`（依 scene 起始時間位移）為 `output/final.srt`；`captions.mode` 為 `burn` 時再以 FFmpeg 燒入畫面。
 4. **BGM**：若 `audio.bgm` 檔案存在，以 FFmpeg `sidechaincompress` 在旁白出現時壓低音量，頭尾淡入淡出；不存在則略過。
 5. 輸出 `output/final.mp4`，project 狀態設為 `completed`。
@@ -479,7 +479,7 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 | `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖） | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4`（H.264 + AAC 48 kHz 立體聲、BT.709，無旁白時為靜音音軌）；失敗時保留既有輸出 | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
-| `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt` | 否 |
+| `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊、轉場、字幕燒入、BGM 在同一次 FFmpeg 編碼完成 | 否 |
 
 `state.mjs` 介面（Agent 使用方式見範本 `AGENTS.md` §4）：
 
@@ -525,11 +525,13 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 - 單條字幕上限：中文 16 字、英文 42 字元，超過則再切。
 - `captions.mode`：`srt`（預設，只輸出 `output/final.srt`）｜`burn`（燒入並同時輸出 srt）｜`none`。
 - **燒入只在 assemble 進行**，不在 scene 渲染時燒入——修改字幕樣式只需重跑 assemble，不使 scene 過期；`captions` 設定因此不納入 scene 的 `inputHash`。
+- 合併：各 scene 的字幕依該 scene 在成片中的起點位移；跨過下一個 scene 起點（含轉場重疊）的部分截斷。
+- 燒入實作：產生 ASS 字幕（`PlayResX/Y` = 輸出解析度，故 `style.fontSize` 以成片像素計，省略時為高度 × 48/1080），以 FFmpeg `ass` 濾鏡（libass）繪製；白字深色描邊，`position` 對應下／中／上。指定字型未安裝時由 libass 改用系統中有對應字形的字型。內建 FFmpeg 的 libass 不支援 Unicode 斷行，長字幕依賴上述單條字數上限。
 
 **BGM**
 
 - 由使用者自備音檔放入 `assets/`，於 `audio.bgm` 指定；網站不提供音樂庫（避免音樂授權責任），不做 AI 生成音樂。
-- assemble 時混音：`bgmVolume` 為基準音量，`ducking: true` 時旁白出現處自動壓低，影片頭尾 1 秒淡入淡出。
+- assemble 時混音：BGM 循環播放至成片長度，`bgmVolume` 為基準音量，`ducking: true` 時以旁白為 sidechain 經 `sidechaincompress` 自動壓低，影片頭尾 1 秒淡入淡出（成片短於 2 秒時縮短）。`audio.bgm` 檔案不存在時警告並略過。
 - BGM 同樣只在 assemble 處理，不影響 scene 的 `inputHash`。
 
 ### 7.6 渲染器

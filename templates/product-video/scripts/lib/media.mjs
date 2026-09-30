@@ -37,10 +37,14 @@ export function locate(name) {
   )
 }
 
-/** Runs ffmpeg with the given args (overwrite enabled, quiet). Throws with stderr tail on failure. */
-export function ffmpeg(args) {
+/**
+ * Runs ffmpeg with the given args (overwrite enabled, quiet). Throws with stderr tail on failure.
+ * `cwd` lets filters reference files by bare name (avoids escaping Windows paths in filtergraphs).
+ */
+export function ffmpeg(args, { cwd } = {}) {
   const { path } = locate('ffmpeg')
   const r = spawnSync(path, ['-hide_banner', '-loglevel', 'error', '-y', ...args], {
+    cwd,
     encoding: 'utf8',
     windowsHide: true,
     maxBuffer: 64 * 1024 * 1024,
@@ -92,6 +96,18 @@ export function normalizeVideo(src, { trimStart = 0, trimEnd = null, fps, frames
     ...VIDEO_ENCODE,
     out,
   ])
+}
+
+/** Duration of the first video stream in seconds (container duration can include audio padding). */
+export function probeVideoDuration(file) {
+  const { path } = locate('ffprobe')
+  const r = spawnSync(path, ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=duration', '-of', 'csv=p=0', file], {
+    encoding: 'utf8',
+    windowsHide: true,
+  })
+  const sec = Number.parseFloat(r.stdout)
+  if (r.status !== 0 || !Number.isFinite(sec)) throw new Error(`ffprobe cannot read the video stream of ${file}: ${r.stderr.trim()}`)
+  return sec
 }
 
 /** Media duration in seconds. */
