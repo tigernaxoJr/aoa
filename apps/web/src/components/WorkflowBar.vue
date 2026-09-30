@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { STEPS } from '../lib/site'
-import { state } from '../lib/store'
+import { companion } from '../lib/companion'
+import { runCompanion, state } from '../lib/store'
 import CopyButton from './CopyButton.vue'
 
 const status = computed(() => state.value!.project.status)
 const next = computed(() => state.value!.next)
 /** The step after the last completed one is "current". */
 const current = computed(() => STEPS.findIndex((s) => !(s.done as readonly string[]).includes(status.value)))
+/** Redo every stale scene with the Companion (deterministic), then assemble. */
+async function redoAll() {
+  for (const s of stale.value) {
+    if (!(await runCompanion('rebuild', `重新產生 ${s.id}`, s.id))) return
+  }
+  await runCompanion('assemble', '合成影片')
+}
 const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.scene?.status === 'stale') && !s.scene?.locked))
 </script>
 
@@ -45,8 +53,17 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
       role="status"
       data-testid="stale-banner"
     >
-      <span>{{ stale.length }} 個 scene 待更新。網頁無法直接叫醒 Agent，請在終端機的 Agent 中執行 <code>/video-sync</code>。</span>
-      <CopyButton text="/video-sync" />
+      <template v-if="companion.state === 'ready'">
+        <span>{{ stale.length }} 個 scene 待更新。</span>
+        <span class="flex flex-wrap gap-2">
+          <button type="button" class="btn-primary py-1" :disabled="!!companion.running" data-testid="redo-all" @click="redoAll">立即重做並合成</button>
+          <button type="button" class="btn-secondary py-1" :disabled="!!companion.running" title="需要改寫文案或分鏡時，交給 Agent 判斷" @click="runCompanion('sync', 'Agent 同步變更')">交給 Agent 處理</button>
+        </span>
+      </template>
+      <template v-else>
+        <span>{{ stale.length }} 個 scene 待更新。網頁無法直接叫醒 Agent，請在終端機的 Agent 中執行 <code>/video-sync</code>（或啟動 <code>npx video-agent serve</code> 以便直接在這裡重做）。</span>
+        <CopyButton text="/video-sync" />
+      </template>
     </div>
   </section>
 </template>

@@ -5,10 +5,16 @@ import HomeView from './components/HomeView.vue'
 import SceneBoard from './components/SceneBoard.vue'
 import SceneEditor from './components/SceneEditor.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
-import { close, restore, state, ui } from './lib/store'
+import CompanionStatus from './components/CompanionStatus.vue'
+import { companion, connect, takePairingFromUrl } from './lib/companion'
+import { close, reload, restore, state, ui } from './lib/store'
 
 const selected = ref<string | null>(null)
-onMounted(restore)
+onMounted(() => {
+  takePairingFromUrl()
+  connect(undefined, reload)
+  restore()
+})
 // Drop the selection when that scene leaves the project.
 watch(state, (st) => {
   if (selected.value && !st?.scenes.some((s) => s.id === selected.value)) selected.value = null
@@ -22,7 +28,13 @@ watch(state, (st) => {
       <template v-if="state">
         <span class="text-slate-300 dark:text-slate-600">/</span>
         <span class="min-w-0 truncate text-sm" data-testid="project-name">{{ state.project.project.name }}</span>
-        <button type="button" class="ml-auto shrink-0 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200" @click="close">關閉專案</button>
+        <span class="ml-auto" />
+        <CompanionStatus />
+        <button type="button" class="shrink-0 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200" @click="close">關閉專案</button>
+      </template>
+      <template v-else>
+        <span class="ml-auto" />
+        <CompanionStatus />
       </template>
     </div>
   </header>
@@ -48,7 +60,16 @@ watch(state, (st) => {
   </main>
 
   <div
-    v-if="ui.notice"
+    v-if="companion.running"
+    class="fixed inset-x-4 bottom-4 mx-auto max-w-md rounded-lg bg-slate-900 px-4 py-3 text-sm text-white shadow-lg sm:inset-x-auto sm:right-4 dark:bg-slate-700"
+    role="status"
+    data-testid="companion-running"
+  >
+    <p class="font-medium">{{ companion.running }}…</p>
+    <p v-if="companion.lastLine" class="mt-1 truncate font-mono text-xs text-slate-300">{{ companion.lastLine }}</p>
+  </div>
+  <div
+    v-else-if="ui.notice"
     class="fixed inset-x-4 bottom-4 mx-auto max-w-md rounded-lg px-4 py-3 text-sm shadow-lg sm:inset-x-auto sm:right-4"
     :class="{
       'bg-emerald-700 text-white': ui.notice.kind === 'ok',

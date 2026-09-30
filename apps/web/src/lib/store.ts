@@ -1,6 +1,7 @@
 // App state: the open project folder, the loaded project, polling (SPEC §9.1), and a single path
 // for running writes so conflicts and lock waits are reported the same way everywhere.
 import { reactive, shallowRef } from 'vue'
+import { run as runAction } from './companion'
 import { ensurePermission, isSupported } from './fsa'
 import { forgetHandle, loadHandle, saveHandle } from './idb'
 import { fingerprint, loadProject, type ProjectState } from './project'
@@ -127,3 +128,20 @@ declare global {
   }
 }
 window.__avp = { open: (handle) => openHandle(handle, false) }
+
+/** Runs a Companion action and reports the outcome the same way writes do. */
+export async function runCompanion(action: string, label: string, scene?: string) {
+  const result = await runAction(action, label, scene)
+  notify(result.ok ? 'ok' : 'error', result.ok ? `${label}：完成` : `${label}：失敗。${summarize(result.output)}`)
+  await reload()
+  return result.ok
+}
+
+function summarize(output: unknown): string {
+  if (typeof output === 'string') return output.split('\n').filter(Boolean).at(-1) ?? ''
+  if (Array.isArray(output)) {
+    const failed = output.find((s: { code?: number }) => s.code)
+    return failed ? `${failed.step}：${String(failed.output).split('\n').filter(Boolean).at(-1) ?? ''}` : ''
+  }
+  return ''
+}

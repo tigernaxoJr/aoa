@@ -12,6 +12,8 @@ import { tmpdir } from 'node:os'
 import { extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, before, test } from 'node:test'
+import { startCompanion } from '../../packages/video-agent/serve/server.mjs'
+import { FAKE_TTS, fullProject, motionScene } from '../agent/helpers.mjs'
 import { baseProject, baseScene, makeProject } from '../template/helpers.mjs'
 
 const require = createRequire(import.meta.url)
@@ -87,14 +89,14 @@ function fixture() {
 }
 
 /** Opens the app with the fixture copied into OPFS; returns the page and a reader for OPFS files. */
-async function openApp(t, p) {
+async function openApp(t, p, hash = '') {
   if (!browser) {
     t.skip('no browser available')
     return null
   }
   const context = await browser.newContext()
   const page = await context.newPage()
-  await page.goto(`${origin}${BASE}/`)
+  await page.goto(`${origin}${BASE}/${hash}`)
   const files = []
   const walk = (dir) => {
     for (const d of readdirSync(dir, { withFileTypes: true })) {
@@ -214,4 +216,25 @@ test('writes wait while an agent holds the lock', async (t) => {
   await page.getByTestId('save').click()
   await page.getByTestId('notice').filter({ hasText: 'Agent 正在寫入' }).waitFor()
   assert.equal(await read('scenes/003-extra/script.md'), '這是一段旁白。\n')
+})
+
+test('the pairing link connects the Companion; "立即重新產生" rebuilds the scene without a terminal', async (t) => {
+  if (!browser) return t.skip('no browser available')
+  Object.assign(process.env, FAKE_TTS)
+  const p = fullProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene: motionScene('scene-001', { title: '開場' }) }] })
+  t.after(p.cleanup)
+  const c = await startCompanion({ projectDir: p.root, port: 0, site: `${origin}${BASE}`, log: () => {} })
+  t.after(() => c.close())
+
+  const app = await openApp(t, p, `#pair=${c.port}:${c.token}`)
+  const { page } = app
+  await page.getByTestId('companion-status').getByText('本機助手已連線').waitFor()
+  assert.equal(await page.evaluate(() => location.hash), '', 'the token is removed from the address bar')
+
+  await page.getByTestId('scene-scene-001').getByRole('button', { name: /開場/ }).click()
+  await page.getByTestId('rebuild').click()
+  await page.getByTestId('notice').filter({ hasText: '重新產生 scene-001：完成' }).waitFor({ timeout: 120_000 })
+  const scene = JSON.parse(readFileSync(p.path('scenes/001-hook/scene.json'), 'utf8'))
+  assert.equal(scene.status, 'rendered')
+  assert.equal(scene.updatedBy, 'companion')
 })

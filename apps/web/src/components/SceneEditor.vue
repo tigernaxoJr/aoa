@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import { PURPOSE_LABEL, STATUS_LABEL } from '../lib/site'
-import { state, ui, write } from '../lib/store'
+import { companion } from '../lib/companion'
+import { runCompanion, state, ui, write } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
 import { approve, markStale, saveSceneFields, saveScript, setLocked } from '../lib/writes'
 
@@ -151,6 +152,17 @@ function discard() {
         @click="write((root, st) => markStale(root, st, id), '已標記需要重做')"
       >
         標記需要重做
+      </button>
+      <button
+        v-if="companion.state === 'ready' && !scene.locked"
+        type="button"
+        class="btn-primary"
+        :disabled="ui.saving || !!companion.running || dirty"
+        :title="dirty ? '請先儲存修改' : '在本機重新產生旁白、畫面與影片'"
+        data-testid="rebuild"
+        @click="runCompanion('rebuild', `重新產生 ${id}`, id)"
+      >
+        立即重新產生
       </button>
       <button type="button" class="btn-secondary" :disabled="ui.saving" @click="write((root, st) => setLocked(root, st, id, !scene!.locked), scene!.locked ? '已解除鎖定' : '已鎖定')">
         {{ scene.locked ? '解除鎖定' : '鎖定' }}

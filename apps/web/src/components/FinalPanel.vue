@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { FINAL_FILE } from '../lib/project'
-import { state } from '../lib/store'
+import { companion } from '../lib/companion'
+import { runCompanion, state } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
 
 const final = computed(() => state.value!.final)
@@ -9,6 +10,7 @@ const url = useFileUrl(
   computed(() => (final.value.exists ? FINAL_FILE : null)),
   computed(() => final.value.mtime),
 )
+const ready = computed(() => state.value!.scenes.length > 0 && state.value!.scenes.every((s) => s.upToDate))
 /** Scenes whose current output is not what final.mp4 was built from, or that need redoing. */
 const outdated = computed(() =>
   state.value!.scenes.filter((s) => !s.upToDate || (final.value.exists && s.outputMtime > final.value.mtime)),
@@ -27,5 +29,15 @@ const outdated = computed(() =>
       </ul>
     </div>
     <p v-else-if="final.exists" class="mt-3 text-sm text-emerald-700 dark:text-emerald-400">影片與所有 scene 一致。</p>
+    <button
+      v-if="companion.state === 'ready' && ready && (!final.exists || outdated.length)"
+      type="button"
+      class="btn-primary mt-4"
+      :disabled="!!companion.running"
+      data-testid="assemble"
+      @click="runCompanion('assemble', '合成影片')"
+    >
+      立即合成
+    </button>
   </section>
 </template>
