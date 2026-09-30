@@ -15,10 +15,16 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 2. **目前目錄沒有 `video.project.json`，但使用者提到某個影片專案目錄** → 請使用者確認後切換到該目錄，回到第 1 點。
 3. **都沒有** → 這是新專案，執行 §2 初始化。
 
-## 2. 初始化新專案（`/video-init`）
+## 2. 初始化新專案（init）
 
 1. **確認位置**：詢問使用者專案要建立在哪個目錄。目錄必須是空的或不存在；不要在產品本身的原始碼目錄裡建立。
-2. **取得範本**：下載 `{{SITE_URL}}/api/templates/product-video.zip` 與 `{{SITE_URL}}/api/templates/product-video/manifest.json`，以 manifest 中的 SHA-256 驗證 zip 後解壓到專案目錄。驗證失敗就停止並告知使用者，不使用該檔案。
+2. **取得範本**：在專案目錄下載範本，以 manifest 的 `zip.sha256` 驗證後解壓，再刪除 zip。雜湊不符就停止並告知使用者，不使用該檔案。
+   ```bash
+   curl -fsSL -o product-video.zip {{SITE_URL}}/api/templates/product-video.zip
+   curl -fsSL {{SITE_URL}}/api/templates/product-video/manifest.json
+   node -e "console.log(require('crypto').createHash('sha256').update(require('fs').readFileSync('product-video.zip')).digest('hex'))"
+   ```
+   解壓：macOS / Linux 用 `unzip -q product-video.zip`；Windows 用 PowerShell `Expand-Archive product-video.zip -DestinationPath .`（Git Bash 內的 `tar` 無法解 zip）。
 3. **收集來源**：至少需要以下一項，缺少時詢問使用者：
    - 產品網址（`sources.productUrl`）
    - 產品原始碼路徑（`sources.sourceCodePath`，唯讀，不修改該目錄）

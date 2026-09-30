@@ -4,7 +4,7 @@
 
 ---
 
-## 1. 規劃結構
+## 1. <a id="structure"></a>規劃結構
 
 ### 依長度決定 scene 數
 
@@ -46,7 +46,7 @@
 
 ---
 
-## 2. 寫旁白（`script.md`）
+## 2. <a id="narration"></a>寫旁白（`script.md`）
 
 ### 語速與長度
 
@@ -85,7 +85,7 @@
 
 ---
 
-## 3. 設計畫面（`scene.json` 的 `visual`）
+## 3. <a id="visual"></a>設計畫面（`scene.json` 的 `visual`）
 
 - **`description`**：用一兩句話描述觀眾會看到什麼，讓使用者在分鏡審閱時能想像畫面。
 - **優先用真實產品畫面**：`web-capture` / `screenshot` 比抽象動畫更有說服力。從 brief 的「可用畫面」挑選。

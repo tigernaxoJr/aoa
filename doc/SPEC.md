@@ -326,38 +326,46 @@ draft → assets_ready → rendering → rendered → approved
 
 所有端點皆為靜態檔案，Agent 以 HTTP GET（如 `WebFetch` / `curl`）讀取。這些 API 本質是 **Agent 的說明書與作業規則**，刻意 **不提供** `POST /api/video/generate` 這類生成式端點。
 
+路徑皆相對於網站根網址 `SITE_URL`（部署於子路徑，見 §12.1），例如 `https://tigernaxojr.github.io/index-url-director/api/index.json`。
+
 ```text
-GET /api/index.json                          # 入口：列出所有資源與版本
-GET /api/agent-guide.md                      # Agent 必讀總綱（本規格的 Agent 版摘要）
+GET /api/index.json                          # 入口：列出所有資源（絕對網址）、版本與 zip 雜湊
+GET /api/agent-guide.md                      # Agent 必讀總綱（= Skill 的 SKILL.md + 安裝與資源說明）
 GET /api/workflow.json                       # 機器可讀工作流程（§6）
-GET /api/schemas/project.schema.json
-GET /api/schemas/scene.schema.json
+GET /api/schemas/{common,project,scene,workflow}.schema.json
 GET /api/prompts/analyze-product.md
 GET /api/prompts/analyze-style.md
 GET /api/prompts/storyboard.md
 GET /api/prompts/scene-script.md
 GET /api/rules/script.md                     # 文案規則（字數/秒、語氣、禁用詞）
 GET /api/rules/visual.md                     # 視覺規則（安全邊距、字級、配色）
-GET /api/skills/product-video.zip            # 完整 Skill 套件
-GET /api/templates/product-video.zip         # 專案範本
-GET /api/templates/product-video/manifest.json
+GET /api/skills/product-video.zip            # 完整 Skill 套件（根目錄為 product-video/）
+GET /api/skills/product-video/*.md           # Skill 各文件（未安裝 Skill 的 Agent 線上讀取）
+GET /api/templates/product-video.zip         # 專案範本（含 schemas/ 與 .claude/commands/）
+GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 SHA-256
 ```
 
-`/api/index.json`：
+`/api/index.json`（節錄）：
 
 ```json
 {
   "specVersion": "1.0.0",
-  "entry": "/api/agent-guide.md",
-  "workflow": "/api/workflow.json",
-  "schemas": {
-    "project": "/api/schemas/project.schema.json",
-    "scene": "/api/schemas/scene.schema.json"
-  },
-  "skill": "/api/skills/product-video.zip",
-  "template": "/api/templates/product-video.zip"
+  "siteUrl": "https://tigernaxojr.github.io/index-url-director",
+  "entry": "https://tigernaxojr.github.io/index-url-director/api/agent-guide.md",
+  "workflow": "https://tigernaxojr.github.io/index-url-director/api/workflow.json",
+  "schemas": { "project": "…/api/schemas/project.schema.json", "scene": "…/api/schemas/scene.schema.json" },
+  "prompts": { "storyboard": "…/api/prompts/storyboard.md" },
+  "rules": { "script": "…/api/rules/script.md" },
+  "skill": "…/api/skills/product-video.zip",
+  "template": "…/api/templates/product-video.zip",
+  "templateManifest": "…/api/templates/product-video/manifest.json",
+  "checksums": { "skill": "<sha256>", "template": "<sha256>" }
 }
 ```
+
+- 網址一律為絕對網址：網站部署在子路徑時，以 `/` 開頭的路徑會指到網域根目錄而失效。
+- **單一來源**：`prompts/*`、`rules/*`、`agent-guide.md` 由 `tools/build-api.mjs` 從 Skill 文件以 `<a id>` 錨點擷取產生，不另外手寫；Skill 是唯一需要維護的文字。對應：`analyze-product` ← `workflow.md#analyze`、`analyze-style` ← `workflow.md#style`、`storyboard` ← `script-guide.md`、`scene-script` ← `script-guide.md#narration` + `#visual`、`rules/script` ← `script-guide.md#narration`、`rules/visual` ← `script-guide.md#visual` + `rendering-guide.md#visual-types` + `#elements`。
+- zip 以固定時間戳建立，相同輸入產生相同位元組與雜湊。
 
 版本規則：`specVersion` 採 SemVer。Major 版變更需提供遷移說明；本機專案的 `specVersion` 與網站不同 major 時，Agent 必須先提示使用者。
 
@@ -590,7 +598,7 @@ skills/product-video/
 └── schemas/ → 連結至 specs/
 ```
 
-安裝方式：Agent 下載 `/api/skills/product-video.zip` 解壓到專案 `.claude/skills/`（或使用者層級 skills 目錄）。
+安裝方式：Agent 下載 `/api/skills/product-video.zip` 解壓到專案 `.claude/skills/`（或使用者層級 skills 目錄）。不安裝也可以：`/api/agent-guide.md` 與 `/api/skills/product-video/*.md` 提供相同內容供線上讀取。
 
 - `SKILL.md` 負責「判斷目前狀態」與「初始化新專案」（此時專案內尚無 `AGENTS.md`）；初始化之後的規則以專案 `AGENTS.md` 為準，SKILL 不重複規則。
 - `workflow.md`（各步驟做法，含 `brief/product-brief.md` 與 `brief/style.json` 的格式）、`script-guide.md`（分鏡與旁白寫作）以 `<a id="…">` 明確錨點供 `workflow.json` 的 `guide` 引用；`npm run test:specs` 檢查所有 Skill 內部連結與錨點。
@@ -599,11 +607,10 @@ skills/product-video/
 
 ### 8.3 Slash Commands（Claude Code）
 
-範本內建 `.claude/commands/`：
+範本 zip 內建 `.claude/commands/`（由 `build-api.mjs` 產生，見 §8.4）：
 
 | 指令 | 對應步驟 |
 |---|---|
-| `/video-init` | init |
 | `/video-analyze` | analyze |
 | `/video-storyboard` | storyboard |
 | `/video-scene <id\|all>` | build_scene |
@@ -613,7 +620,12 @@ skills/product-video/
 | `/video-approve <id>` | 將 `rendered` 的 scene 設為 `approved` |
 | `/video-translate <locale>` | 複製專案並翻譯為指定語言（§4.4） |
 
-指令檔內容僅為薄包裝：指向 Skill 中對應章節，避免規則重複維護。
+指令檔內容僅為薄包裝：指向 `workflow.json` 的對應步驟與 Skill 章節，避免規則重複維護。
+
+**init 沒有專案指令**：init 執行時專案（及其 `.claude/commands/`）尚不存在，因此入口是：
+
+- 已安裝 Skill：`/product-video <產品網址>`（Skill 本身即可作為指令）。
+- 未安裝任何東西：`claude "讀取 <SITE_URL>/api/agent-guide.md，為 <產品網址> 製作產品介紹影片"`。任何能讀網址的 Agent 皆適用，Web UI 的啟動指令採用此形式。
 
 ### 8.4 其他 Agent 相容性
 
@@ -627,7 +639,7 @@ skills/product-video/
 
 - **中立寫法**：`AGENTS.md`、`SKILL.md`、prompts 不得使用任何 Agent 專屬語法或工具名稱（如 `$ARGUMENTS`、特定工具名），一律以「執行 `npm run …`」「讀取檔案 …」描述動作。Agent 專屬內容只能放在其專屬目錄（如 `.claude/`）。
 - **支援等級**：MVP 只正式支援並端到端測試 **Claude Code**。
-- **擴充方式**：指令以單一來源 `templates/commands/*.yaml` 定義，由 `build-api.mjs` 產生各 Agent 格式（`.claude/commands/*.md`、`.gemini/commands/*.toml`、`.cursor/commands/*.md` 等）。依序加入 Codex、Gemini CLI；每個 Agent 通過與 Claude Code 相同的端到端驗收（§13 Phase 3 完成標準）後，網站才標示為「支援」。
+- **擴充方式**：指令的單一來源是 `specs/workflow.json` 中帶 `command` 的 steps / operations（名稱、參數、標題、guide 已在其中，不另設 YAML），由 `build-api.mjs`（`tools/lib/commands.mjs`）產生各 Agent 格式（目前 `.claude/commands/*.md`；之後 `.gemini/commands/*.toml`、`.cursor/commands/*.md` 等）。依序加入 Codex、Gemini CLI；每個 Agent 通過與 Claude Code 相同的端到端驗收（§13 Phase 3 完成標準）後，網站才標示為「支援」。
 
 ---
 
@@ -646,7 +658,7 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.2 畫面
 
-1. **Source**：產品網址、原始碼資料夾、產品描述 → 產生給 Agent 的啟動指令（一鍵複製，例如 `claude "/video-init https://example.com"`）。
+1. **Source**：產品網址、原始碼資料夾、產品描述 → 產生給 Agent 的啟動指令（一鍵複製，例如 `claude "讀取 <SITE_URL>/api/agent-guide.md，為 https://example.com 製作產品介紹影片"`，見 §8.3）。
 2. **Workflow**：五步驟進度條，顯示目前 project 狀態與下一步建議指令。
 3. **Scene Board**：scene 卡片看板（標題、purpose、時長、狀態徽章、縮圖），可拖曳排序。
 4. **Scene Editor**：編輯 `script.md`、視覺描述、voice、強制時長；鎖定/核准按鈕；以 `<video>` 從 handle 讀 blob 預覽 `scene.mp4`。
@@ -730,18 +742,25 @@ agent-video-platform/
 │   ├── workflow.json
 │   └── examples/{valid,invalid}/   # npm run test:specs
 ├── skills/product-video/           # Skill 原始檔
-├── templates/product-video/        # 專案範本（含 scripts/、src/、AGENTS.md、.claude/commands/）
-├── templates/commands/*.yaml       # 各 Agent 指令檔的單一來源（§8.4）
-├── prompts/                        # analyze / storyboard / scene-script
-├── rules/                          # script.md / visual.md
-├── mcp/{cloud,local}/              # Phase 4
-├── tools/build-api.mjs             # 將 specs/skills/templates 打包成 dist/api/*
+├── templates/product-video/        # 專案範本（scripts/、src/、AGENTS.md、README.md；schemas/ 與 .claude/commands/ 於打包時加入）
+├── mcp/{cloud,local}/              # Phase 5
+├── tools/build-api.mjs             # 產生 dist/（/api/* 靜態檔、prompts、rules、zip、manifest、首頁）
+├── tools/lib/                      # commands.mjs（指令檔產生）、markdown.mjs（章節擷取）
+├── tests/                          # template/（本機管線）、site/（build-api）
+├── .github/workflows/deploy-pages.yml
 └── doc/
     ├── SPEC.md                     # 本文件
     └── drafts/                     # 原始草稿
 ```
 
-建置時 `build-api.mjs` 產生 `/api/*` 靜態檔、zip 與 manifest（含雜湊），與 web 一同部署。
+建置時 `build-api.mjs` 產生 `/api/*` 靜態檔、zip 與 manifest（含雜湊），與 web 一同部署。prompts 與 rules 由 Skill 擷取產生（§5），repo 中不存放。
+
+### 12.1 部署（GitHub Pages）
+
+- 網址：`https://tigernaxojr.github.io/index-url-director/`（repo 名稱 `index-url-director`；GitHub Pages 的專案網址路徑即 repo 名稱）。
+- `.github/workflows/deploy-pages.yml`：push 到 `main`（或手動觸發）→ `npm ci` → `npm run test:specs` → `npm run build` → 上傳 `dist/` → `actions/deploy-pages`。首次需在 repo Settings → Pages 將 Source 設為 GitHub Actions。
+- **base path 不寫死**：`SITE_URL` 由 `actions/configure-pages` 的 `base_url` 提供，因此 repo 改名或改用自訂網域時自動跟隨。本機建置依序使用 `--site-url` → `SITE_URL` → `GITHUB_REPOSITORY` → git remote `origin` 推得。
+- Skill 與範本中的網址以 `{{SITE_URL}}` 撰寫，建置時替換；Phase 4 的 Vue 應用以同一個 base path 建置（Vite `base`）並輸出到 `dist/` 根目錄，與 `dist/api/` 並存。
 
 ---
 
@@ -751,7 +770,7 @@ agent-video-platform/
 |---|---|---|
 | **1. 協議** | `project.schema.json`、`scene.schema.json`、`AGENTS.md`、`SKILL.md`、`workflow.json`、範本 `video.project.json` | Schema 通過自身範例驗證 |
 | **2. 本機管線** | 範本 `scripts/*`、Remotion 範本、TTS、capture、assemble | 以手寫 scene.json 可產出 final.mp4 |
-| **3. Agent 流程** | Guide API 靜態檔、slash commands、prompts | Claude Code 從一個產品網址端到端產出影片，並能只重做單一 scene |
+| **3. Agent 流程** | Guide API 靜態檔、slash commands、prompts；GitHub Pages 部署（§12.1） | 網站部署完成；Claude Code 從一個產品網址端到端產出影片，並能只重做單一 scene |
 | **4. Web UI** | 資料夾授權、Workflow、Scene Board/Editor、預覽 | UI 修改文案 → Agent `/video-sync` 只重做該 scene |
 | **5. MCP + Companion** | Cloud MCP + Local MCP；本機 Companion（§2.1 模式 B，可與 Local MCP 同一程式） | Agent 可透過 MCP 完成相同流程；UI 按「立即重新渲染」無需切到終端機 |
 | **6. 進階（視需要）** | 帳號、雲端專案、團隊協作、歷史版本、物件儲存 | — 需重新評估零後端原則 |
@@ -783,3 +802,4 @@ agent-video-platform/
 | D17 | 多語系 | 未提及 | MVP 一專案一語言；`/video-translate` 複製專案並翻譯；預留 `<locale>` 命名 | 語言影響時長→畫面時間軸→每 scene 重渲染，原生支援會使狀態機二維化，MVP 成本過高 |
 | D18 | Companion 形態 | 無 | 同一套件 `video-agent` 兩入口（`mcp` / `serve`）共用核心；port 47831–47840；以 `#pair=` 連結配對；統一寫入協定（鎖檔 + 原子寫入） | 生命週期不同不能同程序；邏輯相同應共用；fragment 不外洩 token 且免掃 port |
 | D19 | 其他 Agent 相容性 | GPT 提及「未來支援其他 Agent」 | MVP 只測 Claude Code；AGENTS.md / Skill 中立寫法；指令檔單一來源產生各家格式，逐一驗收後才標示支援 | 協議層已通用，差異只在指令格式；支援宣告需有測試背書 |
+| D20 | 網站部署與指令來源 | 未規範（§9.4 僅提 Cloudflare / GitHub Pages） | GitHub Pages，網址 `/index-url-director`，base path 從 repo 名稱／Pages 設定推得；Guide API 一律絕對網址；指令檔與 prompts/rules 皆由既有單一來源（workflow.json、Skill）產生；init 以 Skill 或 agent-guide 為入口 | 子路徑部署下根相對路徑會失效；避免 YAML 與 workflow.json、prompts 與 Skill 雙重維護；init 時專案指令尚不存在 |

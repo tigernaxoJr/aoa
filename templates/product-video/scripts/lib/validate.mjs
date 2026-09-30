@@ -25,7 +25,7 @@ export function validateProject(root, overrides = new Map()) {
   if (errors.length) return { errors, warnings, project, inspected: null }
 
   const p = project.project
-  if (p.id === NIL_UUID) errors.push(`${PROJECT_FILE}: project.id is the template placeholder; run /video-init`)
+  if (p.id === NIL_UUID) errors.push(`${PROJECT_FILE}: project.id is the template placeholder; initialize the project first (product-video Skill, or agent-guide.md on the site)`)
   const { aspectRatio, width, height } = p.format
   if (Math.abs(width / height - RATIOS[aspectRatio]) / RATIOS[aspectRatio] > 0.005) {
     errors.push(`${PROJECT_FILE}: format ${width}x${height} does not match aspectRatio ${aspectRatio}`)

@@ -21,7 +21,7 @@
 
 | 步驟 | 指令 | 完成後 project.status | 需停下確認 |
 |---|---|---|---|
-| 1 初始化 | `/video-init` | `initialized` | — |
+| 1 初始化 | 由 Skill 或網站 `agent-guide.md` 執行（專案建立前沒有專案指令） | `initialized` | — |
 | 2 分析產品 | `/video-analyze` | `analyzed` | — |
 | 3 分鏡與旁白 | `/video-storyboard` | `script_generated` | **是**：分鏡審閱 |
 | 4 產生 scene | `/video-scene <id\|all>` | `producing` → `ready_to_assemble` | **是**：每個 scene 預覽 |
