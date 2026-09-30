@@ -1,0 +1,8 @@
+node_modules/
+.tmp/
+.video-agent.lock
+*.tmp
+.env
+.env.*
+output/
+scenes/*/output/

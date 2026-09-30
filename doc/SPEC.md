@@ -251,7 +251,7 @@ my-video-project/
 | `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純 Remotion 動畫）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
 | `narration.provider` | TTS 提供者，省略時沿用 `project.tts.provider`。見 §7.4 |
 | `durationSec` | `null` 表示由 TTS 音檔長度決定（音長 + 0.5s 緩衝）；有值則為強制秒數。幀數一律由 `durationSec × fps` 推得，**不存幀數**。 |
-| `render.inputHash` | 對 scene.json（排除 `status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`）、script.md、該 scene 素材、專案 `format` 與 `renderer` 計算的雜湊。與目前內容不符即視為過期。 |
+| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format` 與 `renderer` 計算的 SHA-256。與目前內容不符即視為過期。 |
 | `locked` | `true` 時 Agent 不得修改此 scene（除非使用者明確要求）。使用者在 UI 手動核准後可設為 `true`。 |
 
 ### 4.2.1 共通規則（由 Schema 強制）
@@ -433,11 +433,11 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 | 用途 | 工具 | 備註 |
 |---|---|---|
-| 執行環境 | Node.js ≥ 20、npm | |
-| 網頁擷取 | Playwright | 截圖、錄製操作、抓取產品頁內容 |
+| 執行環境 | Node.js ≥ 20.12、npm | 需要 `readdirSync` 遞迴列出與 `parentPath` |
+| 網頁擷取 | Playwright | 截圖、錄製操作、抓取產品頁內容。瀏覽器依序使用：Playwright 內建 Chromium → 系統 Chrome → 系統 Edge（可用 `VIDEO_AGENT_BROWSER_CHANNEL` 指定），Windows 使用者無需另外下載 |
 | 語音合成 | 可替換 provider，預設 `edge-tts` | 見 §7.4 |
 | 影片合成 | Remotion（預設）／html-capture | Remotion 授權：個人、≤3 人營利組織、非營利免費，其餘需 Company License（義務在實際渲染者）；見 §7.6 |
-| 轉檔/合併 | FFmpeg / ffprobe | 系統需預先安裝 |
+| 轉檔/合併 | FFmpeg / ffprobe | 依序使用：環境變數 `VIDEO_AGENT_FFMPEG` / `VIDEO_AGENT_FFPROBE` → 系統 PATH → npm 內建（`ffmpeg-static` / `ffprobe-static`），使用者無需預先安裝 |
 
 ### 7.2 `package.json` scripts
 
@@ -467,7 +467,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 | 腳本 | 輸入 | 輸出 | 可修改 JSON？ |
 |---|---|---|---|
-| `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態與是否過期 | 否 |
+| `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態、是否過期與建議的下一個指令；`--json` 輸出機器可讀結果（供 Web UI / Companion）。輸入已變更（`inputHash` 不符）只是警告，不算錯誤 | 否 |
 | `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
 | `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖） | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4` | 否 |
@@ -496,15 +496,17 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | provider | 說明 | 連網 | 備註 |
 |---|---|---|---|
 | `edge-tts`（預設） | 免費、繁中品質佳 | 是，文字送至 Microsoft | 非官方介面，可能失效；失敗時提示改用其他 provider |
-| `azure` / `openai` / `elevenlabs` | 使用者自帶 API key | 是 | key 只放 `.env`，Agent 不讀取、不寫入 JSON |
+| `azure` / `openai` / `elevenlabs` | 使用者自帶 API key | 是 | key 只放 `.env`，Agent 不讀取、不寫入 JSON。**目前範本尚未實作**，執行時提示改用其他 provider |
 | `piper` | 完全離線 | 否 | 無 zh-TW 聲音，適合英文或隱私優先 |
-| `system` | Windows SAPI / macOS `say` | 否 | 跨平台聲音不一致 |
+| `system` | Windows SAPI / macOS `say` / Linux `espeak-ng` | 否 | 跨平台聲音不一致；`voice` 可省略（使用系統預設聲音） |
 | `manual` | 使用者自行錄音 | 否 | 放入 `assets/narration.mp3` 即跳過合成，只以 ffprobe 取音長 |
 
 規則：
 
 - 使用任何連網 provider 前，Agent 必須告知「旁白文字將送至 <服務>」並取得同意，記錄於 `project.tts.consent`；未同意則停下請使用者選擇離線 provider 或 `manual`。
 - provider 失敗視同 scene 失敗（§8.1 規則 10），不自動切換到其他連網 provider。
+- 實作：`<!-- pause -->` 之間的文字區塊各自合成，停頓以靜音補上，全部轉為相同格式後串接成 `narration.mp3`。edge-tts 以 `msedge-tts` 套件實作，並使用其詞邊界時間產生字幕。
+- 環境變數 `VIDEO_AGENT_FAKE_TTS=1` 以離線的測試音（每字 0.25 秒）取代實際合成，供自動化測試與無網路試跑使用。
 
 ### 7.5 字幕與 BGM
 
@@ -677,7 +679,7 @@ video-agent/
 
 Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（Agent 的檔案編輯工具無法取鎖與原子替換，因此 Agent 更新 JSON 時經由 `npm run state -- <scene-id|project> <json-patch>`，由 `scripts/state.mjs` 執行以下協定並於寫入後自動 validate）：
 
-1. 寫入前取得專案根目錄的 `.video-agent.lock`（內容：寫入者、PID、時間）；已存在且未逾時（30 秒）則等待重試，逾時視為殘留鎖並覆蓋。
+1. 寫入前取得專案根目錄的 `.video-agent.lock`（內容：寫入者、PID、時間）；已存在且未逾時（30 秒）則等待重試（最多 10 秒，可用環境變數 `VIDEO_AGENT_LOCK_WAIT_MS` 調整），逾時視為殘留鎖並覆蓋。
 2. 重新讀取目標檔 → 修改 → 寫到 `<file>.tmp` → rename 覆蓋（原子寫入）。
 3. 釋放鎖。
 4. UI（File System Access API 無法可靠實作鎖語意）：寫入前檢查鎖檔存在則延後寫入；寫入時使用 `createWritable()`（本身即寫暫存後替換），並以 `lastModified` 比對偵測衝突（§9.3）。

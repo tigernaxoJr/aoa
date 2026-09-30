@@ -194,7 +194,7 @@
         }
       },
       "if": {
-        "properties": { "provider": { "not": { "const": "manual" } } }
+        "properties": { "provider": { "not": { "enum": ["manual", "system"] } } }
       },
       "then": { "required": ["voice"] }
     }
