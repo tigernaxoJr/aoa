@@ -125,9 +125,13 @@ my-video-project/
 │   ├── render-scene.mjs
 │   ├── assemble.mjs
 │   └── state.mjs               # 唯一的 JSON 寫入入口（§10.2）
-├── src/                        # Remotion 程式碼
-│   ├── Root.tsx
-│   └── scenes/                 # 每個 scene 一個 React 組件（可選客製）
+├── src/                        # 渲染器程式碼（§7.6）
+│   ├── index.ts                # Remotion entry（registerRoot）
+│   ├── Root.tsx                # Composition "Scene"，以 inputProps 接收 render plan
+│   ├── SceneVideo.tsx          # Remotion 版面
+│   ├── plan.ts                 # render plan 型別
+│   ├── lib/motion.js           # 兩個渲染器共用的版面、動畫、配色（純函式）
+│   └── html/player.js          # html-capture 版面（純 DOM，`window.__seek(t)`）
 └── output/
     └── final.mp4
 ```
@@ -454,14 +458,17 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
     "assemble":     "node scripts/assemble.mjs",
     "state":        "node scripts/state.mjs",
     "status":       "node scripts/validate.mjs --report",
-    "preview":      "remotion studio src/Root.tsx"
+    "preview":      "remotion studio src/index.ts"
   },
   "dependencies": {
-    "remotion": "^4", "@remotion/cli": "^4",
+    "remotion": "4.x", "@remotion/cli": "4.x", "@remotion/bundler": "4.x", "@remotion/renderer": "4.x",
+    "react": "^19", "react-dom": "^19",
     "playwright": "^1", "ajv": "^8"
   }
 }
 ```
+
+Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 
 ### 7.3 腳本職責
 
@@ -470,7 +477,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態、是否過期與建議的下一個指令；`--json` 輸出機器可讀結果（供 Web UI / Companion）。輸入已變更（`inputHash` 不符）只是警告，不算錯誤 | 否 |
 | `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
 | `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖） | 否 |
-| `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4` | 否 |
+| `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4`（H.264 + AAC 48 kHz 立體聲、BT.709，無旁白時為靜音音軌）；失敗時保留既有輸出 | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
 | `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt` | 否 |
 
@@ -479,7 +486,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | 用法 | 效果 |
 |---|---|
 | `npm run state -- <project\|scene-id> --status <status>` | 設定狀態（檢查轉換是否合法） |
-| `npm run state -- <scene-id> --rendered` | 計算 `inputHash`，寫入 `render`，狀態 `rendered`，`attempts` 歸零，清除 `error` |
+| `npm run state -- <scene-id> --rendered` | 計算 `inputHash`，寫入 `render`（含 `renderer` 與以 ffprobe 量得的 `actualDurationSec`；輸出檔無法讀取則拒絕），狀態 `rendered`，`attempts` 歸零，清除 `error` |
 | `npm run state -- <scene-id> --failed <step> "<message>" [--hint "<hint>"]` | 狀態 `failed`，寫入 `error`，`attempts` + 1 |
 | `npm run state -- <target> --patch-file <path>` | 套用 JSON Patch（RFC 6902）。不用 JSON Merge Patch，因為它以 `null` 表示刪除，無法把 `durationSec` 設為 `null` |
 
@@ -532,11 +539,22 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | `remotion`（預設） | 成熟、單 scene 渲染與轉場完整、LLM 熟悉度高 | 個人／≤3 人營利組織／非營利免費；其餘需 Company License |
 | `html-capture` | 正式支援的免授權替代方案 | Playwright（Apache-2.0）、FFmpeg |
 
+共通實作（`scripts/render-scene.mjs`）：
+
+- **Render plan**：`scripts/lib/scene-plan.mjs` 將 scene.json + `project.format` 轉為與渲染器無關的 plan（時長、幀數、背景層、疊加元素、旁白）。兩個渲染器只畫 plan；版面、動畫與配色由 `src/lib/motion.js` 的純函式定義，兩者共用，因此畫面一致。
+- **影片素材正規化**：所有影片層（錄影、`user-asset` 影片、影片元素）先以 FFmpeg 轉為專案 fps、依 trim 裁切、補到精確幀數（較短時停在最後一格），再交給渲染器。素材原聲不使用。
+- **素材存取**：渲染期間在 `127.0.0.1` 隨機埠啟動唯讀靜態伺服器，只提供專案根目錄內的檔案（支援 Range）。不使用 `file://`。
+- 暫存檔放在 `.tmp/render-<id>/`，結束即刪除。輸出先寫到 `*.partial.mp4`，成功後才替換 `output/scene.mp4`。
+- scene 間轉場（`transitionIn`）、字幕、BGM 皆不在 scene 渲染中處理，由 `assemble.mjs` 負責。
+- `src/` 不納入 `inputHash`：修改外觀不會自動使既有 scene 過期，需由 Agent 經使用者同意後將受影響的 scene 設為 `stale`。
+
+`remotion`：以 `@remotion/bundler` 打包 `src/index.ts`（依 `src/` 內容與 Remotion 版本快取於 `.tmp/remotion-bundle/`），`@remotion/renderer` 以 plan 為 `inputProps` 渲染 composition `Scene`。瀏覽器依序使用：環境變數 `VIDEO_AGENT_BROWSER_EXECUTABLE` → Remotion 下載的 headless shell → Playwright 的 Chromium。
+
 `html-capture` 實作要求：
 
-- 每個 scene 產生 `scenes/*/scene.html`，所有動畫由單一時間變數 `t` 驅動（CSS 動畫暫停並以 `animation-delay` 定位，或 JS 以 `window.__seek(t)` 設定）。
-- **逐幀截圖**：依 `fps` 逐幀呼叫 `__seek(frame / fps)` 後截圖，再由 FFmpeg 編碼並混入旁白。**不得**使用 Playwright 內建 `recordVideo`（webm、幀率不穩，無法確定性重現）。
-- `web-capture` 類素材仍可用錄影取得，但須先以 FFmpeg 轉為固定幀率再嵌入。
+- 每個 scene 渲染時產生暫存頁 `.tmp/render-<id>/scene.html`（內嵌 plan，載入 `src/html/player.js`），所有畫面由單一時間變數 `t` 驅動（`window.__seek(t)`）。
+- **逐幀截圖**：依 `fps` 逐幀呼叫 `__seek(frame / fps)`，等待所有圖片解碼後截圖，以 PNG 串流交給 FFmpeg 編碼（BT.709）並混入旁白。**不得**使用 Playwright 內建 `recordVideo`（webm、幀率不穩，無法確定性重現）。
+- 影片層在頁面中以預先抽出的 JPEG 影格呈現，而非 `<video>` 定位，確保每幀確定且不受瀏覽器影片解碼器影響。
 - scene 間轉場由 `assemble.mjs` 以 FFmpeg `xfade` 實作。
 - 腳本介面與 Remotion 相同（`npm run render:scene -- <id>`），切換 renderer 不需改 scene 資料。
 

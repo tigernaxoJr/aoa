@@ -8,12 +8,18 @@
     "test:template": "node --test \"tests/**/*.test.mjs\""
   },
   "devDependencies": {
+    "@remotion/bundler": "4.0.531",
+    "@remotion/cli": "4.0.531",
+    "@remotion/renderer": "4.0.531",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "fast-json-patch": "^3.1.1",
     "ffmpeg-static": "^5.3.0",
     "ffprobe-static": "^3.1.0",
     "msedge-tts": "^2.0.8",
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.531"
   }
 }

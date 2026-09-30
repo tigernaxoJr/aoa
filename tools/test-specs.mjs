@@ -113,8 +113,8 @@ if (skillErrors.length) {
 
 // Skill links: relative links in skills/product-video/*.md and workflow.json `guide` fields
 // must point to existing files and anchors (`<a id="...">`).
-// Files listed in PENDING are planned but not yet written; links to them only warn.
-const PENDING = new Set(['rendering-guide.md'])
+// Files or file#anchor targets listed in PENDING are planned but not yet written; links to them only warn.
+const PENDING = new Set(['rendering-guide.md#assemble'])
 const skillDir = join(rootDir, 'skills', 'product-video')
 const skillDocs = new Map(
   readdirSync(skillDir)
@@ -132,7 +132,8 @@ const checkLink = (from, target) => {
     return
   }
   if (anchor && !anchorsOf(skillDocs.get(file)).has(anchor)) {
-    linkErrors.push(`${from} → ${target}: anchor not found`)
+    if (PENDING.has(target)) pendingRefs.add(`${from} → ${target}`)
+    else linkErrors.push(`${from} → ${target}: anchor not found`)
   }
 }
 for (const [file, text] of skillDocs) {

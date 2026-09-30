@@ -10,14 +10,22 @@
     "status": "node scripts/validate.mjs --report",
     "state": "node scripts/state.mjs",
     "tts": "node scripts/tts.mjs",
-    "capture": "node scripts/capture.mjs"
+    "capture": "node scripts/capture.mjs",
+    "render:scene": "node scripts/render-scene.mjs",
+    "preview": "remotion studio src/index.ts"
   },
   "dependencies": {
+    "@remotion/bundler": "4.0.531",
+    "@remotion/cli": "4.0.531",
+    "@remotion/renderer": "4.0.531",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "fast-json-patch": "^3.1.1",
     "msedge-tts": "^2.0.8",
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.531"
   },
   "optionalDependencies": {
     "ffmpeg-static": "^5.3.0",

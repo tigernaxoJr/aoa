@@ -1,18 +1,30 @@
 import assert from 'node:assert/strict'
-import { utimesSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, utimesSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname } from 'node:path'
 import { afterEach, test } from 'node:test'
 import { makeProject, twoScenes } from './helpers.mjs'
+
+const ffmpeg = createRequire(import.meta.url)('ffmpeg-static')
 
 let p
 afterEach(() => p?.cleanup())
 
-/** Walks a scene through the happy path up to `rendered`, creating a fake output file. */
+/** A tiny real mp4, since --rendered probes the output. */
+function fakeRender(file) {
+  mkdirSync(dirname(file), { recursive: true })
+  const r = spawnSync(ffmpeg, ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=s=64x36:d=0.2', '-pix_fmt', 'yuv420p', file])
+  assert.equal(r.status, 0, String(r.stderr))
+}
+
+/** Walks a scene through the happy path up to `rendered`, creating a small output file. */
 function renderScene(project, id, dir) {
   for (const status of ['assets_ready', 'rendering']) {
     const r = project.run('state.mjs', [id, '--status', status])
     assert.equal(r.code, 0, r.stderr)
   }
-  project.write(`${dir}/output/scene.mp4`, 'fake video')
+  fakeRender(project.path(dir, 'output', 'scene.mp4'))
   const r = project.run('state.mjs', [id, '--rendered'])
   assert.equal(r.code, 0, r.stderr)
   return r

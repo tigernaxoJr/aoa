@@ -6,6 +6,7 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
+import { launchBrowser as launch } from './lib/browser.mjs'
 import { ffmpeg, VIDEO_ENCODE } from './lib/media.mjs'
 import { UsageError, findRoot, findSceneRef, isInside, loadProject, readJson, sceneFile } from './lib/project.mjs'
 
@@ -20,22 +21,6 @@ run(async (argv) => {
   if (!id) throw new UsageError('usage: capture <scene-id> | --url <url> --out <dir>')
   return captureScene(root, id)
 })
-
-async function launch() {
-  const { chromium } = await import('playwright')
-  // An explicit channel wins; otherwise Playwright's own Chromium, then installed Chrome, then Edge.
-  const forced = process.env.VIDEO_AGENT_BROWSER_CHANNEL
-  const channels = forced ? [forced] : [undefined, 'chrome', 'msedge']
-  const errors = []
-  for (const channel of channels) {
-    try {
-      return await chromium.launch({ channel })
-    } catch (err) {
-      errors.push(`${channel ?? 'bundled chromium'}: ${err.message.split('\n')[0]}`)
-    }
-  }
-  throw new UsageError(`no usable browser. Run "npx playwright install chromium" or install Chrome/Edge.\n  ${errors.join('\n  ')}`)
-}
 
 async function capturePage(root, flags) {
   if (!/^https?:\/\//.test(flags.url)) throw new UsageError('--url must start with http:// or https://')

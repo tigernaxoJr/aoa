@@ -12,6 +12,7 @@ import jsonpatch from 'fast-json-patch'
 import { parseArgs, run } from './lib/cli.mjs'
 import { withLock, writeJsonAtomic } from './lib/io.mjs'
 import { computeInputHash } from './lib/hash.mjs'
+import { probeDuration } from './lib/media.mjs'
 import { DEFAULTS, PROJECT_FILE, UsageError, findRoot, findSceneRef, readJson, sceneFile } from './lib/project.mjs'
 import { loadSchemas } from './lib/schema.mjs'
 import { checkTransition, deriveProjectStatus } from './lib/status.mjs'
@@ -56,12 +57,14 @@ run((argv) => {
       if (isProject) throw new UsageError('--rendered applies to scenes only')
       setStatus('rendered')
       const outputFile = doc.render?.outputFile ?? DEFAULTS.outputFile
-      if (!existsSync(join(root, ref.dir, outputFile))) throw new UsageError(`${ref.dir}/${outputFile} does not exist; render the scene first`)
+      const output = join(root, ref.dir, outputFile)
+      if (!existsSync(output)) throw new UsageError(`${ref.dir}/${outputFile} does not exist; render the scene first`)
       doc.render = {
         inputHash: computeInputHash(root, project, ref, doc),
         outputFile,
         renderedAt: now,
         renderer: project.project.renderer,
+        actualDurationSec: readableDuration(output, `${ref.dir}/${outputFile}`),
       }
       doc.attempts = 0
       doc.error = null
@@ -106,6 +109,15 @@ run((argv) => {
     for (const w of result.warnings) console.warn(`warning: ${w}`)
   })
 })
+
+/** Output duration in seconds; an unreadable file means the render is broken and must not be recorded. */
+function readableDuration(file, label) {
+  try {
+    return Math.round(probeDuration(file) * 1000) / 1000
+  } catch (err) {
+    throw new UsageError(`${label} is not a readable video; render the scene again (${err.message.split('\n')[0]})`)
+  }
+}
 
 function parseJson(text, source) {
   try {

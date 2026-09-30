@@ -1,0 +1,111 @@
+// Turns scene.json + project format into a renderer-neutral render plan (SPEC §7.6): duration,
+// background layer, overlay elements and narration. Both renderers draw exactly this plan.
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { probeDuration } from './media.mjs'
+import { DEFAULTS, UsageError, resolveProjectPath } from './project.mjs'
+
+/** Silence kept after the narration when durationSec is null (SPEC §4.2). */
+export const TAIL_SEC = 0.5
+
+/**
+ * Returns { plan, warnings }. File-backed layers carry an absolute `file`; the renderer turns
+ * them into URLs. Video layers also carry `span` (seconds on screen) for normalization.
+ */
+export function buildPlan(root, project, ref, scene) {
+  const { width, height, fps } = project.project.format
+  const sceneDir = join(root, ref.dir)
+  const resolve = (p) => resolveProjectPath(root, sceneDir, p)
+  const warnings = []
+  const need = (file, what) => {
+    if (!existsSync(file)) throw new UsageError(`${scene.id}: ${what} not found (${file})`)
+    return file
+  }
+
+  const audioFile = resolve(scene.narration.audioFile ?? DEFAULTS.audioFile)
+  const audioSec = existsSync(audioFile) ? probeDuration(audioFile) : null
+  let duration = scene.durationSec
+  if (duration == null) {
+    if (audioSec == null) {
+      throw new UsageError(`${scene.id}: durationSec is null and there is no narration audio; run "npm run tts -- ${scene.id}" or set durationSec`)
+    }
+    duration = audioSec + TAIL_SEC
+  } else if (audioSec != null && audioSec > duration) {
+    warnings.push(`narration (${audioSec.toFixed(2)}s) is longer than durationSec (${duration}s) and will be cut off`)
+  }
+  const frames = Math.max(1, Math.round(duration * fps))
+  duration = frames / fps
+
+  const plan = {
+    id: scene.id,
+    width,
+    height,
+    fps,
+    frames,
+    durationSec: duration,
+    background: background(scene.visual, resolve, need, sceneDir, duration),
+    elements: [],
+    audio: audioSec == null ? null : { file: audioFile, durationSec: audioSec },
+  }
+
+  for (const [i, el] of (scene.visual.elements ?? []).entries()) {
+    if (el.at >= duration) {
+      warnings.push(`visual.elements[${i}] starts at ${el.at}s, after the scene ends (${duration.toFixed(2)}s); skipped`)
+      continue
+    }
+    const end = el.duration ? Math.min(el.at + el.duration, duration) : duration
+    const item = {
+      type: el.type,
+      at: el.at,
+      end,
+      exitAt: el.duration ? end : null,
+      animation: el.animation ?? 'fadeIn',
+      position: el.position ?? 'center',
+    }
+    if (el.type === 'text') item.content = el.content
+    else item.file = need(resolve(el.src), `visual.elements[${i}].src`)
+    if (el.type === 'video') item.span = end - el.at
+    plan.elements.push(item)
+  }
+  return { plan, warnings }
+}
+
+function background(visual, resolve, need, sceneDir, duration) {
+  switch (visual.type) {
+    case 'web-capture':
+      return {
+        kind: 'video',
+        file: need(join(sceneDir, 'assets', 'capture.mp4'), 'web-capture recording (run npm run capture)'),
+        fit: 'contain',
+        trimStart: 0,
+        trimEnd: null,
+        span: duration,
+      }
+    case 'screenshot':
+      return {
+        kind: 'image',
+        file: need(join(sceneDir, 'assets', 'capture.png'), 'screenshot (run npm run capture)'),
+        fit: 'cover',
+        kenBurns: true,
+      }
+    case 'code': {
+      const { code } = visual
+      const source = code.file ? readFileSync(need(resolve(code.file), 'visual.code.file'), 'utf8') : code.content
+      const lines = source.replace(/\r\n?/g, '\n').replace(/\t/g, '    ').replace(/\n+$/, '').split('\n')
+      return { kind: 'code', language: code.language, lines, highlightLines: code.highlightLines ?? [] }
+    }
+    case 'user-asset': {
+      const { asset } = visual
+      const file = need(resolve(asset.src), 'visual.asset.src')
+      if (asset.kind === 'image') return { kind: 'image', file, fit: asset.fit ?? 'contain', kenBurns: false }
+      return { kind: 'video', file, fit: asset.fit ?? 'contain', trimStart: asset.trimStartSec ?? 0, trimEnd: asset.trimEndSec ?? null, span: duration }
+    }
+    default: // motion-graphic
+      return { kind: 'gradient' }
+  }
+}
+
+/** Every video layer in the plan (background first), for normalization before rendering. */
+export function videoLayers(plan) {
+  return [plan.background, ...plan.elements].filter((l) => l.kind === 'video' || l.type === 'video')
+}

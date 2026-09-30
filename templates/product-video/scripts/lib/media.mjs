@@ -1,5 +1,5 @@
 // FFmpeg / ffprobe access. Resolution order: env override → system PATH → npm-bundled binaries.
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { UsageError } from './project.mjs'
 
@@ -51,6 +51,49 @@ export function ffmpeg(args) {
   }
 }
 
+/**
+ * Starts ffmpeg with stdin open (for piped frames). Returns { write(buffer), finish() }:
+ * write() respects backpressure; finish() closes stdin and resolves when ffmpeg exits cleanly.
+ */
+export function ffmpegStream(args) {
+  const { path } = locate('ffmpeg')
+  const child = spawn(path, ['-hide_banner', '-loglevel', 'error', '-y', ...args], { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] })
+  let stderr = ''
+  child.stderr.on('data', (d) => (stderr = (stderr + d).slice(-4000)))
+  const exited = new Promise((resolve) => child.on('close', resolve))
+  const failure = () => new Error(`ffmpeg failed: ${stderr.trim().split('\n').slice(-5).join('\n')}`)
+  child.stdin.on('error', () => {}) // EPIPE when ffmpeg dies early; reported by finish()
+  return {
+    async write(buffer) {
+      if (child.exitCode !== null) throw failure()
+      if (!child.stdin.write(buffer)) await new Promise((resolve) => child.stdin.once('drain', resolve))
+    },
+    async finish() {
+      child.stdin.end()
+      if ((await exited) !== 0) throw failure()
+    },
+    kill: () => child.kill(),
+  }
+}
+
+/**
+ * Normalizes a video layer to the project fps with exactly `frames` frames: trims to
+ * [trimStart, trimEnd], drops audio, and holds the last frame when the source is shorter.
+ */
+export function normalizeVideo(src, { trimStart = 0, trimEnd = null, fps, frames }, out) {
+  const span = frames / fps
+  ffmpeg([
+    '-ss', String(trimStart),
+    ...(trimEnd != null ? ['-to', String(trimEnd)] : []),
+    '-i', src,
+    '-an',
+    '-vf', `fps=${fps},tpad=stop_mode=clone:stop_duration=${span.toFixed(3)},scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1`,
+    '-frames:v', String(frames),
+    ...VIDEO_ENCODE,
+    out,
+  ])
+}
+
 /** Media duration in seconds. */
 export function probeDuration(file) {
   const { path } = locate('ffprobe')
@@ -64,5 +107,10 @@ export function probeDuration(file) {
 }
 
 /** Encoding settings shared by every mp4 the pipeline produces, so scenes concatenate cleanly. */
-export const VIDEO_ENCODE = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'medium', '-crf', '20']
+export const VIDEO_ENCODE = [
+  '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'medium', '-crf', '20',
+  '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
+]
+/** Filter converting RGB frames (screenshots) to BT.709 limited range, matching VIDEO_ENCODE tags and Remotion's output. */
+export const RGB_TO_BT709 = 'scale=out_color_matrix=bt709:out_range=tv'
 export const AUDIO_ENCODE = ['-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-ac', '2']
