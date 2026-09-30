@@ -81,6 +81,36 @@ if (!validateWorkflow(workflow)) {
   if (failures === before) console.log(`✓ workflow.json (${all.length} steps/operations)`)
 }
 
+// Template project file must be valid (placeholders are chosen to pass the schema).
+const rootDir = join(specsDir, '..')
+const templateProject = join(rootDir, 'templates', 'product-video', 'video.project.json')
+if (validators.project(readJson(templateProject))) {
+  console.log('✓ templates/product-video/video.project.json')
+} else {
+  failures++
+  console.error('✗ templates/product-video/video.project.json')
+  for (const e of validators.project.errors) console.error(`    ${e.instancePath || '/'} ${e.message}`)
+}
+
+// SKILL.md frontmatter per the Agent Skills format.
+const skillFile = join(rootDir, 'skills', 'product-video', 'SKILL.md')
+const frontmatter = readFileSync(skillFile, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? ''
+const field = (key) => frontmatter.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1].trim()
+const skillName = field('name')
+const skillDescription = field('description')
+const skillErrors = []
+if (!skillName || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skillName) || skillName.length > 64) {
+  skillErrors.push('name must be lowercase-hyphenated, ≤ 64 chars')
+}
+if (skillName !== 'product-video') skillErrors.push('name must match its directory (product-video)')
+if (!skillDescription || skillDescription.length > 1024) skillErrors.push('description required, ≤ 1024 chars')
+if (skillErrors.length) {
+  failures++
+  console.error(`✗ skills/product-video/SKILL.md: ${skillErrors.join('; ')}`)
+} else {
+  console.log('✓ skills/product-video/SKILL.md frontmatter')
+}
+
 if (failures) {
   console.error(`\n${failures} check(s) failed`)
   process.exit(1)

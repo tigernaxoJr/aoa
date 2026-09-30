@@ -259,7 +259,7 @@ my-video-project/
 - **路徑**：一律使用正斜線的相對路徑，不得為絕對路徑、不得含 `..` 片段。scene.json 內的路徑相對於該 scene 目錄；以 `@/` 開頭表示相對於專案根目錄（如 `@/assets/logo.png`）。`video.project.json` 內的路徑相對於專案根目錄。唯一例外是 `project.sources.sourceCodePath`（唯讀輸入，可在專案外）。
 - **擴充欄位**：Schema 不接受未定義的欄位，以免拼錯欄位名稱被默默忽略。使用者或第三方工具需要自訂欄位時，一律以 `x-` 開頭（可用於專案根、`project`、scene 根、`visual`），Agent 必須原樣保留。
 - **寫入者**：`updatedBy` 為 `agent` · `user` · `companion` · `mcp`。
-- **Schema 無法表達、由 `validate.mjs` 檢查的規則**：scene id 與 dir 唯一且目錄存在；`format` 寬高與 `aspectRatio` 相符；各 scene.json 的 `id` 與 `video.project.json` 引用一致；解析後路徑不得跳出專案根目錄；狀態為 `rendered` / `approved` 時輸出檔存在且 `inputHash` 相符。
+- **Schema 無法表達、由 `validate.mjs` 檢查的規則**：scene id 與 dir 唯一且目錄存在；`format` 寬高與 `aspectRatio` 相符；各 scene.json 的 `id` 與 `video.project.json` 引用一致；解析後路徑不得跳出專案根目錄；狀態為 `rendered` / `approved` 時輸出檔存在且 `inputHash` 相符；`project.id` 為全 0 UUID 時視為「範本尚未初始化」。
 - Schema 原始檔位於產品 repo 的 `specs/`（`common` / `project` / `scene` 三個檔案），`specs/examples/` 內的有效與無效範例由 `npm run test:specs` 驗證。
 
 ### 4.3 `script.md`
@@ -468,7 +468,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | 腳本 | 輸入 | 輸出 | 可修改 JSON？ |
 |---|---|---|---|
 | `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態與是否過期 | 否 |
-| `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json` | 否 |
+| `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
 | `capture.mjs <id>` | `visual.capture` | `assets/capture.*` | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4` | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
@@ -569,6 +569,10 @@ skills/product-video/
 ```
 
 安裝方式：Agent 下載 `/api/skills/product-video.zip` 解壓到專案 `.claude/skills/`（或使用者層級 skills 目錄）。
+
+- `SKILL.md` 負責「判斷目前狀態」與「初始化新專案」（此時專案內尚無 `AGENTS.md`）；初始化之後的規則以專案 `AGENTS.md` 為準，SKILL 不重複規則。
+- `SKILL.md` 中的網站網址寫成 `{{SITE_URL}}`，由 `build-api.mjs` 打包時替換。
+- 範本 `video.project.json` 使用可通過 Schema 的佔位值（全 0 UUID、`updatedAt` 為 1970-01-01），init 時由 Agent 替換。
 
 ### 8.3 Slash Commands（Claude Code）
 

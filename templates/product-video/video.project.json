@@ -1,0 +1,51 @@
+{
+  "$schema": "./schemas/project.schema.json",
+  "specVersion": "1.0.0",
+  "project": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "name": "Untitled Product Video",
+    "sources": {
+      "productUrl": null,
+      "sourceCodePath": null,
+      "description": "（init 時由 Agent 填入產品來源）",
+      "referenceVideoUrl": null
+    },
+    "targetAudience": "",
+    "language": "zh-TW",
+    "format": {
+      "aspectRatio": "16:9",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "targetDurationSec": 45
+    },
+    "audio": {
+      "bgm": null,
+      "bgmVolume": 0.25,
+      "ducking": true
+    },
+    "captions": {
+      "mode": "srt",
+      "style": {
+        "fontFamily": "Noto Sans TC",
+        "fontSize": 48,
+        "position": "bottom"
+      }
+    },
+    "renderer": "remotion",
+    "rendererLicense": {
+      "acknowledged": false
+    },
+    "tts": {
+      "provider": "edge-tts",
+      "voice": "zh-TW-HsiaoChenNeural",
+      "consent": {
+        "onlineTts": false
+      }
+    }
+  },
+  "scenes": [],
+  "status": "initialized",
+  "updatedAt": "1970-01-01T00:00:00Z",
+  "updatedBy": "agent"
+}
