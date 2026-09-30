@@ -1,5 +1,6 @@
-// Builds the static site (SPEC §5, §12): dist/api/* (Guide API, schemas, prompts, rules, Skill and
-// template zips with SHA-256 manifest) plus a landing page. Deployed to GitHub Pages by
+// Builds the Guide API (SPEC §5, §12): dist/api/* (schemas, prompts, rules, Skill and template zips
+// with SHA-256 manifest). Run after the Web UI build (npm run build does both); writes a fallback
+// landing page only when dist/index.html does not exist. Deployed to GitHub Pages by
 // .github/workflows/deploy-pages.yml.
 //
 //   node tools/build-api.mjs [--site-url <url>] [--out <dir>]
@@ -8,7 +9,7 @@
 // (https://<owner>.github.io/<repo>). The base path therefore always follows the repo name.
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { zipSync } from 'fflate'
@@ -48,7 +49,8 @@ export function build({ siteUrl, out }) {
     writeFileSync(file, data)
     return file
   }
-  rmSync(out, { recursive: true, force: true })
+  // Only dist/api belongs to this script; the Web UI (vite build) owns the rest of dist/.
+  rmSync(api, { recursive: true, force: true })
 
   // Schemas and workflow
   for (const f of SCHEMAS) write(`api/schemas/${f}`, readFileSync(join(root, 'specs', f)))
@@ -117,7 +119,8 @@ export function build({ siteUrl, out }) {
   }
   write('api/index.json', `${JSON.stringify(index, null, 2)}\n`)
 
-  write('index.html', landingPage(index))
+  // Fallback landing page when the Web UI was not built (e.g. running build-api alone).
+  if (!existsSync(join(out, 'index.html'))) write('index.html', landingPage(index))
   write('.nojekyll', '')
   return { index, manifest }
 }

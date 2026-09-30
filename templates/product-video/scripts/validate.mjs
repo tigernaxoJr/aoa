@@ -2,6 +2,7 @@
 // npm run status              → (validate --report) per-scene status table and the suggested next step
 // add --json for machine-readable output (Web UI / Companion)
 import { run, parseArgs } from './lib/cli.mjs'
+import { suggestNext } from './lib/core.mjs'
 import { findRoot } from './lib/project.mjs'
 import { deriveProjectStatus } from './lib/status.mjs'
 import { validateProject } from './lib/validate.mjs'
@@ -45,23 +46,6 @@ function buildReport(root, { project, inspected, errors }) {
     scenes,
     next: suggestNext(project, scenes, errors),
   }
-}
-
-function suggestNext(project, scenes, errors) {
-  if (errors.length) return { command: null, reason: 'fix the validation errors first' }
-  const status = project.status
-  if (status === 'initialized') return { command: '/video-analyze', reason: 'project is initialized' }
-  if (status === 'analyzed') return { command: '/video-storyboard', reason: 'brief is ready' }
-  const failed = scenes.filter((s) => s.status === 'failed')
-  if (failed.length) return { command: `/video-scene ${failed[0].id}`, reason: `${failed.length} scene(s) failed: ${failed[0].error}` }
-  const outdated = scenes.filter((s) => s.outdated && !s.locked)
-  if (outdated.length) return { command: '/video-sync', reason: `${outdated.length} scene(s) changed since their last render` }
-  const lockedOutdated = scenes.filter((s) => s.outdated && s.locked)
-  if (lockedOutdated.length) return { command: null, reason: `locked scene(s) changed: ${lockedOutdated.map((s) => s.id).join(', ')}; ask the user` }
-  const pending = scenes.filter((s) => !['rendered', 'approved'].includes(s.status))
-  if (pending.length) return { command: '/video-scene all', reason: `${pending.length} scene(s) not rendered yet` }
-  if (status !== 'completed') return { command: '/video-assemble', reason: 'all scenes are rendered' }
-  return { command: null, reason: 'done: output/final.mp4 is up to date' }
 }
 
 function printReport({ project, scenes, next }) {

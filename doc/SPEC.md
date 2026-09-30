@@ -667,13 +667,23 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 ### 9.3 UI 寫入規則
 
 - 只能寫：`script.md`、`scene.json` 的可編輯欄位（`title`、`visual.description`、`narration.voice/speed`、`durationSec`、`locked`、`status: approved|stale`）、`video.project.json.scenes` 的順序。
-- 內容修改後將該 scene 設為 `stale`；排序修改只影響 assemble。
-- 寫入前比對檔案 `lastModified`；若 Agent 已在期間修改，提示衝突並重新載入，不盲目覆寫。
-- 寫入時設 `updatedBy: "user"`。
+- 內容修改後，`rendered` / `approved` 的 scene 設為 `stale`（其他狀態維持原狀，Agent 產生時自然使用新內容）；`approved` / `stale` 只依 workflow.json 允許的轉換寫入（核准僅限 `rendered` 且未過期）。
+- 排序修改只影響 assemble；專案為 `completed` 時改為 `ready_to_assemble`，因為 `final.mp4` 已不符合新順序。
+- 寫入 scene 後依 workflow.json `derivedProjectStatus` 重算並寫回 `project.status`（與 `state.mjs` 相同規則，實作共用）。
+- 寫入前：鎖檔 `.video-agent.lock` 存在且未逾時（30 秒）則不寫入，提示稍後再試；再比對檔案 `lastModified`，若 Agent 已在期間修改，提示衝突並重新載入，不盲目覆寫。寫入內容先以 Schema 驗證。
+- 寫入時設 `updatedAt`、`updatedBy: "user"`；以 `createWritable()` 寫入（暫存後替換）。
+- 有未儲存的編輯時，輪詢到的新內容不覆蓋表單，只更新比對基準。
 
 ### 9.4 技術選型
 
-Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（Cloudflare Pages / GitHub Pages）。Schema 驗證使用與本機相同的 JSON Schema（Ajv，瀏覽器端執行）；TypeScript 型別由 `specs/*.schema.json` 自動產生（如 json-schema-to-typescript），不手寫，確保 UI 與協議同步。
+Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1）。Schema 驗證使用與本機相同的 JSON Schema（Ajv，瀏覽器端執行）；TypeScript 型別由 `specs/*.schema.json` 以 json-schema-to-typescript 產生（`npm run gen:types` → `apps/web/src/types/protocol.ts`，CI 以 `--check` 確認未過期），不手寫，確保 UI 與協議同步。
+
+實作要點（`apps/web/`）：
+
+- **與本機腳本共用協議邏輯**：`templates/product-video/scripts/lib/core.mjs` 不依賴 Node 或 DOM，提供 inputHash 的內容序列（`hashParts`）、下一步建議（`suggestNext`）、狀態轉換檢查與 `derivedProjectStatus`。Node 端以串流 SHA-256、瀏覽器以 WebCrypto 計算，結果逐位元組相同，因此 UI 能正確顯示「渲染後內容已變更」。雜湊依檔案大小與修改時間快取，輪詢時不重讀影片素材。
+- **輪詢**：每 2 秒取各檔（專案、scene、旁白稿、輸出、素材、鎖檔、final）的 `lastModified` 與大小組成指紋，變了才重新載入；分頁隱藏或寫入中時暫停。
+- **畫面**：首頁（未開啟專案）＝ Source 啟動指令產生器 + 開啟資料夾 + Guide API 連結；開啟後為 Workflow（五步驟進度、專案狀態、下一步指令、待更新提示與 `/video-sync` 複製）、Scene Board（拖曳或上下按鈕排序）、Scene Editor、Final。窄螢幕單欄排列。
+- **測試**：原生資料夾選擇器無法自動化，E2E 以 OPFS（`navigator.storage.getDirectory()`，同樣是 `FileSystemDirectoryHandle`）搭配 `window.__avp.open(handle)` 開啟；fixture 由本機腳本產生，驗證瀏覽器與 Node 的 inputHash 一致（`tests/web/ui.test.mjs`）。
 
 ---
 
@@ -758,9 +768,9 @@ agent-video-platform/
 ### 12.1 部署（GitHub Pages）
 
 - 網址：`https://tigernaxojr.github.io/index-url-director/`（repo 名稱 `index-url-director`；GitHub Pages 的專案網址路徑即 repo 名稱）。
-- `.github/workflows/deploy-pages.yml`：push 到 `main`（或手動觸發）→ `npm ci` → `npm run test:specs` → `npm run build` → 上傳 `dist/` → `actions/deploy-pages`。首次需在 repo Settings → Pages 將 Source 設為 GitHub Actions。
-- **base path 不寫死**：`SITE_URL` 由 `actions/configure-pages` 的 `base_url` 提供，因此 repo 改名或改用自訂網域時自動跟隨。本機建置依序使用 `--site-url` → `SITE_URL` → `GITHUB_REPOSITORY` → git remote `origin` 推得。
-- Skill 與範本中的網址以 `{{SITE_URL}}` 撰寫，建置時替換；Phase 4 的 Vue 應用以同一個 base path 建置（Vite `base`）並輸出到 `dist/` 根目錄，與 `dist/api/` 並存。
+- `.github/workflows/deploy-pages.yml`：push 到 `main`（或手動觸發）→ `npm ci` → `test:specs`、型別產生檢查、`typecheck` → `npm run build`（Vite 建置 Web UI 至 `dist/`，再由 `build-api.mjs` 加入 `dist/api/`）→ 以 `peaceiris/actions-gh-pages` 將 `dist/` 發佈到 **`gh-pages` 分支**。首次需在 repo Settings → Pages 將來源設為 Deploy from a branch：`gh-pages` / (root)。
+- **base path 不寫死**：`SITE_URL` 依序取自 `--site-url` → 環境變數 `SITE_URL`（CI 中為 repo 變數，可用於自訂網域）→ `GITHUB_REPOSITORY` → git remote `origin`，推得 `https://<owner>.github.io/<repo>`；repo 改名時自動跟隨。
+- Skill 與範本中的網址以 `{{SITE_URL}}` 撰寫，建置時替換；Web UI 以同一個 base path 建置（Vite `base`）並輸出到 `dist/` 根目錄，與 `dist/api/` 並存。`build-api.mjs` 只清除 `dist/api/`，僅在沒有 Web UI 時寫入備用首頁。
 
 ---
 
@@ -802,4 +812,4 @@ agent-video-platform/
 | D17 | 多語系 | 未提及 | MVP 一專案一語言；`/video-translate` 複製專案並翻譯；預留 `<locale>` 命名 | 語言影響時長→畫面時間軸→每 scene 重渲染，原生支援會使狀態機二維化，MVP 成本過高 |
 | D18 | Companion 形態 | 無 | 同一套件 `video-agent` 兩入口（`mcp` / `serve`）共用核心；port 47831–47840；以 `#pair=` 連結配對；統一寫入協定（鎖檔 + 原子寫入） | 生命週期不同不能同程序；邏輯相同應共用；fragment 不外洩 token 且免掃 port |
 | D19 | 其他 Agent 相容性 | GPT 提及「未來支援其他 Agent」 | MVP 只測 Claude Code；AGENTS.md / Skill 中立寫法；指令檔單一來源產生各家格式，逐一驗收後才標示支援 | 協議層已通用，差異只在指令格式；支援宣告需有測試背書 |
-| D20 | 網站部署與指令來源 | 未規範（§9.4 僅提 Cloudflare / GitHub Pages） | GitHub Pages，網址 `/index-url-director`，base path 從 repo 名稱／Pages 設定推得；Guide API 一律絕對網址；指令檔與 prompts/rules 皆由既有單一來源（workflow.json、Skill）產生；init 以 Skill 或 agent-guide 為入口 | 子路徑部署下根相對路徑會失效；避免 YAML 與 workflow.json、prompts 與 Skill 雙重維護；init 時專案指令尚不存在 |
+| D20 | 網站部署與指令來源 | 未規範（§9.4 僅提 Cloudflare / GitHub Pages） | GitHub Pages（`gh-pages` 分支），網址 `/index-url-director`，base path 從 repo 名稱推得（可用 `SITE_URL` 覆寫）；Guide API 一律絕對網址；指令檔與 prompts/rules 皆由既有單一來源（workflow.json、Skill）產生；init 以 Skill 或 agent-guide 為入口 | 子路徑部署下根相對路徑會失效；避免 YAML 與 workflow.json、prompts 與 Skill 雙重維護；init 時專案指令尚不存在 |

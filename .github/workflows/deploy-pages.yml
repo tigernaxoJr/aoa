@@ -1,7 +1,8 @@
-# Builds the static site (Guide API under /api, later the Web UI) and deploys it to GitHub Pages.
-# The site URL comes from GitHub Pages itself (configure-pages → base_url), so the base path always
-# follows the repository name (e.g. https://<owner>.github.io/index-url-director) or a custom domain.
-# One-time setup: Settings → Pages → Build and deployment → Source: GitHub Actions.
+# Builds the site (Web UI at the root, Guide API under /api) and publishes it to the gh-pages branch.
+# The site URL follows the repository name: https://<owner>.github.io/<repo> (index-url-director),
+# derived from GITHUB_REPOSITORY by tools/build-api.mjs and apps/web/vite.config.ts. Set the repository
+# variable SITE_URL to override it (e.g. for a custom domain).
+# One-time setup: Settings → Pages → Build and deployment → Source: Deploy from a branch → gh-pages / (root).
 name: Deploy site
 
 on:
@@ -10,16 +11,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,30 +31,25 @@ jobs:
       - name: Install
         run: npm ci
         env:
-          # Build only needs the schemas and zip tooling; skip large binary downloads.
+          # The build needs no browsers; skip large binary downloads.
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
-      - name: Check specs and skill links
-        run: npm run test:specs
-
-      - id: pages
-        uses: actions/configure-pages@v5
+      - name: Check specs, skill links and generated types
+        run: |
+          npm run test:specs
+          node tools/gen-types.mjs --check
+          npm run typecheck
 
       - name: Build site
         run: npm run build
         env:
-          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          SITE_URL: ${{ vars.SITE_URL }}
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./dist
+          force_orphan: true
+          commit_message: 'deploy: ${{ github.sha }}'
