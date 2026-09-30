@@ -1,0 +1,22 @@
+{
+  "id": "scene-004",
+  "title": "三行完成整合",
+  "purpose": "how-it-works",
+  "narration": {
+    "scriptFile": "script.md"
+  },
+  "visual": {
+    "type": "code",
+    "description": "展示安裝與呼叫範例",
+    "code": {
+      "content": "npm i my-sdk\nimport { init } from \"my-sdk\"\ninit()",
+      "language": "typescript",
+      "highlightLines": [
+        3
+      ]
+    }
+  },
+  "durationSec": 8,
+  "status": "draft",
+  "locked": false
+}

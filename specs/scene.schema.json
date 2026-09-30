@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scene.schema.json",
+  "title": "scene.json",
+  "description": "單一 scene 的定義與狀態（SPEC §4.2）。路徑相對於 scene 目錄；以 `@/` 開頭則相對於專案根目錄。",
+  "type": "object",
+  "$ref": "common.schema.json#/$defs/extensions",
+  "unevaluatedProperties": false,
+  "required": ["id", "title", "purpose", "narration", "visual", "durationSec", "status", "locked"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "$ref": "common.schema.json#/$defs/sceneId" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "purpose": {
+      "enum": ["hook", "problem", "solution", "feature", "how-it-works", "benefit", "social-proof", "cta", "custom"]
+    },
+    "narration": { "$ref": "#/$defs/narration" },
+    "visual": { "$ref": "#/$defs/visual" },
+    "durationSec": {
+      "description": "null：由旁白音長 + 0.5 秒決定；數值：強制秒數。幀數一律由 durationSec × fps 推得，不儲存。",
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0,
+      "maximum": 120
+    },
+    "status": { "$ref": "#/$defs/sceneStatus" },
+    "render": {
+      "description": "最近一次成功渲染的紀錄。stale 時保留舊紀錄以供比對。",
+      "anyOf": [{ "$ref": "#/$defs/render" }, { "type": "null" }]
+    },
+    "locked": {
+      "description": "true 時 Agent 不得修改此 scene，除非使用者明確要求。不納入 inputHash。",
+      "type": "boolean",
+      "default": false
+    },
+    "error": {
+      "anyOf": [{ "$ref": "#/$defs/error" }, { "type": "null" }]
+    },
+    "attempts": {
+      "description": "連續失敗次數，成功後歸零。Agent 自動重試上限 2 次（SPEC §8.1 規則 10）。",
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "updatedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+    "updatedBy": { "$ref": "common.schema.json#/$defs/updatedBy" }
+  },
+  "allOf": [
+    {
+      "description": "已渲染或已核准的 scene 必須有渲染紀錄。",
+      "if": { "properties": { "status": { "enum": ["rendered", "approved", "stale"] } }, "required": ["status"] },
+      "then": { "required": ["render"], "properties": { "render": { "$ref": "#/$defs/render" } } }
+    },
+    {
+      "description": "失敗的 scene 必須記錄錯誤。",
+      "if": { "properties": { "status": { "const": "failed" } }, "required": ["status"] },
+      "then": { "required": ["error"], "properties": { "error": { "$ref": "#/$defs/error" } } }
+    }
+  ],
+  "$defs": {
+    "sceneStatus": {
+      "description": "SPEC §4.5。",
+      "enum": ["draft", "assets_ready", "rendering", "rendered", "approved", "stale", "failed"]
+    },
+    "seconds": { "type": "number", "minimum": 0 },
+    "narration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scriptFile"],
+      "properties": {
+        "scriptFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "script.md" },
+        "provider": {
+          "description": "省略時沿用 project.tts.provider。",
+          "$ref": "common.schema.json#/$defs/ttsProvider"
+        },
+        "voice": { "description": "省略時沿用 project.tts.voice。", "type": "string", "minLength": 1 },
+        "speed": { "type": "number", "minimum": 0.5, "maximum": 2, "default": 1 },
+        "audioFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "assets/narration.mp3" }
+      }
+    },
+    "visual": {
+      "type": "object",
+      "$ref": "common.schema.json#/$defs/extensions",
+      "unevaluatedProperties": false,
+      "required": ["type", "description"],
+      "properties": {
+        "type": {
+          "description": "web-capture：Playwright 錄製網頁操作；screenshot：靜態截圖 + 動效；motion-graphic：純動畫；code：程式碼展示；user-asset：使用者提供的影片或圖片。",
+          "enum": ["web-capture", "screenshot", "motion-graphic", "code", "user-asset"]
+        },
+        "description": {
+          "description": "給人與 Agent 讀的畫面描述。",
+          "type": "string",
+          "minLength": 1
+        },
+        "capture": { "$ref": "#/$defs/capture" },
+        "code": { "$ref": "#/$defs/code" },
+        "asset": { "$ref": "#/$defs/userAsset" },
+        "elements": {
+          "description": "疊加在畫面上的元素。",
+          "type": "array",
+          "items": { "$ref": "#/$defs/element" },
+          "default": []
+        },
+        "transitionIn": {
+          "description": "進場轉場；第一個 scene 的轉場會被忽略。",
+          "enum": ["none", "fade", "slide-left", "slide-right", "wipe", "zoom"],
+          "default": "none"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "enum": ["web-capture", "screenshot"] } } },
+          "then": { "required": ["capture"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "code" } } },
+          "then": { "required": ["code"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "user-asset" } } },
+          "then": { "required": ["asset"] }
+        }
+      ]
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
+        "viewport": {
+          "description": "省略時使用 project.format 的寬高。",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 320, "maximum": 3840 },
+            "height": { "type": "integer", "minimum": 320, "maximum": 3840 }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/captureAction" },
+          "default": []
+        }
+      }
+    },
+    "captureAction": {
+      "description": "依序執行的瀏覽器操作。type 動作不得輸入密碼等機密；需要登入的頁面由使用者自行登入（SPEC §11）。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["do"],
+      "properties": {
+        "do": { "enum": ["navigate", "scroll", "click", "hover", "type", "highlight", "wait"] },
+        "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
+        "selector": { "type": "string", "minLength": 1 },
+        "text": { "type": "string" },
+        "y": { "description": "scroll 的絕對捲動位置（px），與 selector 擇一。", "type": "integer", "minimum": 0 },
+        "ms": { "type": "integer", "minimum": 0, "maximum": 30000 }
+      },
+      "allOf": [
+        { "if": { "properties": { "do": { "const": "navigate" } } }, "then": { "required": ["url"] } },
+        {
+          "if": { "properties": { "do": { "const": "scroll" } } },
+          "then": { "oneOf": [{ "required": ["selector"] }, { "required": ["y"] }] }
+        },
+        {
+          "if": { "properties": { "do": { "enum": ["click", "hover", "highlight"] } } },
+          "then": { "required": ["selector"] }
+        },
+        { "if": { "properties": { "do": { "const": "type" } } }, "then": { "required": ["selector", "text"] } },
+        { "if": { "properties": { "do": { "const": "wait" } } }, "then": { "required": ["ms"] } }
+      ]
+    },
+    "code": {
+      "description": "程式碼展示，file 與 content 擇一。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language"],
+      "properties": {
+        "file": { "$ref": "common.schema.json#/$defs/relPath" },
+        "content": { "type": "string", "minLength": 1 },
+        "language": { "type": "string", "minLength": 1 },
+        "highlightLines": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "uniqueItems": true
+        }
+      },
+      "oneOf": [{ "required": ["file"] }, { "required": ["content"] }]
+    },
+    "userAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src", "kind"],
+      "properties": {
+        "src": { "$ref": "common.schema.json#/$defs/relPath" },
+        "kind": { "enum": ["image", "video"] },
+        "trimStartSec": { "$ref": "#/$defs/seconds" },
+        "trimEndSec": { "$ref": "#/$defs/seconds" },
+        "fit": { "enum": ["contain", "cover"], "default": "contain" }
+      }
+    },
+    "element": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "at"],
+      "properties": {
+        "type": { "enum": ["text", "image", "video"] },
+        "content": { "description": "type = text 時的文字。", "type": "string", "minLength": 1 },
+        "src": { "description": "type = image / video 時的來源。", "$ref": "common.schema.json#/$defs/relPath" },
+        "at": { "description": "出現時間（scene 內相對秒數）。", "$ref": "#/$defs/seconds" },
+        "duration": { "description": "顯示秒數；省略則持續到 scene 結束。", "type": "number", "exclusiveMinimum": 0 },
+        "animation": {
+          "enum": ["none", "fadeIn", "slideInLeft", "slideInRight", "slideInUp", "slideInDown", "zoomIn", "typewriter"],
+          "default": "fadeIn"
+        },
+        "position": {
+          "description": "預設位置，或以畫面百分比指定的自訂座標（元素中心點）。",
+          "anyOf": [
+            { "enum": ["center", "top", "bottom", "left", "right", "top-left", "top-right", "bottom-left", "bottom-right"] },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["x", "y"],
+              "properties": {
+                "x": { "type": "number", "minimum": 0, "maximum": 100 },
+                "y": { "type": "number", "minimum": 0, "maximum": 100 }
+              }
+            }
+          ],
+          "default": "center"
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "text" } } }, "then": { "required": ["content"] } },
+        { "if": { "properties": { "type": { "enum": ["image", "video"] } } }, "then": { "required": ["src"] } }
+      ]
+    },
+    "render": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputHash", "outputFile", "renderedAt"],
+      "properties": {
+        "inputHash": {
+          "description": "SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 與 renderer 計算。",
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "outputFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "output/scene.mp4" },
+        "renderedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "renderer": { "enum": ["remotion", "html-capture"] },
+        "actualDurationSec": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step", "message", "at"],
+      "properties": {
+        "step": { "enum": ["tts", "capture", "render", "validate", "other"] },
+        "message": { "type": "string", "minLength": 1 },
+        "at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "hint": { "description": "給使用者的重試或修正建議。", "type": "string" }
+      }
+    }
+  }
+}

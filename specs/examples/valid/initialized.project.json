@@ -1,0 +1,25 @@
+{
+  "specVersion": "1.0.0",
+  "project": {
+    "id": "0b7e1c52-3f4a-4e8b-8c1d-6a2f9e5b3d71",
+    "name": "CLI Tool Intro",
+    "sources": {
+      "description": "一個把 Markdown 轉成簡報的 CLI 工具"
+    },
+    "language": "en",
+    "format": {
+      "aspectRatio": "9:16",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30
+    },
+    "renderer": "html-capture",
+    "tts": {
+      "provider": "manual"
+    }
+  },
+  "scenes": [],
+  "status": "initialized",
+  "updatedAt": "2026-09-30T12:00:00Z",
+  "updatedBy": "agent"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "scene-006",
+  "title": "立即試用",
+  "purpose": "cta",
+  "narration": {
+    "scriptFile": "script.md"
+  },
+  "visual": {
+    "type": "motion-graphic",
+    "description": "Logo 與網址置中",
+    "elements": [
+      {
+        "type": "text",
+        "content": "example.com",
+        "at": 0,
+        "animation": "typewriter"
+      }
+    ]
+  },
+  "durationSec": 4,
+  "status": "stale",
+  "render": {
+    "inputHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "outputFile": "output/scene.mp4",
+    "renderedAt": "2026-09-30T14:10:00Z"
+  },
+  "locked": false,
+  "updatedBy": "user"
+}

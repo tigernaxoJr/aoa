@@ -1,0 +1,32 @@
+{
+  "id": "scene-001",
+  "title": "開場",
+  "purpose": "hook",
+  "narration": {
+    "scriptFile": "script.md",
+    "provider": "manual"
+  },
+  "visual": {
+    "type": "user-asset",
+    "description": "使用者提供的產品實拍",
+    "asset": {
+      "src": "assets/hero.mp4",
+      "kind": "video",
+      "trimStartSec": 1.5,
+      "fit": "cover"
+    },
+    "x-color-grade": "warm"
+  },
+  "durationSec": null,
+  "status": "failed",
+  "render": null,
+  "locked": true,
+  "error": {
+    "step": "tts",
+    "message": "assets/narration.mp3 not found",
+    "at": "2026-09-30T14:20:00Z",
+    "hint": "請將錄音放入 scenes/001-hook/assets/narration.mp3"
+  },
+  "attempts": 1,
+  "updatedBy": "user"
+}

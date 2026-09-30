@@ -1,0 +1,12 @@
+{
+  "name": "agent-video-platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:specs": "node tools/test-specs.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}

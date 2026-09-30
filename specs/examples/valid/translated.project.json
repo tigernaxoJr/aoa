@@ -1,0 +1,41 @@
+{
+  "specVersion": "1.0.0",
+  "project": {
+    "id": "3c9d2a61-7e4b-4f1a-b8c5-0d2e6f9a1b47",
+    "name": "Product Launch Demo (en)",
+    "sources": {
+      "productUrl": "https://example.com"
+    },
+    "language": "en-US",
+    "translatedFrom": {
+      "id": "8f1c2e0a-5b7d-4c3e-9a1f-2d6b8e4c7a90",
+      "language": "zh-TW"
+    },
+    "format": {
+      "aspectRatio": "16:9",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30
+    },
+    "renderer": "remotion",
+    "rendererLicense": {
+      "acknowledged": false
+    },
+    "tts": {
+      "provider": "piper",
+      "voice": "en_US-lessac-medium",
+      "consent": {
+        "onlineTts": false
+      }
+    }
+  },
+  "scenes": [
+    {
+      "id": "scene-001",
+      "dir": "scenes/001-hook"
+    }
+  ],
+  "status": "script_generated",
+  "updatedAt": "2026-09-30T15:00:00Z",
+  "updatedBy": "agent"
+}

@@ -101,6 +101,7 @@ my-video-project/
 │   ├── skills/product-video/   # 從網站下載的 Skill（可選，亦可線上讀取）
 │   └── commands/               # Slash commands（見 §8.3）
 ├── schemas/                    # 從網站同步的 JSON Schema（離線驗證用）
+│   ├── common.schema.json
 │   ├── project.schema.json
 │   └── scene.schema.json
 ├── brief/
@@ -223,7 +224,7 @@ my-video-project/
     },
     "elements": [
       { "type": "text", "content": "一鍵部署", "animation": "fadeIn", "at": 0.5 },
-      { "type": "image", "src": "../../assets/logo.png", "animation": "slideInLeft", "at": 0 }
+      { "type": "image", "src": "@/assets/logo.png", "animation": "slideInLeft", "at": 0 }
     ],
     "transitionIn": "fade"
   },
@@ -248,8 +249,16 @@ my-video-project/
 | `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純 Remotion 動畫）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
 | `narration.provider` | TTS 提供者，省略時沿用 `project.tts.provider`。見 §7.4 |
 | `durationSec` | `null` 表示由 TTS 音檔長度決定（音長 + 0.5s 緩衝）；有值則為強制秒數。幀數一律由 `durationSec × fps` 推得，**不存幀數**。 |
-| `render.inputHash` | 對 scene.json（排除 `status/render/error/attempts`）、script.md、該 scene 素材、專案 `format` 計算的雜湊。與目前內容不符即視為過期。 |
+| `render.inputHash` | 對 scene.json（排除 `status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`）、script.md、該 scene 素材、專案 `format` 與 `renderer` 計算的雜湊。與目前內容不符即視為過期。 |
 | `locked` | `true` 時 Agent 不得修改此 scene（除非使用者明確要求）。使用者在 UI 手動核准後可設為 `true`。 |
+
+### 4.2.1 共通規則（由 Schema 強制）
+
+- **路徑**：一律使用正斜線的相對路徑，不得為絕對路徑、不得含 `..` 片段。scene.json 內的路徑相對於該 scene 目錄；以 `@/` 開頭表示相對於專案根目錄（如 `@/assets/logo.png`）。`video.project.json` 內的路徑相對於專案根目錄。唯一例外是 `project.sources.sourceCodePath`（唯讀輸入，可在專案外）。
+- **擴充欄位**：Schema 不接受未定義的欄位，以免拼錯欄位名稱被默默忽略。使用者或第三方工具需要自訂欄位時，一律以 `x-` 開頭（可用於專案根、`project`、scene 根、`visual`），Agent 必須原樣保留。
+- **寫入者**：`updatedBy` 為 `agent` · `user` · `companion` · `mcp`。
+- **Schema 無法表達、由 `validate.mjs` 檢查的規則**：scene id 與 dir 唯一且目錄存在；`format` 寬高與 `aspectRatio` 相符；各 scene.json 的 `id` 與 `video.project.json` 引用一致；解析後路徑不得跳出專案根目錄；狀態為 `rendered` / `approved` 時輸出檔存在且 `inputHash` 相符。
+- Schema 原始檔位於產品 repo 的 `specs/`（`common` / `project` / `scene` 三個檔案），`specs/examples/` 內的有效與無效範例由 `npm run test:specs` 驗證。
 
 ### 4.3 `script.md`
 
@@ -548,7 +557,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 3. 所有 JSON 必須符合 Schema；每次寫入後執行 `npm run validate`。
 4. 每個 scene 獨立產生、獨立渲染；修改只重做受影響的 scene。
 5. 不修改 `locked: true` 或 `approved` 的 scene，除非使用者明確要求。
-6. 不覆蓋使用者手動修改的內容；保留未知欄位。
+6. 不覆蓋使用者手動修改的內容；原樣保留 `x-` 開頭的擴充欄位（§4.2.1）。
 7. 寫入 JSON 前先重新讀取檔案（UI 可能已修改），並更新 `updatedAt`、`updatedBy: "agent"`；遵守 §10.2 寫入協定（鎖檔 + 原子寫入）。
 8. 生成素材只放在 `assets/`、`scenes/*/assets/`；輸出只放在 `output/`、`scenes/*/output/`。
 9. 不上傳任何使用者資料到遠端；使用線上服務（如 edge-tts）前需告知。
@@ -630,7 +639,7 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.4 技術選型
 
-Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（Cloudflare Pages / GitHub Pages）。Schema 驗證使用與本機相同的 JSON Schema（Ajv）。
+Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（Cloudflare Pages / GitHub Pages）。Schema 驗證使用與本機相同的 JSON Schema（Ajv，瀏覽器端執行）；TypeScript 型別由 `specs/*.schema.json` 自動產生（如 json-schema-to-typescript），不手寫，確保 UI 與協議同步。
 
 ---
 
@@ -692,8 +701,10 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 agent-video-platform/
 ├── apps/web/                       # Vue 工作台
 ├── specs/                          # 協議（唯一來源）
+│   ├── common.schema.json
 │   ├── project.schema.json
-│   └── scene.schema.json
+│   ├── scene.schema.json
+│   └── examples/{valid,invalid}/   # npm run test:specs
 ├── skills/product-video/           # Skill 原始檔
 ├── templates/product-video/        # 專案範本（含 scripts/、src/、AGENTS.md、.claude/commands/）
 ├── templates/commands/*.yaml       # 各 Agent 指令檔的單一來源（§8.4）

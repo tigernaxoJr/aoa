@@ -1,0 +1,51 @@
+{
+  "$schema": "../../schemas/scene.schema.json",
+  "id": "scene-003",
+  "title": "產品介紹",
+  "purpose": "solution",
+  "narration": {
+    "scriptFile": "script.md",
+    "provider": "edge-tts",
+    "voice": "zh-TW-HsiaoChenNeural",
+    "speed": 1.0,
+    "audioFile": "assets/narration.mp3"
+  },
+  "visual": {
+    "type": "web-capture",
+    "description": "捲動至功能區並高亮第一張卡片",
+    "elements": [
+      {
+        "type": "text",
+        "content": "一鍵部署",
+        "animation": "fadeIn",
+        "at": 0.5,
+        "position": "bottom"
+      },
+      {
+        "type": "image",
+        "src": "@/assets/logo.png",
+        "animation": "slideInLeft",
+        "at": 0,
+        "position": {
+          "x": 10,
+          "y": 10
+        }
+      }
+    ],
+    "transitionIn": "fade"
+  },
+  "durationSec": null,
+  "status": "rendered",
+  "render": {
+    "inputHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "outputFile": "output/scene.mp4",
+    "renderedAt": "2026-09-30T14:10:00Z",
+    "renderer": "remotion",
+    "actualDurationSec": 6.2
+  },
+  "locked": false,
+  "error": null,
+  "attempts": 0,
+  "updatedAt": "2026-09-30T14:10:00Z",
+  "updatedBy": "agent"
+}
