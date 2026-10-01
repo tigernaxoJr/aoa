@@ -571,7 +571,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 - 暫存檔放在 `.tmp/render-<id>/`，結束即刪除。輸出先寫到 `*.partial.mp4`，成功後才替換 `output/scene.mp4`。
 - scene 間轉場（`transitionIn`）、`final.srt`、BGM 不在 scene 渲染中處理，由 `assemble.mjs` 負責；`captions.mode: burn` 的字幕在 scene 渲染時燒入（§7.5）。
 - **關鍵幀**：編碼時在距頭尾各 0.5 秒（`TRANSITION_SEC`）處強制 IDR 關鍵幀，讓 assemble 只需重新編碼轉場片段。
-- **平行渲染**：`render:scene` 一次傳入多個 id 時，各 scene 在獨立程序中平行渲染（`--jobs N`，預設為 CPU 核心數的一半，且每個約保留 1 GB 可用記憶體）。單一 scene 失敗不影響其他 scene；最後列出成功與失敗的 id，有失敗時退出碼為 1。
+- **平行渲染**：`render:scene` 一次傳入多個 id 時，各 scene 在獨立程序中平行渲染（`--jobs N`，預設為 CPU 核心數的一半，且每個約保留 1 GB 可用記憶體）。單一 scene 失敗不影響其他 scene；最後列出成功與失敗的 id，有失敗時退出碼為 1。單一 scene 內也以多個瀏覽器分攤影格（`--pages N`，每個瀏覽器輪流負責第 k、k+N、… 幀，依序交給 FFmpeg）；預設為上述預算除以同時渲染的 scene 數，最多 4 個、每秒影片至多 1 個。因畫面只由 `t` 決定，結果與單一瀏覽器逐幀相同。
 - `src/` 不納入 `inputHash`：修改外觀不會自動使既有 scene 過期，需由 Agent 經使用者同意後將受影響的 scene 設為 `stale`。
 
 實作要求：

@@ -1,5 +1,6 @@
 // pnpm run render:scene <scene-id>...   → <scene>/output/scene.mp4 (SPEC §7.6)
-// Several ids render in parallel, each in its own process (--jobs N, default from the CPU count).
+// Several ids render in parallel, each in its own process (--jobs N, default from the CPU count);
+// each render shoots frames in several browsers (--pages N, the CPU budget left per scene).
 // Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
 // The previous output is replaced only when the new render succeeds.
 import { spawn } from 'node:child_process'
@@ -16,47 +17,56 @@ import { serveProject } from './lib/serve.mjs'
 import { toAss } from './lib/timeline.mjs'
 
 run(async (argv) => {
-  const { positional, flags } = parseArgs(argv, { jobs: 1 })
-  if (!positional.length) throw new UsageError('usage: render:scene <scene-id>... [--jobs N]')
+  const { positional, flags } = parseArgs(argv, { jobs: 1, pages: 1 })
+  if (!positional.length) throw new UsageError('usage: render:scene <scene-id>... [--jobs N] [--pages N]')
   const root = findRoot()
   const project = loadProject(root)
   for (const id of positional) findSceneRef(project, id) // unknown ids fail before anything starts
-  if (positional.length === 1) return renderOne(root, project, positional[0])
-  const jobs = flags.jobs ? Number(flags.jobs) : defaultJobs()
-  if (!Number.isInteger(jobs) || jobs < 1) throw new UsageError('--jobs expects a positive whole number')
-  return renderMany([...new Set(positional)], jobs)
+  const ids = [...new Set(positional)]
+  const jobs = Math.min(count(flags, 'jobs', budget()), ids.length)
+  // Scenes rendering side by side share the budget; four browsers already use most of it.
+  const pages = count(flags, 'pages', Math.max(1, Math.min(4, Math.floor(budget() / jobs))))
+  if (ids.length === 1) return renderOne(root, project, ids[0], pages)
+  return renderMany(ids, jobs, pages)
 })
 
+function count(flags, name, fallback) {
+  if (flags[name] === undefined) return fallback
+  const n = Number(flags[name])
+  if (!Number.isInteger(n) || n < 1) throw new UsageError(`--${name} expects a positive whole number`)
+  return n
+}
+
 /**
- * Half the cores (more adds little: the browser and x264 already use several threads), and
- * about 1 GB of free memory per render.
+ * Browsers to run at once: half the cores (more adds little: each browser and x264 already use
+ * several threads), and about 1 GB of free memory each.
  */
-function defaultJobs() {
+function budget() {
   return Math.max(1, Math.min(Math.floor(availableParallelism() / 2), Math.floor(freemem() / 2 ** 30)))
 }
 
 /** Renders each id in a child process, `jobs` at a time. Returns 1 when any of them failed. */
-async function renderMany(ids, jobs) {
-  console.log(`rendering ${ids.length} scenes, ${Math.min(jobs, ids.length)} at a time`)
+async function renderMany(ids, jobs, pages) {
+  console.log(`rendering ${ids.length} scenes, ${jobs} at a time`)
   const failed = []
   const queue = [...ids]
   const worker = async () => {
     for (let id; (id = queue.shift()); ) {
       const code = await new Promise((resolve) => {
-        const child = spawn(process.execPath, [fileURLToPath(import.meta.url), id], { stdio: 'inherit', windowsHide: true })
+        const child = spawn(process.execPath, [fileURLToPath(import.meta.url), id, '--pages', String(pages)], { stdio: 'inherit', windowsHide: true })
         child.on('error', () => resolve(1))
         child.on('close', resolve)
       })
       if (code !== 0) failed.push(id)
     }
   }
-  await Promise.all(Array.from({ length: Math.min(jobs, ids.length) }, worker))
+  await Promise.all(Array.from({ length: jobs }, worker))
   const ok = ids.filter((id) => !failed.includes(id))
   console.log(`rendered: ${ok.join(', ') || 'none'}${failed.length ? `; failed: ${failed.join(', ')}` : ''}`)
   return failed.length ? 1 : 0
 }
 
-async function renderOne(root, project, id) {
+async function renderOne(root, project, id, pages) {
   const ref = findSceneRef(project, id)
   const scene = readJson(sceneFile(root, ref))
   const sceneDir = join(root, ref.dir)
@@ -94,7 +104,7 @@ async function renderOne(root, project, id) {
 
   const server = await serveProject(root)
   try {
-    await renderHtml({ root, plan, work, server, out: partial, log: progress, subtitles })
+    await renderHtml({ root, plan, work, server, out: partial, log: progress, subtitles, pages })
     renameSync(partial, outFile)
   } catch (err) {
     rmSync(partial, { force: true })

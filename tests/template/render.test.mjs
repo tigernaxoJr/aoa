@@ -131,6 +131,18 @@ describe('render-scene', () => {
     assert.deepEqual(keyframes(out, 24), [0, 12, 24])
   })
 
+  test('frames shot in several browsers match frames shot in one', async (t) => {
+    const out = await render(t)
+    if (!out) return
+    const frames = () => String(ff('-i', out, '-map', '0:v', '-f', 'framemd5', '-')).split('\n').filter((l) => l && !l.startsWith('#'))
+    const one = frames()
+    for (const pages of ['1', '2']) {
+      const r = await p.runAsync('render-scene.mjs', ['scene-001', '--pages', pages], { FONTCONFIG_FILE: p.path('fonts.conf') })
+      assert.equal(r.code, 0, r.stderr)
+      assert.deepEqual(frames(), one, `--pages ${pages}`)
+    }
+  })
+
   test('enlarged text is bigger, but shrinks to two lines inside the frame', async (t) => {
     const text = (content, size, at) => ({ type: 'text', content, size, at, duration: 0.5, animation: 'none' })
     const scene = baseScene('scene-001', {

@@ -9,9 +9,10 @@ import { TRANSITION_SEC } from './timeline.mjs'
 /**
  * Renders `plan` to `out`. Video layers must already carry `clip` (normalized mp4); `server`
  * serves the project root. `work` is a scratch directory inside the project. `subtitles` names an
- * ASS file in `work` to burn in, drawn with the fonts in src/fonts.
+ * ASS file in `work` to burn in, drawn with the fonts in src/fonts. `pages` browser pages shoot
+ * frames side by side, each in its own browser; a frame depends only on its time (rendering-guide.md#motion).
  */
-export async function renderHtml({ root, plan, work, server, out, log, subtitles = null }) {
+export async function renderHtml({ root, plan, work, server, out, log, subtitles = null, pages = 1 }) {
   const url = (file) => server.url(file)
   const layer = (l, i) => {
     if (l.clip) {
@@ -65,33 +66,24 @@ export async function renderHtml({ root, plan, work, server, out, log, subtitles
     out,
   ], { cwd: work })
 
-  const browser = await launchBrowser()
+  // One browser per page: pages of a shared browser queue on its single compositor. Starting a
+  // browser costs about a second of frames, so short scenes use fewer.
+  const count = Math.max(1, Math.min(pages, Math.ceil(frames / fps)))
+  const browsers = []
   try {
-    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 })
-    const errors = []
-    page.on('pageerror', (err) => errors.push(err.message))
-    await page.goto(url(html))
-    // Read why the player failed from its own promise: a pageerror for the same rejection may not
-    // have arrived yet when the wait gives up.
-    const failure = await page
-      .waitForFunction(() => window.__ready !== undefined, null, { timeout: 30_000 })
-      .then(() =>
-        page.evaluate(() =>
-          Promise.race([
-            window.__ready.then(() => null, (err) => String(err?.message ?? err)),
-            new Promise((resolve) => setTimeout(() => resolve('timed out'), 30_000)),
-          ]),
-        ),
-      )
-      .catch((err) => err.message)
-    if (failure) throw new Error(`player did not start: ${[...new Set([failure, ...errors])].join('; ')}`)
-    const stage = page.locator('#stage')
+    const players = await Promise.all(
+      Array.from({ length: count }, async () => {
+        const browser = await launchBrowser()
+        browsers.push(browser)
+        return openPlayer(browser, url(html), width, height)
+      }),
+    )
+    // Each page shoots every n-th frame; a round's frames go to the encoder in order.
     let reported = 0
-    for (let f = 0; f < frames; f++) {
-      await page.evaluate((t) => window.__seek(t), f / fps)
-      if (errors.length) throw new Error(`player error: ${errors.join('; ')}`)
-      await encoder.write(await stage.screenshot({ type: 'png', animations: 'disabled', caret: 'hide' }))
-      const pct = Math.floor(((f + 1) / frames) * 10) * 10
+    for (let f = 0; f < frames; f += players.length) {
+      const shots = await Promise.all(players.slice(0, frames - f).map((shoot, k) => shoot((f + k) / fps)))
+      for (const shot of shots) await encoder.write(shot)
+      const pct = Math.floor((Math.min(f + players.length, frames) / frames) * 10) * 10
       if (pct > reported) log(`  ${(reported = pct)}%`)
     }
     await encoder.finish()
@@ -99,7 +91,39 @@ export async function renderHtml({ root, plan, work, server, out, log, subtitles
     encoder.kill()
     throw err
   } finally {
-    await browser.close()
+    await Promise.all(browsers.map((b) => b.close()))
+  }
+}
+
+/** Opens the scene page and waits for the player; returns shoot(t) → PNG of the stage at time t. */
+async function openPlayer(browser, href, width, height) {
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 })
+  const errors = []
+  page.on('pageerror', (err) => errors.push(err.message))
+  await page.goto(href)
+  // Read why the player failed from its own promise: a pageerror for the same rejection may not
+  // have arrived yet when the wait gives up.
+  const failure = await page
+    .waitForFunction(() => window.__ready !== undefined, null, { timeout: 30_000 })
+    .then(() =>
+      page.evaluate(() =>
+        Promise.race([
+          window.__ready.then(() => null, (err) => String(err?.message ?? err)),
+          new Promise((resolve) => setTimeout(() => resolve('timed out'), 30_000)),
+        ]),
+      ),
+    )
+    .catch((err) => err.message)
+  if (failure) throw new Error(`player did not start: ${[...new Set([failure, ...errors])].join('; ')}`)
+  // The stage fills the viewport, so a plain viewport capture is the frame. Skipping the locator's
+  // scroll and stability checks and using the faster (still lossless) PNG compression save a third
+  // or more of the time per frame.
+  const cdp = await page.context().newCDPSession(page)
+  return async (t) => {
+    await page.evaluate((t) => window.__seek(t), t)
+    if (errors.length) throw new Error(`player error: ${errors.join('; ')}`)
+    const { data } = await cdp.send('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true })
+    return Buffer.from(data, 'base64')
   }
 }
 

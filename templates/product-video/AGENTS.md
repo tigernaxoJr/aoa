@@ -136,6 +136,6 @@ draft → assets_ready → rendering → rendered → approved
 | `pnpm run tts --sample <角色id\|narrator>` | 產生試聽檔 `brief/voices/<id>.mp3`；`--text "…"` 指定句子 |
 | `pnpm run capture <id>` | 擷取網頁畫面 |
 | `pnpm run login` | 打開瀏覽器視窗讓使用者自己登入產品；`--clear` 清除保存的登入 |
-| `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`） |
+| `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`）；單一 scene 也以多個瀏覽器分攤影格（`--pages N`） |
 | `pnpm run assemble` | 依順序合成 `output/final.mp4` |
 | `pnpm run companion` | 啟動本機助手（讓網頁工作台直接重做 scene、合成）；會一直執行，要在背景啟動。只在使用者同意後執行，見 Skill `SKILL.md` §6 |

@@ -30,7 +30,7 @@ pnpm run validate
 pnpm run render:scene scene-001 scene-002 scene-003   # 可加 --jobs 2 限制同時數量
 ```
 
-最後一行列出 `rendered:` 與 `failed:` 的 scene。成功的各自 `pnpm run state <id> --rendered`；失敗的依第 6 節以 `--failed render …` 記錄（錯誤訊息在該 scene id 開頭的輸出行）。電腦記憶體不足或很卡時，用 `--jobs 1`。
+最後一行列出 `rendered:` 與 `failed:` 的 scene。成功的各自 `pnpm run state <id> --rendered`；失敗的依第 6 節以 `--failed render …` 記錄（錯誤訊息在該 scene id 開頭的輸出行）。電腦記憶體不足或很卡時，用 `--jobs 1 --pages 1`。
 
 ## <a id="duration"></a>2. 時長
 
@@ -145,7 +145,7 @@ GSAP 與 Three.js 不在範本裡，要用時先在專案安裝（`pnpm add gsap
 
 ## <a id="render"></a>5. 渲染器
 
-`pnpm run render:scene <id>` 用 Playwright 瀏覽器（與 capture 相同）逐幀截圖，再以 FFmpeg 編碼。1080p 約每秒 5 幀，長的 scene 要先告訴使用者需要等幾分鐘。
+`pnpm run render:scene <id>` 用 Playwright 瀏覽器（與 capture 相同）逐幀截圖，再以 FFmpeg 編碼。單一 scene 也會開幾個瀏覽器分攤影格（`--pages N`，預設依 CPU 核心數，最多 4 個），1080p 約每秒 10–15 幀，長的 scene 要先告訴使用者需要等幾分鐘。
 
 - 輸出一律是 H.264 + AAC 48 kHz 立體聲、BT.709。沒有旁白的 scene 也會有靜音音軌，合成時才能直接串接。
 - 渲染失敗時，既有的 `output/scene.mp4` 不會被刪除或覆蓋。
