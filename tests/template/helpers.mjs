@@ -20,8 +20,6 @@ export function baseProject(overrides = {}) {
       sources: { productUrl: 'https://example.com' },
       language: 'zh-TW',
       format: { aspectRatio: '16:9', width: 1920, height: 1080, fps: 30, targetDurationSec: 30 },
-      renderer: 'remotion',
-      rendererLicense: { acknowledged: true, tier: 'free-individual', acknowledgedAt: '2026-09-30T00:00:00Z' },
       tts: { provider: 'edge-tts', voice: 'zh-TW-HsiaoChenNeural', consent: { onlineTts: true, grantedAt: '2026-09-30T00:00:00Z' } },
     },
     scenes: [],

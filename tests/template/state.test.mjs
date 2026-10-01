@@ -79,7 +79,6 @@ test('rendering all scenes derives project status', () => {
   assert.match(r.stdout, /project: producing → ready_to_assemble/)
   const scene = p.read('scenes/002-cta/scene.json')
   assert.match(scene.render.inputHash, /^sha256:[0-9a-f]{64}$/)
-  assert.equal(scene.render.renderer, 'remotion')
   assert.equal(scene.attempts, 0)
 })
 

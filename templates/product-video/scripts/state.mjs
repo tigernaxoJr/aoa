@@ -63,7 +63,6 @@ run((argv) => {
         inputHash: computeInputHash(root, project, ref, doc),
         outputFile,
         renderedAt: now,
-        renderer: project.project.renderer,
         actualDurationSec: readableDuration(output, `${ref.dir}/${outputFile}`),
       }
       doc.attempts = 0

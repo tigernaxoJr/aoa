@@ -13,7 +13,6 @@
       "height": 1920,
       "fps": 30
     },
-    "renderer": "html-capture",
     "tts": {
       "provider": "manual"
     }

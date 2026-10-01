@@ -75,24 +75,6 @@ export interface VideoProjectJson {
       };
     };
     /**
-     * SPEC §7.6。
-     */
-    renderer: "remotion" | "html-capture";
-    /**
-     * Remotion 授權確認（SPEC §7.6）。acknowledged 為 false 時 Agent 不得渲染。
-     */
-    rendererLicense?: {
-      acknowledged: boolean;
-      /**
-       * free-individual：個人／≤3 人營利組織／非營利；company-licensed：已購買公司授權。
-       */
-      tier?: "free-individual" | "company-licensed";
-      /**
-       * ISO 8601 / RFC 3339 日期時間，須含時區。
-       */
-      acknowledgedAt?: string;
-    };
-    /**
      * 專案預設 TTS（SPEC §7.4），scene 可覆寫。
      */
     tts: {
@@ -284,7 +266,7 @@ export interface SceneJson {
    */
   render?: {
     /**
-     * SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 與 renderer 計算。
+     * SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 計算。
      */
     inputHash: string;
     /**
@@ -295,7 +277,6 @@ export interface SceneJson {
      * ISO 8601 / RFC 3339 日期時間，須含時區。
      */
     renderedAt: string;
-    renderer?: "remotion" | "html-capture";
     actualDurationSec?: number;
   } | null;
   /**

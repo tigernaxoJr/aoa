@@ -14,13 +14,7 @@ run(async (argv) => {
   parseArgs(argv)
   const root = findRoot()
   const project = loadProject(root)
-  const { format, renderer, rendererLicense, captions = {}, audio = {} } = project.project
-  if (renderer === 'remotion' && !rendererLicense?.acknowledged) {
-    throw new UsageError(
-      'gate rendererLicense: Remotion needs a license check before assembling. Ask the user, record it in ' +
-        'project.rendererLicense, or switch project.renderer to html-capture.',
-    )
-  }
+  const { format, captions = {}, audio = {} } = project.project
   if (project.scenes.length === 0) throw new UsageError('video.project.json lists no scenes')
 
   // Every scene must be rendered/approved, have its output, and be unchanged since it was rendered.

@@ -1,6 +1,5 @@
-// Layout and animation math shared by both renderers (Remotion components and the html-capture
-// player), so a scene looks the same whichever renderer draws it. Pure functions of time `t`
-// (seconds from the scene start); no DOM or React here.
+// Layout and animation math for the scene player (src/html/player.js). Pure functions of time `t`
+// (seconds from the scene start); no DOM here, so it can be unit-tested in Node.
 
 export const THEME = {
   fontFamily: '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Noto Sans CJK TC", "Helvetica Neue", Arial, sans-serif',

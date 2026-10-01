@@ -1,5 +1,5 @@
-// Turns scene.json + project format into a renderer-neutral render plan (SPEC §7.6): duration,
-// background layer, overlay elements and narration. Both renderers draw exactly this plan.
+// Turns scene.json + project format into a render plan (SPEC §7.6): duration,
+// background layer, overlay elements and narration. The renderer draws exactly this plan.
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { probeDuration } from './media.mjs'

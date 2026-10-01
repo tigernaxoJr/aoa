@@ -1,4 +1,4 @@
-// render-scene.mjs with both renderers, plus the shared motion math. Scenes use solid-color
+// render-scene.mjs, plus the motion math. Scenes use solid-color
 // sources at a small format (640×360, 24 fps), so layout can be checked by sampling pixels of the output.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
@@ -30,10 +30,9 @@ const near = (actual, expected, label) =>
 let p
 afterEach(() => p?.cleanup())
 
-function smallProject(renderer) {
+function smallProject() {
   const project = baseProject()
   project.project.format = { aspectRatio: '16:9', width: 640, height: 360, fps: 24, targetDurationSec: 10 }
-  project.project.renderer = renderer
   return project
 }
 
@@ -41,7 +40,7 @@ function smallProject(renderer) {
  * Background: red user-asset video, 1 s long but trimmed to 0.2–0.8 s, in a 1.5 s scene (so it
  * must hold its last frame). Blue image centered, green video top-left, a text element, no narration.
  */
-function layeredProject(renderer) {
+function layeredProject() {
   const scene = baseScene('scene-001', {
     durationSec: 1.5,
     visual: {
@@ -55,7 +54,7 @@ function layeredProject(renderer) {
       ],
     },
   })
-  p = makeProject({ project: smallProject(renderer), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
+  p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
   cpSync(templateSrc, p.path('src'), { recursive: true })
   const assets = p.path('scenes/001-hook/assets')
   ff('-f', 'lavfi', '-i', 'color=c=red:s=640x360:r=25:d=1', '-pix_fmt', 'yuv420p', join(assets, 'bg.mp4'))
@@ -82,10 +81,10 @@ function checkLayered(out) {
   near(pixel(out, 1.0, 100, 60), [0, 255, 0], 'top-left video element after at=0.5')
 }
 
-async function render(renderer, t) {
-  layeredProject(renderer)
+async function render(t) {
+  layeredProject()
   const r = await p.runAsync('render-scene.mjs', ['scene-001'])
-  if (/no usable browser|could not download its browser/.test(r.stderr)) {
+  if (/no usable browser/.test(r.stderr)) {
     t.skip('no browser available')
     return null
   }
@@ -96,13 +95,8 @@ async function render(renderer, t) {
 }
 
 describe('render-scene', () => {
-  test('html-capture draws every layer at the planned time', async (t) => {
-    const out = await render('html-capture', t)
-    if (out) checkLayered(out)
-  })
-
-  test('remotion draws the same picture', async (t) => {
-    const out = await render('remotion', t)
+  test('draws every layer at the planned time', async (t) => {
+    const out = await render(t)
     if (out) checkLayered(out)
   })
 
@@ -110,7 +104,7 @@ describe('render-scene', () => {
     const scene = baseScene('scene-001', {
       visual: { type: 'code', description: 'code', code: { language: 'js', content: 'const a = 1\nconsole.log(a)\n', highlightLines: [2] } },
     })
-    p = makeProject({ project: smallProject('html-capture'), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '一二三四。\n' }] })
+    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '一二三四。\n' }] })
     cpSync(templateSrc, p.path('src'), { recursive: true })
     assert.equal(p.run('tts.mjs', ['scene-001'], { VIDEO_AGENT_FAKE_TTS: '1' }).code, 0)
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
@@ -121,36 +115,26 @@ describe('render-scene', () => {
     const [, frames] = /(\d+) frames/.exec(r.stdout)
     assert.equal(Number(frames), expected, r.stdout)
 
-    // The scene can then be marked rendered; state records the renderer and actual duration.
+    // The scene can then be marked rendered; state records the actual duration.
     const s = p.run('state.mjs', ['scene-001', '--status', 'assets_ready'])
     assert.equal(s.code, 0, s.stderr)
     assert.equal(p.run('state.mjs', ['scene-001', '--status', 'rendering']).code, 0)
     const done = p.run('state.mjs', ['scene-001', '--rendered'])
     assert.equal(done.code, 0, done.stderr)
     const render = p.read('scenes/001-hook/scene.json').render
-    assert.equal(render.renderer, 'html-capture')
     assert.ok(Math.abs(render.actualDurationSec - expected / 24) < 0.05, `actualDurationSec ${render.actualDurationSec}`)
   })
 
   test('without narration audio, durationSec must be set', async () => {
-    p = makeProject({ project: smallProject('html-capture'), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook' }] })
+    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook' }] })
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
     assert.equal(r.code, 1)
     assert.match(r.stderr, /durationSec is null and there is no narration audio/)
   })
 
-  test('remotion is blocked until the license gate is recorded', async () => {
-    const project = smallProject('remotion')
-    project.project.rendererLicense = { acknowledged: false }
-    p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene: baseScene('scene-001', { durationSec: 1 }) }] })
-    const r = await p.runAsync('render-scene.mjs', ['scene-001'])
-    assert.equal(r.code, 1)
-    assert.match(r.stderr, /gate rendererLicense/)
-  })
-
   test('a failed render keeps the previous output', async () => {
     const scene = baseScene('scene-001', { durationSec: 1, visual: { type: 'screenshot', description: 's', capture: { url: 'https://example.com' } } })
-    p = makeProject({ project: smallProject('html-capture'), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene }] })
+    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene }] })
     p.write('scenes/001-hook/output/scene.mp4', 'previous render')
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
     assert.equal(r.code, 1)

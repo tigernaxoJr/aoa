@@ -141,7 +141,7 @@ pnpm run status
 |---|---|---|
 | `script.md`、scene 的聲音或語速 | 該 scene 旁白與時長 | 重做 tts → render |
 | `visual.*`、`durationSec`、scene 素材 | 該 scene 畫面 | 重做 capture（若 capture 設定變了）→ render |
-| `project.format`、`project.renderer` | 所有 scene | 全部 render（旁白不必重做，除非 TTS 設定也變） |
+| `project.format` | 所有 scene | 全部 render（旁白不必重做，除非 TTS 設定也變） |
 | `project.tts`（專案層） | 未覆寫 provider / voice 的 scene | 這些 scene 重做 tts → render |
 | `video.project.json` 的 scene 順序 | 只影響合成 | 只重新 assemble |
 | `captions`、`audio` | 只影響合成 | 只重新 assemble |

@@ -1,4 +1,4 @@
-// Browser for Playwright-driven scripts (capture, html-capture renderer).
+// Browser for Playwright-driven scripts (capture, render-scene).
 import { UsageError } from './project.mjs'
 
 /** Launches Chromium: an explicit channel wins; otherwise Playwright's own Chromium, then installed Chrome, then Edge. */

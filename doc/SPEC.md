@@ -49,7 +49,7 @@
                   │  scripts/ · src/ · output/                 │
                   └──────────────────┬───────────────────────┘
                                      ▼
-                     Node.js · Playwright · TTS · Remotion · FFmpeg
+                         Node.js · Playwright · TTS · FFmpeg
                                      ▼
                               output/final.mp4
 ```
@@ -126,12 +126,8 @@ my-video-project/
 │   ├── assemble.mjs
 │   └── state.mjs               # 唯一的 JSON 寫入入口（§10.2）
 ├── src/                        # 渲染器程式碼（§7.6）
-│   ├── index.ts                # Remotion entry（registerRoot）
-│   ├── Root.tsx                # Composition "Scene"，以 inputProps 接收 render plan
-│   ├── SceneVideo.tsx          # Remotion 版面
-│   ├── plan.ts                 # render plan 型別
-│   ├── lib/motion.js           # 兩個渲染器共用的版面、動畫、配色（純函式）
-│   └── html/player.js          # html-capture 版面（純 DOM，`window.__seek(t)`）
+│   ├── lib/motion.js           # 版面、動畫、配色（純函式）
+│   └── html/player.js          # scene 版面（純 DOM，`window.__seek(t)`）
 └── output/
     └── final.mp4
 ```
@@ -181,8 +177,6 @@ my-video-project/
       "mode": "srt",
       "style": { "fontFamily": "Noto Sans TC", "fontSize": 48, "position": "bottom" }
     },
-    "renderer": "remotion",
-    "rendererLicense": { "acknowledged": true, "tier": "free-individual", "acknowledgedAt": "2026-09-30T13:00:00Z" },
     "tts": {
       "provider": "edge-tts",
       "voice": "zh-TW-HsiaoChenNeural",
@@ -200,8 +194,6 @@ my-video-project/
 ```
 
 - `scenes` 陣列的順序 **即為** 影片播放順序。
-- `renderer`：`"remotion"`（預設）｜`"html-capture"`（見 §7.6）。
-- `rendererLicense`：選用 Remotion 時必填。`tier`：`free-individual`（個人／≤3 人營利組織／非營利）｜`company-licensed`（已購買公司授權）。未確認時 Agent 不得執行渲染。
 
 ### 4.2 `scenes/*/scene.json`
 
@@ -252,10 +244,10 @@ my-video-project/
 | 欄位 | 說明 |
 |---|---|
 | `purpose` | `hook` · `problem` · `solution` · `feature` · `how-it-works` · `benefit` · `social-proof` · `cta` · `custom` |
-| `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純 Remotion 動畫）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
+| `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純動畫，無擷取素材）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
 | `narration.provider` | TTS 提供者，省略時沿用 `project.tts.provider`。見 §7.4 |
 | `durationSec` | `null` 表示由 TTS 音檔長度決定（音長 + 0.5s 緩衝）；有值則為強制秒數。幀數一律由 `durationSec × fps` 推得，**不存幀數**。 |
-| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format` 與 `renderer` 計算的 SHA-256。與目前內容不符即視為過期。 |
+| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format` 計算的 SHA-256。與目前內容不符即視為過期。 |
 | `locked` | `true` 時 Agent 不得修改此 scene（除非使用者明確要求）。使用者在 UI 手動核准後可設為 `true`。 |
 
 ### 4.2.1 共通規則（由 Schema 強制）
@@ -379,7 +371,7 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 
 | 區塊 | 內容 |
 |---|---|
-| `gates` | 執行特定腳本前必須取得的使用者確認：`rendererLicense`（擋 `render:scene`、`assemble`）、`onlineTtsConsent`（擋 `tts`）。含說明內容、記錄欄位與拒絕時的處理 |
+| `gates` | 執行特定腳本前必須取得的使用者確認：`onlineTtsConsent`（擋 `tts`）。含說明內容、記錄欄位與拒絕時的處理 |
 | `steps` | 主流程 `init` → `analyze` → `storyboard` → `build_scene` → `assemble`。每步定義 `command`、`scope`（project / scene）、`requires`（允許的 project / scene 狀態、gates）、`skipWhen`、`reads` / `writes`、有序的 `actions`（含狀態轉換）、`checkpoint`、`guide`（Skill 章節） |
 | `operations` | 隨時可執行的操作：`sync`、`status`、`approve`、`translate` |
 | `derivedProjectStatus` | 由 scene 狀態推導 `project.status` 的規則；`state.mjs` 每次寫入 scene 後重算 |
@@ -391,7 +383,7 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 **Step 1 — init**
 1. 下載並解壓專案範本；填入 `video.project.json` 的 `sources` 與 `format`。
 2. 由 Agent 執行 `pnpm install`（含 FFmpeg）；檢查 Node.js、pnpm、瀏覽器（Playwright Chromium 或系統 Chrome / Edge）、TTS 工具。缺少時用白話說明並取得同意，同意後可代為執行一般安裝（如 `winget` / `brew`），不使用系統管理員權限；無法代為安裝時給點擊式步驟。
-3. 確認渲染器授權（§7.6）與 TTS 連網同意（§7.4），寫入 `project.rendererLicense` / `project.tts.consent`。
+3. 確認 TTS 連網同意（§7.4），寫入 `project.tts.consent`。
 4. 同步 `schemas/`，執行 `pnpm run validate`。
 
 **Step 2 — analyze**
@@ -416,7 +408,7 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 
 **Step 5 — assemble**
 1. 檢查所有 scene 為 `rendered` 或 `approved` 且 `inputHash` 相符；否則列出需重做的 scene 並停止。
-2. 依 `video.project.json.scenes` 順序以 FFmpeg 串接（兩種 renderer 相同）：有 `transitionIn` 的 scene 以 `xfade` 與前一個 scene 重疊 0.5 秒（不超過兩者各自長度的一半，並對齊整幀），聲音同時以 `acrossfade` 交叉淡化；`none` 直接串接。每個 scene 的聲音先補齊或截到其視訊長度，避免音畫漂移。
+2. 依 `video.project.json.scenes` 順序以 FFmpeg 串接：有 `transitionIn` 的 scene 以 `xfade` 與前一個 scene 重疊 0.5 秒（不超過兩者各自長度的一半，並對齊整幀），聲音同時以 `acrossfade` 交叉淡化；`none` 直接串接。每個 scene 的聲音先補齊或截到其視訊長度，避免音畫漂移。
 3. **字幕**：合併各 scene 的 `assets/captions.json`（依 scene 起始時間位移）為 `output/final.srt`；`captions.mode` 為 `burn` 時再以 FFmpeg 燒入畫面。
 4. **BGM**：若 `audio.bgm` 檔案存在，以 FFmpeg `sidechaincompress` 在旁白出現時壓低音量，頭尾淡入淡出；不存在則略過。
 5. 輸出 `output/final.mp4`，project 狀態設為 `completed`。
@@ -448,7 +440,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | 執行環境 | Node.js ≥ 20.12、pnpm | 需要 `readdirSync` 遞迴列出與 `parentPath` |
 | 網頁擷取 | Playwright | 截圖、錄製操作、抓取產品頁內容。瀏覽器依序使用：Playwright 內建 Chromium → 系統 Chrome → 系統 Edge（可用 `VIDEO_AGENT_BROWSER_CHANNEL` 指定），Windows 使用者無需另外下載 |
 | 語音合成 | 可替換 provider，預設 `edge-tts` | 見 §7.4 |
-| 影片合成 | Remotion（預設）／html-capture | Remotion 授權：個人、≤3 人營利組織、非營利免費，其餘需 Company License（義務在實際渲染者）；見 §7.6 |
+| 影片合成 | Playwright 逐幀截圖 + FFmpeg | 不需額外授權；見 §7.6 |
 | 轉檔/合併 | FFmpeg / ffprobe | 依序使用：環境變數 `VIDEO_AGENT_FFMPEG` / `VIDEO_AGENT_FFPROBE` → 系統 PATH → 套件內建（`ffmpeg-static` / `ffprobe-static`），使用者無需預先安裝 |
 
 ### 7.2 `package.json` scripts
@@ -465,18 +457,13 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
     "render:scene": "node scripts/render-scene.mjs",
     "assemble":     "node scripts/assemble.mjs",
     "state":        "node scripts/state.mjs",
-    "status":       "node scripts/validate.mjs --report",
-    "preview":      "remotion studio src/index.ts"
+    "status":       "node scripts/validate.mjs --report"
   },
   "dependencies": {
-    "remotion": "4.x", "@remotion/cli": "4.x", "@remotion/bundler": "4.x", "@remotion/renderer": "4.x",
-    "react": "^19", "react-dom": "^19",
     "playwright": "^1", "ajv": "^8"
   }
 }
 ```
-
-Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 
 ### 7.3 腳本職責
 
@@ -544,31 +531,21 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 
 ### 7.6 渲染器
 
-| renderer | 定位 | 授權 |
-|---|---|---|
-| `remotion`（預設） | 成熟、單 scene 渲染與轉場完整、LLM 熟悉度高 | 個人／≤3 人營利組織／非營利免費；其餘需 Company License |
-| `html-capture` | 正式支援的免授權替代方案 | Playwright（Apache-2.0）、FFmpeg |
+以 Playwright（Apache-2.0）逐幀截圖、FFmpeg 編碼，不需額外授權（`scripts/render-scene.mjs`）：
 
-共通實作（`scripts/render-scene.mjs`）：
-
-- **Render plan**：`scripts/lib/scene-plan.mjs` 將 scene.json + `project.format` 轉為與渲染器無關的 plan（時長、幀數、背景層、疊加元素、旁白）。兩個渲染器只畫 plan；版面、動畫與配色由 `src/lib/motion.js` 的純函式定義，兩者共用，因此畫面一致。
+- **Render plan**：`scripts/lib/scene-plan.mjs` 將 scene.json + `project.format` 轉為 plan（時長、幀數、背景層、疊加元素、旁白）。渲染器只畫 plan；版面、動畫與配色由 `src/lib/motion.js` 的純函式定義。
 - **影片素材正規化**：所有影片層（錄影、`user-asset` 影片、影片元素）先以 FFmpeg 轉為專案 fps、依 trim 裁切、補到精確幀數（較短時停在最後一格），再交給渲染器。素材原聲不使用。
 - **素材存取**：渲染期間在 `127.0.0.1` 隨機埠啟動唯讀靜態伺服器，只提供專案根目錄內的檔案（支援 Range）。不使用 `file://`。
 - 暫存檔放在 `.tmp/render-<id>/`，結束即刪除。輸出先寫到 `*.partial.mp4`，成功後才替換 `output/scene.mp4`。
 - scene 間轉場（`transitionIn`）、字幕、BGM 皆不在 scene 渲染中處理，由 `assemble.mjs` 負責。
 - `src/` 不納入 `inputHash`：修改外觀不會自動使既有 scene 過期，需由 Agent 經使用者同意後將受影響的 scene 設為 `stale`。
 
-`remotion`：以 `@remotion/bundler` 打包 `src/index.ts`（依 `src/` 內容與 Remotion 版本快取於 `.tmp/remotion-bundle/`），`@remotion/renderer` 以 plan 為 `inputProps` 渲染 composition `Scene`。瀏覽器依序使用：環境變數 `VIDEO_AGENT_BROWSER_EXECUTABLE` → Remotion 下載的 headless shell → Playwright 的 Chromium。
-
-`html-capture` 實作要求：
+實作要求：
 
 - 每個 scene 渲染時產生暫存頁 `.tmp/render-<id>/scene.html`（內嵌 plan，載入 `src/html/player.js`），所有畫面由單一時間變數 `t` 驅動（`window.__seek(t)`）。
 - **逐幀截圖**：依 `fps` 逐幀呼叫 `__seek(frame / fps)`，等待所有圖片解碼後截圖，以 PNG 串流交給 FFmpeg 編碼（BT.709）並混入旁白。**不得**使用 Playwright 內建 `recordVideo`（webm、幀率不穩，無法確定性重現）。
 - 影片層在頁面中以預先抽出的 JPEG 影格呈現，而非 `<video>` 定位，確保每幀確定且不受瀏覽器影片解碼器影響。
 - scene 間轉場由 `assemble.mjs` 以 FFmpeg `xfade` 實作。
-- 腳本介面與 Remotion 相同（`pnpm run render:scene <id>`），切換 renderer 不需改 scene 資料。
-
-**授權告知**：`init` 選用 Remotion 時，Agent 必須說明授權條件並請使用者確認身分級距，寫入 `project.rendererLicense`；使用者表示不符合免費條件且未購買授權時，改用 `html-capture`。
 
 ---
 
@@ -595,7 +572,7 @@ skills/product-video/
 ├── SKILL.md              # 觸發描述 + 工作流程總覽 + 規則
 ├── workflow.md
 ├── script-guide.md       # 文案寫法、各 purpose 的範例
-├── rendering-guide.md    # Remotion / capture 實作指引
+├── rendering-guide.md    # 渲染與 capture 實作指引
 └── schemas/ → 連結至 specs/
 ```
 
@@ -800,7 +777,7 @@ agent-video-platform/
 | Phase | 內容 | 完成標準 |
 |---|---|---|
 | **1. 協議** | `project.schema.json`、`scene.schema.json`、`AGENTS.md`、`SKILL.md`、`workflow.json`、範本 `video.project.json` | Schema 通過自身範例驗證 |
-| **2. 本機管線** | 範本 `scripts/*`、Remotion 範本、TTS、capture、assemble | 以手寫 scene.json 可產出 final.mp4 |
+| **2. 本機管線** | 範本 `scripts/*`、渲染器、TTS、capture、assemble | 以手寫 scene.json 可產出 final.mp4 |
 | **3. Agent 流程** | Guide API 靜態檔、slash commands、prompts；GitHub Pages 部署（§12.1） | 網站部署完成；Claude Code 從一個產品網址端到端產出影片，並能只重做單一 scene |
 | **4. Web UI** | 資料夾授權、Workflow、Scene Board/Editor、預覽 | UI 修改文案 → Agent `/video-sync` 只重做該 scene |
 | **5. MCP + Companion** | Cloud MCP + Local MCP；本機 Companion（§2.1 模式 B，可與 Local MCP 同一程式） | Agent 可透過 MCP 完成相同流程；UI 按「立即重新渲染」無需切到終端機 |
@@ -817,7 +794,7 @@ agent-video-platform/
 | D1 | 專案核心檔名 | `config.json`(Q) / `data/project.json`(D) / `video-spec.json`(Gm) / `video.project.json`(GPT) | `video.project.json` 放根目錄 | 語意明確、易被 UI 辨識為專案 |
 | D2 | Scene 資料放哪 | 全放 project.json(D)、兩處重複(Gm)、每 scene 一個目錄(GPT) | 每 scene 一個目錄；project 只存順序與引用 | 避免雙重事實來源；scene 可整包刪除/複製；素材就近存放 |
 | D3 | 時長單位 | 秒(D, GPT) / 幀數(Gm) | 存秒，幀數推導；預設由 TTS 音長決定 | 人類可讀；改 fps 不需改資料；採 Gemini 的音長驅動設計 |
-| D4 | 渲染方式 | Puppeteer 錄螢幕(Q) / HTML+Playwright 截幀(D) / Remotion(Gm, GPT) | Remotion 預設，`html-capture` 為替代；Playwright 負責素材擷取 | Remotion 可程式化、單 scene 渲染與轉場支援佳；保留無 Remotion 路徑 |
+| D4 | 渲染方式 | Puppeteer 錄螢幕(Q) / HTML+Playwright 截幀(D) / Remotion(Gm, GPT) | HTML + Playwright 逐幀截圖；Playwright 也負責素材擷取 | 確定性重現、不需額外授權；原本以 Remotion 為預設，見 D15 |
 | D5 | 狀態列舉 | 各稿不同 | §4.5 統一狀態機，新增 `stale`、`approved` | 支援 UI 修改後差異重做與使用者核准 |
 | D6 | 如何偵測需重做 | 「掃描檔案變動」(Gm) | `inputHash` + `stale` 狀態 | 確定性判斷，不依賴時間戳 |
 | D7 | 不覆蓋使用者修改 | 口頭規則(D, GPT) | `locked` 欄位 + `updatedBy` + 寫入前重讀/衝突檢查 | 規則需可被機器檢查 |
@@ -828,7 +805,7 @@ agent-video-platform/
 | D12 | 使用者審閱 | review 步驟(Q, GPT) | storyboard 與每 scene 渲染後各有 checkpoint | 在最便宜的階段攔截錯誤 |
 | D13 | UI ↔ Agent 通訊 | 各稿僅提「UI 讀寫檔案」，未處理反向通知 | MVP 採模式 A（檔案輪詢 + 使用者觸發）；Phase 5 加本機 Companion（模式 B）；不採檔案佇列 A' | 靜態部署不排除本機服務；A' 閒置 token 成本高；協議預先設計成可無痛升級 |
 | D14 | TTS 預設 | edge-tts(Gm) / 未指定 | 可替換 provider；預設 edge-tts，首次使用需同意；支援自帶 key、Piper、系統、手動錄音 | 繁中免費堪用者僅 edge-tts，但其為非官方介面，不能綁死 |
-| D15 | 渲染器授權 | 未處理 | Remotion 預設 + init 時授權告知並記錄；html-capture（逐幀截圖）為正式免授權替代；Revideo 暫不評估 | 主力使用者多屬免費級距；renderer 已抽象化，不綁死 |
+| D15 | 渲染器授權 | 未處理 | 移除 Remotion，只保留逐幀截圖渲染器 | Remotion 對 >3 人公司需付費，使用者難以自行判斷級距；兩個渲染器畫面相同，維持兩套版面與授權詢問不划算。代價是渲染較慢 |
 | D16 | BGM 與字幕 | 可選(Q) / 未規範 | 兩者皆進 MVP：字幕預設輸出 SRT、可選燒入；BGM 自備音檔 + ducking；兩者只在 assemble 處理 | 旁白即字幕來源，成本低；集中在 assemble 使樣式調整不觸發 scene 重渲染 |
 | D17 | 多語系 | 未提及 | MVP 一專案一語言；`/video-translate` 複製專案並翻譯；預留 `<locale>` 命名 | 語言影響時長→畫面時間軸→每 scene 重渲染，原生支援會使狀態機二維化，MVP 成本過高 |
 | D18 | Companion 形態 | 無 | 同一套件 `video-agent` 兩入口（`mcp` / `serve`）共用核心；port 47831–47840；以 `#pair=` 連結配對；統一寫入協定（鎖檔 + 原子寫入） | 生命週期不同不能同程序；邏輯相同應共用；fragment 不外洩 token 且免掃 port |

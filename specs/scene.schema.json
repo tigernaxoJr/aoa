@@ -243,13 +243,12 @@
       "required": ["inputHash", "outputFile", "renderedAt"],
       "properties": {
         "inputHash": {
-          "description": "SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 與 renderer 計算。",
+          "description": "SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 計算。",
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
         "outputFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "output/scene.mp4" },
         "renderedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
-        "renderer": { "enum": ["remotion", "html-capture"] },
         "actualDurationSec": { "type": "number", "exclusiveMinimum": 0 }
       }
     },

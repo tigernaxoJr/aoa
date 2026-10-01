@@ -81,7 +81,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
     {
       description:
         'Create a new video project from the site template (checksum-verified) in an empty directory and fill in its identity and sources. ' +
-        'Afterwards: run pnpm install there, and record the rendererLicense and onlineTtsConsent gates with update_project after asking the user.',
+        'Afterwards: run pnpm install there, and record the onlineTtsConsent gate with update_project after asking the user.',
       inputSchema: {
         directory: z.string().describe('New or empty directory for the project'),
         name: z.string().min(1),
@@ -139,13 +139,13 @@ export function createServer({ projectDir = process.cwd() } = {}) {
   )
   server.registerTool(
     'update_project',
-    { description: 'Change video.project.json with a JSON Patch, e.g. record gates (/project/rendererLicense, /project/tts/consent) or status.', inputSchema: { project: projectArg, patch: jsonPatch } },
+    { description: 'Change video.project.json with a JSON Patch, e.g. record the TTS consent gate (/project/tts/consent) or status.', inputSchema: { project: projectArg, patch: jsonPatch } },
     tool(async ({ project, patch: ops }) => scriptResult(await patch(rootOf(project), 'project', ops, BY))),
   )
   server.registerTool(
     'render_scene',
     {
-      description: 'Produce one scene end to end: narration (tts), capture, render, and record its state. Failures are recorded on the scene. Respects the rendererLicense and onlineTtsConsent gates.',
+      description: 'Produce one scene end to end: narration (tts), capture, render, and record its state. Failures are recorded on the scene. Respects the onlineTtsConsent gate.',
       inputSchema: { project: projectArg, id: z.string() },
     },
     tool(async ({ project, id }) => {

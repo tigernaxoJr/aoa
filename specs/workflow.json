@@ -2,14 +2,6 @@
   "$schema": "./workflow.schema.json",
   "specVersion": "1.0.0",
   "gates": {
-    "rendererLicense": {
-      "appliesWhen": "project.renderer == 'remotion'",
-      "check": "project.rendererLicense.acknowledged == true",
-      "blocks": ["render:scene", "assemble"],
-      "ask": "說明 Remotion 授權：個人、員工 ≤3 人的營利組織、非營利組織可免費使用；其餘需購買 Company License，義務在實際渲染的一方。請使用者確認屬於哪一級距。",
-      "record": "project.rendererLicense = { acknowledged: true, tier, acknowledgedAt }",
-      "onDecline": "使用者不符合免費條件且未購買授權時，將 project.renderer 改為 'html-capture'。"
-    },
     "onlineTtsConsent": {
       "appliesWhen": "實際使用的 TTS provider 為 edge-tts、azure、openai 或 elevenlabs",
       "check": "project.tts.consent.onlineTts == true",
@@ -43,7 +35,7 @@
         { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、sources、language、format。至少需要一種 sources。" },
         { "id": "install", "do": "pnpm install" },
         { "id": "check_tools", "do": "檢查 ffmpeg / ffprobe、Playwright 瀏覽器、所選 TTS 是否可用；缺少時告知安裝方式，不自行以系統權限安裝。" },
-        { "id": "gates", "do": "依 gates 詢問 rendererLicense 與 onlineTtsConsent 並記錄。" },
+        { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 並記錄。" },
         {
           "id": "validate",
           "do": "pnpm run validate",
@@ -129,7 +121,7 @@
       "requires": {
         "projectStatus": ["script_generated", "producing", "ready_to_assemble", "completed"],
         "sceneStatus": ["draft", "assets_ready", "stale", "failed"],
-        "gates": ["onlineTtsConsent", "rendererLicense"]
+        "gates": ["onlineTtsConsent"]
       },
       "skipWhen": [
         "scene.locked == true（除非使用者明確要求）",
@@ -187,7 +179,6 @@
       "scope": "project",
       "requires": {
         "projectStatus": ["ready_to_assemble", "completed"],
-        "gates": ["rendererLicense"],
         "other": ["所有 scene 為 rendered 或 approved，且 inputHash 相符"]
       },
       "reads": [

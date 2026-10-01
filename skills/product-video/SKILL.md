@@ -1,6 +1,6 @@
 ---
 name: product-video
-description: 在使用者本機製作產品介紹影片：分析產品網址或原始碼、規劃分鏡與旁白、逐段產生語音與畫面、以 Remotion 或 HTML 擷取渲染，最後用 FFmpeg 合成。當使用者要做產品介紹影片、產品 demo 影片、宣傳短片，或目錄中有 video.project.json 並要求繼續、修改、重做某段、合成、翻譯影片時使用。
+description: 在使用者本機製作產品介紹影片：分析產品網址或原始碼、規劃分鏡與旁白、逐段產生語音與畫面並渲染，最後用 FFmpeg 合成。當使用者要做產品介紹影片、產品 demo 影片、宣傳短片，或目錄中有 video.project.json 並要求繼續、修改、重做某段、合成、翻譯影片時使用。
 ---
 
 # Product Video
@@ -46,7 +46,6 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    - 瀏覽器：已有 Chrome 或 Edge 就不需要其他動作；都沒有時，取得同意後執行 `pnpm exec playwright install chromium`。
    - 不使用系統管理員權限、不修改系統設定；安裝需要使用者點擊確認時，告訴他會看到什麼視窗、要按哪個按鈕。
 7. **Gates**：依 `schemas/workflow.json` 的 `gates`，用白話說明並取得確認：
-   - `rendererLicense`：例如「做影片的工具 Remotion，個人、3 人以下的公司或非營利組織可以免費使用；更大的公司需要購買授權。你屬於哪一種？」。使用者不符合免費條件且未購買授權時，改用 `html-capture`，並說明畫面效果相同。
    - `onlineTtsConsent`：例如「旁白語音會用微軟的線上語音服務產生，旁白文字會傳給微軟。可以嗎？不行的話可以改用電腦內建的語音或自己錄音。」。使用者不同意時，改選離線 provider 或 `manual`。
    以 `pnpm run state` 寫入結果。
 8. **驗證**：執行 `pnpm run validate`，通過後告知使用者專案已建立、資料夾在哪裡（用「文件 > acme-video」這種說法），並直接問他是否要開始分析產品（即 analyze 步驟），不必要求他輸入指令。

@@ -53,7 +53,7 @@ export function hashParts(project, scene, files) {
   const content = Object.fromEntries(Object.entries(scene).filter(([k]) => !HASH_EXCLUDED.has(k)))
   return [
     { label: 'scene', text: canonical(content) },
-    { label: 'project', text: canonical({ format: project.project.format, renderer: project.project.renderer }) },
+    { label: 'project', text: canonical({ format: project.project.format }) },
     ...files.map((file) => ({ label: `file:${file}`, file })),
   ]
 }

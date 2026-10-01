@@ -127,6 +127,6 @@ export const VIDEO_ENCODE = [
   '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'medium', '-crf', '20',
   '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
 ]
-/** Filter converting RGB frames (screenshots) to BT.709 limited range, matching VIDEO_ENCODE tags and Remotion's output. */
+/** Filter converting RGB frames (screenshots) to BT.709 limited range matching VIDEO_ENCODE tags. */
 export const RGB_TO_BT709 = 'scale=out_color_matrix=bt709:out_range=tv'
 export const AUDIO_ENCODE = ['-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-ac', '2']

@@ -78,7 +78,7 @@ export async function inputHash(root: FileSystemDirectoryHandle, project: VideoP
   const assets = await listFiles(root, `${dir}/assets`)
   const files = hashFiles(dir, scene, assets)
   const found = await Promise.all(files.map((f) => tryFile(root, f)))
-  const key = JSON.stringify([scene, project.project.format, project.project.renderer, files.map((f, i) => [f, found[i]?.size, found[i]?.lastModified])])
+  const key = JSON.stringify([scene, project.project.format, files.map((f, i) => [f, found[i]?.size, found[i]?.lastModified])])
   const cached = hashCache.get(key)
   if (cached) return cached
   const enc = new TextEncoder()

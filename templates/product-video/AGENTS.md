@@ -83,10 +83,9 @@ pnpm run state scene-003 --patch-file .tmp/patch.json
 
 | Gate | 何時需要 | 未通過時不得執行 |
 |---|---|---|
-| `rendererLicense` | `project.renderer` 為 `remotion` | `render:scene`、`assemble` |
 | `onlineTtsConsent` | TTS provider 為 `edge-tts`、`azure`、`openai`、`elevenlabs` | `tts` |
 
-要向使用者說明的內容、使用者拒絕時的處理方式，見 `schemas/workflow.json` 的 `gates`。確認結果以 `pnpm run state` 寫入 `project.rendererLicense` / `project.tts.consent`。
+要向使用者說明的內容、使用者拒絕時的處理方式，見 `schemas/workflow.json` 的 `gates`。確認結果以 `pnpm run state` 寫入 `project.tts.consent`。
 
 ## 6. Scene 狀態
 
@@ -110,4 +109,3 @@ draft → assets_ready → rendering → rendered → approved
 | `pnpm run capture <id>` | 擷取網頁畫面 |
 | `pnpm run render:scene <id>` | 渲染單一 scene |
 | `pnpm run assemble` | 依順序合成 `output/final.mp4` |
-| `pnpm run preview` | 開啟 Remotion Studio 預覽（僅 renderer 為 remotion） |

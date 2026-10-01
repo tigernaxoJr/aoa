@@ -17,10 +17,6 @@
       "height": 1080,
       "fps": 30
     },
-    "renderer": "remotion",
-    "rendererLicense": {
-      "acknowledged": false
-    },
     "tts": {
       "provider": "piper",
       "voice": "en_US-lessac-medium",

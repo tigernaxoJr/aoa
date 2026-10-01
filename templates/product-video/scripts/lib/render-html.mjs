@@ -1,4 +1,4 @@
-// html-capture renderer (SPEC §7.6): a page driven by one time variable, screenshotted frame by
+// Scene renderer (SPEC §7.6): a page driven by one time variable, screenshotted frame by
 // frame with Playwright and encoded by FFmpeg. No recordVideo: every frame is deterministic.
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'

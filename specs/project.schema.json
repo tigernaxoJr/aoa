@@ -53,7 +53,7 @@
       "type": "object",
       "$ref": "common.schema.json#/$defs/extensions",
       "unevaluatedProperties": false,
-      "required": ["id", "name", "sources", "language", "format", "renderer", "tts"],
+      "required": ["id", "name", "sources", "language", "format", "tts"],
       "properties": {
         "id": { "type": "string", "format": "uuid" },
         "name": { "type": "string", "minLength": 1, "maxLength": 200 },
@@ -73,21 +73,8 @@
         "format": { "$ref": "#/$defs/format" },
         "audio": { "$ref": "#/$defs/audio" },
         "captions": { "$ref": "#/$defs/captions" },
-        "renderer": {
-          "description": "SPEC §7.6。",
-          "enum": ["remotion", "html-capture"],
-          "default": "remotion"
-        },
-        "rendererLicense": { "$ref": "#/$defs/rendererLicense" },
         "tts": { "$ref": "#/$defs/tts" }
-      },
-      "allOf": [
-        {
-          "description": "選用 Remotion 時必須有授權確認紀錄（SPEC §7.6）。",
-          "if": { "properties": { "renderer": { "const": "remotion" } }, "required": ["renderer"] },
-          "then": { "required": ["rendererLicense"] }
-        }
-      ]
+      }
     },
     "sources": {
       "description": "至少提供一種產品來源。",
@@ -155,22 +142,6 @@
           }
         }
       }
-    },
-    "rendererLicense": {
-      "description": "Remotion 授權確認（SPEC §7.6）。acknowledged 為 false 時 Agent 不得渲染。",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["acknowledged"],
-      "properties": {
-        "acknowledged": { "type": "boolean" },
-        "tier": {
-          "description": "free-individual：個人／≤3 人營利組織／非營利；company-licensed：已購買公司授權。",
-          "enum": ["free-individual", "company-licensed"]
-        },
-        "acknowledgedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
-      },
-      "if": { "properties": { "acknowledged": { "const": true } } },
-      "then": { "required": ["tier", "acknowledgedAt"] }
     },
     "tts": {
       "description": "專案預設 TTS（SPEC §7.4），scene 可覆寫。",

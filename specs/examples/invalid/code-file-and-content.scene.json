@@ -62,7 +62,6 @@
     "inputHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "outputFile": "output/scene.mp4",
     "renderedAt": "2026-09-30T14:10:00Z",
-    "renderer": "remotion",
     "actualDurationSec": 6.2
   },
   "locked": false,

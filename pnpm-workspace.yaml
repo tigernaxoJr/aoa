@@ -3,7 +3,3 @@ allowBuilds:
   ffmpeg-static: true
   # Its preinstall is only `npx only-allow pnpm` (a dev guard); nothing to build.
   msedge-tts: false
-# Remotion is pinned to an exact release that can be newer than pnpm's minimumReleaseAge.
-minimumReleaseAgeExclude:
-  - remotion
-  - '@remotion/*'

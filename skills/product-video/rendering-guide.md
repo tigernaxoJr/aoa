@@ -13,7 +13,7 @@ pnpm run capture scene-003                         # 只有 web-capture / screen
 pnpm run state scene-003 --status assets_ready
 pnpm run state scene-003 --status rendering
 pnpm run render:scene scene-003                    # → output/scene.mp4
-pnpm run state scene-003 --rendered                # 寫入 inputHash、renderer、實際秒數
+pnpm run state scene-003 --rendered                # 寫入 inputHash、實際秒數
 pnpm run validate
 ```
 
@@ -61,19 +61,11 @@ pnpm run validate
 
 ## <a id="render"></a>5. 渲染器
 
-`pnpm run render:scene <id>` 依 `project.renderer` 選擇渲染器。兩者使用相同的版面與動畫定義（`src/lib/motion.js`），畫面一致。
-
-| | `remotion` | `html-capture` |
-|---|---|---|
-| 前置條件 | `rendererLicense` gate 已通過 | 無 |
-| 首次執行 | 打包 `src/`（快取於 `.tmp/remotion-bundle/`），並下載 Remotion 專用的瀏覽器 | 使用 Playwright 瀏覽器（與 capture 相同） |
-| 速度 | 較快（平行渲染） | 逐幀截圖，1080p 約每秒 5 幀 |
+`pnpm run render:scene <id>` 用 Playwright 瀏覽器（與 capture 相同）逐幀截圖，再以 FFmpeg 編碼。1080p 約每秒 5 幀，長的 scene 要先告訴使用者需要等幾分鐘。
 
 - 輸出一律是 H.264 + AAC 48 kHz 立體聲、BT.709。沒有旁白的 scene 也會有靜音音軌，合成時才能直接串接。
 - 渲染失敗時，既有的 `output/scene.mp4` 不會被刪除或覆蓋。
 - 轉場（`transitionIn`）、字幕與 BGM 不在這裡處理，而是在合成時處理。
-
-Remotion 無法下載瀏覽器時（例如離線），會改用 Playwright 的瀏覽器。仍然失敗時，告訴使用者可設定環境變數 `VIDEO_AGENT_BROWSER_EXECUTABLE` 指向 Chrome，或在取得同意後把 `project.renderer` 改為 `html-capture`。
 
 ## <a id="errors"></a>6. 失敗處理
 
@@ -81,7 +73,6 @@ Remotion 無法下載瀏覽器時（例如離線），會改用 Playwright 的�
 |---|---|---|---|
 | `durationSec is null and there is no narration audio` | 沒有旁白音檔 | 執行 `tts`，或設定 `durationSec` | `render` |
 | `… (run pnpm run capture) not found` | 缺擷取素材 | 執行 `capture` | `capture` |
-| `gate rendererLicense` | Remotion 授權尚未確認 | 依 gates 詢問使用者 | 不記錄，先處理 gate |
 | `no usable browser` | 找不到瀏覽器 | 告知使用者執行 `pnpm exec playwright install chromium` 或安裝 Chrome / Edge | `render` |
 | `ffmpeg failed: …` | 素材格式無法讀取 | 檢查該素材能否播放；請使用者提供其他格式 | `render` |
 | `… is not a readable video`（`state --rendered`） | 輸出檔損壞 | 重新渲染 | `render` |
@@ -90,7 +81,7 @@ Remotion 無法下載瀏覽器時（例如離線），會改用 Playwright 的�
 
 ## <a id="customize"></a>7. 客製外觀
 
-配色、字型、字級都在 `src/lib/motion.js` 的 `THEME` 與 `styles()`；Remotion 版面在 `src/SceneVideo.tsx`，html-capture 版面在 `src/html/player.js`。兩個渲染器都會用到的改動，要同時改這兩個檔案。
+配色、字型、字級都在 `src/lib/motion.js` 的 `THEME` 與 `styles()`；版面在 `src/html/player.js`。
 
 `src/` 不納入 `inputHash`，所以改了 `src/` 之後，已渲染的 scene 不會自動被標為過期。只有在使用者要求時才改 `src/`；改完後告訴使用者哪些 scene 需要重做，經同意後對這些 scene 執行 `pnpm run state <id> --status stale`，再依第 1 節重做。`approved` 或 `locked` 的 scene 必須由使用者明確指定才重做。
 

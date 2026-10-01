@@ -1,4 +1,4 @@
-// html-capture player (SPEC §7.6). Loaded by scenes/*/output/scene.html, which sets window.__PLAN__.
+// Scene player (SPEC §7.6). Loaded by scenes/*/output/scene.html, which sets window.__PLAN__.
 // Every visual is a function of one time variable: render-scene calls window.__seek(t) per frame
 // and screenshots the page. Video layers are pre-extracted JPEG frames, so seeking is exact.
 import { backgroundScale, codeOpacity, elementState, elementTransform, styles, visibleText } from '../lib/motion.js'
