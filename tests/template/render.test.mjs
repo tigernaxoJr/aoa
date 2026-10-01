@@ -6,6 +6,7 @@ import { cpSync, existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { afterEach, describe, test } from 'node:test'
+import { probeDuration } from '../../templates/product-video/scripts/lib/media.mjs'
 import { anchor, elementState, visibleText } from '../../templates/product-video/src/lib/motion.js'
 import { baseProject, baseScene, makeProject } from './helpers.mjs'
 
@@ -120,7 +121,8 @@ describe('render-scene', () => {
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
     if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
     assert.equal(r.code, 0, r.stderr)
-    const audioSec = Number(spawnSync(ffprobe, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', p.path('scenes/001-hook/assets/narration.mp3')], { encoding: 'utf8' }).stdout)
+    // Same ffprobe as the pipeline: versions disagree on MP3 length (newer ones drop encoder padding).
+    const audioSec = probeDuration(p.path('scenes/001-hook/assets/narration.mp3'))
     const expected = Math.round((audioSec + 0.5) * 24)
     const [, frames] = /(\d+) frames/.exec(r.stdout)
     assert.equal(Number(frames), expected, r.stdout)
