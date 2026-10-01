@@ -1,0 +1,16 @@
+{
+  "id": "scene-002",
+  "title": "動畫",
+  "purpose": "how-it-works",
+  "narration": {
+    "scriptFile": "script.md"
+  },
+  "visual": {
+    "type": "motion-graphic",
+    "description": "motion.file 必須是 JavaScript 模組",
+    "motion": { "file": "assets/motion.html" }
+  },
+  "durationSec": 3,
+  "status": "draft",
+  "locked": false
+}

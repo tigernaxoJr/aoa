@@ -79,7 +79,11 @@ export function ffmpegStream(args, { cwd } = {}) {
       child.stdin.end()
       if ((await exited) !== 0) throw failure()
     },
-    kill: () => child.kill(),
+    // ffmpeg blocked on an empty stdin ignores SIGTERM; the output is discarded anyway.
+    kill: () => {
+      child.stdin.destroy()
+      child.kill('SIGKILL')
+    },
   }
 }
 

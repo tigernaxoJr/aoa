@@ -10,6 +10,7 @@ import {
   styles,
   TEXT_MAX_LINES,
   TEXT_SIZE,
+  THEME,
   visibleText,
 } from '../lib/motion.js'
 
@@ -50,6 +51,9 @@ if (bg.kind === 'image' || bg.kind === 'video') {
   bgNode = node('img', { ...css.fill, objectFit: bg.fit }, stage)
   if (bg.kind === 'image') setSrc(bgNode, bg.src)
 }
+// A motion module (rendering-guide.md#motion) draws into its own full-frame layer under the overlays.
+let motionSeek = null
+if (bg.kind === 'module') bgNode = node('div', { ...css.fill, overflow: 'hidden' }, stage)
 if (bg.kind === 'code') {
   bgNode = node('div', css.code, stage)
   const marked = new Set(bg.highlightLines)
@@ -103,6 +107,8 @@ window.__seek = async (t) => {
     bgNode.style.transform = `scale(${backgroundScale(bg, t, plan.durationSec)})`
   } else if (bg.kind === 'code') {
     bgNode.style.opacity = String(codeOpacity(t))
+  } else if (bg.kind === 'module') {
+    await motionSeek(t)
   }
   for (const { item, box, inner } of overlays) {
     const state = elementState(item, t)
@@ -128,6 +134,12 @@ const FONTS = [
 window.__ready = (async () => {
   for (const [family, file, weight] of FONTS) {
     document.fonts.add(await new FontFace(family, `url(${new URL(file, import.meta.url)})`, { weight }).load())
+  }
+  if (bg.kind === 'module') {
+    const { default: setup } = await import(bg.src)
+    if (typeof setup !== 'function') throw new Error('motion module must export default setup(ctx)')
+    motionSeek = await setup({ root: bgNode, width, height, fps, durationSec: plan.durationSec, theme: THEME })
+    if (typeof motionSeek !== 'function') throw new Error('motion module setup(ctx) must return seek(t)')
   }
   for (const o of overlays) if (o.item.type === 'text') fitText(o)
   while (pending.size) await Promise.all(pending)

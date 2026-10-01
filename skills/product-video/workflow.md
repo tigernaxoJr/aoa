@@ -136,15 +136,17 @@ pnpm run state project --status analyzed
 
    估算方式：每個要講的重點約 6–10 秒，hook 與 CTA 各約 4 秒；以 [script-guide.md](script-guide.md#structure) 的 scene 數對照表為準。對象越不懂技術、風格越活潑，越偏向短版。
 4. **太趕時怎麼處理**：「製作時如果某一段太趕（例如操作還沒做完就換下一段），要讓我自己把那段稍微拉長、事後告訴你，還是每次先問你？」寫入 `project.durationAdjust`（`auto` / `ask`；沒回答就是 `ask`）。規則見 [rendering-guide.md#pacing](rendering-guide.md#pacing)。
+5. **自訂動畫**：「有些段落我可以自己寫程式畫動畫（例如資料流動、3D 產品展示、粒子特效），比單純的文字和圖片生動，但每段要花比較多的 AI 用量，也比較慢。要全部放行、都不要，還是規劃分鏡時一段一段問你？」寫入 `project.customMotion`（`allow` / `deny` / `ask`；沒回答就是 `ask`）。規則見 [script-guide.md#custom-motion](script-guide.md#custom-motion)。
 
-使用者確認後，把結果寫入專案（`project.targetAudience`、`project.style`、`project.format.targetDurationSec`、`project.durationAdjust`），用 `pnpm run state project --patch-file <檔案>`：
+使用者確認後，把結果寫入專案（`project.targetAudience`、`project.style`、`project.format.targetDurationSec`、`project.durationAdjust`、`project.customMotion`），用 `pnpm run state project --patch-file <檔案>`：
 
 ```json
 [
   { "op": "replace", "path": "/project/targetAudience", "value": "中小企業老闆，不懂技術" },
   { "op": "add", "path": "/project/style", "value": "活潑社群短片：節奏快、字大" },
   { "op": "replace", "path": "/project/format/targetDurationSec", "value": 30 },
-  { "op": "add", "path": "/project/durationAdjust", "value": "auto" }
+  { "op": "add", "path": "/project/durationAdjust", "value": "auto" },
+  { "op": "add", "path": "/project/customMotion", "value": "ask" }
 ]
 ```
 

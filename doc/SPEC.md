@@ -246,7 +246,7 @@ my-video-project/
 | 欄位 | 說明 |
 |---|---|
 | `purpose` | `hook` · `problem` · `solution` · `feature` · `how-it-works` · `benefit` · `social-proof` · `cta` · `custom` |
-| `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純動畫，無擷取素材）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
+| `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純動畫，無擷取素材；`visual.motion.file` 可指定 Agent 撰寫的動畫模組，預設匯出 `setup(ctx)` 並回傳 `seek(t)`，受 `project.customMotion` 限制）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
 | `narration.provider` | TTS 提供者，省略時沿用 `project.tts.provider`。見 §7.4 |
 | `durationSec` | `null` 表示由 TTS 音檔長度決定（音長 + 0.5s 緩衝）；有值則為強制秒數。幀數一律由 `durationSec × fps` 推得，**不存幀數**。 |
 | `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format`（`captions.mode` 為 `burn` 時連同 `captions`）計算的 SHA-256。與目前內容不符即視為過期。 |

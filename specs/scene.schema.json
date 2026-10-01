@@ -84,7 +84,7 @@
       "required": ["type", "description"],
       "properties": {
         "type": {
-          "description": "web-capture：Playwright 錄製網頁操作；screenshot：靜態截圖 + 動效；motion-graphic：純動畫；code：程式碼展示；user-asset：使用者提供的影片或圖片。",
+          "description": "web-capture：Playwright 錄製網頁操作；screenshot：靜態截圖 + 動效；motion-graphic：純動畫（可用 motion 指定自寫的動畫模組）；code：程式碼展示；user-asset：使用者提供的影片或圖片。",
           "enum": ["web-capture", "screenshot", "motion-graphic", "code", "user-asset"]
         },
         "description": {
@@ -95,6 +95,7 @@
         "capture": { "$ref": "#/$defs/capture" },
         "code": { "$ref": "#/$defs/code" },
         "asset": { "$ref": "#/$defs/userAsset" },
+        "motion": { "$ref": "#/$defs/motion" },
         "elements": {
           "description": "疊加在畫面上的元素。",
           "type": "array",
@@ -119,6 +120,11 @@
         {
           "if": { "properties": { "type": { "const": "user-asset" } } },
           "then": { "required": ["asset"] }
+        },
+        {
+          "description": "motion 只用於 motion-graphic。",
+          "if": { "required": ["motion"] },
+          "then": { "properties": { "type": { "const": "motion-graphic" } } }
         }
       ]
     },
@@ -203,6 +209,15 @@
         }
       },
       "oneOf": [{ "required": ["file"] }, { "required": ["content"] }]
+    },
+    "motion": {
+      "description": "motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL 等），取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file"],
+      "properties": {
+        "file": { "description": "ES module，預設匯出 setup(ctx)，回傳 seek(t)。通常放在 assets/motion.js。", "$ref": "common.schema.json#/$defs/relPath", "pattern": "\\.m?js$" }
+      }
     },
     "userAsset": {
       "type": "object",

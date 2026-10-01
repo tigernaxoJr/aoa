@@ -1,0 +1,20 @@
+{
+  "id": "scene-002",
+  "title": "資料怎麼流動",
+  "purpose": "how-it-works",
+  "narration": {
+    "scriptFile": "script.md"
+  },
+  "visual": {
+    "type": "motion-graphic",
+    "description": "三個節點依序亮起，粒子沿連線流向雲端圖示",
+    "motion": { "file": "assets/motion.js" },
+    "elements": [
+      { "type": "image", "src": "@/assets/svg/cloud.svg", "at": 1.2, "position": "right" },
+      { "type": "text", "content": "即時同步", "at": 2, "position": "top" }
+    ]
+  },
+  "durationSec": null,
+  "status": "draft",
+  "locked": false
+}

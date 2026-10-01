@@ -66,11 +66,65 @@ pnpm run render:scene scene-001 scene-002 scene-003   # 可加 --jobs 2 限制�
 |---|---|---|
 | `web-capture` | 網頁操作錄影，完整顯示在畫面內 | `assets/capture.mp4`（`pnpm run capture`） |
 | `screenshot` | 截圖填滿畫面，整段緩慢放大 | `assets/capture.png`（`pnpm run capture`） |
-| `motion-graphic` | 深色漸層背景，畫面由 `elements` 構成 | 無 |
+| `motion-graphic` | 深色漸層背景，畫面由 `elements` 構成；有 `motion` 時改由動畫模組畫出（[#motion](#motion)） | 無；有 `motion` 時為 `motion.file` |
 | `code` | 程式碼面板置中；`highlightLines` 以外的行會變淡 | `code.file` 或 `code.content` |
 | `user-asset` | 使用者的圖片或影片，依 `fit`（`contain` / `cover`）縮放 | `asset.src` |
 
 影片素材（錄影、`user-asset` 影片、影片元素）比它應在畫面上的時間短時，停在最後一格；比較長時截掉。`trimStartSec` / `trimEndSec` 先裁切，再套用上述規則。影片素材的原聲不會使用，scene 的聲音只有旁白。
+
+### <a id="motion"></a>自訂動畫模組 `visual.motion`
+
+`motion-graphic` 可以用你寫的 JavaScript 模組畫整個背景，取代預設漸層；`elements` 仍疊在上面。能不能用、要不要先問，依 `project.customMotion`（[script-guide.md#custom-motion](script-guide.md#custom-motion)）。
+
+```json
+"visual": { "type": "motion-graphic", "description": "粒子沿連線流向雲端", "motion": { "file": "assets/motion.js" } }
+```
+
+模組放在該 scene 的 `assets/`（例如 `assets/motion.js`），預設匯出 `setup(ctx)`，回傳 `seek(t)`：
+
+```js
+export default async function setup({ root, width, height, fps, durationSec, theme }) {
+  // root：鋪滿畫面的 <div>，把 <svg>、<canvas> 等放進去。theme：配色與字型（src/lib/motion.js 的 THEME）
+  // 在這裡建立所有節點、載入所有圖片（await 完成），之後不再載入任何東西
+  return (t) => {
+    // t：scene 內秒數。依 t 畫出這一格；可以是 async
+  }
+}
+```
+
+渲染器對每一格呼叫 `seek(t)` 再截圖，所以**畫面只能由 `t` 決定**：
+
+- 不用 `requestAnimationFrame`、`setTimeout`、`Date.now()`、`performance.now()`、CSS animation / transition（截圖時會被停用），也不讓函式庫自己跑時間。
+- 隨機一律用固定種子的亂數（例如自寫 mulberry32），粒子位置用 `t` 直接算出來，不要逐格累加。
+- 素材用相對於模組的網址載入：`new URL('./logo.png', import.meta.url)`、`new URL('../../../assets/svg/cloud.svg', import.meta.url)`。不從網路（CDN、外部圖片）載入任何東西。
+- 文字用內附字型 `theme.fontFamily`、`theme.monoFamily`；畫面上的主要標題仍建議用 `elements` 的文字元素（會自動排版、縮放）。
+- 沒有聲音：scene 的聲音只有旁白，不用 Web Audio，也不要做需要音效才成立的畫面。
+- 單一畫面不要過重：渲染器逐格截圖，Three.js / shader 在沒有顯示卡的電腦上很慢；粒子數千顆以內，避免後製特效疊很多層。
+
+可用的做法：
+
+| 做法 | 適合 | 寫法重點 |
+|---|---|---|
+| SVG | 圖示、流程圖、線條描繪、圖表 | 在 `root` 建 `<svg>`；`seek` 依 `t` 設定屬性。線條描繪用 `stroke-dasharray` + `stroke-dashoffset` |
+| Canvas 2D | 粒子、大量圖形、數字跳動 | `seek` 每次清空重畫整張 |
+| GSAP | 多段編排的動畫（依序進場、彈性緩動） | `const tl = gsap.timeline({ paused: true })` 編排好，`seek` 裡 `tl.seek(t)` |
+| Three.js | 3D 物件、產品展示、空間感 | `new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })`，`seek` 依 `t` 設定位置與相機後 `renderer.render(scene, camera)` |
+| GLSL shader | 光線流動、漸層波紋、背景質感 | Three.js 的 `ShaderMaterial` 或原生 WebGL，把 `t` 傳進 uniform（例如 `uTime`） |
+
+GSAP 與 Three.js 不在範本裡，要用時先在專案安裝（`pnpm add gsap`、`pnpm add three`，依硬性規則 11 先用白話取得同意），模組裡直接 `import { gsap } from 'gsap'`、`import * as THREE from 'three'`、`import { OrbitControls } from 'three/addons/controls/OrbitControls.js'`，渲染器會從專案的 `node_modules` 提供，不需要網路。其他函式庫不支援 bare import；需要時把單一 ES module 檔放在 `assets/` 以相對路徑匯入。
+
+寫完先渲染這一段確認畫面（短的 scene 可以先把 `durationSec` 設短測試，確認後改回）。`motion.js` 與 scene `assets/` 內的檔案都納入 `inputHash`，修改後該 scene 會自動變成需要重做；模組匯入的共用檔案（`@/assets/` 下）不在內，改了要自己把用到它的 scene 標為 `stale`。
+
+### <a id="svg"></a>SVG 插圖（可存檔重複使用）
+
+需要圖示、示意圖、插圖而產品裡沒有現成圖檔時，可以自己寫 SVG：
+
+- 存成檔案再引用，不要每段重畫。只用在一段的放在該 scene 的 `assets/`；會重複使用的（品牌風格的圖示、背景圖形）放在專案 `assets/svg/`，檔名用說明用途的英文（`cloud-sync.svg`、`check-circle.svg`），以 `@/assets/svg/<檔名>` 引用。畫新的之前先看 `assets/svg/` 有沒有能直接用的。
+- 用法：`elements` 的 `image`（`"src": "@/assets/svg/cloud-sync.svg"`），或 `user-asset` 的 `image` 背景，或在動畫模組中載入、內嵌後逐格控制。
+- 檔案本身要能單獨顯示：寫 `xmlns="http://www.w3.org/2000/svg"`、`viewBox`，以及 `width`、`height`（決定元素顯示大小）。
+- 檔案內不放 `<script>`、SMIL / CSS 動畫、外部連結與外部字型；要動就用元素的 `animation`，或在動畫模組中依 `t` 控制。文字盡量轉成路徑或交給 `elements`，避免字型不同。
+- 配色沿用 `THEME`（深色背景、白字、強調色 `#38bdf8`），同一部影片的圖示線條粗細、圓角一致。
+- 繪製新的插圖算[自訂動畫](script-guide.md#custom-motion)，受 `project.customMotion` 限制；重複使用已存的 SVG 與簡單圖形不受限。
 
 ## <a id="elements"></a>4. 疊加元素 `visual.elements`
 
@@ -105,6 +159,8 @@ pnpm run render:scene scene-001 scene-002 scene-003   # 可加 --jobs 2 限制�
 | `… (run pnpm run capture) not found` | 缺擷取素材 | 執行 `capture` | `capture` |
 | `gate productLogin: …` | 產品要登入，還沒登入或登入已過期 | 依 [workflow.md#login](workflow.md#login) 請使用者登入後重新 capture；不算失敗，不記 `--failed` | — |
 | `no usable browser` | 找不到瀏覽器 | 告知使用者執行 `pnpm exec playwright install chromium` 或安裝 Chrome / Edge | `render` |
+| `player did not start: …`、`player error: …` | 動畫模組（`visual.motion`）載入或執行出錯，訊息為瀏覽器中的錯誤 | 修正模組後重新渲染；同一錯誤修不好時改用 `elements` 排版並告訴使用者 | `render` |
+| `visual.motion.file not found` | 動畫模組檔不存在 | 寫好模組，或移除 `visual.motion` | `render` |
 | `ffmpeg failed: …` | 素材格式無法讀取 | 檢查該素材能否播放；請使用者提供其他格式 | `render` |
 | `… is not a readable video`（`state --rendered`） | 輸出檔損壞 | 重新渲染 | `render` |
 

@@ -106,7 +106,8 @@ function background(visual, resolve, need, sceneDir, duration) {
       if (asset.kind === 'image') return { kind: 'image', file, fit: asset.fit ?? 'contain', kenBurns: false }
       return { kind: 'video', file, fit: asset.fit ?? 'contain', trimStart: asset.trimStartSec ?? 0, trimEnd: asset.trimEndSec ?? null, span: duration }
     }
-    default: // motion-graphic
+    default: // motion-graphic: the agent's own animation module, or the theme gradient
+      if (visual.motion) return { kind: 'module', file: need(resolve(visual.motion.file), 'visual.motion.file') }
       return { kind: 'gradient' }
   }
 }

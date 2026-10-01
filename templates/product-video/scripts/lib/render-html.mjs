@@ -1,6 +1,6 @@
 // Scene renderer (SPEC §7.6): a page driven by one time variable, screenshotted frame by
 // frame with Playwright and encoded by FFmpeg. No recordVideo: every frame is deterministic.
-import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { launchBrowser } from './browser.mjs'
 import { AUDIO_ENCODE, RGB_TO_BT709, VIDEO_ENCODE, ffmpeg, ffmpegStream } from './media.mjs'
@@ -34,7 +34,8 @@ export async function renderHtml({ root, plan, work, server, out, log, subtitles
     html,
     `<!doctype html>
 <html><head><meta charset="utf-8"><title>${plan.id}</title>
-<style>html,body{margin:0;padding:0;background:#000;overflow:hidden}</style></head>
+<style>html,body{margin:0;padding:0;background:#000;overflow:hidden}</style>
+<script type="importmap">${JSON.stringify({ imports: importMap(root, url) })}</script></head>
 <body><div id="stage"></div>
 <script>window.__PLAN__ = ${JSON.stringify(pagePlan).replace(/</g, '\\u003c')}</script>
 <script type="module" src="${url(join(root, 'src', 'html', 'player.js'))}"></script>
@@ -71,7 +72,7 @@ export async function renderHtml({ root, plan, work, server, out, log, subtitles
     page.on('pageerror', (err) => errors.push(err.message))
     await page.goto(url(html))
     await page.waitForFunction(() => window.__ready, null, { timeout: 30_000 }).catch(() => {
-      throw new Error(`player did not start${errors.length ? `: ${errors.join('; ')}` : ''}`)
+      throw new Error(`player did not start${errors.length ? `: ${[...new Set(errors)].join('; ')}` : ''}`)
     })
     await page.evaluate(() => window.__ready)
     const stage = page.locator('#stage')
@@ -90,6 +91,27 @@ export async function renderHtml({ root, plan, work, server, out, log, subtitles
   } finally {
     await browser.close()
   }
+}
+
+/**
+ * Bare imports a motion module may use (rendering-guide.md#motion), for the animation libraries
+ * installed in the project. Everything is served from the project, so rendering needs no network.
+ */
+const LIBRARIES = {
+  gsap: { gsap: 'index.js', 'gsap/': '.' },
+  three: { three: 'build/three.module.js', 'three/addons/': 'examples/jsm' },
+}
+
+function importMap(root, url) {
+  const imports = {}
+  for (const [name, entries] of Object.entries(LIBRARIES)) {
+    const dir = join(root, 'node_modules', name)
+    if (!existsSync(join(dir, 'package.json'))) continue
+    for (const [spec, path] of Object.entries(entries)) {
+      imports[spec] = spec.endsWith('/') ? `${url(join(dir, path))}/` : url(join(dir, path))
+    }
+  }
+  return imports
 }
 
 /** Drops local-only fields before a layer is embedded in the page. */

@@ -37,6 +37,10 @@ export interface VideoProjectJson {
      */
     durationAdjust?: "auto" | "ask";
     /**
+     * 自訂動畫（Agent 撰寫 visual.motion 動畫模組或繪製新的 SVG 插圖，會耗用較多 token）：allow = 全部放行；deny = 不使用；ask = 分鏡審閱時逐段由使用者決定。
+     */
+    customMotion?: "allow" | "deny" | "ask";
+    /**
      * 影片風格與語氣（例如：專業簡報、活潑社群短片），與使用者確認後填寫。
      */
     style?: string;
@@ -172,7 +176,7 @@ export interface SceneJson {
    */
   visual: {
     /**
-     * web-capture：Playwright 錄製網頁操作；screenshot：靜態截圖 + 動效；motion-graphic：純動畫；code：程式碼展示；user-asset：使用者提供的影片或圖片。
+     * web-capture：Playwright 錄製網頁操作；screenshot：靜態截圖 + 動效；motion-graphic：純動畫（可用 motion 指定自寫的動畫模組）；code：程式碼展示；user-asset：使用者提供的影片或圖片。
      */
     type: "web-capture" | "screenshot" | "motion-graphic" | "code" | "user-asset";
     /**
@@ -242,6 +246,15 @@ export interface SceneJson {
       trimStartSec?: number;
       trimEndSec?: number;
       fit?: "contain" | "cover";
+    };
+    /**
+     * motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL 等），取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。
+     */
+    motion?: {
+      /**
+       * ES module，預設匯出 setup(ctx)，回傳 seek(t)。通常放在 assets/motion.js。
+       */
+      file: string;
     };
     /**
      * 疊加在畫面上的元素。

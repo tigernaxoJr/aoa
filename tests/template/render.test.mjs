@@ -163,6 +163,58 @@ describe('render-scene', () => {
     assert.ok(long.top > 0 && long.bottom < 359 && long.left > 0 && long.right < 639, 'long text stays inside the frame')
   })
 
+  test('a motion module draws the background frame by frame; shared SVGs overlay it', async (t) => {
+    const scene = baseScene('scene-001', {
+      durationSec: 1.5,
+      visual: {
+        type: 'motion-graphic',
+        description: 'moving square',
+        motion: { file: 'assets/motion.js' },
+        elements: [{ type: 'image', src: '@/assets/svg/mark.svg', at: 0, animation: 'none', position: 'bottom-right' }],
+      },
+    })
+    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
+    cpSync(templateSrc, p.path('src'), { recursive: true })
+    // Blue canvas with a white 40 px square that moves 200 px per second; driven only by seek(t).
+    p.write('scenes/001-hook/assets/motion.js', `export default function setup({ root, width, height }) {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  root.append(canvas)
+  const g = canvas.getContext('2d')
+  return (t) => {
+    g.fillStyle = '#0000ff'
+    g.fillRect(0, 0, width, height)
+    g.fillStyle = '#ffffff'
+    g.fillRect(100 + t * 200, 40, 40, 40)
+  }
+}
+`)
+    p.write('assets/svg/mark.svg', '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#00ff00"/></svg>')
+    const r = await p.runAsync('render-scene.mjs', ['scene-001'])
+    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
+    assert.equal(r.code, 0, r.stderr)
+    const out = p.path('scenes/001-hook/output/scene.mp4')
+
+    near(pixel(out, 0.1, 20, 340), [0, 0, 255], 'the module replaces the gradient')
+    const early = whiteBox(out, 0.25)
+    const late = whiteBox(out, 1.0)
+    assert.ok(Math.abs(early.left - 150) <= 3, `square at 0.25 s starts at x=${early.left}`)
+    assert.ok(Math.abs(late.left - 300) <= 3, `square at 1.0 s starts at x=${late.left}`)
+    near(pixel(out, 0.5, 560, 300), [0, 255, 0], 'SVG element in the bottom-right corner')
+  })
+
+  test('a motion module that does not return seek(t) fails the render', async (t) => {
+    const scene = baseScene('scene-001', { durationSec: 0.5, visual: { type: 'motion-graphic', description: 'x', motion: { file: 'assets/motion.js' } } })
+    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
+    cpSync(templateSrc, p.path('src'), { recursive: true })
+    p.write('scenes/001-hook/assets/motion.js', 'export default function setup() {}\n')
+    const r = await p.runAsync('render-scene.mjs', ['scene-001'])
+    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
+    assert.equal(r.code, 1)
+    assert.match(r.stderr, /must return seek\(t\)/)
+  })
+
   test('duration follows the narration plus 0.5 s', async (t) => {
     const scene = baseScene('scene-001', {
       visual: { type: 'code', description: 'code', code: { language: 'js', content: 'const a = 1\nconsole.log(a)\n', highlightLines: [2] } },

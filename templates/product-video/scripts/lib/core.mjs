@@ -14,11 +14,12 @@ export function canonical(value) {
   return JSON.stringify(value)
 }
 
-/** Project-relative paths a scene's content refers to (script, code file, asset, element sources). */
+/** Project-relative paths a scene's content refers to (script, code file, asset, motion module, element sources). */
 export function referencedPaths(scene) {
   return [
     scene.narration?.scriptFile ?? 'script.md',
     scene.visual?.code?.file,
+    scene.visual?.motion?.file,
     scene.visual?.asset?.src,
     ...(scene.visual?.elements ?? []).map((el) => el.src),
   ].filter(Boolean)

@@ -1,0 +1,17 @@
+{
+  "id": "scene-002",
+  "title": "程式碼",
+  "purpose": "how-it-works",
+  "narration": {
+    "scriptFile": "script.md"
+  },
+  "visual": {
+    "type": "code",
+    "description": "motion 只能用在 motion-graphic",
+    "code": { "language": "js", "content": "run()" },
+    "motion": { "file": "assets/motion.js" }
+  },
+  "durationSec": 3,
+  "status": "draft",
+  "locked": false
+}
