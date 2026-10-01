@@ -32,12 +32,6 @@
         "position": "bottom"
       }
     },
-    "renderer": "remotion",
-    "rendererLicense": {
-      "acknowledged": true,
-      "tier": "free-individual",
-      "acknowledgedAt": "2026-09-30T13:00:00Z"
-    },
     "tts": {
       "provider": "edge-tts",
       "consent": {

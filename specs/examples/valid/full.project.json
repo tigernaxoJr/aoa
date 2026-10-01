@@ -6,6 +6,7 @@
     "name": "Product Launch Demo",
     "sources": {
       "productUrl": "https://example.com",
+      "requiresLogin": true,
       "sourceCodePath": "../my-product",
       "description": "使用者補充的產品說明",
       "referenceVideoUrl": null
@@ -31,12 +32,6 @@
         "fontSize": 48,
         "position": "bottom"
       }
-    },
-    "renderer": "remotion",
-    "rendererLicense": {
-      "acknowledged": true,
-      "tier": "free-individual",
-      "acknowledgedAt": "2026-09-30T13:00:00Z"
     },
     "tts": {
       "provider": "edge-tts",

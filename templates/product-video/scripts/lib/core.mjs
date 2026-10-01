@@ -53,7 +53,8 @@ export function hashParts(project, scene, files) {
   const content = Object.fromEntries(Object.entries(scene).filter(([k]) => !HASH_EXCLUDED.has(k)))
   return [
     { label: 'scene', text: canonical(content) },
-    { label: 'project', text: canonical({ format: project.project.format, renderer: project.project.renderer }) },
+    // Burned captions are drawn when the scene renders, so their settings belong to the scene too.
+    { label: 'project', text: canonical({ format: project.project.format, ...(project.project.captions?.mode === 'burn' && { captions: project.project.captions }) }) },
     ...files.map((file) => ({ label: `file:${file}`, file })),
   ]
 }
@@ -70,7 +71,7 @@ export function hashFiles(sceneDir, scene, assetFiles) {
 
 /**
  * Suggests the next agent command from the project status and per-scene facts
- * ({ id, status, outdated, locked, error }). Shared by `npm run status` and the Web UI.
+ * ({ id, status, outdated, locked, error }). Shared by `pnpm run status` and the Web UI.
  */
 export function suggestNext(project, scenes, errors = []) {
   if (errors.length) return { command: null, reason: 'fix the validation errors first' }

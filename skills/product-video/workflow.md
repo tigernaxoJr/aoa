@@ -21,9 +21,9 @@
 1. 讀取頁面文字：首頁、功能頁、定價頁、關於頁（若有連結）。只讀使用者給的網域，不追到第三方網站。
 2. 擷取截圖作為分析與後續素材：
    ```bash
-   npm run capture -- --url <網址> --out brief/screens/
+   pnpm run capture --url <網址> --out brief/screens/
    ```
-   會輸出整頁截圖與首屏截圖。需要登入的頁面，請使用者自行登入後再擷取，或改用使用者提供的截圖。
+   會輸出整頁截圖、首屏截圖、頁面文字，以及 `<slug>.elements.txt`：頁面上可見的標題、按鈕、連結、輸入框與它們的 selector，寫分鏡時用來挑選要 highlight 的元素（見 [script-guide.md#highlight](script-guide.md#highlight)）。`sources.requiresLogin` 為 true 時，擷取前先依 [login](#login) 請使用者自己登入；擷取時出現 `gate productLogin`（被導到登入頁）也一樣。
 
 **產品原始碼**（`sources.sourceCodePath`，唯讀）
 
@@ -115,13 +115,77 @@
 
    `pacing`：`slow`（平均鏡頭 > 4 秒）、`medium`（2.5–4 秒）、`fast`（< 2.5 秒）。只記錄從影格與音訊實際觀察到的特徵。
 
-### 完成
+### <a id="confirm"></a>完成：和使用者確認對象、風格與長度（checkpoint）
 
 ```bash
-npm run state -- project --status analyzed
+pnpm run state project --status analyzed
 ```
 
-向使用者摘要 brief 的一句話定位、核心功能與不確定處，並建議下一步 `/video-storyboard`。
+寫分鏡前**必須停下**，用白話向使用者呈現：
+
+1. **產品摘要**：一句話定位、核心功能、不確定處。
+2. **對象與風格**：init 時的設定是否仍合適；分析後有更好的建議就提出（例如「產品偏技術，建議對象改成開發者、風格用操作教學」）。
+3. **建議長度**：依內容估算，並說明理由，給 2–3 個選項：
+
+   ```text
+   要講的重點：痛點 1 個、核心功能 3 個、CTA
+   → 精簡版 30 秒：hook → 產品介紹 → 最重要的 1 個功能 → CTA
+   → 標準版 45 秒（建議）：hook → 痛點 → 產品介紹 → 2 個功能 → CTA
+   → 完整版 75 秒：再加上操作步驟與第 3 個功能
+   ```
+
+   估算方式：每個要講的重點約 6–10 秒，hook 與 CTA 各約 4 秒；以 [script-guide.md](script-guide.md#structure) 的 scene 數對照表為準。對象越不懂技術、風格越活潑，越偏向短版。
+4. **太趕時怎麼處理**：「製作時如果某一段太趕（例如操作還沒做完就換下一段），要讓我自己把那段稍微拉長、事後告訴你，還是每次先問你？」寫入 `project.durationAdjust`（`auto` / `ask`；沒回答就是 `ask`）。規則見 [rendering-guide.md#pacing](rendering-guide.md#pacing)。
+
+使用者確認後，把結果寫入專案（`project.targetAudience`、`project.style`、`project.format.targetDurationSec`、`project.durationAdjust`），用 `pnpm run state project --patch-file <檔案>`：
+
+```json
+[
+  { "op": "replace", "path": "/project/targetAudience", "value": "中小企業老闆，不懂技術" },
+  { "op": "add", "path": "/project/style", "value": "活潑社群短片：節奏快、字大" },
+  { "op": "replace", "path": "/project/format/targetDurationSec", "value": 30 },
+  { "op": "add", "path": "/project/durationAdjust", "value": "auto" }
+]
+```
+
+確認後才進入 `/video-storyboard`。
+
+---
+
+## <a id="login"></a>login：登入產品網站（gate productLogin）
+
+產品網址要登入才看得到（`sources.requiresLogin: true`，或 capture 輸出 `gate productLogin`）時使用。使用者自己在一個瀏覽器視窗裡登入，**你不問、不看、不保存帳號密碼**，也不讀取 `.auth/`。
+
+### 1. 開視窗前先說明（一次說完，等使用者回「好」）
+
+1. **錄影會拍到什麼**：「錄影會拍到登入後畫面上的內容，例如客戶名稱、email、金額。如果有不想公開的資料，建議用展示用的帳號；或者錄影時我可以把那些地方換成示意資料，會先跟你確認。」（換成示意資料的做法同 [script-guide.md#demo-data](script-guide.md#demo-data)，需要 `domEditConsent`。）
+2. **接下來會發生什麼**：
+   > 「我會打開一個新的瀏覽器視窗。為了安全，它和你平常用的瀏覽器分開，所以要再登入一次。視窗上方可能寫著『Chrome 正受到自動測試軟體控制』，這是正常的。請像平常一樣登入（需要手機驗證碼也照常輸入），帳號密碼只在那個視窗裡輸入，我看不到。畫面下方的藍色提示變成綠色『已經登入了』之後，關掉那個視窗就好。」
+
+### 2. 執行
+
+```bash
+pnpm run login            # 預設打開 sources.productUrl；也可給網址：pnpm run login https://app.example.com
+```
+
+指令會一直等到使用者關掉視窗（最多 30 分鐘），執行時間長是正常的。不要提醒使用者回終端機按任何鍵。
+
+| 輸出 | 意思 | 接著 |
+|---|---|---|
+| `login: signed in` | 登入成功並已保存 | 告訴使用者「登入好了」，繼續原本的步驟 |
+| `… no sign-in page was seen; ask the user …` | 有保存，但沒看到登入頁（有些網站在首頁直接登入） | 問使用者剛才有沒有登入成功；有就繼續，capture 若再出現 `gate productLogin` 就重新登入一次 |
+| `closed before the user signed in` | 沒有登入就關了視窗 | 問使用者要再試一次，還是改用他提供的截圖或錄影 |
+| `no usable browser` | 找不到瀏覽器 | 見 SKILL §2 安裝瀏覽器 |
+
+### 3. 登入過期
+
+capture 輸出 `gate productLogin: … the saved sign-in has expired` 時，不要顯示技術訊息，只說：「登入好像過期了，我再開一次視窗，麻煩你重新登入。」再從第 2 步執行。這不算 scene 失敗，不要用 `--failed` 記錄。
+
+### 4. 做完後
+
+合成完成後問使用者：「要不要清除剛才保存的登入資料？之後要重做影片時，再登入一次就好。」建議清除；使用者同意就執行 `pnpm run login --clear`。
+
+使用者不想登入時：只擷取不需登入的公開頁面，或請他提供截圖、錄影（`visual.type: user-asset`）。
 
 ---
 
@@ -132,7 +196,7 @@ npm run state -- project --status analyzed
 ### 1. 找出變更
 
 ```bash
-npm run status
+pnpm run status
 ```
 
 依變更類型決定要做什麼：
@@ -140,8 +204,8 @@ npm run status
 | 變更 | 影響 | 處理 |
 |---|---|---|
 | `script.md`、scene 的聲音或語速 | 該 scene 旁白與時長 | 重做 tts → render |
-| `visual.*`、`durationSec`、scene 素材 | 該 scene 畫面 | 重做 capture（若 capture 設定變了）→ render |
-| `project.format`、`project.renderer` | 所有 scene | 全部 render（旁白不必重做，除非 TTS 設定也變） |
+| `visual.*`（含 `capture.actions` 的 script 檔）、`durationSec`、scene 素材 | 該 scene 畫面 | 重做 capture（若 capture 設定變了）→ render |
+| `project.format` | 所有 scene | 全部 render（旁白不必重做，除非 TTS 設定也變） |
 | `project.tts`（專案層） | 未覆寫 provider / voice 的 scene | 這些 scene 重做 tts → render |
 | `video.project.json` 的 scene 順序 | 只影響合成 | 只重新 assemble |
 | `captions`、`audio` | 只影響合成 | 只重新 assemble |
@@ -150,9 +214,9 @@ npm run status
 
 ### 2. 標記與重做
 
-1. `status` 為 `rendered` / `approved`、但 `inputHash` 不相符的 scene：`npm run state -- <id> --status stale`。
+1. `status` 為 `rendered` / `approved`、但 `inputHash` 不相符的 scene：`pnpm run state <id> --status stale`。
 2. **`locked: true` 的 scene 即使過期也不重做**，列出來請使用者決定。
-3. 依播放順序對每個需要處理的 scene 執行 build_scene。sync 時不在每個 scene 停下，全部完成後一次回報。
+3. 依播放順序對每個需要處理的 scene 執行 build_scene。sync 時不在每個 scene 停下，全部完成後一次回報。有多個 scene 要渲染時，先完成各自的 `tts`、`capture` 與狀態，再一次 `render:scene <id> <id>…` 平行渲染（[rendering-guide.md](rendering-guide.md#flow)）。
 4. 失敗的 scene 依 `AGENTS.md` 規則處理，不影響其他 scene 繼續；最後在回報中列出。
 
 ### 3. 合成
@@ -176,18 +240,18 @@ npm run status
 
 - 目標目錄：與原專案同層的 `<原目錄名>-<locale>/`，例如 `launch-video-en-US/`。已存在時詢問使用者，不覆蓋。
 - 不複製：`output/`、`scenes/*/output/`、`scenes/*/assets/narration.*`、`scenes/*/assets/captions.json`、`node_modules/`、`.tmp/`。
-- 在新目錄執行 `npm install`。
+- 在新目錄執行 `pnpm install`。
 
 ### 2. 更新專案身分
 
-以下 JSON 修改都寫成 JSON Patch，用 `npm run state -- project --patch-file <檔案>` 套用（`script.md` 是純文字，可直接編輯）。
+以下 JSON 修改都寫成 JSON Patch，用 `pnpm run state project --patch-file <檔案>` 套用（`script.md` 是純文字，可直接編輯）。
 
 - `project.id`：新的 UUID v4
 - `project.translatedFrom`：`{ "id": "<原專案 id>", "language": "<原語言>" }`
 - `project.language`：目標 locale
 - `project.name`：翻譯，或加上語言後綴
 - `project.tts.voice`：依 [SKILL.md §4](SKILL.md) 選擇目標語言的聲音；連網 TTS 的同意需重新取得（服務相同也要，因為內容不同）
-- `captions.style.fontFamily`：確認字型支援目標語言（如 Noto Sans TC → Noto Sans / Noto Sans JP）
+- `captions.style.fontFamily`：確認字型支援目標語言（如 Noto Sans TC → Noto Sans / Noto Sans JP）；內附字型只有 Noto Sans TC，其他語言的字型要放進 `src/fonts/`，否則會用系統字型，各平台結果不同
 
 ### 3. 翻譯內容
 
@@ -198,7 +262,7 @@ npm run status
 
 ### 4. 重設狀態
 
-所有 scene 設為 `draft`、清除 `render` 與 `error`、`attempts` 歸零；`project.status` 設為 `script_generated`。在新專案執行 `npm run validate`。
+所有 scene 設為 `draft`、清除 `render` 與 `error`、`attempts` 歸零；`project.status` 設為 `script_generated`。在新專案執行 `pnpm run validate`。
 
 ### 5. Checkpoint
 

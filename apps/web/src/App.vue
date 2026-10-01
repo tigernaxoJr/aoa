@@ -5,6 +5,7 @@ import HomeView from './components/HomeView.vue'
 import SceneBoard from './components/SceneBoard.vue'
 import SceneEditor from './components/SceneEditor.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
+import ActivityBanner from './components/ActivityBanner.vue'
 import CompanionStatus from './components/CompanionStatus.vue'
 import { companion, connect, takePairingFromUrl } from './lib/companion'
 import { close, reload, restore, state, ui } from './lib/store'
@@ -43,9 +44,10 @@ watch(state, (st) => {
     <HomeView v-if="!state" />
     <div v-else class="mx-auto max-w-6xl space-y-5 px-4 py-6">
       <p v-if="state.errors.length" class="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
-        專案檔有問題，請讓 Agent 執行 <code>npm run validate</code> 修正：<br />
+        專案檔有問題，請讓 Agent 執行 <code>pnpm run validate</code> 修正：<br />
         <span v-for="e in state.errors.slice(0, 5)" :key="e" class="block font-mono text-xs">{{ e }}</span>
       </p>
+      <ActivityBanner />
       <WorkflowBar />
       <div class="grid gap-5 lg:grid-cols-5">
         <div class="space-y-5" :class="selected ? 'lg:col-span-2' : 'lg:col-span-3'">

@@ -6,12 +6,16 @@ import addFormats from 'ajv-formats'
 import commonSchema from '@specs/common.schema.json'
 import projectSchema from '@specs/project.schema.json'
 import sceneSchema from '@specs/scene.schema.json'
+import activitySchema from '@specs/activity.schema.json'
 import workflowJson from '@specs/workflow.json'
-import type { SceneJson, VideoProjectJson } from '../types/protocol'
+import type { SceneJson, VideoActivityJson, VideoProjectJson } from '../types/protocol'
 import { listFiles, readText, tryFile } from './fsa'
+import { START_FILE } from './site'
 
 export const PROJECT_FILE = 'video.project.json'
 export const LOCK_FILE = '.video-agent.lock'
+/** What the agent is doing; written only by the agent, possibly before the project exists (SPEC §9.2). */
+export const ACTIVITY_FILE = 'video.activity.json'
 export const FINAL_FILE = 'output/final.mp4'
 /** A lock older than this is a leftover from a crashed writer (SPEC §10.2). */
 export const LOCK_STALE_MS = 30_000
@@ -20,9 +24,9 @@ export const workflow = workflowJson
 const ajv = new Ajv2020({ allErrors: true, strict: false })
 addFormats(ajv)
 ajv.addSchema(commonSchema)
-const validators = { project: ajv.compile(projectSchema), scene: ajv.compile(sceneSchema) }
+const validators = { project: ajv.compile(projectSchema), scene: ajv.compile(sceneSchema), activity: ajv.compile(activitySchema) }
 
-export function schemaErrors(kind: 'project' | 'scene', doc: unknown): string[] {
+export function schemaErrors(kind: 'project' | 'scene' | 'activity', doc: unknown): string[] {
   const validate = validators[kind]
   return validate(doc) ? [] : (validate.errors ?? []).map((e) => `${e.instancePath || '/'} ${e.message}`)
 }
@@ -78,7 +82,7 @@ export async function inputHash(root: FileSystemDirectoryHandle, project: VideoP
   const assets = await listFiles(root, `${dir}/assets`)
   const files = hashFiles(dir, scene, assets)
   const found = await Promise.all(files.map((f) => tryFile(root, f)))
-  const key = JSON.stringify([scene, project.project.format, project.project.renderer, files.map((f, i) => [f, found[i]?.size, found[i]?.lastModified])])
+  const key = JSON.stringify([scene, project.project.format, files.map((f, i) => [f, found[i]?.size, found[i]?.lastModified])])
   const cached = hashCache.get(key)
   if (cached) return cached
   const enc = new TextEncoder()
@@ -149,9 +153,19 @@ async function loadScene(root: FileSystemDirectoryHandle, project: VideoProjectJ
   return state
 }
 
-export async function loadProject(root: FileSystemDirectoryHandle): Promise<ProjectState> {
+/** Files an OS drops into any folder; they don't make a folder unusable for a new project. */
+const IGNORABLE = /^(\..*|desktop\.ini|Thumbs\.db)$/i
+
+/** True when a folder without a project holds only the start and activity files (or nothing), so a project can be built in it. */
+export async function readyForNewProject(root: FileSystemDirectoryHandle) {
+  for await (const [name] of root.entries()) if (name !== START_FILE && name !== ACTIVITY_FILE && !IGNORABLE.test(name)) return false
+  return true
+}
+
+/** Null when the folder has no project yet (the agent has not run init). */
+export async function loadProject(root: FileSystemDirectoryHandle): Promise<ProjectState | null> {
   const file = await tryFile(root, PROJECT_FILE)
-  if (!file) throw new Error(`這個資料夾沒有 ${PROJECT_FILE}，不是影片專案。`)
+  if (!file) return null
   const project = JSON.parse(await file.text()) as VideoProjectJson
   const errors = schemaErrors('project', project).map((e) => `${PROJECT_FILE}: ${e}`)
   const scenes = errors.length ? [] : await Promise.all(project.scenes.map((ref) => loadScene(root, project, ref)))
@@ -184,12 +198,24 @@ export async function loadProject(root: FileSystemDirectoryHandle): Promise<Proj
   }
 }
 
+/** The agent's activity, or null when there is none or it is unreadable (a half-written file shows nothing rather than an error). */
+export async function loadActivity(root: FileSystemDirectoryHandle): Promise<VideoActivityJson | null> {
+  const file = await tryFile(root, ACTIVITY_FILE)
+  if (!file) return null
+  try {
+    const doc = JSON.parse(await file.text())
+    return schemaErrors('activity', doc).length ? null : doc
+  } catch {
+    return null
+  }
+}
+
 /**
  * Cheap change detector for polling (SPEC §9.1): lastModified of every file the UI shows.
  * A different fingerprint means something changed on disk and the project should be reloaded.
  */
 export async function fingerprint(root: FileSystemDirectoryHandle, state: ProjectState | null): Promise<string> {
-  const paths = [PROJECT_FILE, LOCK_FILE, FINAL_FILE]
+  const paths = [PROJECT_FILE, LOCK_FILE, FINAL_FILE, ACTIVITY_FILE]
   for (const s of state?.scenes ?? []) paths.push(`${s.dir}/scene.json`, s.scriptPath, s.outputPath)
   const assets = await Promise.all((state?.scenes ?? []).map((s) => listFiles(root, `${s.dir}/assets`)))
   paths.push(...assets.flat())

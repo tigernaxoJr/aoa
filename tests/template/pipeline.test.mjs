@@ -1,4 +1,4 @@
-// End-to-end: hand-written scenes → tts (offline fake) → render-scene (html-capture) → state →
+// End-to-end: hand-written scenes → tts (offline fake) → render-scene → state →
 // assemble → completed, exactly as the agent runs it (SPEC §13 Phase 2 completion criterion).
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
@@ -16,7 +16,6 @@ afterEach(() => p?.cleanup())
 test('hand-written scenes become output/final.mp4', async (t) => {
   const project = baseProject()
   project.project.format = { aspectRatio: '16:9', width: 640, height: 360, fps: 24, targetDurationSec: 10 }
-  project.project.renderer = 'html-capture'
   const scenes = [
     {
       id: 'scene-001',

@@ -32,10 +32,6 @@
         "position": "bottom"
       }
     },
-    "renderer": "remotion",
-    "rendererLicense": {
-      "acknowledged": false
-    },
     "tts": {
       "provider": "edge-tts",
       "voice": "zh-TW-HsiaoChenNeural",

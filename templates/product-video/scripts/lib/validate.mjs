@@ -39,9 +39,6 @@ export function validateProject(root, overrides = new Map()) {
       errors.push(`${PROJECT_FILE}: audio.bgm ${err.message}`)
     }
   }
-  if (p.renderer === 'remotion' && !p.rendererLicense?.acknowledged) {
-    warnings.push('rendererLicense not acknowledged; rendering is blocked until the user confirms (gate rendererLicense)')
-  }
 
   const seenIds = new Set()
   const seenDirs = new Set()

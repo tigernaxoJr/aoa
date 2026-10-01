@@ -17,7 +17,7 @@ function listFiles(dir) {
 
 /**
  * Hashes: scene content fields, every file under the scene's assets/ directory, the script file,
- * files referenced by the scene (including `@/` paths), and the project's format + renderer.
+ * files referenced by the scene (including `@/` paths), and the project's format.
  */
 export function computeInputHash(root, project, ref, scene) {
   const sceneDir = join(root, ref.dir)

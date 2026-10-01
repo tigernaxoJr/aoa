@@ -8,7 +8,7 @@ import { baseProject, baseScene, writeJson } from '../template/helpers.mjs'
 export const repo = fileURLToPath(new URL('../../', import.meta.url))
 export const agentBin = join(repo, 'packages/video-agent/bin/video-agent.mjs')
 
-export function fullProject({ renderer = 'html-capture', scenes = [] } = {}) {
+export function fullProject({ scenes = [] } = {}) {
   mkdirSync(join(repo, '.tmp'), { recursive: true })
   const root = mkdtempSync(join(repo, '.tmp', 'agent-'))
   for (const dir of ['scripts', 'src']) cpSync(join(repo, 'templates/product-video', dir), join(root, dir), { recursive: true })
@@ -17,7 +17,6 @@ export function fullProject({ renderer = 'html-capture', scenes = [] } = {}) {
     cpSync(join(repo, 'specs', f), join(root, 'schemas', f))
   }
   const project = baseProject()
-  project.project.renderer = renderer
   project.project.format = { aspectRatio: '16:9', width: 640, height: 360, fps: 24, targetDurationSec: 10 }
   project.scenes = scenes.map(({ id, dir }) => ({ id, dir }))
   writeJson(join(root, 'video.project.json'), project)

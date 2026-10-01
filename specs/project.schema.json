@@ -53,12 +53,18 @@
       "type": "object",
       "$ref": "common.schema.json#/$defs/extensions",
       "unevaluatedProperties": false,
-      "required": ["id", "name", "sources", "language", "format", "renderer", "tts"],
+      "required": ["id", "name", "sources", "language", "format", "tts"],
       "properties": {
         "id": { "type": "string", "format": "uuid" },
         "name": { "type": "string", "minLength": 1, "maxLength": 200 },
         "sources": { "$ref": "#/$defs/sources" },
         "targetAudience": { "type": "string" },
+        "durationAdjust": {
+          "description": "製作中發現某段太趕時：auto = Agent 可自行在限度內調整 scene 長度並事後回報；ask = 每次先詢問使用者。",
+          "enum": ["auto", "ask"],
+          "default": "ask"
+        },
+        "style": { "description": "影片風格與語氣（例如：專業簡報、活潑社群短片），與使用者確認後填寫。", "type": "string" },
         "language": { "$ref": "common.schema.json#/$defs/locale" },
         "translatedFrom": {
           "description": "由 /video-translate 產生時記錄來源專案（SPEC §4.4）。",
@@ -73,21 +79,8 @@
         "format": { "$ref": "#/$defs/format" },
         "audio": { "$ref": "#/$defs/audio" },
         "captions": { "$ref": "#/$defs/captions" },
-        "renderer": {
-          "description": "SPEC §7.6。",
-          "enum": ["remotion", "html-capture"],
-          "default": "remotion"
-        },
-        "rendererLicense": { "$ref": "#/$defs/rendererLicense" },
         "tts": { "$ref": "#/$defs/tts" }
-      },
-      "allOf": [
-        {
-          "description": "選用 Remotion 時必須有授權確認紀錄（SPEC §7.6）。",
-          "if": { "properties": { "renderer": { "const": "remotion" } }, "required": ["renderer"] },
-          "then": { "required": ["rendererLicense"] }
-        }
-      ]
+      }
     },
     "sources": {
       "description": "至少提供一種產品來源。",
@@ -95,6 +88,11 @@
       "additionalProperties": false,
       "properties": {
         "productUrl": { "type": ["string", "null"], "format": "uri", "pattern": "^https?://" },
+        "requiresLogin": {
+          "description": "產品網址要登入才看得到。為 true 時，使用者須先以 pnpm run login 在瀏覽器視窗自行登入，capture 才能執行（gate productLogin）。帳密不寫入任何檔案。",
+          "type": "boolean",
+          "default": false
+        },
         "sourceCodePath": {
           "description": "產品原始碼位置，唯讀輸入，可在專案外（相對或絕對路徑）。",
           "type": ["string", "null"],
@@ -155,22 +153,6 @@
           }
         }
       }
-    },
-    "rendererLicense": {
-      "description": "Remotion 授權確認（SPEC §7.6）。acknowledged 為 false 時 Agent 不得渲染。",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["acknowledged"],
-      "properties": {
-        "acknowledged": { "type": "boolean" },
-        "tier": {
-          "description": "free-individual：個人／≤3 人營利組織／非營利；company-licensed：已購買公司授權。",
-          "enum": ["free-individual", "company-licensed"]
-        },
-        "acknowledgedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
-      },
-      "if": { "properties": { "acknowledged": { "const": true } } },
-      "then": { "required": ["tier", "acknowledgedAt"] }
     },
     "tts": {
       "description": "專案預設 TTS（SPEC §7.4），scene 可覆寫。",

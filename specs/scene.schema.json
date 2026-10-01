@@ -142,6 +142,18 @@
           "type": "array",
           "items": { "$ref": "#/$defs/captureAction" },
           "default": []
+        },
+        "domEditConsent": {
+          "description": "使用者同意在錄製時以 script 動作修改頁面內容（例如填入示意資料）的紀錄。",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["granted"],
+          "properties": {
+            "granted": { "type": "boolean" },
+            "grantedAt": { "$ref": "common.schema.json#/$defs/timestamp" }
+          },
+          "if": { "properties": { "granted": { "const": true } } },
+          "then": { "required": ["grantedAt"] }
         }
       }
     },
@@ -151,12 +163,14 @@
       "additionalProperties": false,
       "required": ["do"],
       "properties": {
-        "do": { "enum": ["navigate", "scroll", "click", "hover", "type", "highlight", "wait"] },
+        "do": { "enum": ["navigate", "scroll", "click", "hover", "type", "highlight", "script", "wait"] },
         "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
         "selector": { "type": "string", "minLength": 1 },
         "text": { "type": "string" },
+        "file": { "description": "script 動作在頁面中執行的 JavaScript 檔（例如在資料很少的報表頁填入示意資料）。需要 capture.domEditConsent。", "$ref": "common.schema.json#/$defs/relPath" },
         "y": { "description": "scroll 的絕對捲動位置（px），與 selector 擇一。", "type": "integer", "minimum": 0 },
-        "ms": { "type": "integer", "minimum": 0, "maximum": 30000 }
+        "ms": { "description": "wait 的毫秒數；highlight 時為框住後停留的毫秒數（預設 1200）。", "type": "integer", "minimum": 0, "maximum": 30000 },
+        "cut": { "description": "true 時把這個動作從開始到結束（含等待頁面穩定）整段從錄影剪掉。Agent 判斷該段畫面沒有意義時使用，例如單頁應用切換路由的過場、載入中的骨架畫面。", "type": "boolean" }
       },
       "allOf": [
         { "if": { "properties": { "do": { "const": "navigate" } } }, "then": { "required": ["url"] } },
@@ -169,6 +183,7 @@
           "then": { "required": ["selector"] }
         },
         { "if": { "properties": { "do": { "const": "type" } } }, "then": { "required": ["selector", "text"] } },
+        { "if": { "properties": { "do": { "const": "script" } } }, "then": { "required": ["file"] } },
         { "if": { "properties": { "do": { "const": "wait" } } }, "then": { "required": ["ms"] } }
       ]
     },
@@ -211,6 +226,7 @@
         "src": { "description": "type = image / video 時的來源。", "$ref": "common.schema.json#/$defs/relPath" },
         "at": { "description": "出現時間（scene 內相對秒數）。", "$ref": "#/$defs/seconds" },
         "duration": { "description": "顯示秒數；省略則持續到 scene 結束。", "type": "number", "exclusiveMinimum": 0 },
+        "size": { "description": "type = text 的字級。large / xl 放大，但會自動縮回到不超過兩行、不超出畫面。", "enum": ["normal", "large", "xl"], "default": "normal" },
         "animation": {
           "enum": ["none", "fadeIn", "slideInLeft", "slideInRight", "slideInUp", "slideInDown", "zoomIn", "typewriter"],
           "default": "fadeIn"
@@ -243,13 +259,12 @@
       "required": ["inputHash", "outputFile", "renderedAt"],
       "properties": {
         "inputHash": {
-          "description": "SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 與 renderer 計算。",
+          "description": "SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 計算。",
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
         "outputFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "output/scene.mp4" },
         "renderedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
-        "renderer": { "enum": ["remotion", "html-capture"] },
         "actualDurationSec": { "type": "number", "exclusiveMinimum": 0 }
       }
     },

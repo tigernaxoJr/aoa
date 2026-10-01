@@ -1,5 +1,5 @@
 // `video-agent mcp`: stdio MCP server (SPEC §10). Guide resources and prompts wrap the site's static
-// API; project tools wrap the project's npm scripts, writing JSON only through state.mjs (--by mcp).
+// API; project tools wrap the project's pnpm scripts, writing JSON only through state.mjs (--by mcp).
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -44,7 +44,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
   for (const [name, uri, path, mimeType, description] of resources) {
     server.registerResource(name, uri, { description, mimeType }, async () => ({ contents: [{ uri, mimeType, text: await guideText(path) }] }))
   }
-  server.registerResource('project', 'video://project/current', { description: 'Current project status report (npm run status --json)', mimeType: 'application/json' }, async (uri) => ({
+  server.registerResource('project', 'video://project/current', { description: 'Current project status report (pnpm run status --json)', mimeType: 'application/json' }, async (uri) => ({
     contents: [{ uri: uri.href, mimeType: 'application/json', text: JSON.stringify(await status(rootOf()), null, 2) }],
   }))
 
@@ -73,7 +73,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
   )
   server.registerTool(
     'validate_project',
-    { description: 'Validate all project JSON and paths (npm run validate).', inputSchema: { project: projectArg } },
+    { description: 'Validate all project JSON and paths (pnpm run validate).', inputSchema: { project: projectArg } },
     tool(async ({ project }) => scriptResult(await runScript(rootOf(project), 'validate'))),
   )
   server.registerTool(
@@ -81,17 +81,18 @@ export function createServer({ projectDir = process.cwd() } = {}) {
     {
       description:
         'Create a new video project from the site template (checksum-verified) in an empty directory and fill in its identity and sources. ' +
-        'Afterwards: run npm install there, and record the rendererLicense and onlineTtsConsent gates with update_project after asking the user.',
+        'Afterwards: run pnpm install there, and record the onlineTtsConsent gate with update_project after asking the user.',
       inputSchema: {
         directory: z.string().describe('New or empty directory for the project'),
         name: z.string().min(1),
         productUrl: z.string().url().optional(),
+        requiresLogin: z.boolean().optional().describe('productUrl needs signing in: before capture, run pnpm run login so the user signs in in a window (gate productLogin); never ask for the password'),
         sourceCodePath: z.string().optional(),
         description: z.string().optional(),
         language: z.string().optional().describe('BCP 47 tag, default zh-TW'),
       },
     },
-    tool(async ({ directory, name, productUrl, sourceCodePath, description, language }) => {
+    tool(async ({ directory, name, productUrl, requiresLogin, sourceCodePath, description, language }) => {
       if (!productUrl && !sourceCodePath && !description) throw new AgentError('give at least one of productUrl, sourceCodePath, description')
       const dir = resolve(projectDir, directory)
       const manifest = await unpackTemplate(dir)
@@ -99,13 +100,13 @@ export function createServer({ projectDir = process.cwd() } = {}) {
       const doc = JSON.parse(readFileSync(file, 'utf8'))
       doc.project.id = randomUUID()
       doc.project.name = name
-      doc.project.sources = { ...doc.project.sources, productUrl: productUrl ?? null, sourceCodePath: sourceCodePath ?? null, description: description ?? null }
+      doc.project.sources = { ...doc.project.sources, productUrl: productUrl ?? null, ...(productUrl && requiresLogin ? { requiresLogin: true } : {}), sourceCodePath: sourceCodePath ?? null, description: description ?? null }
       if (language) doc.project.language = language
       doc.updatedAt = new Date().toISOString()
       doc.updatedBy = BY
       // A brand-new project has no other writers, so this one direct write is allowed (SPEC §7.3).
       writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`)
-      return text({ directory: dir, specVersion: manifest.specVersion, files: manifest.files.length, next: ['npm install', 'record gates with update_project', 'analyze (prompt "analyze")'] })
+      return text({ directory: dir, specVersion: manifest.specVersion, files: manifest.files.length, next: ['pnpm install', 'record gates with update_project', 'analyze (prompt "analyze")'] })
     }),
   )
   server.registerTool(
@@ -139,13 +140,13 @@ export function createServer({ projectDir = process.cwd() } = {}) {
   )
   server.registerTool(
     'update_project',
-    { description: 'Change video.project.json with a JSON Patch, e.g. record gates (/project/rendererLicense, /project/tts/consent) or status.', inputSchema: { project: projectArg, patch: jsonPatch } },
+    { description: 'Change video.project.json with a JSON Patch, e.g. record the TTS consent gate (/project/tts/consent) or status.', inputSchema: { project: projectArg, patch: jsonPatch } },
     tool(async ({ project, patch: ops }) => scriptResult(await patch(rootOf(project), 'project', ops, BY))),
   )
   server.registerTool(
     'render_scene',
     {
-      description: 'Produce one scene end to end: narration (tts), capture, render, and record its state. Failures are recorded on the scene. Respects the rendererLicense and onlineTtsConsent gates.',
+      description: 'Produce one scene end to end: narration (tts), capture, render, and record its state. Failures are recorded on the scene. Respects the onlineTtsConsent gate.',
       inputSchema: { project: projectArg, id: z.string() },
     },
     tool(async ({ project, id }) => {

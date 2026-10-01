@@ -56,10 +56,10 @@ const sameToken = (a, b) => {
   return x.length === y.length && timingSafeEqual(x, y)
 }
 
-/** Runs `claude -p "/video-sync"` in the project with only npm scripts and file tools allowed. */
+/** Runs `claude -p "/video-sync"` in the project with only pnpm scripts and file tools allowed. */
 function claudeSync(root, onLine) {
   const command = process.env.VIDEO_AGENT_CLAUDE || 'claude'
-  const args = ['-p', '/video-sync', '--allowedTools', 'Bash(npm run:*)', 'Read', 'Edit', 'Write', 'Glob', 'Grep']
+  const args = ['-p', '/video-sync', '--allowedTools', 'Bash(pnpm run:*)', 'Read', 'Edit', 'Write', 'Glob', 'Grep']
   // VIDEO_AGENT_CLAUDE may name a Node script (a stand-in used by tests, or a wrapper).
   if (/\.m?js$/.test(command)) return runProcess(process.execPath, [command, ...args], { cwd: root, onLine })
   return runProcess(command, args, { cwd: root, onLine })

@@ -1,29 +1,62 @@
-// npm run render:scene -- <scene-id>   → <scene>/output/scene.mp4 with the project's renderer (SPEC §7.6)
-// Writes files only; the agent records status via `npm run state` (SPEC §7.3).
+// pnpm run render:scene <scene-id>...   → <scene>/output/scene.mp4 (SPEC §7.6)
+// Several ids render in parallel, each in its own process (--jobs N, default from the CPU count).
+// Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
 // The previous output is replaced only when the new render succeeds.
-import { mkdirSync, renameSync, rmSync } from 'node:fs'
+import { spawn } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { availableParallelism, freemem } from 'node:os'
 import { dirname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parseArgs, run } from './lib/cli.mjs'
 import { normalizeVideo, probeDuration } from './lib/media.mjs'
 import { DEFAULTS, UsageError, findRoot, findSceneRef, loadProject, readJson, resolveProjectPath, sceneFile } from './lib/project.mjs'
 import { renderHtml } from './lib/render-html.mjs'
-import { renderRemotion } from './lib/render-remotion.mjs'
 import { buildPlan, videoLayers } from './lib/scene-plan.mjs'
 import { serveProject } from './lib/serve.mjs'
+import { toAss } from './lib/timeline.mjs'
 
 run(async (argv) => {
-  const { positional } = parseArgs(argv)
-  const [id] = positional
-  if (!id) throw new UsageError('usage: render:scene <scene-id>')
+  const { positional, flags } = parseArgs(argv, { jobs: 1 })
+  if (!positional.length) throw new UsageError('usage: render:scene <scene-id>... [--jobs N]')
   const root = findRoot()
   const project = loadProject(root)
-  const { renderer, rendererLicense } = project.project
-  if (renderer === 'remotion' && !rendererLicense?.acknowledged) {
-    throw new UsageError(
-      'gate rendererLicense: Remotion needs a license check before rendering. Ask the user, record it in ' +
-        'project.rendererLicense, or switch project.renderer to html-capture.',
-    )
+  for (const id of positional) findSceneRef(project, id) // unknown ids fail before anything starts
+  if (positional.length === 1) return renderOne(root, project, positional[0])
+  const jobs = flags.jobs ? Number(flags.jobs) : defaultJobs()
+  if (!Number.isInteger(jobs) || jobs < 1) throw new UsageError('--jobs expects a positive whole number')
+  return renderMany([...new Set(positional)], jobs)
+})
+
+/**
+ * Half the cores (more adds little: the browser and x264 already use several threads), and
+ * about 1 GB of free memory per render.
+ */
+function defaultJobs() {
+  return Math.max(1, Math.min(Math.floor(availableParallelism() / 2), Math.floor(freemem() / 2 ** 30)))
+}
+
+/** Renders each id in a child process, `jobs` at a time. Returns 1 when any of them failed. */
+async function renderMany(ids, jobs) {
+  console.log(`rendering ${ids.length} scenes, ${Math.min(jobs, ids.length)} at a time`)
+  const failed = []
+  const queue = [...ids]
+  const worker = async () => {
+    for (let id; (id = queue.shift()); ) {
+      const code = await new Promise((resolve) => {
+        const child = spawn(process.execPath, [fileURLToPath(import.meta.url), id], { stdio: 'inherit', windowsHide: true })
+        child.on('error', () => resolve(1))
+        child.on('close', resolve)
+      })
+      if (code !== 0) failed.push(id)
+    }
   }
+  await Promise.all(Array.from({ length: Math.min(jobs, ids.length) }, worker))
+  const ok = ids.filter((id) => !failed.includes(id))
+  console.log(`rendered: ${ok.join(', ') || 'none'}${failed.length ? `; failed: ${failed.join(', ')}` : ''}`)
+  return failed.length ? 1 : 0
+}
+
+async function renderOne(root, project, id) {
   const ref = findSceneRef(project, id)
   const scene = readJson(sceneFile(root, ref))
   const sceneDir = join(root, ref.dir)
@@ -37,19 +70,31 @@ run(async (argv) => {
   mkdirSync(work, { recursive: true })
   mkdirSync(dirname(outFile), { recursive: true })
   const log = (msg) => console.log(msg)
-  log(`${id}: ${renderer}, ${plan.frames} frames @ ${plan.fps} fps (${plan.durationSec.toFixed(2)}s)`)
+  const progress = (msg) => log(`${id}: ${msg.trim()}`)
+  log(`${id}: ${plan.frames} frames @ ${plan.fps} fps (${plan.durationSec.toFixed(2)}s)`)
 
-  // Every video layer becomes an exact-length, constant-fps clip before either renderer sees it.
+  // Every video layer becomes an exact-length, constant-fps clip before the renderer sees it.
   for (const [i, layer] of videoLayers(plan).entries()) {
     layer.clip = join(work, `clip-${i}.mp4`)
     const frames = Math.max(1, Math.round((layer.span ?? plan.durationSec) * plan.fps))
     normalizeVideo(layer.file, { trimStart: layer.trimStart, trimEnd: layer.trimEnd, fps: plan.fps, frames }, layer.clip)
   }
 
+  // captions.mode burn: the scene's captions are drawn into its video here, not at assemble.
+  const { captions = {}, format } = project.project
+  const captionsFile = join(sceneDir, DEFAULTS.captionsFile)
+  let subtitles = null
+  if (captions.mode === 'burn' && existsSync(captionsFile)) {
+    const cues = JSON.parse(readFileSync(captionsFile, 'utf8'))
+      .filter((c) => c.start < plan.durationSec)
+      .map((c) => ({ ...c, end: Math.min(c.end, plan.durationSec) }))
+    subtitles = 'captions.ass'
+    writeFileSync(join(work, subtitles), toAss(cues, format, captions.style))
+  }
+
   const server = await serveProject(root)
   try {
-    const render = renderer === 'html-capture' ? renderHtml : renderRemotion
-    await render({ root, plan, work, server, out: partial, log })
+    await renderHtml({ root, plan, work, server, out: partial, log: progress, subtitles })
     renameSync(partial, outFile)
   } catch (err) {
     rmSync(partial, { force: true })
@@ -62,4 +107,4 @@ run(async (argv) => {
   const actual = probeDuration(outFile)
   log(`${id}: rendered ${relative(root, outFile).split('\\').join('/')} (${actual.toFixed(2)}s)`)
   return 0
-})
+}

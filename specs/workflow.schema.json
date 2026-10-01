@@ -48,7 +48,7 @@
         "check": { "description": "成立條件（以專案檔欄位描述）。", "type": "string" },
         "appliesWhen": { "description": "只有此條件成立時才需要檢查。", "type": "string" },
         "blocks": {
-          "description": "gate 未成立時不得執行的 npm script。",
+          "description": "gate 未成立時不得執行的 pnpm script。",
           "type": "array",
           "items": { "type": "string" }
         },
@@ -84,7 +84,7 @@
       "required": ["id", "do"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-        "do": { "description": "動作說明；以 `npm run` 開頭者為必須執行的指令。", "type": "string" },
+        "do": { "description": "動作說明；以 `pnpm run` 開頭者為必須執行的指令。", "type": "string" },
         "when": { "type": "string" },
         "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } }
       }

@@ -1,7 +1,17 @@
-// html-capture player (SPEC §7.6). Loaded by scenes/*/output/scene.html, which sets window.__PLAN__.
+// Scene player (SPEC §7.6). Loaded by scenes/*/output/scene.html, which sets window.__PLAN__.
 // Every visual is a function of one time variable: render-scene calls window.__seek(t) per frame
 // and screenshots the page. Video layers are pre-extracted JPEG frames, so seeking is exact.
-import { backgroundScale, codeOpacity, elementState, elementTransform, styles, visibleText } from '../lib/motion.js'
+import {
+  anchor,
+  backgroundScale,
+  codeOpacity,
+  elementState,
+  elementTransform,
+  styles,
+  TEXT_MAX_LINES,
+  TEXT_SIZE,
+  visibleText,
+} from '../lib/motion.js'
 
 const plan = window.__PLAN__
 const { width, height, fps } = plan
@@ -57,6 +67,36 @@ const overlays = plan.elements.map((item) => {
   return { item, box, inner }
 })
 
+/**
+ * Enlarged text (size large / xl) shrinks step by step, never below normal, until it wraps to at
+ * most TEXT_MAX_LINES lines and stays inside the frame. Measured once, with the full text.
+ */
+function fitText({ item, box, inner }) {
+  let scale = TEXT_SIZE[item.size] ?? 1
+  if (scale === 1) return
+  const a = anchor(item.position)
+  Object.assign(box.style, { display: 'block', visibility: 'hidden', transform: `translate(${a.tx}%, ${a.ty}%)` })
+  inner.textContent = item.content
+  const frame = stage.getBoundingClientRect()
+  const fits = () => {
+    const pad = parseFloat(getComputedStyle(inner).paddingTop) * 2
+    const lines = (inner.clientHeight - pad) / (parseFloat(inner.style.fontSize) * 1.3)
+    const r = box.getBoundingClientRect()
+    return (
+      lines < TEXT_MAX_LINES + 0.5 &&
+      inner.scrollWidth <= inner.clientWidth &&
+      r.left >= frame.left && r.right <= frame.right && r.top >= frame.top && r.bottom <= frame.bottom
+    )
+  }
+  inner.style.fontSize = css.textFont(scale)
+  while (scale > 1 && !fits()) {
+    scale = Math.max(1, scale - 0.05)
+    inner.style.fontSize = css.textFont(scale)
+  }
+  Object.assign(box.style, { display: 'none', visibility: '' })
+  inner.textContent = ''
+}
+
 window.__seek = async (t) => {
   if (bg.kind === 'image' || bg.kind === 'video') {
     if (bg.kind === 'video') setSrc(bgNode, frameUrl(bg, t))
@@ -79,8 +119,17 @@ window.__seek = async (t) => {
   while (pending.size) await Promise.all(pending)
 }
 
+// Bundled fonts, loaded up front: text that first appears mid-scene must not render in a fallback.
+const FONTS = [
+  ['Noto Sans TC', '../fonts/NotoSansTC-Bold.otf', '700'],
+  ['JetBrains Mono', '../fonts/JetBrainsMono-Regular.ttf', '400'],
+]
+
 window.__ready = (async () => {
-  await document.fonts.ready
+  for (const [family, file, weight] of FONTS) {
+    document.fonts.add(await new FontFace(family, `url(${new URL(file, import.meta.url)})`, { weight }).load())
+  }
+  for (const o of overlays) if (o.item.type === 'text') fitText(o)
   while (pending.size) await Promise.all(pending)
   return true
 })()

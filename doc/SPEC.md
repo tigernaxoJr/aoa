@@ -49,7 +49,7 @@
                   │  scripts/ · src/ · output/                 │
                   └──────────────────┬───────────────────────┘
                                      ▼
-                     Node.js · Playwright · TTS · Remotion · FFmpeg
+                         Node.js · Playwright · TTS · FFmpeg
                                      ▼
                               output/final.mp4
 ```
@@ -67,7 +67,7 @@
 |---|---|---|---|---|---|
 | **A. 檔案輪詢** | 靜態 | Claude Code | UI 輪詢檔案（自動） | 使用者在終端機下指令（手動） | **MVP** |
 | A'. 檔案佇列 | 靜態 | Claude Code 常駐監看 | UI 輪詢檔案 | UI 寫 `requests/*.json`，Agent 監看並處理 | 不採用 |
-| **B. 本機 Companion** | 靜態 | Claude Code + `npx video-agent serve` | WebSocket 推送 | WebSocket → Companion 執行腳本或 `claude -p` | Phase 5 |
+| **B. 本機 Companion** | 靜態 | Claude Code + `pnpm dlx video-agent serve` | WebSocket 推送 | WebSocket → Companion 執行腳本或 `claude -p` | Phase 5 |
 
 **模式 A 的限制（MVP 必須在 UI 明示）**：Claude Code 是請求驅動的，不會背景監聽檔案；瀏覽器也無法喚起它。因此 UI → Agent 方向不是即時的——UI 修改只會把 scene 標為 `stale`，UI 顯示「N 個 scene 待更新」並提供一鍵複製 `/video-sync` 指令，由使用者在終端機觸發。
 
@@ -76,13 +76,13 @@
 **模式 B 的設計要求**：
 
 - Companion 是無狀態的：所有狀態仍只存在專案檔中，Companion 只監看檔案並轉發事件；關掉 Companion 系統即退回模式 A，不影響資料。
-- 職責劃分：**確定性工作**（重跑 TTS、render 單一 scene、assemble）由 Companion 直接執行 npm scripts；**需要推理的工作**（改寫文案、重規劃分鏡）才以 `claude -p "/video-sync"` 呼叫 Agent。
+- 職責劃分：**確定性工作**（重跑 TTS、render 單一 scene、assemble）由 Companion 直接執行 pnpm scripts；**需要推理的工作**（改寫文案、重規劃分鏡）才以 `claude -p "/video-sync"` 呼叫 Agent。
 - 安全：只綁定 `127.0.0.1`；CORS 只允許網站 origin，並檢查每個請求的 `Origin`；啟動時產生隨機配對 token，所有請求須帶 token——否則任何網頁都能叫本機執行指令。只暴露白名單動作，不接受任意指令字串。
 - 形態與配對：見 §10.1。
 - 瀏覽器限制：Chrome 對「公開網站存取本機網路」會要求使用者授權（Local Network Access），UI 需引導；Safari 對 localhost 連線限制較多，列為不支援。
 - 相容性：UI 偵測到 Companion（連 `ws://127.0.0.1:<port>` 成功）時啟用「立即重新渲染」等按鈕與推送更新；否則自動回退到模式 A。
 
-**為了讓 A → B 無痛升級，MVP 的檔案協議即須滿足**：狀態只存在 `scene.json` / `video.project.json`；「待處理」以 `status: stale` 表達（即工作佇列）；腳本介面為 `npm run <script> -- <scene-id>`，可被 Agent 或 Companion 同樣呼叫。
+**為了讓 A → B 無痛升級，MVP 的檔案協議即須滿足**：狀態只存在 `scene.json` / `video.project.json`；「待處理」以 `status: stale` 表達（即工作佇列）；腳本介面為 `pnpm run <script> <scene-id>`，可被 Agent 或 Companion 同樣呼叫。
 
 ---
 
@@ -104,6 +104,7 @@ my-video-project/
 │   ├── common.schema.json
 │   ├── project.schema.json
 │   ├── scene.schema.json
+│   ├── activity.schema.json
 │   ├── workflow.schema.json
 │   └── workflow.json
 ├── brief/
@@ -126,12 +127,9 @@ my-video-project/
 │   ├── assemble.mjs
 │   └── state.mjs               # 唯一的 JSON 寫入入口（§10.2）
 ├── src/                        # 渲染器程式碼（§7.6）
-│   ├── index.ts                # Remotion entry（registerRoot）
-│   ├── Root.tsx                # Composition "Scene"，以 inputProps 接收 render plan
-│   ├── SceneVideo.tsx          # Remotion 版面
-│   ├── plan.ts                 # render plan 型別
-│   ├── lib/motion.js           # 兩個渲染器共用的版面、動畫、配色（純函式）
-│   └── html/player.js          # html-capture 版面（純 DOM，`window.__seek(t)`）
+│   ├── lib/motion.js           # 版面、動畫、配色（純函式）
+│   ├── html/player.js          # scene 版面（純 DOM，`window.__seek(t)`）
+│   └── fonts/                  # 內附字型（Noto Sans TC Bold、JetBrains Mono，OFL）
 └── output/
     └── final.mp4
 ```
@@ -181,8 +179,6 @@ my-video-project/
       "mode": "srt",
       "style": { "fontFamily": "Noto Sans TC", "fontSize": 48, "position": "bottom" }
     },
-    "renderer": "remotion",
-    "rendererLicense": { "acknowledged": true, "tier": "free-individual", "acknowledgedAt": "2026-09-30T13:00:00Z" },
     "tts": {
       "provider": "edge-tts",
       "voice": "zh-TW-HsiaoChenNeural",
@@ -200,8 +196,6 @@ my-video-project/
 ```
 
 - `scenes` 陣列的順序 **即為** 影片播放順序。
-- `renderer`：`"remotion"`（預設）｜`"html-capture"`（見 §7.6）。
-- `rendererLicense`：選用 Remotion 時必填。`tier`：`free-individual`（個人／≤3 人營利組織／非營利）｜`company-licensed`（已購買公司授權）。未確認時 Agent 不得執行渲染。
 
 ### 4.2 `scenes/*/scene.json`
 
@@ -252,10 +246,10 @@ my-video-project/
 | 欄位 | 說明 |
 |---|---|
 | `purpose` | `hook` · `problem` · `solution` · `feature` · `how-it-works` · `benefit` · `social-proof` · `cta` · `custom` |
-| `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純 Remotion 動畫）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
+| `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純動畫，無擷取素材）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
 | `narration.provider` | TTS 提供者，省略時沿用 `project.tts.provider`。見 §7.4 |
 | `durationSec` | `null` 表示由 TTS 音檔長度決定（音長 + 0.5s 緩衝）；有值則為強制秒數。幀數一律由 `durationSec × fps` 推得，**不存幀數**。 |
-| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format` 與 `renderer` 計算的 SHA-256。與目前內容不符即視為過期。 |
+| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format`（`captions.mode` 為 `burn` 時連同 `captions`）計算的 SHA-256。與目前內容不符即視為過期。 |
 | `locked` | `true` 時 Agent 不得修改此 scene（除非使用者明確要求）。使用者在 UI 手動核准後可設為 `true`。 |
 
 ### 4.2.1 共通規則（由 Schema 強制）
@@ -264,7 +258,7 @@ my-video-project/
 - **擴充欄位**：Schema 不接受未定義的欄位，以免拼錯欄位名稱被默默忽略。使用者或第三方工具需要自訂欄位時，一律以 `x-` 開頭（可用於專案根、`project`、scene 根、`visual`），Agent 必須原樣保留。
 - **寫入者**：`updatedBy` 為 `agent` · `user` · `companion` · `mcp`。
 - **Schema 無法表達、由 `validate.mjs` 檢查的規則**：scene id 與 dir 唯一且目錄存在；`format` 寬高與 `aspectRatio` 相符；各 scene.json 的 `id` 與 `video.project.json` 引用一致；解析後路徑不得跳出專案根目錄；狀態為 `rendered` / `approved` 時輸出檔存在且 `inputHash` 相符；`project.id` 為全 0 UUID 時視為「範本尚未初始化」。
-- Schema 原始檔位於產品 repo 的 `specs/`（`common` / `project` / `scene` 三個檔案），`specs/examples/` 內的有效與無效範例由 `npm run test:specs` 驗證。
+- Schema 原始檔位於產品 repo 的 `specs/`（`common` / `project` / `scene` 三個檔案），`specs/examples/` 內的有效與無效範例由 `pnpm run test:specs` 驗證。
 
 ### 4.3 `script.md`
 
@@ -379,45 +373,47 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 
 | 區塊 | 內容 |
 |---|---|
-| `gates` | 執行特定腳本前必須取得的使用者確認：`rendererLicense`（擋 `render:scene`、`assemble`）、`onlineTtsConsent`（擋 `tts`）。含說明內容、記錄欄位與拒絕時的處理 |
+| `gates` | 執行特定腳本前必須取得的使用者確認：`onlineTtsConsent`（擋 `tts`）、`domEditConsent`（scene 錄製時以 `script` 動作改寫頁面，例如報表資料太少時填入示意資料；擋該 scene 的 `capture`）、`productLogin`（產品要登入才看得到：`sources.requiresLogin`，或擷取時被導到登入頁；擋 `capture`，由使用者以 `pnpm run login` 自己登入，見 §11）。含說明內容、記錄欄位與拒絕時的處理 |
 | `steps` | 主流程 `init` → `analyze` → `storyboard` → `build_scene` → `assemble`。每步定義 `command`、`scope`（project / scene）、`requires`（允許的 project / scene 狀態、gates）、`skipWhen`、`reads` / `writes`、有序的 `actions`（含狀態轉換）、`checkpoint`、`guide`（Skill 章節） |
 | `operations` | 隨時可執行的操作：`sync`、`status`、`approve`、`translate` |
 | `derivedProjectStatus` | 由 scene 狀態推導 `project.status` 的規則；`state.mjs` 每次寫入 scene 後重算 |
 
-`npm run test:specs` 會驗證 workflow.json 符合 schema，並交叉檢查所有狀態轉換值皆為合法的 project / scene 狀態、引用的 gate 皆已定義、指令不重複。
+`pnpm run test:specs` 會驗證 workflow.json 符合 schema，並交叉檢查所有狀態轉換值皆為合法的 project / scene 狀態、引用的 gate 皆已定義、指令不重複。
 
 ### 6.2 步驟細節
 
 **Step 1 — init**
 1. 下載並解壓專案範本；填入 `video.project.json` 的 `sources` 與 `format`。
-2. 由 Agent 執行 `npm install`（含 FFmpeg）；檢查 Node.js、瀏覽器（Playwright Chromium 或系統 Chrome / Edge）、TTS 工具。缺少時用白話說明並取得同意，同意後可代為執行一般安裝（如 `winget` / `brew`），不使用系統管理員權限；無法代為安裝時給點擊式步驟。
-3. 確認渲染器授權（§7.6）與 TTS 連網同意（§7.4），寫入 `project.rendererLicense` / `project.tts.consent`。
-4. 同步 `schemas/`，執行 `npm run validate`。
+2. 由 Agent 執行 `pnpm install`（含 FFmpeg）；檢查 Node.js、pnpm、瀏覽器（Playwright Chromium 或系統 Chrome / Edge）、TTS 工具。缺少時用白話說明並取得同意，同意後可代為執行一般安裝（如 `winget` / `brew`），不使用系統管理員權限；無法代為安裝時給點擊式步驟。
+3. 確認 TTS 連網同意（§7.4），寫入 `project.tts.consent`。
+4. 同步 `schemas/`，執行 `pnpm run validate`。
 
 **Step 2 — analyze**
 1. 讀取產品網址（Playwright 擷取頁面文字與主要截圖）、本機原始碼（README、package.json、路由/頁面）、使用者描述。
 2. 產出 `brief/product-brief.md`：產品一句話、目標受眾、痛點、核心功能（≤5）、USP、品牌色與字型、CTA。
 3. （可選）若有 `referenceVideoUrl` 或使用者提供的參考影片檔：以 FFmpeg 抽取關鍵影格，分析節奏、色調、字幕樣式、轉場，寫入 `brief/style.json`。無法取得影片時跳過並註明，不臆測。
+4. **Checkpoint**：摘要產品重點，與使用者確認觀看對象、影片風格（`project.style`），並依內容提出 2–3 個長度選項與理由；確認後寫入 `targetAudience`、`style`、`format.targetDurationSec`。
 
 **Step 3 — storyboard**
 1. 依 brief 規劃 **3–8 個 scene**，建議骨架：Hook → Problem → Solution → Feature(s) → Benefit → CTA。
 2. 每個 scene 產生 `scene.json` + `script.md`；總旁白估算時長需接近 `targetDurationSec`（中文約 4 字/秒、英文約 2.5 字/秒）。
-3. 執行 `npm run validate`。
-4. **Checkpoint**：停下來請使用者審閱分鏡（在終端或 UI），確認後才進入 Step 4。
+3. 執行 `pnpm run validate`。
+4. **Checkpoint**：停下來請使用者審閱分鏡與完整旁白稿（在終端或 UI），確認後才進入 Step 4（產生語音與渲染）。
 
 **Step 4 — build_scene（逐 scene、可單獨重跑）**
 1. 若 `locked: true` 或狀態為 `rendered/approved` 且未過期 → 跳過。
-2. **TTS**：`npm run tts -- <id>` → `assets/narration.mp3`；以 `ffprobe` 取得音長，決定 `durationSec`（若未強制指定）。
-3. **Capture**：依 `visual.type` 執行 `npm run capture -- <id>`（Playwright 截圖或錄製網頁操作）→ `assets/`。
+2. **TTS**：`pnpm run tts <id>` → `assets/narration.mp3`；以 `ffprobe` 取得音長，決定 `durationSec`（若未強制指定）。
+3. **Capture**：依 `visual.type` 執行 `pnpm run capture <id>`（Playwright 截圖或錄製網頁操作）→ `assets/`。
 4. 狀態設為 `assets_ready`。
-5. **Render**：`npm run render:scene -- <id>` → `output/scene.mp4`；寫入 `render.inputHash`、`renderedAt`，狀態 `rendered`。
-6. 執行 `npm run validate`。
+5. **Render**：`pnpm run render:scene <id>` → `output/scene.mp4`（多個 scene 可一次傳入，平行渲染，見 §7.6）；寫入 `render.inputHash`、`renderedAt`，狀態 `rendered`。
+6. 執行 `pnpm run validate`。
 7. **Checkpoint**：回報該 scene 預覽路徑，使用者可要求修改；修改只重跑該 scene。
 
 **Step 5 — assemble**
 1. 檢查所有 scene 為 `rendered` 或 `approved` 且 `inputHash` 相符；否則列出需重做的 scene 並停止。
-2. 依 `video.project.json.scenes` 順序以 FFmpeg 串接（兩種 renderer 相同）：有 `transitionIn` 的 scene 以 `xfade` 與前一個 scene 重疊 0.5 秒（不超過兩者各自長度的一半，並對齊整幀），聲音同時以 `acrossfade` 交叉淡化；`none` 直接串接。每個 scene 的聲音先補齊或截到其視訊長度，避免音畫漂移。
-3. **字幕**：合併各 scene 的 `assets/captions.json`（依 scene 起始時間位移）為 `output/final.srt`；`captions.mode` 為 `burn` 時再以 FFmpeg 燒入畫面。
+2. 依 `video.project.json.scenes` 順序以 FFmpeg 串接：有 `transitionIn` 的 scene 以 `xfade` 與前一個 scene 重疊 0.5 秒（不超過兩者各自長度的一半，並對齊整幀），聲音同時以 `acrossfade` 交叉淡化；`none` 直接串接。每個 scene 的聲音先補齊或截到其視訊長度，避免音畫漂移。
+   - 各 scene 視訊編碼參數相同（codec、profile、解析度、幀率、色彩標記、SPS/PPS）時，視訊不整支重新編碼：scene 在關鍵幀處以 segment muxer 直接切開複製，只有轉場前後到最近關鍵幀之間的片段以相同參數重新編碼（含 xfade），最後以 concat demuxer 串接（`-c:v copy`，每段依其幀數定位）；聲音另外整條混音與編碼。render-scene 在距頭尾各 0.5 秒處強制 IDR 關鍵幀，所以重新編碼的長度通常剛好等於轉場長度。編碼參數不同、或重新編碼的片段與 scene 參數不符時，退回整支重新編碼。
+3. **字幕**：合併各 scene 的 `assets/captions.json`（依 scene 起始時間位移）為 `output/final.srt`；`captions.mode` 為 `burn` 時字幕已在 scene 渲染時燒入（§7.5）。
 4. **BGM**：若 `audio.bgm` 檔案存在，以 FFmpeg `sidechaincompress` 在旁白出現時壓低音量，頭尾淡入淡出；不存在則略過。
 5. 輸出 `output/final.mp4`，project 狀態設為 `completed`。
 
@@ -437,6 +433,8 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 重新 assemble
 ```
 
+**重新規劃分鏡**：專案已有 scene（含 `completed`）時仍可執行 `/video-storyboard`，改為修訂現有分鏡：先列出每段保留／修改／新增／移除並經使用者確認，才寫入檔案；保留的 scene 沿用原 id 與目錄（目錄路徑算在 `inputHash` 內）。以 patch 修改 `scenes` 陣列時，`state.mjs` 依 `derivedProjectStatus` 重算 project 狀態，且 scene 清單變更後最多為 `ready_to_assemble`（`final.mp4` 已不符）。之後以 sync 只重做修改與新增的 scene 並重新合成。
+
 ---
 
 ## 7. 本機工具鏈
@@ -445,11 +443,11 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 | 用途 | 工具 | 備註 |
 |---|---|---|
-| 執行環境 | Node.js ≥ 20.12、npm | 需要 `readdirSync` 遞迴列出與 `parentPath` |
+| 執行環境 | Node.js ≥ 20.12、pnpm | 需要 `readdirSync` 遞迴列出與 `parentPath` |
 | 網頁擷取 | Playwright | 截圖、錄製操作、抓取產品頁內容。瀏覽器依序使用：Playwright 內建 Chromium → 系統 Chrome → 系統 Edge（可用 `VIDEO_AGENT_BROWSER_CHANNEL` 指定），Windows 使用者無需另外下載 |
 | 語音合成 | 可替換 provider，預設 `edge-tts` | 見 §7.4 |
-| 影片合成 | Remotion（預設）／html-capture | Remotion 授權：個人、≤3 人營利組織、非營利免費，其餘需 Company License（義務在實際渲染者）；見 §7.6 |
-| 轉檔/合併 | FFmpeg / ffprobe | 依序使用：環境變數 `VIDEO_AGENT_FFMPEG` / `VIDEO_AGENT_FFPROBE` → 系統 PATH → npm 內建（`ffmpeg-static` / `ffprobe-static`），使用者無需預先安裝 |
+| 影片合成 | Playwright 逐幀截圖 + FFmpeg | 不需額外授權；見 §7.6 |
+| 轉檔/合併 | FFmpeg / ffprobe | ffmpeg 依序使用：環境變數 `VIDEO_AGENT_FFMPEG` → 系統 PATH → 套件內建（`ffmpeg-static`）。ffprobe 依序使用：`VIDEO_AGENT_FFPROBE` → 套件內建（`ffprobe-static`）→ 系統 PATH，因為不同版本量出的 MP3 長度不同（新版扣除編碼器補白），固定版本才能讓各平台 scene 長度一致。使用者無需預先安裝 |
 
 ### 7.2 `package.json` scripts
 
@@ -462,21 +460,17 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
     "validate":     "node scripts/validate.mjs",
     "tts":          "node scripts/tts.mjs",
     "capture":      "node scripts/capture.mjs",
+    "login":        "node scripts/login.mjs",
     "render:scene": "node scripts/render-scene.mjs",
     "assemble":     "node scripts/assemble.mjs",
     "state":        "node scripts/state.mjs",
-    "status":       "node scripts/validate.mjs --report",
-    "preview":      "remotion studio src/index.ts"
+    "status":       "node scripts/validate.mjs --report"
   },
   "dependencies": {
-    "remotion": "4.x", "@remotion/cli": "4.x", "@remotion/bundler": "4.x", "@remotion/renderer": "4.x",
-    "react": "^19", "react-dom": "^19",
     "playwright": "^1", "ajv": "^8"
   }
 }
 ```
-
-Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 
 ### 7.3 腳本職責
 
@@ -484,21 +478,22 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 |---|---|---|---|
 | `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態、是否過期與建議的下一個指令；`--json` 輸出機器可讀結果（供 Web UI / Companion）。輸入已變更（`inputHash` 不符）只是警告，不算錯誤 | 否 |
 | `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
-| `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖） | 否 |
+| `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖、頁面文字、可 highlight 的元素與 selector）；`highlight` 一次框一個元素，找不到時警告並略過；`script` 需 `domEditConsent`。有保存的登入時以它開頁；`sources.requiresLogin` 卻沒有登入、或開頁被導到登入頁時以 `gate productLogin` 失敗 | 否 |
+| `login.mjs [url]` | `sources.productUrl` | 打開**可見**的瀏覽器視窗（優先用已安裝的 Chrome / Edge），使用者自己登入後關閉；登入狀態（cookie、localStorage、IndexedDB）存到 `.auth/login.json`（列入 `.gitignore`，Agent 不讀）。只在看過登入頁、又離開登入頁後才算登入成功，視窗下方的提示隨之由藍轉綠。`--clear` 刪除 | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4`（H.264 + AAC 48 kHz 立體聲、BT.709，無旁白時為靜音音軌）；失敗時保留既有輸出 | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
-| `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊、轉場、字幕燒入、BGM 在同一次 FFmpeg 編碼完成 | 否 |
+| `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊直接複製，只重新編碼轉場片段；聲音（含 BGM）整條混音編碼。scene 編碼參數不一致時整支重新編碼 | 否 |
 
 `state.mjs` 介面（Agent 使用方式見範本 `AGENTS.md` §4）：
 
 | 用法 | 效果 |
 |---|---|
-| `npm run state -- <project\|scene-id> --status <status>` | 設定狀態（檢查轉換是否合法） |
-| `npm run state -- <scene-id> --rendered` | 計算 `inputHash`，寫入 `render`（含 `renderer` 與以 ffprobe 量得的 `actualDurationSec`；輸出檔無法讀取則拒絕），狀態 `rendered`，`attempts` 歸零，清除 `error` |
-| `npm run state -- <scene-id> --failed <step> "<message>" [--hint "<hint>"]` | 狀態 `failed`，寫入 `error`，`attempts` + 1 |
-| `npm run state -- <target> --patch-file <path>` | 套用 JSON Patch（RFC 6902）。不用 JSON Merge Patch，因為它以 `null` 表示刪除，無法把 `durationSec` 設為 `null` |
+| `pnpm run state <project\|scene-id> --status <status>` | 設定狀態（檢查轉換是否合法） |
+| `pnpm run state <scene-id> --rendered` | 計算 `inputHash`，寫入 `render`（含 `renderer` 與以 ffprobe 量得的 `actualDurationSec`；輸出檔無法讀取則拒絕），狀態 `rendered`，`attempts` 歸零，清除 `error` |
+| `pnpm run state <scene-id> --failed <step> "<message>" [--hint "<hint>"]` | 狀態 `failed`，寫入 `error`，`attempts` + 1 |
+| `pnpm run state <target> --patch-file <path>` | 套用 JSON Patch（RFC 6902）。不用 JSON Merge Patch，因為它以 `null` 表示刪除，無法把 `durationSec` 設為 `null` |
 
-所有用法皆自動更新 `updatedAt` / `updatedBy`，寫入前驗證，失敗則不寫入。新建 `scene.json` 是唯一可直接寫檔的情況（尚無其他寫入者），寫完須執行 `npm run validate`。
+所有用法皆自動更新 `updatedAt` / `updatedBy`，寫入前驗證，失敗則不寫入。新建 `scene.json` 是唯一可直接寫檔的情況（尚無其他寫入者），寫完須執行 `pnpm run validate`。
 
 **產出類腳本只產生檔案，不改 JSON；狀態一律由 Agent 決定並經 `state.mjs` 寫回**，確保狀態寫入集中、可追蹤且不互相覆蓋。
 
@@ -532,9 +527,10 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
   - 其他 provider / `manual`：依句子（句號、問號、換行）切分，按字數比例分配音長。
 - 單條字幕上限：中文 16 字、英文 42 字元，超過則再切。
 - `captions.mode`：`srt`（預設，只輸出 `output/final.srt`）｜`burn`（燒入並同時輸出 srt）｜`none`。
-- **燒入只在 assemble 進行**，不在 scene 渲染時燒入——修改字幕樣式只需重跑 assemble，不使 scene 過期；`captions` 設定因此不納入 scene 的 `inputHash`。
+- **燒入在 scene 渲染時進行**（`render-scene.mjs`），assemble 不燒字幕，視訊可直接串接。代價：`captions.mode` 為 `burn` 時，`captions` 設定納入每個 scene 的 `inputHash`，修改字幕樣式會使所有 scene 過期、需重新渲染；`srt` / `none` 時不納入，只需重跑 assemble。
+- 燒入的字幕只截到該 scene 結尾；有轉場時，前一段結尾的字幕會隨畫面一起淡出（`final.srt` 仍截在下一段起點）。
 - 合併：各 scene 的字幕依該 scene 在成片中的起點位移；跨過下一個 scene 起點（含轉場重疊）的部分截斷。
-- 燒入實作：產生 ASS 字幕（`PlayResX/Y` = 輸出解析度，故 `style.fontSize` 以成片像素計，省略時為高度 × 48/1080），以 FFmpeg `ass` 濾鏡（libass）繪製；白字深色描邊，`position` 對應下／中／上。指定字型未安裝時由 libass 改用系統中有對應字形的字型。內建 FFmpeg 的 libass 不支援 Unicode 斷行，長字幕依賴上述單條字數上限。
+- 燒入實作：產生 ASS 字幕（`PlayResX/Y` = 輸出解析度，故 `style.fontSize` 以成片像素計，省略時為高度 × 48/1080），在 scene 編碼時以 FFmpeg `ass` 濾鏡（libass，`fontsdir` 指向 `src/fonts/`）繪製；白字深色描邊，`position` 對應下／中／上。字型先找 `src/fonts/`，找不到才用系統字型（各平台結果可能不同）。libass 不支援 woff2 與可變字型，`src/fonts/` 只放靜態字重的 OTF／TTF。內建 FFmpeg 的 libass 不支援 Unicode 斷行，長字幕依賴上述單條字數上限。
 
 **BGM**
 
@@ -544,31 +540,24 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 
 ### 7.6 渲染器
 
-| renderer | 定位 | 授權 |
-|---|---|---|
-| `remotion`（預設） | 成熟、單 scene 渲染與轉場完整、LLM 熟悉度高 | 個人／≤3 人營利組織／非營利免費；其餘需 Company License |
-| `html-capture` | 正式支援的免授權替代方案 | Playwright（Apache-2.0）、FFmpeg |
+以 Playwright（Apache-2.0）逐幀截圖、FFmpeg 編碼，不需額外授權（`scripts/render-scene.mjs`）：
 
-共通實作（`scripts/render-scene.mjs`）：
-
-- **Render plan**：`scripts/lib/scene-plan.mjs` 將 scene.json + `project.format` 轉為與渲染器無關的 plan（時長、幀數、背景層、疊加元素、旁白）。兩個渲染器只畫 plan；版面、動畫與配色由 `src/lib/motion.js` 的純函式定義，兩者共用，因此畫面一致。
+- **Render plan**：`scripts/lib/scene-plan.mjs` 將 scene.json + `project.format` 轉為 plan（時長、幀數、背景層、疊加元素、旁白）。渲染器只畫 plan；版面、動畫與配色由 `src/lib/motion.js` 的純函式定義。
 - **影片素材正規化**：所有影片層（錄影、`user-asset` 影片、影片元素）先以 FFmpeg 轉為專案 fps、依 trim 裁切、補到精確幀數（較短時停在最後一格），再交給渲染器。素材原聲不使用。
 - **素材存取**：渲染期間在 `127.0.0.1` 隨機埠啟動唯讀靜態伺服器，只提供專案根目錄內的檔案（支援 Range）。不使用 `file://`。
+- **字型**：畫面與燒入字幕只使用 `src/fonts/` 內附的字型（Noto Sans TC Bold、JetBrains Mono），不依賴系統字型，因此 Windows、macOS、Linux 輸出相同。
 - 暫存檔放在 `.tmp/render-<id>/`，結束即刪除。輸出先寫到 `*.partial.mp4`，成功後才替換 `output/scene.mp4`。
-- scene 間轉場（`transitionIn`）、字幕、BGM 皆不在 scene 渲染中處理，由 `assemble.mjs` 負責。
+- scene 間轉場（`transitionIn`）、`final.srt`、BGM 不在 scene 渲染中處理，由 `assemble.mjs` 負責；`captions.mode: burn` 的字幕在 scene 渲染時燒入（§7.5）。
+- **關鍵幀**：編碼時在距頭尾各 0.5 秒（`TRANSITION_SEC`）處強制 IDR 關鍵幀，讓 assemble 只需重新編碼轉場片段。
+- **平行渲染**：`render:scene` 一次傳入多個 id 時，各 scene 在獨立程序中平行渲染（`--jobs N`，預設為 CPU 核心數的一半，且每個約保留 1 GB 可用記憶體）。單一 scene 失敗不影響其他 scene；最後列出成功與失敗的 id，有失敗時退出碼為 1。
 - `src/` 不納入 `inputHash`：修改外觀不會自動使既有 scene 過期，需由 Agent 經使用者同意後將受影響的 scene 設為 `stale`。
 
-`remotion`：以 `@remotion/bundler` 打包 `src/index.ts`（依 `src/` 內容與 Remotion 版本快取於 `.tmp/remotion-bundle/`），`@remotion/renderer` 以 plan 為 `inputProps` 渲染 composition `Scene`。瀏覽器依序使用：環境變數 `VIDEO_AGENT_BROWSER_EXECUTABLE` → Remotion 下載的 headless shell → Playwright 的 Chromium。
-
-`html-capture` 實作要求：
+實作要求：
 
 - 每個 scene 渲染時產生暫存頁 `.tmp/render-<id>/scene.html`（內嵌 plan，載入 `src/html/player.js`），所有畫面由單一時間變數 `t` 驅動（`window.__seek(t)`）。
 - **逐幀截圖**：依 `fps` 逐幀呼叫 `__seek(frame / fps)`，等待所有圖片解碼後截圖，以 PNG 串流交給 FFmpeg 編碼（BT.709）並混入旁白。**不得**使用 Playwright 內建 `recordVideo`（webm、幀率不穩，無法確定性重現）。
 - 影片層在頁面中以預先抽出的 JPEG 影格呈現，而非 `<video>` 定位，確保每幀確定且不受瀏覽器影片解碼器影響。
 - scene 間轉場由 `assemble.mjs` 以 FFmpeg `xfade` 實作。
-- 腳本介面與 Remotion 相同（`npm run render:scene -- <id>`），切換 renderer 不需改 scene 資料。
-
-**授權告知**：`init` 選用 Remotion 時，Agent 必須說明授權條件並請使用者確認身分級距，寫入 `project.rendererLicense`；使用者表示不符合免費條件且未購買授權時，改用 `html-capture`。
 
 ---
 
@@ -578,7 +567,7 @@ Remotion 各套件版本必須完全相同，範本以精確版本鎖定。
 
 1. 開始前先讀取 `/api/agent-guide.md` 與 `/api/workflow.json`（或本機 Skill）。
 2. 依步驟執行，不跳步；到 checkpoint 必須停下等待使用者確認。
-3. 所有 JSON 必須符合 Schema；每次寫入後執行 `npm run validate`。
+3. 所有 JSON 必須符合 Schema；每次寫入後執行 `pnpm run validate`。
 4. 每個 scene 獨立產生、獨立渲染；修改只重做受影響的 scene。
 5. 不修改 `locked: true` 或 `approved` 的 scene，除非使用者明確要求。
 6. 不覆蓋使用者手動修改的內容；原樣保留 `x-` 開頭的擴充欄位（§4.2.1）。
@@ -595,14 +584,14 @@ skills/product-video/
 ├── SKILL.md              # 觸發描述 + 工作流程總覽 + 規則
 ├── workflow.md
 ├── script-guide.md       # 文案寫法、各 purpose 的範例
-├── rendering-guide.md    # Remotion / capture 實作指引
+├── rendering-guide.md    # 渲染與 capture 實作指引
 └── schemas/ → 連結至 specs/
 ```
 
 安裝方式：Agent 下載 `/api/skills/product-video.zip` 解壓到專案 `.claude/skills/`（或使用者層級 skills 目錄）。不安裝也可以：`/api/agent-guide.md` 與 `/api/skills/product-video/*.md` 提供相同內容供線上讀取。
 
 - `SKILL.md` 負責「判斷目前狀態」與「初始化新專案」（此時專案內尚無 `AGENTS.md`）；初始化之後的規則以專案 `AGENTS.md` 為準，SKILL 不重複規則。
-- `workflow.md`（各步驟做法，含 `brief/product-brief.md` 與 `brief/style.json` 的格式）、`script-guide.md`（分鏡與旁白寫作）以 `<a id="…">` 明確錨點供 `workflow.json` 的 `guide` 引用；`npm run test:specs` 檢查所有 Skill 內部連結與錨點。
+- `workflow.md`（各步驟做法，含 `brief/product-brief.md` 與 `brief/style.json` 的格式）、`script-guide.md`（分鏡與旁白寫作）以 `<a id="…">` 明確錨點供 `workflow.json` 的 `guide` 引用；`pnpm run test:specs` 檢查所有 Skill 內部連結與錨點。
 - `SKILL.md` 中的網站網址寫成 `{{SITE_URL}}`，由 `build-api.mjs` 打包時替換。
 - 範本 `video.project.json` 使用可通過 Schema 的佔位值（全 0 UUID、`updatedAt` 為 1970-01-01），init 時由 Agent 替換。
 
@@ -617,7 +606,7 @@ skills/product-video/
 | `/video-scene <id\|all>` | build_scene |
 | `/video-sync` | 找出 stale scene 並重做 + assemble |
 | `/video-assemble` | assemble |
-| `/video-status` | 執行 `npm run status` 並摘要 |
+| `/video-status` | 執行 `pnpm run status` 並摘要 |
 | `/video-approve <id>` | 將 `rendered` 的 scene 設為 `approved` |
 | `/video-translate <locale>` | 複製專案並翻譯為指定語言（§4.4） |
 
@@ -632,13 +621,13 @@ skills/product-video/
 
 | 層 | 通用性 | 規則 |
 |---|---|---|
-| npm scripts、JSON Schema、檔案協議 | 完全通用 | 協議本體，任何能讀檔、執行指令的 Agent 皆可用 |
+| pnpm scripts、JSON Schema、檔案協議 | 完全通用 | 協議本體，任何能讀檔、執行指令的 Agent 皆可用 |
 | `AGENTS.md` | 多數 Agent 原生讀取 | 規則的唯一來源；Claude Code 以 `CLAUDE.md` 的 `@AGENTS.md` 引入 |
 | `SKILL.md` | Agent Skills 開放格式，支援度各異 | 內容保持中立 |
 | MCP | 通用 | Phase 5 |
 | Slash commands | 各家格式不同 | 只是便利入口，不承載規則 |
 
-- **中立寫法**：`AGENTS.md`、`SKILL.md`、prompts 不得使用任何 Agent 專屬語法或工具名稱（如 `$ARGUMENTS`、特定工具名），一律以「執行 `npm run …`」「讀取檔案 …」描述動作。Agent 專屬內容只能放在其專屬目錄（如 `.claude/`）。
+- **中立寫法**：`AGENTS.md`、`SKILL.md`、prompts 不得使用任何 Agent 專屬語法或工具名稱（如 `$ARGUMENTS`、特定工具名），一律以「執行 `pnpm run …`」「讀取檔案 …」描述動作。Agent 專屬內容只能放在其專屬目錄（如 `.claude/`）。
 - **支援等級**：MVP 只正式支援並端到端測試 **Claude Code**。
 - **擴充方式**：指令的單一來源是 `specs/workflow.json` 中帶 `command` 的 steps / operations（名稱、參數、標題、guide 已在其中，不另設 YAML），由 `build-api.mjs`（`tools/lib/commands.mjs`）產生各 Agent 格式（目前 `.claude/commands/*.md`；之後 `.gemini/commands/*.toml`、`.cursor/commands/*.md` 等）。依序加入 Codex、Gemini CLI；每個 Agent 通過與 Claude Code 相同的端到端驗收（§13 Phase 3 完成標準）後，網站才標示為「支援」。
 
@@ -650,7 +639,7 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.1 本機檔案存取
 
-- 使用 **File System Access API**：使用者點擊「開啟專案資料夾」→ `window.showDirectoryPicker({ mode: "readwrite" })` → 取得 `FileSystemDirectoryHandle`。
+- 使用 **File System Access API**：使用者在首頁步驟 1 點擊「選擇或建立資料夾」（新專案時在 Agent 開始之前，見 §9.2）→ `window.showDirectoryPicker({ mode: "readwrite" })` → 取得 `FileSystemDirectoryHandle`。
 - **不使用** `fetch("file://…")`（瀏覽器禁止）。
 - 支援瀏覽器：Chrome / Edge（桌面版）；需 HTTPS 或 localhost。Firefox / Safari 顯示唯讀提示或引導改用支援的瀏覽器。
 - Directory handle 存入 IndexedDB，下次開啟時請求重新授權即可，免重新選擇。
@@ -659,15 +648,21 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.2 畫面
 
-1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）：
-   1. 打開 Agent：沒有的話下載 Claude 桌面版並登入；開新對話時選一個存放影片的資料夾（例如「文件」）。
-   2. 產品資訊：產品網址、原始碼資料夾（以資料夾選擇器挑選，讀取 `package.json` / README 帶入說明與網址；瀏覽器無法取得完整路徑，因此只傳資料夾名稱，由 Agent 尋找）、產品說明。至少一項；輸入內容保存在 `localStorage`。
-   3. 複製一段白話訊息貼給 Agent：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
-   4. Agent 建好專案後，選擇該專案資料夾開啟工作台。
-2. **Workflow**：五步驟進度條，顯示目前 project 狀態與下一步建議指令。
-3. **Scene Board**：scene 卡片看板（標題、purpose、時長、狀態徽章、縮圖），可拖曳排序。
-4. **Scene Editor**：編輯 `script.md`、視覺描述、voice、強制時長；鎖定/核准按鈕；以 `<video>` 從 handle 讀 blob 預覽 `scene.mp4`。
-5. **Final**：預覽 `final.mp4`，列出過期 scene。
+1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）。先選資料夾，網頁從一開始就以 File System Access API 掌握專案資料夾：
+   1. 準備資料夾：以 `showDirectoryPicker({ mode: "readwrite" })` 選擇或在對話框中新建一個空資料夾（只允許空資料夾，或只含 `video.start.json`、`video.activity.json` 與系統隱藏檔；已有 `video.project.json` 則直接開啟工作台）。Handle 存入 IndexedDB。
+   2. 產品資訊：產品網址、原始碼資料夾、產品說明，至少一項；填了網址時可勾「這個網站要登入才看得到」（不提供帳密欄位，勾選後說明 Agent 會開視窗讓使用者自己登入、建議用展示帳號）；輸入內容保存在 `localStorage`，並同步寫入專案資料夾的 `video.start.json`。原始碼資料夾以**完整路徑**為主：瀏覽器無法取得選取資料夾的完整路徑，因此由使用者貼上（頁面依作業系統說明如何複製路徑）；資料夾選擇器只用來讀取 `package.json` / README 帶入說明與網址，並記下 `sourceFolder`（名稱、`packageName`、`gitRemote`（去除帳密）、最上層 `entries`），沒填路徑時供 Agent 依名稱尋找並比對。
+   3. 打開 Agent（沒有的話下載 Claude 桌面版並登入），開新對話（資料夾選步驟 1 的資料夾或它的上層都可以，不必再精確選一次），貼上白話訊息：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋「我已準備好影片專案資料夾『X』，裡面的 video.start.json 記有產品資訊與識別碼 <id>，請先找到這個資料夾，直接在那裡建立專案」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。瀏覽器無法取得資料夾的完整路徑，所以由 Agent 從目前目錄往下、再到常見位置尋找 `id` 相符的 `video.start.json`，切換過去後 init（SKILL §1–2）。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
+   4. 網頁輪詢該資料夾，顯示 `video.activity.json`（Agent 正在做什麼），`video.project.json` 一出現就自動切換到工作台。
+   - 不支援 File System Access API 的瀏覽器跳過步驟 1：訊息不含資料夾，Agent 在工作資料夾中自建 `<產品>-video`，網頁不提供工作台。
+
+   `video.start.json`（網頁寫、Agent 讀，init 後保留不再更新）：`id`（8 碼隨機識別碼，資料夾第一次準備時產生，之後沿用）、`productUrl`、`requiresLogin`、`sourceCodePath`、`sourceFolder`（`{ name, packageName, gitRemote, entries }` 或 `null`）、`description`、`updatedAt`。
+
+   `video.activity.json`（Agent 寫、網頁讀，格式見 `activity.schema.json`，不納入版本控制，不經過鎖）：`message`（一句白話）、`waitingForUser`、`step`、`scene`、`updatedAt`。Agent 在每個步驟或 scene 開始時、每次停下來等使用者回覆前覆寫它，專案建立前就開始寫。網頁不能叫醒 Agent，所以這是使用者在網頁上得知「該回對話了」的唯一管道；讀不到或不合格式時不顯示。
+2. **Activity**：首頁步驟 4 與工作台頂端顯示 Agent 動態。`waitingForUser` 時醒目提示回到對話；工作中的訊息超過 10 分鐘未更新視為 Agent 已停下，只以灰字顯示為「最後的動態」。
+3. **Workflow**：五步驟進度條，顯示目前 project 狀態與下一步建議指令。
+4. **Scene Board**：scene 卡片看板（標題、purpose、時長、狀態徽章、縮圖；Agent 正在處理的 scene 標「製作中」），可拖曳排序。
+5. **Scene Editor**：編輯 `script.md`、視覺描述、voice、強制時長；鎖定/核准按鈕；以 `<video>` 從 handle 讀 blob 預覽 `scene.mp4`。
+6. **Final**：預覽 `final.mp4`，列出過期 scene。
 
 ### 9.3 UI 寫入規則
 
@@ -681,13 +676,13 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.4 技術選型
 
-Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1）。Schema 驗證使用與本機相同的 JSON Schema（Ajv，瀏覽器端執行）；TypeScript 型別由 `specs/*.schema.json` 以 json-schema-to-typescript 產生（`npm run gen:types` → `apps/web/src/types/protocol.ts`，CI 以 `--check` 確認未過期），不手寫，確保 UI 與協議同步。
+Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1）。Schema 驗證使用與本機相同的 JSON Schema（Ajv，瀏覽器端執行）；TypeScript 型別由 `specs/*.schema.json` 以 json-schema-to-typescript 產生（`pnpm run gen:types` → `apps/web/src/types/protocol.ts`，CI 以 `--check` 確認未過期），不手寫，確保 UI 與協議同步。
 
 實作要點（`apps/web/`）：
 
 - **與本機腳本共用協議邏輯**：`templates/product-video/scripts/lib/core.mjs` 不依賴 Node 或 DOM，提供 inputHash 的內容序列（`hashParts`）、下一步建議（`suggestNext`）、狀態轉換檢查與 `derivedProjectStatus`。Node 端以串流 SHA-256、瀏覽器以 WebCrypto 計算，結果逐位元組相同，因此 UI 能正確顯示「渲染後內容已變更」。雜湊依檔案大小與修改時間快取，輪詢時不重讀影片素材。
 - **輪詢**：每 2 秒取各檔（專案、scene、旁白稿、輸出、素材、鎖檔、final）的 `lastModified` 與大小組成指紋，變了才重新載入；分頁隱藏或寫入中時暫停。
-- **畫面**：首頁（未開啟專案）＝ Source 啟動指令產生器 + 開啟資料夾 + Guide API 連結；開啟後為 Workflow（五步驟進度、專案狀態、下一步指令、待更新提示與 `/video-sync` 複製）、Scene Board（拖曳或上下按鈕排序）、Scene Editor、Final。窄螢幕單欄排列。
+- **畫面**：首頁（尚無專案）＝ 準備資料夾 + Source 啟動訊息產生器 + 等待 Agent 建立專案 + Guide API 連結；開啟後為 Workflow（五步驟進度、專案狀態、下一步指令、待更新提示與 `/video-sync` 複製）、Scene Board（拖曳或上下按鈕排序）、Scene Editor、Final。窄螢幕單欄排列。
 - **測試**：原生資料夾選擇器無法自動化，E2E 以 OPFS（`navigator.storage.getDirectory()`，同樣是 `FileSystemDirectoryHandle`）搭配 `window.__avp.open(handle)` 開啟；fixture 由本機腳本產生，驗證瀏覽器與 Node 的 inputHash 一致（`tests/web/ui.test.mjs`）。
 
 ---
@@ -698,17 +693,17 @@ Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1�
 
 | | Guide（網站內容的 MCP 包裝） | Project（本機專案） |
 |---|---|---|
-| Resources | `video://guide`、`video://workflow`、`video://schemas/{common,project,scene}`、`video://rules/{script,visual}`、`video://templates/product-introduction`（範本 manifest） | `video://project/current`（`npm run status` 的 JSON） |
+| Resources | `video://guide`、`video://workflow`、`video://schemas/{common,project,scene}`、`video://rules/{script,visual}`、`video://templates/product-introduction`（範本 manifest） | `video://project/current`（`pnpm run status` 的 JSON） |
 | Prompts | `analyze`、`analyze-style`、`storyboard`、`scene-script`（參數 `id`） | — |
 | Tools | — | `project_status`、`validate_project`、`create_project`、`create_scene`、`update_scene`、`update_project`、`render_scene`、`assemble_video` |
 
 - **沒有獨立的 Cloud MCP 伺服器**：網站部署於 GitHub Pages，只能提供靜態檔，無法運行 MCP。Guide 類 resources / prompts 改由本機 `video-agent mcp` 提供，內容依序取自 `VIDEO_AGENT_GUIDE_DIR` → 套件打包時內附的 `guide/`（`prepack` 以 `build-api.mjs` 產生）→ repo 的 `dist/api` → 以 HTTP 讀取 `VIDEO_AGENT_SITE_URL`（預設本站）。內容與 `/api/*` 完全相同（D21）。
 - **不含協議邏輯**：所有專案操作都執行專案自己的 `scripts/*.mjs`，行為與專案的範本版本一致；JSON 只經 `state.mjs` 寫入，`updatedBy` 為 `mcp` / `companion`。
-- `create_project`：下載範本並以 manifest 的 SHA-256 驗證後解壓到空目錄，填入 `project.id`（UUID v4）、名稱、來源、語言；之後仍須 `npm install` 並經使用者確認後以 `update_project` 記錄 gates。
+- `create_project`：下載範本並以 manifest 的 SHA-256 驗證後解壓到空目錄，填入 `project.id`（UUID v4）、名稱、來源、語言；之後仍須 `pnpm install` 並經使用者確認後以 `update_project` 記錄 gates。
 - `create_scene`：寫入新的 `scene.json` + `script.md`，再以 JSON Patch 加入 `scenes`；註冊失敗（例如 Schema 不符）時只移除本次建立的目錄。
 - `update_scene` / `update_project`：JSON Patch，經 `state.mjs` 驗證並檢查狀態轉換。
 - `render_scene`：執行 build_scene 的確定性部分（見下方「重做流程」），失敗時以 `state --failed` 記錄。`assemble_video`：`assemble` 後將專案設為 `completed`。
-- 註冊方式（Claude Code）：`claude mcp add video-agent -- npx -y video-agent mcp`（或以 `node <repo>/packages/video-agent/bin/video-agent.mjs mcp` 指定本機路徑）。
+- 註冊方式（Claude Code）：`claude mcp add video-agent -- pnpm dlx video-agent mcp`（或以 `node <repo>/packages/video-agent/bin/video-agent.mjs mcp` 指定本機路徑）。
 
 **重做流程（`core/project.mjs` 的 `buildScene`，MCP 與 Companion 共用）**：專案若為 `script_generated` / `ready_to_assemble` / `completed` 先設為 `producing` → scene 為 `rendered` / `approved` 時先設為 `stale`（workflow 不允許直接跳回 `assets_ready`）；殘留在 `rendering` 的先記為失敗 → `tts` → `capture` → `assets_ready` → `rendering` → `render:scene` → `--rendered`。任一步失敗即停止並記錄。鎖定（`locked`）的 scene 拒絕執行。Gates 由各腳本本身把關。
 
@@ -734,12 +729,12 @@ packages/video-agent/
 - UI **不主動掃描 port**（避免反覆觸發 Local Network Access 授權），只連線已配對的 port。
 - **訊息**：UI → `{ "type": "run", "id", "action", "scene"? }`；Companion → `queued` / `started` / `log`（逐行輸出）/ `result`（`ok`、`output`），以及專案檔案變動時的 `changed`（忽略 `node_modules`、`.tmp`、`.git`；UI 收到即重新載入，不必等輪詢）。
 - **白名單動作**：`status`、`validate`、`tts <id>`、`capture <id>`、`render-scene <id>`、`rebuild <id>`（重做流程）、`assemble`（含設為 completed）、`sync`。scene id 須符合 `scene-*` 格式；參數一律以陣列傳給子程序，不經 shell。一次只執行一個動作，其餘排隊。
-- **`sync`**：在專案目錄執行 `claude -p "/video-sync" --allowedTools "Bash(npm run:*)" Read Edit Write Glob Grep`，只開放 npm scripts 與檔案工具，**不使用**略過權限檢查的選項。可用 `VIDEO_AGENT_CLAUDE` 指定其他執行檔。
+- **`sync`**：在專案目錄執行 `claude -p "/video-sync" --allowedTools "Bash(pnpm run:*)" Read Edit Write Glob Grep`，只開放 pnpm scripts 與檔案工具，**不使用**略過權限檢查的選項。可用 `VIDEO_AGENT_CLAUDE` 指定其他執行檔。
 - **UI**：標頭顯示連線狀態；連上時 Scene Editor 顯示「立即重新產生」（`rebuild`），待更新提示顯示「立即重做並合成」（逐一 `rebuild` 後 `assemble`）與「交給 Agent 處理」（`sync`），Final 顯示「立即合成」。未連上時維持模式 A 的提示。
 
 ### 10.2 寫入協定
 
-Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（Agent 的檔案編輯工具無法取鎖與原子替換，因此 Agent 更新 JSON 時經由 `npm run state -- <scene-id|project> <json-patch>`，由 `scripts/state.mjs` 執行以下協定並於寫入後自動 validate）：
+Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（Agent 的檔案編輯工具無法取鎖與原子替換，因此 Agent 更新 JSON 時經由 `pnpm run state <scene-id|project> <json-patch>`，由 `scripts/state.mjs` 執行以下協定並於寫入後自動 validate）：
 
 1. 寫入前取得專案根目錄的 `.video-agent.lock`（內容：寫入者、PID、時間）；已存在且未逾時（30 秒）則等待重試（最多 10 秒，可用環境變數 `VIDEO_AGENT_LOCK_WAIT_MS` 調整），逾時視為殘留鎖並覆蓋。
 2. 重新讀取目標檔 → 修改 → 寫到 `<file>.tmp` → rename 覆蓋（原子寫入）。
@@ -755,7 +750,8 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 - 範本內容（腳本、指令）由網站提供並在本機執行 → 範本 zip 需附 SHA-256 雜湊並公開於 `manifest.json`，Agent 下載後驗證。
 - 所有檔案路徑需驗證不得跳出專案根目錄（防止 `../` 路徑穿越）。
 - JSON 檔不得包含 API key、帳密等敏感資訊；需要時使用 `.env`（並列入 `.gitignore`）。
-- Web capture 只擷取使用者提供的網址；需要登入的頁面由使用者自行在 Playwright 開啟的瀏覽器中登入，Agent 不處理密碼。
+- Web capture 只擷取使用者提供的網址。
+- 需要登入的產品（`sources.requiresLogin`，gate `productLogin`）：Agent 不索取、不輸入、不保存帳密。Agent 先提醒錄影會拍到登入後的內容（建議展示帳號，或經 `domEditConsent` 換成示意資料），再執行 `pnpm run login`：打開一個獨立的瀏覽器視窗，使用者照平常方式登入（含兩步驟驗證、SSO），關閉視窗即完成，不需回終端機操作。登入狀態存於專案的 `.auth/login.json`（`.gitignore`、檔案權限 600、Agent 不讀），capture 載入它開頁；被導到登入頁時回報 `gate productLogin`，Agent 以白話請使用者重新登入。不使用使用者平常的瀏覽器設定檔（Chrome 不允許自動化操作它，也會讓錄影程式接觸所有網站的登入）。影片完成後 Agent 詢問是否以 `pnpm run login --clear` 清除。
 
 ---
 
@@ -768,9 +764,10 @@ agent-video-platform/
 │   ├── common.schema.json
 │   ├── project.schema.json
 │   ├── scene.schema.json
+│   ├── activity.schema.json
 │   ├── workflow.schema.json
 │   ├── workflow.json
-│   └── examples/{valid,invalid}/   # npm run test:specs
+│   └── examples/{valid,invalid}/   # pnpm run test:specs
 ├── skills/product-video/           # Skill 原始檔
 ├── templates/product-video/        # 專案範本（scripts/、src/、AGENTS.md、README.md；schemas/ 與 .claude/commands/ 於打包時加入）
 ├── packages/video-agent/           # Local MCP + Companion（Phase 5，§10）
@@ -789,7 +786,7 @@ agent-video-platform/
 ### 12.1 部署（GitHub Pages）
 
 - 網址：`https://tigernaxojr.github.io/index-url-director/`（repo 名稱 `index-url-director`；GitHub Pages 的專案網址路徑即 repo 名稱）。
-- `.github/workflows/deploy-pages.yml`：push 到 `main`（或手動觸發）→ `npm ci` → `test:specs`、型別產生檢查、`typecheck` → `npm run build`（Vite 建置 Web UI 至 `dist/`，再由 `build-api.mjs` 加入 `dist/api/`）→ 以 `peaceiris/actions-gh-pages` 將 `dist/` 發佈到 **`gh-pages` 分支**。首次需在 repo Settings → Pages 將來源設為 Deploy from a branch：`gh-pages` / (root)。
+- `.github/workflows/deploy-pages.yml`：push 到 `main`（或手動觸發）→ `pnpm install --frozen-lockfile` → `test:specs`、型別產生檢查、`typecheck` → `pnpm run build`（Vite 建置 Web UI 至 `dist/`，再由 `build-api.mjs` 加入 `dist/api/`）→ 以 `peaceiris/actions-gh-pages` 將 `dist/` 發佈到 **`gh-pages` 分支**。首次需在 repo Settings → Pages 將來源設為 Deploy from a branch：`gh-pages` / (root)。
 - **base path 不寫死**：`SITE_URL` 依序取自 `--site-url` → 環境變數 `SITE_URL`（CI 中為 repo 變數，可用於自訂網域）→ `GITHUB_REPOSITORY` → git remote `origin`，推得 `https://<owner>.github.io/<repo>`；repo 改名時自動跟隨。
 - Skill 與範本中的網址以 `{{SITE_URL}}` 撰寫，建置時替換；Web UI 以同一個 base path 建置（Vite `base`）並輸出到 `dist/` 根目錄，與 `dist/api/` 並存。`build-api.mjs` 只清除 `dist/api/`，僅在沒有 Web UI 時寫入備用首頁。
 
@@ -800,7 +797,7 @@ agent-video-platform/
 | Phase | 內容 | 完成標準 |
 |---|---|---|
 | **1. 協議** | `project.schema.json`、`scene.schema.json`、`AGENTS.md`、`SKILL.md`、`workflow.json`、範本 `video.project.json` | Schema 通過自身範例驗證 |
-| **2. 本機管線** | 範本 `scripts/*`、Remotion 範本、TTS、capture、assemble | 以手寫 scene.json 可產出 final.mp4 |
+| **2. 本機管線** | 範本 `scripts/*`、渲染器、TTS、capture、assemble | 以手寫 scene.json 可產出 final.mp4 |
 | **3. Agent 流程** | Guide API 靜態檔、slash commands、prompts；GitHub Pages 部署（§12.1） | 網站部署完成；Claude Code 從一個產品網址端到端產出影片，並能只重做單一 scene |
 | **4. Web UI** | 資料夾授權、Workflow、Scene Board/Editor、預覽 | UI 修改文案 → Agent `/video-sync` 只重做該 scene |
 | **5. MCP + Companion** | Cloud MCP + Local MCP；本機 Companion（§2.1 模式 B，可與 Local MCP 同一程式） | Agent 可透過 MCP 完成相同流程；UI 按「立即重新渲染」無需切到終端機 |
@@ -817,7 +814,7 @@ agent-video-platform/
 | D1 | 專案核心檔名 | `config.json`(Q) / `data/project.json`(D) / `video-spec.json`(Gm) / `video.project.json`(GPT) | `video.project.json` 放根目錄 | 語意明確、易被 UI 辨識為專案 |
 | D2 | Scene 資料放哪 | 全放 project.json(D)、兩處重複(Gm)、每 scene 一個目錄(GPT) | 每 scene 一個目錄；project 只存順序與引用 | 避免雙重事實來源；scene 可整包刪除/複製；素材就近存放 |
 | D3 | 時長單位 | 秒(D, GPT) / 幀數(Gm) | 存秒，幀數推導；預設由 TTS 音長決定 | 人類可讀；改 fps 不需改資料；採 Gemini 的音長驅動設計 |
-| D4 | 渲染方式 | Puppeteer 錄螢幕(Q) / HTML+Playwright 截幀(D) / Remotion(Gm, GPT) | Remotion 預設，`html-capture` 為替代；Playwright 負責素材擷取 | Remotion 可程式化、單 scene 渲染與轉場支援佳；保留無 Remotion 路徑 |
+| D4 | 渲染方式 | Puppeteer 錄螢幕(Q) / HTML+Playwright 截幀(D) / Remotion(Gm, GPT) | HTML + Playwright 逐幀截圖；Playwright 也負責素材擷取 | 確定性重現、不需額外授權；原本以 Remotion 為預設，見 D15 |
 | D5 | 狀態列舉 | 各稿不同 | §4.5 統一狀態機，新增 `stale`、`approved` | 支援 UI 修改後差異重做與使用者核准 |
 | D6 | 如何偵測需重做 | 「掃描檔案變動」(Gm) | `inputHash` + `stale` 狀態 | 確定性判斷，不依賴時間戳 |
 | D7 | 不覆蓋使用者修改 | 口頭規則(D, GPT) | `locked` 欄位 + `updatedBy` + 寫入前重讀/衝突檢查 | 規則需可被機器檢查 |
@@ -825,10 +822,10 @@ agent-video-platform/
 | D9 | Agent 指引形式 | JSON guide(Q) / slash commands(D) / Skill + MCP(GPT) | 靜態 API + Skill 為主；slash commands 為薄包裝；MCP 為 Phase 5 | 單一來源維護規則，多入口使用 |
 | D10 | 參考影片風格分析 | 必要步驟(D) | 可選；無法取得影片時跳過 | Agent 無法直接「觀看」線上影片，需本機抽影格 |
 | D11 | 腳本是否改 JSON | 未規範 | 產出類腳本不改 JSON；狀態由 Agent 決定、經 `state.mjs` 寫入 | 集中狀態寫入，避免競態（見 D18 寫入協定） |
-| D12 | 使用者審閱 | review 步驟(Q, GPT) | storyboard 與每 scene 渲染後各有 checkpoint | 在最便宜的階段攔截錯誤 |
+| D12 | 使用者審閱 | review 步驟(Q, GPT) | analyze（對象、風格、長度）、storyboard 與每 scene 渲染後各有 checkpoint | 在最便宜的階段攔截錯誤 |
 | D13 | UI ↔ Agent 通訊 | 各稿僅提「UI 讀寫檔案」，未處理反向通知 | MVP 採模式 A（檔案輪詢 + 使用者觸發）；Phase 5 加本機 Companion（模式 B）；不採檔案佇列 A' | 靜態部署不排除本機服務；A' 閒置 token 成本高；協議預先設計成可無痛升級 |
 | D14 | TTS 預設 | edge-tts(Gm) / 未指定 | 可替換 provider；預設 edge-tts，首次使用需同意；支援自帶 key、Piper、系統、手動錄音 | 繁中免費堪用者僅 edge-tts，但其為非官方介面，不能綁死 |
-| D15 | 渲染器授權 | 未處理 | Remotion 預設 + init 時授權告知並記錄；html-capture（逐幀截圖）為正式免授權替代；Revideo 暫不評估 | 主力使用者多屬免費級距；renderer 已抽象化，不綁死 |
+| D15 | 渲染器授權 | 未處理 | 移除 Remotion，只保留逐幀截圖渲染器 | Remotion 對 >3 人公司需付費，使用者難以自行判斷級距；兩個渲染器畫面相同，維持兩套版面與授權詢問不划算。代價是渲染較慢 |
 | D16 | BGM 與字幕 | 可選(Q) / 未規範 | 兩者皆進 MVP：字幕預設輸出 SRT、可選燒入；BGM 自備音檔 + ducking；兩者只在 assemble 處理 | 旁白即字幕來源，成本低；集中在 assemble 使樣式調整不觸發 scene 重渲染 |
 | D17 | 多語系 | 未提及 | MVP 一專案一語言；`/video-translate` 複製專案並翻譯；預留 `<locale>` 命名 | 語言影響時長→畫面時間軸→每 scene 重渲染，原生支援會使狀態機二維化，MVP 成本過高 |
 | D18 | Companion 形態 | 無 | 同一套件 `video-agent` 兩入口（`mcp` / `serve`）共用核心；port 47831–47840；以 `#pair=` 連結配對；統一寫入協定（鎖檔 + 原子寫入） | 生命週期不同不能同程序；邏輯相同應共用；fragment 不外洩 token 且免掃 port |

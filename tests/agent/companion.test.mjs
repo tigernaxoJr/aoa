@@ -96,7 +96,7 @@ test('only whitelisted actions run; rebuild produces the scene and change events
   assert.equal(JSON.parse(readFileSync(p.path('video.project.json'), 'utf8')).status, 'completed')
 })
 
-test('sync runs claude -p /video-sync limited to npm scripts and file tools', async (t) => {
+test('sync runs claude -p /video-sync limited to pnpm scripts and file tools', async (t) => {
   const p = fullProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene: motionScene('scene-001') }] })
   t.after(p.cleanup)
   const fake = p.path('fake-claude.mjs')
@@ -112,6 +112,6 @@ test('sync runs claude -p /video-sync limited to npm scripts and file tools', as
   assert.equal(result.ok, true)
   const args = JSON.parse(readFileSync(join(p.root, 'claude-args.json'), 'utf8'))
   assert.deepEqual(args.slice(0, 2), ['-p', '/video-sync'])
-  assert.ok(args.includes('Bash(npm run:*)'))
+  assert.ok(args.includes('Bash(pnpm run:*)'))
   assert.ok(!args.some((a) => /dangerously|bypass/i.test(a)), 'never skips permission checks')
 })

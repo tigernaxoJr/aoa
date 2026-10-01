@@ -2,19 +2,24 @@
 // for running writes so conflicts and lock waits are reported the same way everywhere.
 import { reactive, shallowRef } from 'vue'
 import { run as runAction } from './companion'
-import { ensurePermission, isSupported } from './fsa'
+import { ensurePermission, isSupported, tryFile } from './fsa'
 import { forgetHandle, loadHandle, saveHandle } from './idb'
-import { fingerprint, loadProject, type ProjectState } from './project'
+import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
+import type { VideoActivityJson } from '../types/protocol'
 import { LockedError } from './writes'
 
 const POLL_MS = 2000
 
 export const root = shallowRef<FileSystemDirectoryHandle | null>(null)
 export const state = shallowRef<ProjectState | null>(null)
+/** What the agent says it is doing (SPEC §9.2); shown before and after the project exists. */
+export const activity = shallowRef<VideoActivityJson | null>(null)
 export const ui = reactive({
   supported: isSupported(),
   /** A folder remembered from last visit that still needs the user to re-grant access. */
   remembered: null as FileSystemDirectoryHandle | null,
+  /** The folder is open but holds no project yet: the page waits for the agent to create it. */
+  waiting: false,
   loading: false,
   error: null as string | null,
   notice: null as { kind: 'ok' | 'warn' | 'error'; text: string } | null,
@@ -36,6 +41,8 @@ export async function reload() {
   try {
     const next = await loadProject(root.value)
     state.value = next
+    activity.value = await loadActivity(root.value)
+    ui.waiting = !next
     print = await fingerprint(root.value, next)
     ui.error = null
   } catch (err) {
@@ -52,9 +59,17 @@ async function poll() {
   }
 }
 
+/**
+ * Opens a project folder, or prepares an empty one for a new project (SPEC §9.2). A folder with
+ * other files is refused before anything changes, so a wrong pick keeps the previous folder.
+ */
 export async function openHandle(handle: FileSystemDirectoryHandle, remember = true) {
   ui.loading = true
   try {
+    if (!(await tryFile(handle, PROJECT_FILE)) && !(await readyForNewProject(handle))) {
+      ui.error = `「${handle.name}」裡已經有其他檔案。請在選擇資料夾的視窗按「新增資料夾」，建立一個空的資料夾來放影片專案。`
+      return
+    }
     root.value = handle
     ui.remembered = null
     await reload()
@@ -98,6 +113,8 @@ export async function reconnect() {
 export async function close() {
   root.value = null
   state.value = null
+  activity.value = null
+  ui.waiting = false
   if (timer) clearInterval(timer)
   timer = null
   await forgetHandle()
@@ -127,7 +144,7 @@ declare global {
     __avp?: { open(handle: FileSystemDirectoryHandle): Promise<void>; pickSource?(handle: FileSystemDirectoryHandle): Promise<void> }
   }
 }
-window.__avp = { open: (handle) => openHandle(handle, false) }
+window.__avp = { open: (handle) => openHandle(handle) }
 
 /** Runs a Companion action and reports the outcome the same way writes do. */
 export async function runCompanion(action: string, label: string, scene?: string) {

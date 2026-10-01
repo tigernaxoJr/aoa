@@ -1,10 +1,10 @@
 // The only writer of video.project.json and existing scene.json files (SPEC §7.3, §10.2).
 //
-//   npm run state -- <project|scene-id> --status <status>
-//   npm run state -- <scene-id> --rendered
-//   npm run state -- <scene-id> --failed <step> "<message>" [--hint "<hint>"]
-//   npm run state -- <project|scene-id> --patch-file <file>     (RFC 6902 JSON Patch)
-//   npm run state -- <project|scene-id> --patch '<json>'
+//   pnpm run state <project|scene-id> --status <status>
+//   pnpm run state <scene-id> --rendered
+//   pnpm run state <scene-id> --failed <step> "<message>" [--hint "<hint>"]
+//   pnpm run state <project|scene-id> --patch-file <file>     (RFC 6902 JSON Patch)
+//   pnpm run state <project|scene-id> --patch '<json>'
 // options: --by agent|user|companion|mcp (default agent), --force (skip transition check)
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -63,7 +63,6 @@ run((argv) => {
         inputHash: computeInputHash(root, project, ref, doc),
         outputFile,
         renderedAt: now,
-        renderer: project.project.renderer,
         actualDurationSec: readableDuration(output, `${ref.dir}/${outputFile}`),
       }
       doc.attempts = 0
@@ -95,6 +94,13 @@ run((argv) => {
     const overrides = new Map([[file, doc]])
     const result = validateProject(root, overrides)
     assertValid(result)
+
+    // A revised storyboard (scenes added, removed or reordered) re-derives the project status. The
+    // final video no longer matches the scene list, so it is at most ready_to_assemble.
+    if (isProject && doc.status === before.status && JSON.stringify(doc.scenes) !== JSON.stringify(before.scenes)) {
+      const derived = deriveProjectStatus(root, result.project, result.inspected)
+      if (derived) doc.status = derived === 'completed' ? 'ready_to_assemble' : derived
+    }
 
     const changes = [[file, doc, `${target}: ${before.status} → ${doc.status}`]]
     if (!isProject) {

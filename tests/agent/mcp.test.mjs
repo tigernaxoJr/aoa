@@ -1,5 +1,5 @@
 // `video-agent mcp` through the official MCP client over stdio: guide resources and prompts, and the
-// project tools running the project's own scripts end to end (fake TTS, html-capture).
+// project tools running the project's own scripts end to end (fake TTS).
 import assert from 'node:assert/strict'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

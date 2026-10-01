@@ -16,7 +16,7 @@ export function siteUrl() {
 
 /**
  * Local directory laid out like the site's /api: $VIDEO_AGENT_GUIDE_DIR, the copy bundled into the
- * package at pack time (guide/), or this repository's dist/api after `npm run build`.
+ * package at pack time (guide/), or this repository's dist/api after `pnpm run build`.
  */
 function localGuideDir() {
   const candidates = [

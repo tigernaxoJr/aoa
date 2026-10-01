@@ -1,0 +1,5 @@
+allowBuilds:
+  # Downloads the FFmpeg binary.
+  ffmpeg-static: true
+  # Its preinstall is only `npx only-allow pnpm` (a dev guard); nothing to build.
+  msedge-tts: false

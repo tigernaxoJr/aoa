@@ -1,5 +1,5 @@
-// Turns scene.json + project format into a renderer-neutral render plan (SPEC §7.6): duration,
-// background layer, overlay elements and narration. Both renderers draw exactly this plan.
+// Turns scene.json + project format into a render plan (SPEC §7.6): duration,
+// background layer, overlay elements and narration. The renderer draws exactly this plan.
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { probeDuration } from './media.mjs'
@@ -27,7 +27,7 @@ export function buildPlan(root, project, ref, scene) {
   let duration = scene.durationSec
   if (duration == null) {
     if (audioSec == null) {
-      throw new UsageError(`${scene.id}: durationSec is null and there is no narration audio; run "npm run tts -- ${scene.id}" or set durationSec`)
+      throw new UsageError(`${scene.id}: durationSec is null and there is no narration audio; run "pnpm run tts ${scene.id}" or set durationSec`)
     }
     duration = audioSec + TAIL_SEC
   } else if (audioSec != null && audioSec > duration) {
@@ -47,6 +47,12 @@ export function buildPlan(root, project, ref, scene) {
     elements: [],
     audio: audioSec == null ? null : { file: audioFile, durationSec: audioSec },
   }
+  if (scene.visual.type === 'web-capture') {
+    const recSec = probeDuration(plan.background.file)
+    if (recSec > duration + 0.5) {
+      warnings.push(`the recording (${recSec.toFixed(2)}s) is longer than the scene (${duration.toFixed(2)}s); the last ${(recSec - duration).toFixed(1)}s is cut`)
+    }
+  }
 
   for (const [i, el] of (scene.visual.elements ?? []).entries()) {
     if (el.at >= duration) {
@@ -62,7 +68,7 @@ export function buildPlan(root, project, ref, scene) {
       animation: el.animation ?? 'fadeIn',
       position: el.position ?? 'center',
     }
-    if (el.type === 'text') item.content = el.content
+    if (el.type === 'text') Object.assign(item, { content: el.content, size: el.size ?? 'normal' })
     else item.file = need(resolve(el.src), `visual.elements[${i}].src`)
     if (el.type === 'video') item.span = end - el.at
     plan.elements.push(item)
@@ -75,7 +81,7 @@ function background(visual, resolve, need, sceneDir, duration) {
     case 'web-capture':
       return {
         kind: 'video',
-        file: need(join(sceneDir, 'assets', 'capture.mp4'), 'web-capture recording (run npm run capture)'),
+        file: need(join(sceneDir, 'assets', 'capture.mp4'), 'web-capture recording (run pnpm run capture)'),
         fit: 'contain',
         trimStart: 0,
         trimEnd: null,
@@ -84,7 +90,7 @@ function background(visual, resolve, need, sceneDir, duration) {
     case 'screenshot':
       return {
         kind: 'image',
-        file: need(join(sceneDir, 'assets', 'capture.png'), 'screenshot (run npm run capture)'),
+        file: need(join(sceneDir, 'assets', 'capture.png'), 'screenshot (run pnpm run capture)'),
         fit: 'cover',
         kenBurns: true,
       }

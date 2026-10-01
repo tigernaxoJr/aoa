@@ -1,5 +1,5 @@
-// Minimal static file server on 127.0.0.1 for renderers: serves files under the project root only,
-// with Range support (video elements seek). Both renderers load scene assets through it.
+// Minimal static file server on 127.0.0.1 for the renderer: serves files under the project root only,
+// with Range support (video elements seek). The renderer loads scene assets through it.
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, relative } from 'node:path'

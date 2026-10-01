@@ -1,6 +1,6 @@
 # 分鏡與旁白寫作指引
 
-用於 `/video-storyboard`：根據 `brief/product-brief.md`（與可選的 `brief/style.json`）規劃 scene，產生每個 scene 的 `scene.json` 與 `script.md`。
+用於 `/video-storyboard`：根據 `brief/product-brief.md`（與可選的 `brief/style.json`）規劃 scene，產生每個 scene 的 `scene.json` 與 `script.md`。影片做到一半或已經合成後要重新規劃分鏡，見 [§6](#revise)。
 
 ---
 
@@ -18,6 +18,7 @@
 - 第一個 scene 必須是 `hook`，最後一個必須是 `cta`。
 - `social-proof` 只在 brief 的「可信證據」有內容時使用。
 - 有 `brief/style.json` 時，依 `pacing` 調整：`fast` 偏向較多、較短的 scene；`slow` 偏向較少、較長的 scene。
+- 依 `project.style` 與 `project.targetAudience` 決定語氣、用詞與畫面：例如「專業簡報」句子沉穩、畫面資訊清楚；「活潑社群短片」句子短、口語、畫面文字放大（見 [§3 字級](#visual)）。
 
 ### 各 purpose 的寫法
 
@@ -91,12 +92,28 @@
 - **優先用真實產品畫面**：`web-capture` / `screenshot` 比抽象動畫更有說服力。從 brief 的「可用畫面」挑選。
 - **`capture.actions`**：
   - 保持簡短（≤ 6 個動作），每個操作後加 `wait` 讓觀眾看清楚（300–800 ms）。
-  - 優先使用穩定的 selector（`id`、`data-*`、有語意的 class），避免 `div:nth-child(7)`。
+  - 優先使用穩定的 selector（`id`、`data-*`、有語意的 class），避免 `div:nth-child(7)`。也可以用 Playwright 的文字 selector，例如 `button:has-text("免費試用")`。
+  - <a id="highlight"></a>**主動 highlight 重點元素**：錄製網頁時，你可以自行決定要框起哪些元素，不必先問使用者；分鏡審閱時在「畫面」欄寫出要框的元素即可（例如「框出『建立專案』按鈕」）。
+    - 挑旁白正在講的那個元素：講到「一鍵部署」就框部署按鈕，講到價格就框方案卡片。
+    - 每個 scene 1–3 次；一次只框一個（新的 highlight 會自動取消前一個）。
+    - 依旁白時間排順序：用 `wait` 把 highlight 推到旁白講到它的時候；`ms` 是框住後停留的毫秒數（預設 1200）。
+    - 估算時間時不必算頁面載入：`navigate` 或點連結換頁時，從發出請求到頁面穩定的那段會自動剪掉。
+    - <a id="cut"></a>**剪掉沒有意義的畫面**：你判斷某個動作的過程不值得給觀眾看（單頁應用切換路由的過場、載入中的骨架、轉圈圈、為了到達目標而做的中間步驟），就在該動作加 `"cut": true`，不必問使用者。該動作從開始到畫面穩定的整段會剪掉，觀眾直接看到結果；被剪掉的時間也不必算進旁白對時。要讓觀眾看到的操作（例如示範點擊、輸入）不要剪。
+    - selector 從 analyze 產生的 `brief/screens/*.elements.txt` 挑，或讀產品原始碼確認；只框可見、有意義的元素，不框整頁或大區塊。
+    - 找不到元素時，`capture` 會印出 `warning: highlight … skipped` 並繼續錄製，不會失敗。看到這個警告就修正 selector 重新擷取，或在回報中告訴使用者那個框沒有出現。
   - `type` 只輸入示範用的假資料，絕不輸入真實帳密或個資。
+  - <a id="demo-data"></a>**資料很少的報表頁**：儀表板、報表、圖表頁如果只有一兩筆資料或一片空白，錄出來會很空。這時可以**先詢問使用者**能否在錄製時改寫頁面 HTML，畫出合理的畫面（gate `domEditConsent`，每個 scene 分別取得）：
+    1. 先說明看到的狀況與打算怎麼補，例如「營收報表目前只有 1 筆訂單，畫面很空。我可以在錄影時暫時把表格填成 12 筆示意訂單、圖表補上 6 個月的趨勢。這只影響錄下來的畫面，不會改到你的產品或資料，畫面角落會標示『示意資料』。可以嗎？」
+    2. 同意後，在 scene 目錄寫 `demo-data.js`（在頁面中執行，可用 `await`），並在 `capture.actions` 加入 `{ "do": "script", "file": "demo-data.js" }`，放在 `navigate` 之後、`highlight` 之前；以 `pnpm run state` 寫入 `visual.capture.domEditConsent = { "granted": true, "grantedAt": "<現在時間>" }`。
+    3. 示意資料要合理且一致：數字量級符合產品情境、總計與明細對得上、日期連續；用通用名稱（「客戶 A」「範例商店」），不用真實公司或人名，不寫看起來像真實成果的數據（例如「營收成長 300%」）。
+    4. 優先改現有元素的文字與表格列，沿用頁面原本的樣式；圖表若是 canvas 無法改，就改用頁面上的 HTML 表格，或請使用者提供截圖。前端框架重新渲染可能把改動蓋掉，執行後加 `wait`，擷取後檢查畫面。
+    5. 畫面上加一則 `elements` 文字「示意資料」（`position: top-right`、`size: normal`），除非使用者明確說不需要。
+    - 使用者不同意時照實錄製，或請他提供有資料的帳號畫面、截圖。不要在未同意時加 `script` 動作，`capture` 會拒絕執行。
 - **`elements`（疊加元素）**：
   - 畫面文字 ≤ 12 個中文字或 6 個英文詞；**不要把旁白原文搬上畫面**（字幕已經有了），而是提煉關鍵字。
   - `at` 對齊旁白中提到該關鍵字的時間點（依語速估算）。
   - 品牌 logo 用 `@/assets/brand/…`。
+  - **字級 `size`**：`normal`（預設）、`large`、`xl`。只有短而重要的字才放大：hook 的提問、benefit 的數字、cta 的網址，或風格是活潑短片、直式影片時。渲染器會把放大的字自動縮回到不超過兩行、不超出畫面，所以不會嚴重跑版；但字太長時縮回後就和 `normal` 差不多，放大前先把文字精簡到 8 字以內。疊在網頁錄影上、或同一畫面已有兩則文字時維持 `normal`。
 - **`transitionIn`**：預設 `none`（直接切換）；同一段落內的 scene 之間可用 `fade`。全片不超過兩種轉場。
 - **`durationSec`**：一般保持 `null`（由旁白決定）；只有無旁白或需要與音樂對拍時才指定。
 
@@ -134,11 +151,11 @@
 
 ---
 
-## 4. 建立檔案
+## 4. <a id="files"></a>建立檔案
 
 1. scene id 依建立順序編號：`scene-001`、`scene-002`…；目錄為 `scenes/{三位數}-{purpose 或簡短英文 slug}/`，例如 `scenes/004-branch-preview/`。
 2. 每個 scene 寫入 `scene.json` 與 `script.md`（新建檔案可直接寫入）。
-3. 以 `npm run state -- project --patch-file <檔案>` 把 scene 依播放順序加入 `video.project.json` 的 `scenes`：
+3. 以 `pnpm run state project --patch-file <檔案>` 把 scene 依播放順序加入 `video.project.json` 的 `scenes`：
 
    ```json
    [
@@ -147,13 +164,13 @@
    ]
    ```
 
-4. 執行 `npm run validate`，並將 project 狀態設為 `script_generated`。
+4. 執行 `pnpm run validate`，並將 project 狀態設為 `script_generated`（只在第一次規劃時；重新規劃見 [§6](#revise)）。
 
 ---
 
 ## 5. <a id="review"></a>分鏡審閱（checkpoint）
 
-完成後**必須停下**，以表格呈現給使用者：
+完成後**必須停下**，請使用者確認分鏡與完整旁白稿。使用者明確同意前，不執行 `tts`、`capture`、`render:scene`。先以表格呈現總覽：
 
 ```text
 目標 45 秒｜預估 43.5 秒｜6 個 scene
@@ -167,6 +184,49 @@
 需要調整哪幾段？確認後我會開始逐段產生（/video-scene all）。
 ```
 
+表格之後，逐段列出**完整的旁白稿**（不要用「…」省略）與畫面文字，讓使用者能逐字確認：
+
+```text
+【1 hook｜約 4 秒】
+旁白：部署一個網站，還要花你半天嗎？
+畫面：時鐘快轉 + 終端機報錯；大字「部署要半天？」
+```
+
 - 秒數為估算值，實際以 TTS 產生後的音長為準。
+- 預估總長與已確認的目標長度相差超過 10% 時，在表格上方說明原因，並問使用者要刪減內容還是調整目標長度。
+- 可以提醒使用者也能在網頁工作台直接修改旁白，改完說「我改好了」即可。
 - 使用者提出修改時，**只改被點名的 scene**，改完再呈現一次更新後的表格。
 - 使用者要求新增或刪除 scene 時，同步更新 `video.project.json` 的 `scenes`；刪除的 scene 目錄保留，由使用者自行決定是否刪除。
+
+---
+
+## 6. <a id="revise"></a>重新規劃分鏡（已有 scene 時）
+
+專案已經有 scene（包括 `output/final.mp4` 已合成）時，使用者說「重新規劃分鏡」「開場和結尾換掉、中間加一段比較」等，也是執行 `/video-storyboard`，但改為**修訂現有分鏡**：沒被點名的段落原樣保留，之後只重做有變更的段落。
+
+1. **讀取現況**：執行 `pnpm run status`，讀取每個 scene 的 `scene.json` 與 `script.md`（Web UI 或使用者可能剛改過）。
+2. **提出修訂，先不寫檔**：只改使用者要求的部分，其餘照舊。總覽表多一欄「變更」：
+
+   ```text
+   目標 45 秒｜預估 47.0 秒｜6 個 scene（保留 3、修改 1、新增 1、移除 1）
+
+   | # | scene     | 變更 | 用途    | 旁白                         | 畫面               | 秒數 |
+   |---|-----------|------|---------|------------------------------|--------------------|------|
+   | 1 | scene-001 | 修改 | hook    | 還在手動部署嗎？             | 終端機報錯         | 3.5  |
+   | 2 | scene-002 | 保留 | problem | （不變）                     | （不變）           | 7.5  |
+   | 3 | scene-007 | 新增 | feature | 推上 GitHub，預覽網址就好了。 | 錄製 PR 頁面       | 8.0  |
+   | … |           |      |         |                              |                    |      |
+   | — | scene-004 | 移除 | feature | —                            | —                  | —    |
+   ```
+
+   修改與新增的段落逐段列出完整旁白稿與畫面文字（同 [§5](#review)）；保留的段落不必重列。說明哪些段落會重做、其餘沿用現有影片，再請使用者確認。**確認前不寫入任何檔案**，避免使用者反悔時已做好的段落被改掉。
+3. **寫入**（使用者確認後）：
+   - **保留**：不動。scene id 與目錄都不改，即使播放順序變了，也不要為了讓編號連續而重新命名目錄；目錄名稱算在內容指紋（`inputHash`）裡，改名會讓該段變成需要重做。
+   - **修改**：直接改 `script.md`；`scene.json` 以 `pnpm run state <id> --patch-file` 修改。
+   - **新增**：id 與目錄編號接在目前最大的編號後面（已有 `scene-006` 就從 `scene-007`、`scenes/007-…` 開始），依 [§4](#files) 建立檔案。
+   - **移除**：只從 `scenes` 陣列移除，目錄保留，由使用者自行決定是否刪除。
+   - **順序**：用一個 `pnpm run state project --patch-file` 一次寫入新的 `scenes` 陣列（例如 `{ "op": "replace", "path": "/scenes", "value": [...] }`）。**不要**再把 project 設為 `script_generated`：`state` 會依各 scene 狀態自動重算，且只要 scene 清單變了，就不會再是 `completed`。
+4. **重做與合成**：執行 `pnpm run validate`，再依 [workflow.md#sync](workflow.md#sync) 執行 sync：只重做修改與新增的段落，然後重新合成。只調整順序或移除段落時，不重做任何段落，直接重新合成。
+
+- `locked: true` 或 `approved` 的段落，使用者沒有明確點名就不修改；修訂內容涉及它們時先問。
+- 修訂後預估總長與目標長度相差超過 10% 時，和 §5 一樣先說明並詢問。

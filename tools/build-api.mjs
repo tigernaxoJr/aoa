@@ -1,5 +1,5 @@
 // Builds the Guide API (SPEC §5, §12): dist/api/* (schemas, prompts, rules, Skill and template zips
-// with SHA-256 manifest). Run after the Web UI build (npm run build does both); writes a fallback
+// with SHA-256 manifest). Run after the Web UI build (pnpm run build does both); writes a fallback
 // landing page only when dist/index.html does not exist. Deployed to GitHub Pages by
 // .github/workflows/deploy-pages.yml.
 //
@@ -19,7 +19,7 @@ import { absolutizeLinks, section, stripFrontmatter } from './lib/markdown.mjs'
 const root = fileURLToPath(new URL('../', import.meta.url))
 const skillDir = join(root, 'skills', 'product-video')
 const templateDir = join(root, 'templates', 'product-video')
-const SCHEMAS = ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'workflow.schema.json']
+const SCHEMAS = ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'activity.schema.json', 'workflow.schema.json']
 /** Paths never shipped in the template zip (relative, forward slashes). */
 const TEMPLATE_EXCLUDE = [/(^|\/)node_modules\//, /^\.tmp\//, /^output\//, /^scenes\/[^/]+\/output\//, /(^|\/)\.video-agent\.lock$/]
 /** Fixed timestamp so identical inputs give byte-identical zips (and stable hashes). */

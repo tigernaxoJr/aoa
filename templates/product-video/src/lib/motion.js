@@ -1,10 +1,10 @@
-// Layout and animation math shared by both renderers (Remotion components and the html-capture
-// player), so a scene looks the same whichever renderer draws it. Pure functions of time `t`
-// (seconds from the scene start); no DOM or React here.
+// Layout and animation math for the scene player (src/html/player.js). Pure functions of time `t`
+// (seconds from the scene start); no DOM here, so it can be unit-tested in Node.
 
 export const THEME = {
-  fontFamily: '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Noto Sans CJK TC", "Helvetica Neue", Arial, sans-serif',
-  monoFamily: '"JetBrains Mono", "Cascadia Code", Consolas, "SF Mono", Menlo, monospace',
+  // Both families ship in src/fonts/ (loaded by the player), so every OS renders the same glyphs.
+  fontFamily: '"Noto Sans TC", sans-serif',
+  monoFamily: '"JetBrains Mono", "Noto Sans TC", monospace',
   background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0c4a6e 100%)',
   text: '#ffffff',
   accent: '#38bdf8',
@@ -12,6 +12,11 @@ export const THEME = {
   codeBackground: '#0b1220',
   codeText: '#e2e8f0',
 }
+
+/** Font scale of a text element per `size`. Enlarged text shrinks back toward 1 to fit (player.js). */
+export const TEXT_SIZE = { normal: 1, large: 1.35, xl: 1.7 }
+/** Most lines an enlarged text element may wrap to before it is shrunk. */
+export const TEXT_MAX_LINES = 2
 
 /** Seconds an element takes to animate in, and to fade out when it has a `duration`. */
 export const ENTER_SEC = 0.5
@@ -130,6 +135,7 @@ export function styles(width, height, codeLines = 0) {
       const a = anchor(el.position)
       return { position: 'absolute', left: `${a.left}%`, top: `${a.top}%`, transformOrigin: '50% 50%' }
     },
+    textFont: (scale = 1) => px(unit * 0.062 * scale),
     text: {
       maxWidth: px(width * 0.8),
       width: 'max-content',
