@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { afterEach, test } from 'node:test'
+import { locate } from '../../templates/product-video/scripts/lib/media.mjs'
 import { baseProject, baseScene, makeProject } from './helpers.mjs'
 
 const require = createRequire(import.meta.url)
@@ -15,6 +16,10 @@ const duration = (file) =>
 const FAKE = { VIDEO_AGENT_FAKE_TTS: '1' }
 let p
 afterEach(() => p?.cleanup())
+
+test('ffprobe is the bundled copy even when the system has one, so durations match across machines', () => {
+  assert.equal(locate('ffprobe').path, ffprobe)
+})
 
 test('tts writes narration and captions, pauses add silence', () => {
   p = makeProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', script: '一二三四。\n<!-- pause 1 -->\n五六七八。\n' }] })

@@ -442,7 +442,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | 網頁擷取 | Playwright | 截圖、錄製操作、抓取產品頁內容。瀏覽器依序使用：Playwright 內建 Chromium → 系統 Chrome → 系統 Edge（可用 `VIDEO_AGENT_BROWSER_CHANNEL` 指定），Windows 使用者無需另外下載 |
 | 語音合成 | 可替換 provider，預設 `edge-tts` | 見 §7.4 |
 | 影片合成 | Playwright 逐幀截圖 + FFmpeg | 不需額外授權；見 §7.6 |
-| 轉檔/合併 | FFmpeg / ffprobe | 依序使用：環境變數 `VIDEO_AGENT_FFMPEG` / `VIDEO_AGENT_FFPROBE` → 系統 PATH → 套件內建（`ffmpeg-static` / `ffprobe-static`），使用者無需預先安裝 |
+| 轉檔/合併 | FFmpeg / ffprobe | ffmpeg 依序使用：環境變數 `VIDEO_AGENT_FFMPEG` → 系統 PATH → 套件內建（`ffmpeg-static`）。ffprobe 依序使用：`VIDEO_AGENT_FFPROBE` → 套件內建（`ffprobe-static`）→ 系統 PATH，因為不同版本量出的 MP3 長度不同（新版扣除編碼器補白），固定版本才能讓各平台 scene 長度一致。使用者無需預先安裝 |
 
 ### 7.2 `package.json` scripts
 

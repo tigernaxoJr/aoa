@@ -121,7 +121,7 @@ describe('render-scene', () => {
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
     if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
     assert.equal(r.code, 0, r.stderr)
-    // Same ffprobe as the pipeline: versions disagree on MP3 length (newer ones drop encoder padding).
+    // Same ffprobe as the pipeline (the bundled one): versions disagree on MP3 length.
     const audioSec = probeDuration(p.path('scenes/001-hook/assets/narration.mp3'))
     const expected = Math.round((audioSec + 0.5) * 24)
     const [, frames] = /(\d+) frames/.exec(r.stdout)

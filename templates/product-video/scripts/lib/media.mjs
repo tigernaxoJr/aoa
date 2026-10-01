@@ -19,15 +19,17 @@ function bundled(name) {
   }
 }
 
-/** Returns { path, source } for 'ffmpeg' or 'ffprobe'. */
+/**
+ * Returns { path, source } for 'ffmpeg' or 'ffprobe'. ffprobe prefers the bundled copy: versions
+ * disagree on MP3 length (newer ones drop encoder padding), which would change scene durations
+ * from one machine to the next.
+ */
 export function locate(name) {
   if (cache[name]) return cache[name]
   const env = process.env[`VIDEO_AGENT_${name.toUpperCase()}`]
-  const candidates = [
-    env && { path: env, source: 'env' },
-    { path: name, source: 'system' },
-    bundled(name) && { path: bundled(name), source: 'bundled' },
-  ].filter(Boolean)
+  const system = { path: name, source: 'system' }
+  const pkg = bundled(name) && { path: bundled(name), source: 'bundled' }
+  const candidates = [env && { path: env, source: 'env' }, ...(name === 'ffprobe' ? [pkg, system] : [system, pkg])].filter(Boolean)
   for (const c of candidates) {
     if (works(c.path)) return (cache[name] = c)
   }
