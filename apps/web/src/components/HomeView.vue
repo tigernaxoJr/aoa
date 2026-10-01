@@ -233,7 +233,7 @@ const links = [
                 <li>
                   打開 Agent。還沒有的話，到 <a href="https://claude.ai/download" target="_blank" rel="noopener" class="link">claude.ai/download</a> 下載 Claude 桌面版，安裝後登入，切到上方的「Code」。其他 Coding Agent 也可以，只要它能讀網址、在你的電腦上工作。
                 </li>
-                <li v-if="folder">開一個新的對話。它會請你選一個資料夾：選「{{ folder }}」或放它的地方（例如「文件」）都可以，Agent 會自己找到「{{ folder }}」。</li>
+                <li v-if="folder">開一個新的對話。不用再選一次「{{ folder }}」：要你選資料夾時，用它預設的或隨便選一個（例如「文件」）都可以，下面這段話會告訴 Agent 去「{{ folder }}」工作。</li>
                 <li v-else>開一個新的對話。它會請你選一個資料夾：選你想存放影片的地方，例如「文件」。</li>
                 <li>按「複製這段話」，到 Agent 的對話框貼上（{{ os === 'mac' ? '⌘+V' : 'Ctrl+V' }}），再按送出。</li>
               </ol>

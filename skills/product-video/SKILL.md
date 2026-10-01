@@ -13,11 +13,33 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 
 依序檢查：
 
-1. **目前目錄有 `video.project.json`** → 已是影片專案。讀取專案根目錄的 `AGENTS.md`，**之後一律以它的規則為準**；執行 `pnpm run status` 取得各 scene 狀態與建議的下一步，再依使用者要求執行對應步驟（§3）。
-2. **使用者說網頁已準備好資料夾「X」並給了識別碼** → 專案要建在那個資料夾。目前目錄的 `video.start.json` 的 `id` 與識別碼相同時就是這裡，執行 §2 初始化。否則它在別處（使用者開對話時不必選它）：先在目前目錄底下（往下約 4 層）、再到使用者的「文件」「桌面」「下載」與家目錄尋找名為 `video.start.json`、`id` 相同的檔案（跳過 `node_modules`、`.git` 等大型目錄）。找到就切換到它所在的資料夾：Agent 能切換工作目錄時就切換，否則之後所有指令都先 `cd` 到那裡、檔案用完整路徑讀寫；用白話告訴使用者「我找到了『文件 > X』，接下來都在那裡工作」，然後執行 §2。找不到就請使用者把資料夾從檔案總管／Finder 拖進對話框，或開一個新對話並選擇 X。
+1. **目前目錄有 `video.project.json`** → 已是影片專案。先依下面「既有專案：同步範本」把專案的工具更新到網站上的版本，再讀取專案根目錄的 `AGENTS.md`，**之後一律以它的規則為準**；執行 `pnpm run status` 取得各 scene 狀態與建議的下一步，再依使用者要求執行對應步驟（§3）。
+2. **使用者說網頁已準備好資料夾「X」並給了識別碼** → 專案要建在那個資料夾。目前目錄的 `video.start.json` 的 `id` 與識別碼相同時就是這裡，執行 §2 初始化。否則它在別處（使用者開對話時不必選它）：先在目前目錄底下（往下約 4 層）、再到使用者的「文件」「桌面」「下載」與家目錄尋找名為 `video.start.json`、`id` 相同的檔案（跳過 `node_modules`、`.git` 等大型目錄）。找到就切換到它所在的資料夾（那裡已經有 `video.project.json` 時，它是做到一半的專案，改照第 1 點）：Agent 能切換工作目錄時就切換，否則之後所有指令都先 `cd` 到那裡、檔案用完整路徑讀寫；用白話告訴使用者「我找到了『文件 > X』，接下來都在那裡工作」，然後執行 §2。找不到就請使用者把資料夾從檔案總管／Finder 拖進對話框，或開一個新對話並選擇 X。
 3. **目前目錄有 `video.start.json`、沒有 `video.project.json`**（使用者沒給識別碼）→ 網頁準備好的就是這個資料夾，執行 §2 初始化，專案就建在目前目錄。
 4. **目前目錄沒有 `video.project.json`，但使用者提到某個影片專案目錄** → 請使用者確認後切換到該目錄，回到第 1 點。
 5. **都沒有** → 這是新專案，執行 §2 初始化。
+
+### 既有專案：同步範本
+
+專案裡的腳本、Schema、`AGENTS.md` 等工具檔來自建立當時的範本；網站上的範本之後可能更新過。每次進入既有專案（§1 第 1 點），開始工作前都先檢查一次，有差異就把線上版本同步下來，不必先問使用者：
+
+1. 取得線上 manifest，列出和本機不同的範本檔（`video.project.json` 是影片內容，不算範本檔）：
+   ```bash
+   mkdir -p .tmp
+   curl -fsSL -o .tmp/template-manifest.json {{SITE_URL}}/api/templates/product-video/manifest.json
+   node -e "const fs=require('fs'),c=require('crypto');const m=JSON.parse(fs.readFileSync('.tmp/template-manifest.json'));const d=m.files.filter(f=>f.path!=='video.project.json'&&(!fs.existsSync(f.path)||c.createHash('sha256').update(fs.readFileSync(f.path)).digest('hex')!==f.sha256)).map(f=>f.path);console.log(d.length?d.join('
+'):'UP_TO_DATE');console.log('specVersion',m.specVersion)"
+   ```
+   印出 `UP_TO_DATE` 就跳過這一節。
+2. 有差異時：先確認沒有其他程式正在處理專案（專案根目錄沒有 `.video-agent.lock`；有的話等它消失，或問使用者網頁上的本機助手是否還在執行），然後寫 `video.activity.json` 並用白話告訴使用者：「網站上的製作工具有新版本，我先更新，不會動到你的影片內容。」
+3. 下載範本 zip 到 `.tmp/`，以 manifest 的 `zip.sha256` 驗證（雜湊不符就停止並告知使用者），解壓到 `.tmp/template/`（macOS / Linux `unzip -q .tmp/product-video.zip -d .tmp/template`；Windows PowerShell `Expand-Archive .tmp/product-video.zip -DestinationPath .tmp/template`），再把除了 `video.project.json` 以外的檔案覆蓋到專案：
+   ```bash
+   node -e "const p=require('path');require('fs').cpSync('.tmp/template','.',{recursive:true,filter:s=>p.basename(s)!=='video.project.json'})"
+   ```
+   只會覆蓋範本本身的檔案；`scenes/`、`brief/`、`assets/`、`output/` 等影片內容不在範本裡，不會被動到。
+4. 清單裡有 `package.json` 或 `pnpm-lock.yaml` 時執行 `pnpm install`。
+5. manifest 的 `specVersion` 和 `video.project.json` 的 `specVersion` 不同時，以新的 `schemas/` 為準把專案資料調整成新格式，再用 `pnpm run state project --patch '[{"op":"replace","path":"/specVersion","value":"<新版本>"}]'` 更新版本；會刪除或改寫使用者內容（旁白、分鏡）的調整要先問使用者。
+6. 執行 `pnpm run validate`，刪除 `.tmp/template*` 與下載的 zip，用一句白話告訴使用者更新了什麼（例如「已更新製作工具，影片內容沒有變動」）。更新後 `pnpm run status` 若顯示某些 scene 需要重做，照實告訴使用者，等他同意再重做。
 
 ## 2. 初始化新專案（init）
 

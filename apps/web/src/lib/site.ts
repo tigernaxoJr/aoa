@@ -71,7 +71,9 @@ export function launchMessage(src: SourceInput, projectFolder: { name: string; i
   return [
     `請讀取 ${api('agent-guide.md')}，依照裡面的步驟幫我製作產品介紹影片。`,
     ...(projectFolder
-      ? [`我已經在網頁上準備好影片專案資料夾「${projectFolder.name}」，裡面的 ${START_FILE} 記有產品資訊與識別碼 ${projectFolder.id}。請先找到這個資料夾（可能就是你現在開著的資料夾），直接在那裡建立專案。`]
+      ? [
+          `你的工作資料夾是我在網頁上準備好的「${projectFolder.name}」：裡面的 ${START_FILE} 記有產品資訊與識別碼 ${projectFolder.id}。我開對話時沒有特別選它，請你自己找到這個資料夾、把工作目錄切換過去，所有檔案都放在那裡，不要在其他地方建立專案。`,
+        ]
       : []),
     ...parts.map((p) => `・${p}`),
     '我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。',

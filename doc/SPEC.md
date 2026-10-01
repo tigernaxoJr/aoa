@@ -339,6 +339,8 @@ GET /api/templates/product-video.zip         # 專案範本（含 schemas/ 與 .
 GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 SHA-256
 ```
 
+既有專案每次被 Agent 打開時，先以 manifest 的逐檔 SHA-256 比對本機範本檔；有差異就下載、驗證範本 zip，覆蓋除 `video.project.json` 以外的範本檔（影片內容不在範本內），必要時 `pnpm install`，`specVersion` 不同時把專案資料遷移到新 Schema（SKILL §1「既有專案：同步範本」）。
+
 `/api/index.json`（節錄）：
 
 ```json
@@ -651,7 +653,7 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）。先選資料夾，網頁從一開始就以 File System Access API 掌握專案資料夾：
    1. 準備資料夾：以 `showDirectoryPicker({ mode: "readwrite" })` 選擇或在對話框中新建一個空資料夾（只允許空資料夾，或只含 `video.start.json`、`video.activity.json` 與系統隱藏檔；已有 `video.project.json` 則直接開啟工作台）。Handle 存入 IndexedDB。
    2. 產品資訊：產品網址、原始碼資料夾、產品說明，至少一項；填了網址時可勾「這個網站要登入才看得到」（不提供帳密欄位，勾選後說明 Agent 會開視窗讓使用者自己登入、建議用展示帳號）；輸入內容保存在 `localStorage`，並同步寫入專案資料夾的 `video.start.json`。原始碼資料夾以**完整路徑**為主：瀏覽器無法取得選取資料夾的完整路徑，因此由使用者貼上（頁面依作業系統說明如何複製路徑）；資料夾選擇器只用來讀取 `package.json` / README 帶入說明與網址，並記下 `sourceFolder`（名稱、`packageName`、`gitRemote`（去除帳密）、最上層 `entries`），沒填路徑時供 Agent 依名稱尋找並比對。
-   3. 打開 Agent（沒有的話下載 Claude 桌面版並登入），開新對話（資料夾選步驟 1 的資料夾或它的上層都可以，不必再精確選一次），貼上白話訊息：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋「我已準備好影片專案資料夾『X』，裡面的 video.start.json 記有產品資訊與識別碼 <id>，請先找到這個資料夾，直接在那裡建立專案」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。瀏覽器無法取得資料夾的完整路徑，所以由 Agent 從目前目錄往下、再到常見位置尋找 `id` 相符的 `video.start.json`，切換過去後 init（SKILL §1–2）。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
+   3. 打開 Agent（沒有的話下載 Claude 桌面版並登入），開新對話（不必再選步驟 1 的資料夾，Agent 預設或任意資料夾都可以），貼上白話訊息：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋「你的工作資料夾是我準備好的『X』，裡面的 video.start.json 記有產品資訊與識別碼 <id>；請找到它、把工作目錄切換過去，所有檔案都放在那裡」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。瀏覽器無法取得資料夾的完整路徑，所以由 Agent 從目前目錄往下、再到常見位置尋找 `id` 相符的 `video.start.json`，切換過去後 init（SKILL §1–2）。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
    4. 網頁輪詢該資料夾，顯示 `video.activity.json`（Agent 正在做什麼），`video.project.json` 一出現就自動切換到工作台。
    - 不支援 File System Access API 的瀏覽器跳過步驟 1：訊息不含資料夾，Agent 在工作資料夾中自建 `<產品>-video`，網頁不提供工作台。
 
