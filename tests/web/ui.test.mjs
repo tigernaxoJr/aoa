@@ -33,7 +33,7 @@ before(async () => {
     let file = join(outDir, path.slice(BASE.length))
     if (path.endsWith('/')) file = join(file, 'index.html')
     try {
-      const type = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' }[extname(file)] ?? 'application/octet-stream'
+      const type = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.zip': 'application/zip' }[extname(file)] ?? 'application/octet-stream'
       res.writeHead(200, { 'content-type': type }).end(readFileSync(file))
     } catch {
       res.writeHead(404).end()
@@ -45,6 +45,8 @@ before(async () => {
   process.env.SITE_URL = `${origin}${BASE}`
   const { build } = await import('vite')
   await build({ configFile: join(repo, 'apps/web/vite.config.ts'), logLevel: 'error', build: { outDir, emptyOutDir: true } })
+  const { build: buildApi } = await import('../../tools/build-api.mjs')
+  buildApi({ siteUrl: process.env.SITE_URL, out: outDir })
 
   const { chromium } = await import('playwright')
   for (const channel of [undefined, 'chrome', 'msedge']) {
@@ -469,4 +471,28 @@ test('unsaved edits: switching scenes asks first; the full video is a list entry
   // Outdated scenes listed under the full video open their editor.
   await page.getByTestId('final-outdated').getByRole('button', { name: /補充/ }).click()
   await page.getByTestId('editor-scene-003').waitFor()
+})
+
+test('a project from an older template: one click updates its tools and drops retired fields', async (t) => {
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const project = p.read('video.project.json')
+  Object.assign(project.project, { renderer: 'remotion', rendererLicense: 'free' })
+  p.write('video.project.json', project)
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page, read } = app
+  await page.getByTestId('template-outdated').waitFor()
+  assert.match(await page.getByRole('alert').textContent(), /unknown field "renderer"/)
+
+  await page.getByTestId('template-update').click()
+  await page.getByTestId('template-outdated').waitFor({ state: 'detached' })
+  const updated = JSON.parse(await read('video.project.json'))
+  assert.equal(updated.project.renderer, undefined)
+  assert.equal(updated.project.rendererLicense, undefined)
+  assert.equal(updated.updatedBy, 'user')
+  assert.equal(updated.project.name, '網頁測試專案', 'video content is kept')
+  assert.match(await read('scripts/validate.mjs'), /validate/, 'template files are written')
+  assert.equal(await page.getByRole('alert').count(), 0, 'the project is valid again')
+  assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-status').textContent(), '已渲染')
 })

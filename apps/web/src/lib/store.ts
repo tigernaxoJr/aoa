@@ -5,6 +5,7 @@ import { companion, run as runAction } from './companion'
 import { ensurePermission, isSupported, tryFile } from './fsa'
 import { forgetHandle, loadHandle, saveHandle } from './idb'
 import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
+import { type TemplateDiff, templateDiff, updateTemplate } from './template'
 import type { VideoActivityJson } from '../types/protocol'
 import { LockedError } from './writes'
 
@@ -16,6 +17,8 @@ export const root = shallowRef<FileSystemDirectoryHandle | null>(null)
 export const state = shallowRef<ProjectState | null>(null)
 /** What the agent says it is doing (SPEC §9.2); shown before and after the project exists. */
 export const activity = shallowRef<VideoActivityJson | null>(null)
+/** The project's tools differ from this site's template (checked once per opened folder). */
+export const outdated = shallowRef<TemplateDiff | null>(null)
 export const ui = reactive({
   supported: isSupported(),
   /** A folder remembered from last visit that still needs the user to re-grant access. */
@@ -84,6 +87,7 @@ export async function openHandle(handle: FileSystemDirectoryHandle, remember = t
     }
     if (remember) await saveHandle(handle)
     timer ??= setInterval(poll, POLL_MS)
+    outdated.value = state.value ? await templateDiff(handle) : null
   } finally {
     ui.loading = false
   }
@@ -119,6 +123,7 @@ export async function close() {
   root.value = null
   state.value = null
   activity.value = null
+  outdated.value = null
   ui.waiting = false
   if (timer) clearInterval(timer)
   timer = null
@@ -137,6 +142,25 @@ export async function write(action: (root: FileSystemDirectoryHandle, state: Pro
     // A lock is a wait-and-retry; a conflict or invalid edit is an error. The reload below shows fresh data either way.
     notify(err instanceof LockedError ? 'warn' : 'error', (err as Error).message)
     return false
+  } finally {
+    ui.saving = false
+    await reload()
+  }
+}
+
+/** Updates the project's tools to this site's template; the agent only needs to reinstall when package.json changed. */
+export async function syncTemplate() {
+  if (!root.value || !outdated.value) return
+  ui.saving = true
+  try {
+    const { dropped, needsInstall } = await updateTemplate(root.value, outdated.value)
+    outdated.value = null
+    const parts = ['專案工具已更新到最新版']
+    if (dropped.length) parts.push(`已移除新版不再使用的欄位：${dropped.join('、')}`)
+    if (needsInstall) parts.push('相依套件有變更，請讓 Agent 執行 pnpm install')
+    notify(needsInstall ? 'warn' : 'ok', parts.join('。'))
+  } catch (err) {
+    notify(err instanceof LockedError ? 'warn' : 'error', (err as Error).message)
   } finally {
     ui.saving = false
     await reload()

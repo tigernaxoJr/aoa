@@ -13,7 +13,7 @@ export class ConflictError extends Error {}
 
 type Root = FileSystemDirectoryHandle
 
-async function assertUnlocked(root: Root) {
+export async function assertUnlocked(root: Root) {
   const lock = await tryFile(root, LOCK_FILE)
   if (lock && Date.now() - lock.lastModified < LOCK_STALE_MS) {
     throw new LockedError('Agent 正在寫入專案檔，請稍候幾秒再儲存。')

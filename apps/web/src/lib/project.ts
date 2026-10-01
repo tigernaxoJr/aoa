@@ -28,7 +28,38 @@ const validators = { project: ajv.compile(projectSchema), scene: ajv.compile(sce
 
 export function schemaErrors(kind: 'project' | 'scene' | 'activity', doc: unknown): string[] {
   const validate = validators[kind]
-  return validate(doc) ? [] : (validate.errors ?? []).map((e) => `${e.instancePath || '/'} ${e.message}`)
+  if (validate(doc)) return []
+  return (validate.errors ?? []).map((e) => {
+    const where = e.instancePath || '/'
+    const extra = e.params?.additionalProperty ?? e.params?.unevaluatedProperty
+    return extra ? `${where} has unknown field "${extra}"` : `${where} ${e.message}`
+  })
+}
+
+/**
+ * Removes fields the current schema does not know (left by an older template, e.g. project.renderer)
+ * and returns their paths. Keeps the document untouched unless that alone makes it valid, so real
+ * errors are left for the agent to fix.
+ */
+export function dropUnknownFields(kind: 'project' | 'scene', doc: Record<string, unknown>): string[] {
+  const validate = validators[kind]
+  if (validate(doc)) return []
+  const unknown = (validate.errors ?? []).flatMap((e) => {
+    const field = e.params?.additionalProperty ?? e.params?.unevaluatedProperty
+    return field ? [{ at: e.instancePath, field: String(field) }] : []
+  })
+  const copy = structuredClone(doc)
+  for (const { at, field } of unknown) {
+    const parent = at
+      .split('/')
+      .slice(1)
+      .reduce<any>((o, k) => o?.[k.replaceAll('~1', '/').replaceAll('~0', '~')], copy)
+    if (parent && typeof parent === 'object') delete parent[field]
+  }
+  if (!unknown.length || !validate(copy)) return []
+  for (const k of Object.keys(doc)) delete doc[k]
+  Object.assign(doc, copy)
+  return unknown.map(({ at, field }) => `${at}/${field}`)
 }
 
 export interface SceneState {

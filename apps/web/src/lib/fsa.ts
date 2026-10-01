@@ -43,7 +43,7 @@ export async function readText(root: FileSystemDirectoryHandle, path: string) {
 }
 
 /** Replaces a file's contents. createWritable() writes to a temporary file and swaps it in on close. */
-export async function writeText(root: FileSystemDirectoryHandle, path: string, text: string) {
+export async function writeText(root: FileSystemDirectoryHandle, path: string, text: string | Uint8Array<ArrayBuffer>) {
   const { dirs, name } = split(path)
   const dir = await dirAt(root, dirs, true)
   const handle = await dir.getFileHandle(name, { create: true })

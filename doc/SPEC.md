@@ -339,7 +339,7 @@ GET /api/templates/product-video.zip         # 專案範本（含 schemas/ 與 .
 GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 SHA-256
 ```
 
-既有專案每次被 Agent 打開時，先以 manifest 的逐檔 SHA-256 比對本機範本檔；有差異就下載、驗證範本 zip，覆蓋除 `video.project.json` 以外的範本檔（影片內容不在範本內），必要時 `pnpm install`，`specVersion` 不同時把專案資料遷移到新 Schema（SKILL §1「既有專案：同步範本」）。
+既有專案每次被 Agent 打開時，先以 manifest 的逐檔 SHA-256 比對本機範本檔；有差異就下載、驗證範本 zip，覆蓋除 `video.project.json` 以外的範本檔（影片內容不在範本內），必要時 `pnpm install`，`specVersion` 不同時把專案資料遷移到新 Schema（SKILL §1「既有專案：同步範本」）。網頁開啟既有專案時做同樣的比對；有差異就顯示「更新專案工具」，按下後以同一份 zip 覆蓋不同的範本檔、移除新版 Schema 已不認得的欄位並更新 `specVersion`（只在移除後即通過驗證時才寫回），`package.json` 有變時提示讓 Agent 執行 `pnpm install`。
 
 `/api/index.json`（節錄）：
 

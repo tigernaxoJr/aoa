@@ -9,7 +9,7 @@ import WorkflowBar from './components/WorkflowBar.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import CompanionStatus from './components/CompanionStatus.vue'
 import { companion, connect, takePairingFromUrl } from './lib/companion'
-import { close, reload, restore, state, ui } from './lib/store'
+import { close, outdated, reload, restore, state, syncTemplate, ui } from './lib/store'
 
 const current = ref<string | null>(null)
 /** The open editor has edits not saved yet. */
@@ -76,10 +76,19 @@ watch(state, (st) => {
   <main>
     <HomeView v-if="!state" />
     <div v-else class="mx-auto max-w-7xl space-y-4 px-4 py-5 sm:py-6">
+      <div v-if="outdated" class="callout bg-amber-50 text-amber-950 dark:bg-amber-950/60 dark:text-amber-100" role="status" data-testid="template-outdated">
+        <Icon name="refresh" class="mt-0.5" />
+        <div class="min-w-0 flex-1">
+          <p>這個專案的工具（腳本、格式定義）是舊版範本建立的，和網站目前的版本不一致（{{ outdated.paths.length }} 個檔案）。更新後網頁與 Agent 才會用同一套規則；影片內容（分鏡、旁白、素材）不會被覆蓋。</p>
+          <button type="button" class="btn-primary btn-sm mt-2" :disabled="ui.saving" data-testid="template-update" @click="syncTemplate">
+            <Icon name="refresh" :size="14" />更新專案工具
+          </button>
+        </div>
+      </div>
       <div v-if="state.errors.length" class="callout bg-red-50 text-red-900 dark:bg-red-950/60 dark:text-red-200" role="alert">
         <Icon name="alert" class="mt-0.5" />
         <p class="min-w-0">
-          專案檔有問題，請讓 Agent 執行 <code>pnpm run validate</code> 修正：
+          專案檔有問題，{{ outdated ? '請先按上方「更新專案工具」；仍有問題時' : '' }}請讓 Agent 執行 <code>pnpm run validate</code> 修正：
           <span v-for="e in state.errors.slice(0, 5)" :key="e" class="mt-1 block font-mono text-xs break-all">{{ e }}</span>
         </p>
       </div>
