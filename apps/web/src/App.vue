@@ -43,7 +43,7 @@ watch(state, (st) => {
     <HomeView v-if="!state" />
     <div v-else class="mx-auto max-w-6xl space-y-5 px-4 py-6">
       <p v-if="state.errors.length" class="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
-        專案檔有問題，請讓 Agent 執行 <code>npm run validate</code> 修正：<br />
+        專案檔有問題，請讓 Agent 執行 <code>pnpm run validate</code> 修正：<br />
         <span v-for="e in state.errors.slice(0, 5)" :key="e" class="block font-mono text-xs">{{ e }}</span>
       </p>
       <WorkflowBar />

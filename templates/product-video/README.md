@@ -21,7 +21,7 @@
 | `/video-approve <id>` | 核准某個 scene |
 | `/video-translate <locale>` | 複製一份專案並翻譯成其他語言 |
 
-不確定下一步時，執行 `npm run status`。
+不確定下一步時，執行 `pnpm run status`。
 
 ## 可以直接修改的檔案
 
@@ -29,11 +29,11 @@
 - `video.project.json` 的 `scenes` 順序：影片播放順序。改完執行 `/video-assemble`。
 - `assets/`：放 logo、BGM 等共用素材。BGM 檔名填在 `video.project.json` 的 `project.audio.bgm`。
 
-其他 JSON 請透過 Agent 或 `npm run state` 修改，它會負責鎖定與驗證。
+其他 JSON 請透過 Agent 或 `pnpm run state` 修改，它會負責鎖定與驗證。
 
 ## 需要的工具
 
-- Node.js 20.12 以上。執行 `npm install` 會一併取得 FFmpeg。
+- Node.js 20.12 以上與 pnpm。執行 `pnpm install` 會一併取得 FFmpeg。
 - 瀏覽器：Playwright 內建的 Chromium，或系統安裝的 Chrome / Edge。
 
 ## 產出

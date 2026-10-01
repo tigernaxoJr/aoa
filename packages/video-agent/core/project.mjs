@@ -55,7 +55,7 @@ export function runProcess(command, args, { cwd, onLine, env } = {}) {
   })
 }
 
-/** `npm run status --json`: validation result plus per-scene report and the suggested next step. */
+/** `pnpm run status --json`: validation result plus per-scene report and the suggested next step. */
 export async function status(root) {
   const r = await runScript(root, 'validate', ['--report', '--json'])
   try {

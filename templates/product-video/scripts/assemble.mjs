@@ -1,6 +1,6 @@
-// npm run assemble   → output/final.mp4 (+ output/final.srt unless captions.mode is none)
+// pnpm run assemble   → output/final.mp4 (+ output/final.srt unless captions.mode is none)
 // Joins scene outputs in video.project.json order with transitions, merges captions, mixes BGM.
-// Writes files only; the agent records status via `npm run state` (SPEC §7.3).
+// Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
 // The previous final.mp4 / final.srt are replaced only when the new assemble succeeds.
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -33,7 +33,7 @@ run(async (argv) => {
         : !s.hasOutput ? 'output missing'
         : 'inputs changed since render'
     throw new UsageError(
-      `not ready to assemble; redo these scenes first (npm run status):\n${notReady.map((s) => `  - ${s.ref.id}: ${why(s)}`).join('\n')}`,
+      `not ready to assemble; redo these scenes first (pnpm run status):\n${notReady.map((s) => `  - ${s.ref.id}: ${why(s)}`).join('\n')}`,
     )
   }
 
@@ -51,7 +51,7 @@ run(async (argv) => {
     inspected.map((s) => {
       const file = join(root, s.ref.dir, DEFAULTS.captionsFile)
       if (existsSync(file)) return JSON.parse(readFileSync(file, 'utf8'))
-      if (mode !== 'none') warnings.push(`${s.ref.id}: no ${DEFAULTS.captionsFile}; run npm run tts -- ${s.ref.id} to get captions`)
+      if (mode !== 'none') warnings.push(`${s.ref.id}: no ${DEFAULTS.captionsFile}; run pnpm run tts ${s.ref.id} to get captions`)
       return []
     }),
   )

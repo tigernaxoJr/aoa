@@ -1,7 +1,7 @@
-// npm run capture -- <scene-id>                         → <scene>/assets/capture.mp4 (web-capture) or capture.png (screenshot)
-// npm run capture -- --url <url> --out <dir> [--width 1440 --height 900]
+// pnpm run capture <scene-id>                         → <scene>/assets/capture.mp4 (web-capture) or capture.png (screenshot)
+// pnpm run capture --url <url> --out <dir> [--width 1440 --height 900]
 //                                                       → <dir>/<slug>-top.png, <slug>-full.png, <slug>.txt (for analyze)
-// Writes files only; the agent records status via `npm run state` (SPEC §7.3).
+// Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

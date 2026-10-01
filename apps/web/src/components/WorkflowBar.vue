@@ -61,7 +61,7 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
         </span>
       </template>
       <template v-else>
-        <span>{{ stale.length }} 個 scene 待更新。網頁無法直接叫醒 Agent，請在終端機的 Agent 中執行 <code>/video-sync</code>（或啟動 <code>npx video-agent serve</code> 以便直接在這裡重做）。</span>
+        <span>{{ stale.length }} 個 scene 待更新。網頁無法直接叫醒 Agent，請在終端機的 Agent 中執行 <code>/video-sync</code>（或啟動 <code>pnpm dlx video-agent serve</code> 以便直接在這裡重做）。</span>
         <CopyButton text="/video-sync" />
       </template>
     </div>

@@ -27,7 +27,7 @@ export function buildPlan(root, project, ref, scene) {
   let duration = scene.durationSec
   if (duration == null) {
     if (audioSec == null) {
-      throw new UsageError(`${scene.id}: durationSec is null and there is no narration audio; run "npm run tts -- ${scene.id}" or set durationSec`)
+      throw new UsageError(`${scene.id}: durationSec is null and there is no narration audio; run "pnpm run tts ${scene.id}" or set durationSec`)
     }
     duration = audioSec + TAIL_SEC
   } else if (audioSec != null && audioSec > duration) {
@@ -75,7 +75,7 @@ function background(visual, resolve, need, sceneDir, duration) {
     case 'web-capture':
       return {
         kind: 'video',
-        file: need(join(sceneDir, 'assets', 'capture.mp4'), 'web-capture recording (run npm run capture)'),
+        file: need(join(sceneDir, 'assets', 'capture.mp4'), 'web-capture recording (run pnpm run capture)'),
         fit: 'contain',
         trimStart: 0,
         trimEnd: null,
@@ -84,7 +84,7 @@ function background(visual, resolve, need, sceneDir, duration) {
     case 'screenshot':
       return {
         kind: 'image',
-        file: need(join(sceneDir, 'assets', 'capture.png'), 'screenshot (run npm run capture)'),
+        file: need(join(sceneDir, 'assets', 'capture.png'), 'screenshot (run pnpm run capture)'),
         fit: 'cover',
         kenBurns: true,
       }

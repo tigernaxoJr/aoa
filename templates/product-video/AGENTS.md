@@ -29,12 +29,12 @@
 
 隨時可用：`/video-status`（狀態摘要）、`/video-sync`（只重做有變更的 scene 並重新合成）、`/video-approve <id>`（核准）、`/video-translate <locale>`（複製專案並翻譯）。
 
-不確定下一步時，執行 `npm run status`，它會列出每個 scene 的狀態、是否過期，以及建議的下一個指令。
+不確定下一步時，執行 `pnpm run status`，它會列出每個 scene 的狀態、是否過期，以及建議的下一個指令。
 
 ## 3. 硬性規則
 
 1. **依步驟執行，不跳步。** 遇到 checkpoint 必須停下，等使用者明確確認後才繼續。
-2. **修改既有 JSON 一律透過 `npm run state`**（見 §4），不得直接編輯 `video.project.json` 或既有的 `scene.json`。只有新建 `scene.json` 時可直接寫入檔案，寫完立即執行 `npm run validate`。
+2. **修改既有 JSON 一律透過 `pnpm run state`**（見 §4），不得直接編輯 `video.project.json` 或既有的 `scene.json`。只有新建 `scene.json` 時可直接寫入檔案，寫完立即執行 `pnpm run validate`。
 3. **一次只處理一個 scene。** 修改只重做受影響的 scene，不重新產生整部影片。
 4. **不動鎖定或已核准的 scene。** `locked: true` 或 `status: approved` 的 scene，除非使用者明確要求，否則不修改、不重做。
 5. **尊重使用者的修改。** 編輯任何檔案前先重新讀取（Web UI 或使用者可能剛改過）。不覆蓋使用者寫的內容；原樣保留所有 `x-` 開頭的欄位。
@@ -45,27 +45,27 @@
 7. **不儲存幀數。** 時長一律以秒記錄（`durationSec`），`null` 表示由旁白音長決定。
 8. **資料不離開本機。** 不上傳使用者的原始碼、素材或影片到任何遠端服務。使用連網 TTS 前必須通過 `onlineTtsConsent` gate（§5）。
 9. **不處理機密。** 不讀取 `.env`，不把 API key、密碼、token 寫進任何 JSON 或旁白稿。需要登入的產品頁面，請使用者自行在瀏覽器中登入。
-10. **失敗時保留現場。** 不刪除既有檔案；以 `npm run state -- <id> --failed …` 記錄錯誤。同一 scene 自動重試至多 2 次（看 `attempts`），之後停下並告訴使用者原因與重試方式。
+10. **失敗時保留現場。** 不刪除既有檔案；以 `pnpm run state <id> --failed …` 記錄錯誤。同一 scene 自動重試至多 2 次（看 `attempts`），之後停下並告訴使用者原因與重試方式。
 11. **未經同意不安裝工具。** 缺少 Node.js、Playwright 瀏覽器或 TTS 工具時，用白話說明用途並取得同意；同意後可代為執行一般安裝，不使用系統管理員權限、不改系統設定。需要使用者點擊確認時，給逐步說明。
 12. **假設使用者不懂電腦操作。** 所有指令由你執行，不要求使用者開終端機或打指令；使用者用白話下指示（「繼續」「第三段改成…」），由你對應到工作流程步驟。說明避免術語，回報檔案位置用「文件 > 專案 > output > final.mp4」這類資料夾順序，並可建議用網頁工作台預覽。
 
-## 4. 寫入狀態：`npm run state`
+## 4. 寫入狀態：`pnpm run state`
 
 `state` 會取得鎖檔、重新讀取目標檔、套用修改、原子寫入、執行驗證，並自動更新 `updatedAt` 與 `updatedBy: "agent"`。寫入 scene 後會依 `workflow.json` 的 `derivedProjectStatus` 重算 `project.status`。
 
 ```bash
 # 改狀態
-npm run state -- project --status analyzed
-npm run state -- scene-003 --status assets_ready
+pnpm run state project --status analyzed
+pnpm run state scene-003 --status assets_ready
 
 # 渲染成功：計算 inputHash、寫入 render、狀態設為 rendered、attempts 歸零
-npm run state -- scene-003 --rendered
+pnpm run state scene-003 --rendered
 
 # 失敗：狀態設為 failed、寫入 error、attempts + 1
-npm run state -- scene-003 --failed tts "edge-tts timeout" --hint "稍後重試或改用 manual"
+pnpm run state scene-003 --failed tts "edge-tts timeout" --hint "稍後重試或改用 manual"
 
 # 其他修改：JSON Patch（RFC 6902），寫成檔案再套用，避免 shell 引號問題
-npm run state -- scene-003 --patch-file .tmp/patch.json
+pnpm run state scene-003 --patch-file .tmp/patch.json
 ```
 
 `--patch-file` 範例（`.tmp/` 不納入版本控制，用完可刪）：
@@ -86,7 +86,7 @@ npm run state -- scene-003 --patch-file .tmp/patch.json
 | `rendererLicense` | `project.renderer` 為 `remotion` | `render:scene`、`assemble` |
 | `onlineTtsConsent` | TTS provider 為 `edge-tts`、`azure`、`openai`、`elevenlabs` | `tts` |
 
-要向使用者說明的內容、使用者拒絕時的處理方式，見 `schemas/workflow.json` 的 `gates`。確認結果以 `npm run state` 寫入 `project.rendererLicense` / `project.tts.consent`。
+要向使用者說明的內容、使用者拒絕時的處理方式，見 `schemas/workflow.json` 的 `gates`。確認結果以 `pnpm run state` 寫入 `project.rendererLicense` / `project.tts.consent`。
 
 ## 6. Scene 狀態
 
@@ -97,17 +97,17 @@ draft → assets_ready → rendering → rendered → approved
 任一步驟失敗 → failed（修正後可重試）
 ```
 
-- `render.inputHash` 與目前內容不符時，scene 視為過期，即使 `status` 仍是 `rendered`。`npm run status` 會標示出來。
+- `render.inputHash` 與目前內容不符時，scene 視為過期，即使 `status` 仍是 `rendered`。`pnpm run status` 會標示出來。
 - 字幕樣式與 BGM 只在合成時使用，改它們不需要重做 scene，只要重新合成。
 
 ## 7. 常用指令
 
 | 指令 | 作用 |
 |---|---|
-| `npm run status` | 各 scene 狀態、是否過期、下一步建議 |
-| `npm run validate` | 驗證所有 JSON 與路徑；非 0 代表有錯 |
-| `npm run tts -- <id>` | 產生旁白音檔與字幕時間軸 |
-| `npm run capture -- <id>` | 擷取網頁畫面 |
-| `npm run render:scene -- <id>` | 渲染單一 scene |
-| `npm run assemble` | 依順序合成 `output/final.mp4` |
-| `npm run preview` | 開啟 Remotion Studio 預覽（僅 renderer 為 remotion） |
+| `pnpm run status` | 各 scene 狀態、是否過期、下一步建議 |
+| `pnpm run validate` | 驗證所有 JSON 與路徑；非 0 代表有錯 |
+| `pnpm run tts <id>` | 產生旁白音檔與字幕時間軸 |
+| `pnpm run capture <id>` | 擷取網頁畫面 |
+| `pnpm run render:scene <id>` | 渲染單一 scene |
+| `pnpm run assemble` | 依順序合成 `output/final.mp4` |
+| `pnpm run preview` | 開啟 Remotion Studio 預覽（僅 renderer 為 remotion） |

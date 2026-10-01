@@ -1,12 +1,13 @@
 {
   "name": "agent-video-platform",
   "private": true,
+  "packageManager": "pnpm@11.22.0",
   "type": "module",
   "scripts": {
     "test:specs": "node tools/test-specs.mjs",
     "test": "node --test \"tests/**/*.test.mjs\" && node tools/test-specs.mjs && node tools/gen-types.mjs --check",
     "test:template": "node --test \"tests/template/*.test.mjs\"",
-    "build": "npm run build:web && node tools/build-api.mjs",
+    "build": "pnpm run build:web && node tools/build-api.mjs",
     "dev": "vite --config apps/web/vite.config.ts",
     "build:web": "vite build --config apps/web/vite.config.ts",
     "typecheck": "vue-tsc --noEmit -p apps/web/tsconfig.json",

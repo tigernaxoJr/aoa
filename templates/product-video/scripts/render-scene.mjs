@@ -1,5 +1,5 @@
-// npm run render:scene -- <scene-id>   → <scene>/output/scene.mp4 with the project's renderer (SPEC §7.6)
-// Writes files only; the agent records status via `npm run state` (SPEC §7.3).
+// pnpm run render:scene <scene-id>   → <scene>/output/scene.mp4 with the project's renderer (SPEC §7.6)
+// Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
 // The previous output is replaced only when the new render succeeds.
 import { mkdirSync, renameSync, rmSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'

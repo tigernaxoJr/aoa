@@ -1,4 +1,4 @@
-// FFmpeg / ffprobe access. Resolution order: env override → system PATH → npm-bundled binaries.
+// FFmpeg / ffprobe access. Resolution order: env override → system PATH → bundled binaries (ffmpeg-static).
 import { spawn, spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { UsageError } from './project.mjs'
@@ -33,7 +33,7 @@ export function locate(name) {
   }
   throw new UsageError(
     `${name} not found. Install FFmpeg (winget install Gyan.FFmpeg / brew install ffmpeg / apt install ffmpeg), ` +
-      `or run npm install to get the bundled copy.`,
+      `or run pnpm install to get the bundled copy.`,
   )
 }
 

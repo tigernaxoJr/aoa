@@ -1,5 +1,5 @@
 // `video-agent mcp`: stdio MCP server (SPEC §10). Guide resources and prompts wrap the site's static
-// API; project tools wrap the project's npm scripts, writing JSON only through state.mjs (--by mcp).
+// API; project tools wrap the project's pnpm scripts, writing JSON only through state.mjs (--by mcp).
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -44,7 +44,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
   for (const [name, uri, path, mimeType, description] of resources) {
     server.registerResource(name, uri, { description, mimeType }, async () => ({ contents: [{ uri, mimeType, text: await guideText(path) }] }))
   }
-  server.registerResource('project', 'video://project/current', { description: 'Current project status report (npm run status --json)', mimeType: 'application/json' }, async (uri) => ({
+  server.registerResource('project', 'video://project/current', { description: 'Current project status report (pnpm run status --json)', mimeType: 'application/json' }, async (uri) => ({
     contents: [{ uri: uri.href, mimeType: 'application/json', text: JSON.stringify(await status(rootOf()), null, 2) }],
   }))
 
@@ -73,7 +73,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
   )
   server.registerTool(
     'validate_project',
-    { description: 'Validate all project JSON and paths (npm run validate).', inputSchema: { project: projectArg } },
+    { description: 'Validate all project JSON and paths (pnpm run validate).', inputSchema: { project: projectArg } },
     tool(async ({ project }) => scriptResult(await runScript(rootOf(project), 'validate'))),
   )
   server.registerTool(
@@ -81,7 +81,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
     {
       description:
         'Create a new video project from the site template (checksum-verified) in an empty directory and fill in its identity and sources. ' +
-        'Afterwards: run npm install there, and record the rendererLicense and onlineTtsConsent gates with update_project after asking the user.',
+        'Afterwards: run pnpm install there, and record the rendererLicense and onlineTtsConsent gates with update_project after asking the user.',
       inputSchema: {
         directory: z.string().describe('New or empty directory for the project'),
         name: z.string().min(1),
@@ -105,7 +105,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
       doc.updatedBy = BY
       // A brand-new project has no other writers, so this one direct write is allowed (SPEC §7.3).
       writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`)
-      return text({ directory: dir, specVersion: manifest.specVersion, files: manifest.files.length, next: ['npm install', 'record gates with update_project', 'analyze (prompt "analyze")'] })
+      return text({ directory: dir, specVersion: manifest.specVersion, files: manifest.files.length, next: ['pnpm install', 'record gates with update_project', 'analyze (prompt "analyze")'] })
     }),
   )
   server.registerTool(

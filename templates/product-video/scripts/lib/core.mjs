@@ -70,7 +70,7 @@ export function hashFiles(sceneDir, scene, assetFiles) {
 
 /**
  * Suggests the next agent command from the project status and per-scene facts
- * ({ id, status, outdated, locked, error }). Shared by `npm run status` and the Web UI.
+ * ({ id, status, outdated, locked, error }). Shared by `pnpm run status` and the Web UI.
  */
 export function suggestNext(project, scenes, errors = []) {
   if (errors.length) return { command: null, reason: 'fix the validation errors first' }

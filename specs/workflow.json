@@ -41,12 +41,12 @@
       "actions": [
         { "id": "scaffold", "do": "下載並解壓 /api/templates/product-video.zip，以 manifest.json 的 SHA-256 驗證完整性。" },
         { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、sources、language、format。至少需要一種 sources。" },
-        { "id": "install", "do": "npm install" },
+        { "id": "install", "do": "pnpm install" },
         { "id": "check_tools", "do": "檢查 ffmpeg / ffprobe、Playwright 瀏覽器、所選 TTS 是否可用；缺少時告知安裝方式，不自行以系統權限安裝。" },
         { "id": "gates", "do": "依 gates 詢問 rendererLicense 與 onlineTtsConsent 並記錄。" },
         {
           "id": "validate",
-          "do": "npm run validate",
+          "do": "pnpm run validate",
           "transitions": [{ "target": "project", "to": "initialized" }]
         }
       ],
@@ -79,7 +79,7 @@
         },
         {
           "id": "done",
-          "do": "npm run state -- project --status analyzed",
+          "do": "pnpm run state project --status analyzed",
           "transitions": [{ "target": "project", "from": ["initialized", "analyzed"], "to": "analyzed" }]
         }
       ],
@@ -107,13 +107,13 @@
         { "id": "timing", "do": "估算旁白總時長（中文約 4 字/秒、英文約 2.5 字/秒），需接近 project.format.targetDurationSec。" },
         {
           "id": "register",
-          "do": "npm run state -- project --patch-file <patch>（將 scenes 依播放順序寫入 video.project.json）",
+          "do": "pnpm run state project --patch-file <patch>（將 scenes 依播放順序寫入 video.project.json）",
           "transitions": [
             { "target": "scene", "to": "draft" },
             { "target": "project", "from": ["analyzed", "script_generated"], "to": "script_generated" }
           ]
         },
-        { "id": "validate", "do": "npm run validate" }
+        { "id": "validate", "do": "pnpm run validate" }
       ],
       "checkpoint": "列出每個 scene 的標題、purpose、旁白稿與預估秒數，請使用者審閱。使用者確認後才可進入 build_scene。",
       "guide": "skills/product-video/script-guide.md"
@@ -149,30 +149,30 @@
       "actions": [
         {
           "id": "begin",
-          "do": "npm run state -- project --status producing",
+          "do": "pnpm run state project --status producing",
           "transitions": [{ "target": "project", "from": ["script_generated", "ready_to_assemble", "completed"], "to": "producing" }]
         },
-        { "id": "tts", "do": "npm run tts -- <id>", "when": "旁白音檔不存在或 script.md / 聲音設定已變更" },
-        { "id": "capture", "do": "npm run capture -- <id>", "when": "visual.type 為 web-capture 或 screenshot" },
+        { "id": "tts", "do": "pnpm run tts <id>", "when": "旁白音檔不存在或 script.md / 聲音設定已變更" },
+        { "id": "capture", "do": "pnpm run capture <id>", "when": "visual.type 為 web-capture 或 screenshot" },
         {
           "id": "assets_ready",
-          "do": "npm run state -- <id> --status assets_ready",
+          "do": "pnpm run state <id> --status assets_ready",
           "transitions": [{ "target": "scene", "from": ["draft", "stale", "failed"], "to": "assets_ready" }]
         },
         {
           "id": "render",
-          "do": "npm run state -- <id> --status rendering，接著 npm run render:scene -- <id>",
+          "do": "pnpm run state <id> --status rendering，接著 pnpm run render:scene <id>",
           "transitions": [{ "target": "scene", "from": ["assets_ready"], "to": "rendering" }]
         },
         {
           "id": "rendered",
-          "do": "npm run state -- <id> --rendered（寫入 render.inputHash、outputFile、renderedAt，attempts 歸零）",
+          "do": "pnpm run state <id> --rendered（寫入 render.inputHash、outputFile、renderedAt，attempts 歸零）",
           "transitions": [{ "target": "scene", "from": ["rendering"], "to": "rendered" }]
         },
-        { "id": "validate", "do": "npm run validate" },
+        { "id": "validate", "do": "pnpm run validate" },
         {
           "id": "on_failure",
-          "do": "npm run state -- <id> --failed <step> \"<message>\"；保留既有檔案；同一 scene 自動重試至多 2 次（依 attempts），之後停下回報。",
+          "do": "pnpm run state <id> --failed <step> \"<message>\"；保留既有檔案；同一 scene 自動重試至多 2 次（依 attempts），之後停下回報。",
           "when": "任何動作失敗",
           "transitions": [{ "target": "scene", "to": "failed" }]
         }
@@ -200,11 +200,11 @@
         { "path": "output/final.srt", "optional": true, "note": "captions.mode 為 none 時不產生" }
       ],
       "actions": [
-        { "id": "check", "do": "npm run status；有未完成或過期的 scene 時列出並停止。" },
-        { "id": "assemble", "do": "npm run assemble" },
+        { "id": "check", "do": "pnpm run status；有未完成或過期的 scene 時列出並停止。" },
+        { "id": "assemble", "do": "pnpm run assemble" },
         {
           "id": "done",
-          "do": "npm run state -- project --status completed",
+          "do": "pnpm run state project --status completed",
           "transitions": [{ "target": "project", "from": ["ready_to_assemble", "completed"], "to": "completed" }]
         }
       ],
@@ -220,10 +220,10 @@
       "scope": "project",
       "requires": { "projectStatus": ["script_generated", "producing", "ready_to_assemble", "completed"] },
       "actions": [
-        { "id": "detect", "do": "npm run status，找出 status 為 stale、failed、draft，或 inputHash 不相符的 scene。" },
+        { "id": "detect", "do": "pnpm run status，找出 status 為 stale、failed、draft，或 inputHash 不相符的 scene。" },
         {
           "id": "mark_stale",
-          "do": "npm run state -- <id> --status stale",
+          "do": "pnpm run state <id> --status stale",
           "when": "scene 為 rendered 或 approved 但 inputHash 不相符（例如使用者直接改檔）",
           "transitions": [{ "target": "scene", "from": ["rendered", "approved"], "to": "stale" }]
         },
@@ -238,7 +238,7 @@
       "title": "查看狀態",
       "command": "/video-status",
       "scope": "project",
-      "actions": [{ "id": "report", "do": "npm run status，並以表格摘要各 scene 狀態、是否過期、下一步建議指令。" }],
+      "actions": [{ "id": "report", "do": "pnpm run status，並以表格摘要各 scene 狀態、是否過期、下一步建議指令。" }],
       "checkpoint": null
     },
     {
@@ -251,7 +251,7 @@
       "actions": [
         {
           "id": "approve",
-          "do": "npm run state -- <id> --status approved",
+          "do": "pnpm run state <id> --status approved",
           "transitions": [{ "target": "scene", "from": ["rendered"], "to": "approved" }]
         }
       ],

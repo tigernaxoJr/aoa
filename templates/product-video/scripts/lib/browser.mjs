@@ -14,5 +14,5 @@ export async function launchBrowser() {
       errors.push(`${channel ?? 'bundled chromium'}: ${err.message.split('\n')[0]}`)
     }
   }
-  throw new UsageError(`no usable browser. Run "npx playwright install chromium" or install Chrome/Edge.\n  ${errors.join('\n  ')}`)
+  throw new UsageError(`no usable browser. Run "pnpm exec playwright install chromium" or install Chrome/Edge.\n  ${errors.join('\n  ')}`)
 }

@@ -21,7 +21,7 @@
 1. 讀取頁面文字：首頁、功能頁、定價頁、關於頁（若有連結）。只讀使用者給的網域，不追到第三方網站。
 2. 擷取截圖作為分析與後續素材：
    ```bash
-   npm run capture -- --url <網址> --out brief/screens/
+   pnpm run capture --url <網址> --out brief/screens/
    ```
    會輸出整頁截圖與首屏截圖。需要登入的頁面，請使用者自行登入後再擷取，或改用使用者提供的截圖。
 
@@ -118,7 +118,7 @@
 ### 完成
 
 ```bash
-npm run state -- project --status analyzed
+pnpm run state project --status analyzed
 ```
 
 向使用者摘要 brief 的一句話定位、核心功能與不確定處，並建議下一步 `/video-storyboard`。
@@ -132,7 +132,7 @@ npm run state -- project --status analyzed
 ### 1. 找出變更
 
 ```bash
-npm run status
+pnpm run status
 ```
 
 依變更類型決定要做什麼：
@@ -150,7 +150,7 @@ npm run status
 
 ### 2. 標記與重做
 
-1. `status` 為 `rendered` / `approved`、但 `inputHash` 不相符的 scene：`npm run state -- <id> --status stale`。
+1. `status` 為 `rendered` / `approved`、但 `inputHash` 不相符的 scene：`pnpm run state <id> --status stale`。
 2. **`locked: true` 的 scene 即使過期也不重做**，列出來請使用者決定。
 3. 依播放順序對每個需要處理的 scene 執行 build_scene。sync 時不在每個 scene 停下，全部完成後一次回報。
 4. 失敗的 scene 依 `AGENTS.md` 規則處理，不影響其他 scene 繼續；最後在回報中列出。
@@ -176,11 +176,11 @@ npm run status
 
 - 目標目錄：與原專案同層的 `<原目錄名>-<locale>/`，例如 `launch-video-en-US/`。已存在時詢問使用者，不覆蓋。
 - 不複製：`output/`、`scenes/*/output/`、`scenes/*/assets/narration.*`、`scenes/*/assets/captions.json`、`node_modules/`、`.tmp/`。
-- 在新目錄執行 `npm install`。
+- 在新目錄執行 `pnpm install`。
 
 ### 2. 更新專案身分
 
-以下 JSON 修改都寫成 JSON Patch，用 `npm run state -- project --patch-file <檔案>` 套用（`script.md` 是純文字，可直接編輯）。
+以下 JSON 修改都寫成 JSON Patch，用 `pnpm run state project --patch-file <檔案>` 套用（`script.md` 是純文字，可直接編輯）。
 
 - `project.id`：新的 UUID v4
 - `project.translatedFrom`：`{ "id": "<原專案 id>", "language": "<原語言>" }`
@@ -198,7 +198,7 @@ npm run status
 
 ### 4. 重設狀態
 
-所有 scene 設為 `draft`、清除 `render` 與 `error`、`attempts` 歸零；`project.status` 設為 `script_generated`。在新專案執行 `npm run validate`。
+所有 scene 設為 `draft`、清除 `render` 與 `error`、`attempts` 歸零；`project.status` 設為 `script_generated`。在新專案執行 `pnpm run validate`。
 
 ### 5. Checkpoint
 

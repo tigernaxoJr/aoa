@@ -7,20 +7,20 @@
 ## <a id="flow"></a>1. 流程
 
 ```bash
-npm run state -- project --status producing          # 專案仍是 script_generated 等狀態時
-npm run tts -- scene-003                             # 旁白 → assets/narration.mp3、assets/captions.json
-npm run capture -- scene-003                         # 只有 web-capture / screenshot 需要
-npm run state -- scene-003 --status assets_ready
-npm run state -- scene-003 --status rendering
-npm run render:scene -- scene-003                    # → output/scene.mp4
-npm run state -- scene-003 --rendered                # 寫入 inputHash、renderer、實際秒數
-npm run validate
+pnpm run state project --status producing          # 專案仍是 script_generated 等狀態時
+pnpm run tts scene-003                             # 旁白 → assets/narration.mp3、assets/captions.json
+pnpm run capture scene-003                         # 只有 web-capture / screenshot 需要
+pnpm run state scene-003 --status assets_ready
+pnpm run state scene-003 --status rendering
+pnpm run render:scene scene-003                    # → output/scene.mp4
+pnpm run state scene-003 --rendered                # 寫入 inputHash、renderer、實際秒數
+pnpm run validate
 ```
 
 完成後回報 `scenes/<dir>/output/scene.mp4` 的路徑與實際秒數（`render.actualDurationSec`），請使用者預覽。這是 checkpoint，必須等使用者確認。
 
 - 旁白沒有改動、`assets/narration.mp3` 仍在時，可以跳過 `tts`。擷取素材也一樣。
-- `render:scene` 只產生檔案，不改 JSON。狀態一律用 `npm run state` 寫回。
+- `render:scene` 只產生檔案，不改 JSON。狀態一律用 `pnpm run state` 寫回。
 
 ## <a id="duration"></a>2. 時長
 
@@ -35,8 +35,8 @@ npm run validate
 
 | `visual.type` | 背景 | 需要的素材 |
 |---|---|---|
-| `web-capture` | 網頁操作錄影，完整顯示在畫面內 | `assets/capture.mp4`（`npm run capture`） |
-| `screenshot` | 截圖填滿畫面，整段緩慢放大 | `assets/capture.png`（`npm run capture`） |
+| `web-capture` | 網頁操作錄影，完整顯示在畫面內 | `assets/capture.mp4`（`pnpm run capture`） |
+| `screenshot` | 截圖填滿畫面，整段緩慢放大 | `assets/capture.png`（`pnpm run capture`） |
 | `motion-graphic` | 深色漸層背景，畫面由 `elements` 構成 | 無 |
 | `code` | 程式碼面板置中；`highlightLines` 以外的行會變淡 | `code.file` 或 `code.content` |
 | `user-asset` | 使用者的圖片或影片，依 `fit`（`contain` / `cover`）縮放 | `asset.src` |
@@ -61,7 +61,7 @@ npm run validate
 
 ## <a id="render"></a>5. 渲染器
 
-`npm run render:scene -- <id>` 依 `project.renderer` 選擇渲染器。兩者使用相同的版面與動畫定義（`src/lib/motion.js`），畫面一致。
+`pnpm run render:scene <id>` 依 `project.renderer` 選擇渲染器。兩者使用相同的版面與動畫定義（`src/lib/motion.js`），畫面一致。
 
 | | `remotion` | `html-capture` |
 |---|---|---|
@@ -80,19 +80,19 @@ Remotion 無法下載瀏覽器時（例如離線），會改用 Playwright 的�
 | 訊息 | 原因 | 處理 | `--failed` 的 step |
 |---|---|---|---|
 | `durationSec is null and there is no narration audio` | 沒有旁白音檔 | 執行 `tts`，或設定 `durationSec` | `render` |
-| `… (run npm run capture) not found` | 缺擷取素材 | 執行 `capture` | `capture` |
+| `… (run pnpm run capture) not found` | 缺擷取素材 | 執行 `capture` | `capture` |
 | `gate rendererLicense` | Remotion 授權尚未確認 | 依 gates 詢問使用者 | 不記錄，先處理 gate |
-| `no usable browser` | 找不到瀏覽器 | 告知使用者執行 `npx playwright install chromium` 或安裝 Chrome / Edge | `render` |
+| `no usable browser` | 找不到瀏覽器 | 告知使用者執行 `pnpm exec playwright install chromium` 或安裝 Chrome / Edge | `render` |
 | `ffmpeg failed: …` | 素材格式無法讀取 | 檢查該素材能否播放；請使用者提供其他格式 | `render` |
 | `… is not a readable video`（`state --rendered`） | 輸出檔損壞 | 重新渲染 | `render` |
 
-記錄方式：`npm run state -- <id> --failed render "<訊息>" --hint "<給使用者的建議>"`。同一 scene 自動重試至多 2 次。
+記錄方式：`pnpm run state <id> --failed render "<訊息>" --hint "<給使用者的建議>"`。同一 scene 自動重試至多 2 次。
 
 ## <a id="customize"></a>7. 客製外觀
 
 配色、字型、字級都在 `src/lib/motion.js` 的 `THEME` 與 `styles()`；Remotion 版面在 `src/SceneVideo.tsx`，html-capture 版面在 `src/html/player.js`。兩個渲染器都會用到的改動，要同時改這兩個檔案。
 
-`src/` 不納入 `inputHash`，所以改了 `src/` 之後，已渲染的 scene 不會自動被標為過期。只有在使用者要求時才改 `src/`；改完後告訴使用者哪些 scene 需要重做，經同意後對這些 scene 執行 `npm run state -- <id> --status stale`，再依第 1 節重做。`approved` 或 `locked` 的 scene 必須由使用者明確指定才重做。
+`src/` 不納入 `inputHash`，所以改了 `src/` 之後，已渲染的 scene 不會自動被標為過期。只有在使用者要求時才改 `src/`；改完後告訴使用者哪些 scene 需要重做，經同意後對這些 scene 執行 `pnpm run state <id> --status stale`，再依第 1 節重做。`approved` 或 `locked` 的 scene 必須由使用者明確指定才重做。
 
 ---
 
@@ -101,9 +101,9 @@ Remotion 無法下載瀏覽器時（例如離線），會改用 Playwright 的�
 用於 `/video-assemble`。所有 scene 都必須是 `rendered` 或 `approved`，而且渲染後輸入沒有變動。
 
 ```bash
-npm run status                                   # 確認沒有未完成或過期的 scene
-npm run assemble                                 # → output/final.mp4、output/final.srt
-npm run state -- project --status completed
+pnpm run status                                   # 確認沒有未完成或過期的 scene
+pnpm run assemble                                 # → output/final.mp4、output/final.srt
+pnpm run state project --status completed
 ```
 
 `assemble` 發現有 scene 未就緒時，會列出 scene id 與原因（狀態、缺輸出、輸入已變更）並停止，不產生任何檔案。把列出的 scene 依第 1 節重做，或執行 `/video-sync`。
@@ -120,7 +120,7 @@ npm run state -- project --status completed
 
 - `captions.mode: none` 不產生 `final.srt`。
 - `audio.bgm` 指定的檔案不存在時，略過 BGM 並警告，不算失敗。BGM 由使用者自備，不要替使用者下載音樂。
-- 字幕樣式、BGM、scene 順序都只影響合成：修改它們只需重新 `npm run assemble`，不需要重做 scene。
+- 字幕樣式、BGM、scene 順序都只影響合成：修改它們只需重新 `pnpm run assemble`，不需要重做 scene。
 - 轉場會讓成片比各 scene 加總短（每個轉場 0.5 秒）。旁白預設留有 0.5 秒尾音，轉場只會蓋到這段靜音；若 scene 用 `durationSec` 強制秒數且旁白講到最後一刻，轉場會蓋到旁白結尾，這時把該 scene 下一個的 `transitionIn` 改為 `none`。
 - 合成失敗時，既有的 `output/final.mp4` 不會被刪除或覆蓋。
 

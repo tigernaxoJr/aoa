@@ -1,6 +1,6 @@
-// npm run tts -- <scene-id>          → <scene>/assets/narration.mp3 + assets/captions.json
-// npm run tts -- --list-voices       → voices of the project's provider
-// Writes files only; the agent records status via `npm run state` (SPEC §7.3).
+// pnpm run tts <scene-id>          → <scene>/assets/narration.mp3 + assets/captions.json
+// pnpm run tts --list-voices       → voices of the project's provider
+// Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

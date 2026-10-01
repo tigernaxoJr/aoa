@@ -138,7 +138,7 @@
 
 1. scene id 依建立順序編號：`scene-001`、`scene-002`…；目錄為 `scenes/{三位數}-{purpose 或簡短英文 slug}/`，例如 `scenes/004-branch-preview/`。
 2. 每個 scene 寫入 `scene.json` 與 `script.md`（新建檔案可直接寫入）。
-3. 以 `npm run state -- project --patch-file <檔案>` 把 scene 依播放順序加入 `video.project.json` 的 `scenes`：
+3. 以 `pnpm run state project --patch-file <檔案>` 把 scene 依播放順序加入 `video.project.json` 的 `scenes`：
 
    ```json
    [
@@ -147,7 +147,7 @@
    ]
    ```
 
-4. 執行 `npm run validate`，並將 project 狀態設為 `script_generated`。
+4. 執行 `pnpm run validate`，並將 project 狀態設為 `script_generated`。
 
 ---
 

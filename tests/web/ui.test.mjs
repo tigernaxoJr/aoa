@@ -157,7 +157,7 @@ test('home page walks a non-technical user to a plain-language message for the a
     `請讀取 ${origin}${BASE}/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
   )
   const visible = await page.locator('main').innerText()
-  assert.doesNotMatch(visible, /終端機中開啟|npm install|cd /, 'the main path never asks for a terminal')
+  assert.doesNotMatch(visible, /終端機中開啟|p?npm install|cd /, 'the main path never asks for a terminal')
   assert.equal(await page.getByTestId('launch-command').isVisible(), false, 'the terminal command stays folded away')
 })
 

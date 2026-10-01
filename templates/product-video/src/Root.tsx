@@ -1,5 +1,5 @@
-// Remotion compositions. "Scene" renders one scene plan (npm run render:scene passes the real plan
-// as inputProps); the default plan is only a placeholder for `npm run preview`.
+// Remotion compositions. "Scene" renders one scene plan (pnpm run render:scene passes the real plan
+// as inputProps); the default plan is only a placeholder for `pnpm run preview`.
 import React from 'react'
 import { Composition } from 'remotion'
 import { SceneVideo } from './SceneVideo'
@@ -14,7 +14,7 @@ const previewPlan: Plan = {
   durationSec: 4,
   background: { kind: 'gradient' },
   elements: [
-    { type: 'text', content: 'npm run render:scene -- <id>', at: 0.3, end: 4, exitAt: null, animation: 'slideInUp', position: 'center' },
+    { type: 'text', content: 'pnpm run render:scene <id>', at: 0.3, end: 4, exitAt: null, animation: 'slideInUp', position: 'center' },
   ],
   audio: null,
 }

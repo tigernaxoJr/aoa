@@ -1,5 +1,5 @@
 // Builds the Guide API (SPEC §5, §12): dist/api/* (schemas, prompts, rules, Skill and template zips
-// with SHA-256 manifest). Run after the Web UI build (npm run build does both); writes a fallback
+// with SHA-256 manifest). Run after the Web UI build (pnpm run build does both); writes a fallback
 // landing page only when dist/index.html does not exist. Deployed to GitHub Pages by
 // .github/workflows/deploy-pages.yml.
 //

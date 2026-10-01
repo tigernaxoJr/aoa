@@ -23,25 +23,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - name: Install
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         env:
           # The build needs no browsers; skip large binary downloads.
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: Check specs, skill links and generated types
         run: |
-          npm run test:specs
+          pnpm run test:specs
           node tools/gen-types.mjs --check
-          npm run typecheck
+          pnpm run typecheck
 
       - name: Build site
-        run: npm run build
+        run: pnpm run build
         env:
           SITE_URL: ${{ vars.SITE_URL }}
 

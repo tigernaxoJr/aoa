@@ -154,7 +154,7 @@ describe('render-scene', () => {
     p.write('scenes/001-hook/output/scene.mp4', 'previous render')
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
     assert.equal(r.code, 1)
-    assert.match(r.stderr, /screenshot \(run npm run capture\) not found/)
+    assert.match(r.stderr, /screenshot \(run pnpm run capture\) not found/)
     assert.equal(readFileSync(p.path('scenes/001-hook/output/scene.mp4'), 'utf8'), 'previous render')
   })
 })
