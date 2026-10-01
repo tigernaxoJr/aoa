@@ -9,6 +9,14 @@
       "ask": "告知使用者：旁白文字將送至 <服務名稱> 進行語音合成。請使用者同意，或改選離線 provider（piper、system）或 manual 自行錄音。",
       "record": "project.tts.consent = { onlineTts: true, grantedAt }",
       "onDecline": "停下，請使用者選擇離線 provider 或 manual。"
+    },
+    "domEditConsent": {
+      "appliesWhen": "scene 的 visual.capture.actions 含有 script 動作（錄製時修改頁面內容，例如在資料很少的報表頁填入示意資料）",
+      "check": "visual.capture.domEditConsent.granted == true",
+      "blocks": ["capture"],
+      "ask": "告知使用者：這個頁面的資料太少，畫面會很空。說明打算在錄製時暫時改寫哪些內容（例如表格填入 12 筆示意訂單、圖表補上 6 個月的趨勢），只影響錄下來的畫面，不會改到產品或它的資料；畫面角落會標示「示意資料」。請使用者同意，或改用真實資料、使用者提供的截圖。",
+      "record": "visual.capture.domEditConsent = { granted: true, grantedAt }（每個 scene 分別取得）",
+      "onDecline": "不加 script 動作，照實錄製；或請使用者提供有資料的帳號畫面或截圖。"
     }
   },
   "steps": [
@@ -32,7 +40,7 @@
       ],
       "actions": [
         { "id": "scaffold", "do": "下載並解壓 /api/templates/product-video.zip，以 manifest.json 的 SHA-256 驗證完整性。" },
-        { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、sources、language、format。至少需要一種 sources。" },
+        { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、sources、language、format。至少需要一種 sources。向使用者確認 targetAudience 與 style；targetDurationSec 未指定時先用預設，analyze 後再確認。" },
         { "id": "install", "do": "pnpm install" },
         { "id": "check_tools", "do": "檢查 ffmpeg / ffprobe、Playwright 瀏覽器、所選 TTS 是否可用；缺少時告知安裝方式，不自行以系統權限安裝。" },
         { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 並記錄。" },
@@ -75,7 +83,7 @@
           "transitions": [{ "target": "project", "from": ["initialized", "analyzed"], "to": "analyzed" }]
         }
       ],
-      "checkpoint": null,
+      "checkpoint": "摘要產品重點，確認觀看對象與影片風格，並依內容提出 2–3 個長度選項（附估算理由與建議）。使用者確認後以 pnpm run state 寫入 project.targetAudience、project.style、project.format.targetDurationSec，才可進入 storyboard。",
       "guide": "skills/product-video/workflow.md#analyze"
     },
     {
@@ -107,7 +115,7 @@
         },
         { "id": "validate", "do": "pnpm run validate" }
       ],
-      "checkpoint": "列出每個 scene 的標題、purpose、旁白稿與預估秒數，請使用者審閱。使用者確認後才可進入 build_scene。",
+      "checkpoint": "列出分鏡總覽（每個 scene 的標題、purpose、畫面、預估秒數），再逐段列出完整旁白稿與畫面文字，請使用者審閱。使用者明確確認前不得執行 tts、capture 或 render；確認後才可進入 build_scene。",
       "guide": "skills/product-video/script-guide.md"
     },
     {
@@ -121,7 +129,7 @@
       "requires": {
         "projectStatus": ["script_generated", "producing", "ready_to_assemble", "completed"],
         "sceneStatus": ["draft", "assets_ready", "stale", "failed"],
-        "gates": ["onlineTtsConsent"]
+        "gates": ["onlineTtsConsent", "domEditConsent"]
       },
       "skipWhen": [
         "scene.locked == true（除非使用者明確要求）",

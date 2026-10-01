@@ -34,10 +34,15 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    - 產品原始碼路徑（`sources.sourceCodePath`，唯讀，不修改該目錄）。先確認路徑存在。使用者可能只給資料夾名稱（網頁無法取得完整路徑），或路徑不存在：依序在工作資料夾、它的上一層、使用者的「文件」「桌面」「下載」與常見程式碼資料夾（如 `~/code`、`~/source/repos`）尋找同名資料夾。`video.start.json` 的 `sourceFolder` 記有該資料夾的 `packageName`（package.json 的 name）、`gitRemote`（`.git/config` 的遠端網址）與 `entries`（最上層的檔案與資料夾名稱），用來比對候選資料夾、排除只是同名的。找到一個就用白話確認，找到多個請使用者選，找不到就請使用者把資料夾從檔案總管／Finder 拖進對話框，或說出它放在哪裡。
    - 產品文字描述（`sources.description`）
    - （可選）風格參考影片網址（`sources.referenceVideoUrl`）
-4. **確認格式**：語言、目標受眾、畫面比例（16:9 橫式 / 9:16 直式 / 1:1 / 4:5）、目標長度。使用者沒有偏好時沿用範本預設（zh-TW、16:9、1920×1080、30fps、45 秒）。
+4. **確認對象、風格與格式**：即使 `video.start.json` 已填寫，**對象與風格也要用白話向使用者確認一次**，一次問一件事並附建議：
+   - **觀看對象**：例如「潛在客戶（不懂技術）」「開發者」「公司內部主管」。
+   - **影片風格**：給 2–3 個選項並標出建議，例如「專業簡報（沉穩、資訊清楚）」「活潑社群短片（節奏快、字大）」「產品操作教學（步驟清楚）」。
+   - 語言、畫面比例（16:9 橫式 / 9:16 直式 / 1:1 / 4:5）：沒有偏好時沿用範本預設（zh-TW、16:9、1920×1080、30fps）。
+   - **目標長度先不定案**：使用者已有明確要求就照用；否則先填預設 45 秒，告訴他「看完產品內容後我會建議適合的長度再跟你確認」，在 analyze 結束時決定（見 [workflow.md#confirm](workflow.md#confirm)）。
+   使用者不確定對象或風格時，可以先填暫定值，分析完再一起確認。
 5. **填寫專案檔**：範本的 `video.project.json` 是可通過驗證的佔位內容，必須替換：
    - `project.id`：產生新的 UUID v4（範本為全 0，`pnpm run validate` 會視為未初始化）
-   - `project.name`、`project.sources`、`project.language`、`project.targetAudience`、`project.format`
+   - `project.name`、`project.sources`、`project.language`、`project.targetAudience`、`project.style`、`project.format`
    - `project.tts.voice`：依語言選擇（見 §4）
    - `updatedAt`：目前時間
    新專案沒有其他寫入者，這一次可以直接編輯 `video.project.json`；之後一律依 `AGENTS.md` 透過 `pnpm run state` 修改。
@@ -84,7 +89,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 - **說白話**：避免 JSON、pnpm、scene、render、commit 等術語；必須提到時順便解釋（例如「scene，也就是影片的一段」）。一次只問一件事，給選項時附上建議。
 - **需要使用者動手時**（安裝軟體、允許權限、在網頁上按按鈕）：寫成編號步驟，說明會看到什麼、按哪裡、完成後回覆什麼。
 
-- **checkpoint 一定停下**：分鏡完成後、每個 scene 渲染後，列出結果並等使用者確認或提出修改。
+- **checkpoint 一定停下**：分析完成後（確認對象、風格與長度）、分鏡與旁白完成後、每個 scene 渲染後，列出結果並等使用者確認或提出修改。使用者沒有明確說「可以」「繼續」之前，不產生語音、不渲染。
 - **修改只重做受影響的部分**：使用者說「第三段文案改成…」，只改該 scene 的 `script.md`，只重做該 scene，再重新合成。
 - **告訴使用者怎麼看成果**：用「文件 > acme-video > scenes > 003-solution > output > scene.mp4」這種資料夾順序描述位置，並建議打開網頁工作台 {{SITE_URL}}/ 預覽每一段、直接修改旁白。專案是網頁準備的（有 `video.start.json`）時，網頁已經開著這個資料夾，會自動顯示；否則請他在網頁步驟 1 選擇這個專案資料夾。
 - **Web UI**：使用者可能同時開著 Agent Video Producer 網頁工作台，它會直接修改專案檔。使用者說「我在網頁上改好了」時，執行 `/video-sync`。

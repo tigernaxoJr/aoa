@@ -73,6 +73,7 @@ export function scenePaths(scene) {
   add('narration.audioFile', scene.narration?.audioFile)
   add('visual.code.file', scene.visual?.code?.file)
   add('visual.asset.src', scene.visual?.asset?.src)
+  scene.visual?.capture?.actions?.forEach((a, i) => add(`visual.capture.actions[${i}].file`, a.file))
   scene.visual?.elements?.forEach((el, i) => add(`visual.elements[${i}].src`, el.src))
   add('render.outputFile', scene.render?.outputFile)
   return paths

@@ -13,6 +13,11 @@ export const THEME = {
   codeText: '#e2e8f0',
 }
 
+/** Font scale of a text element per `size`. Enlarged text shrinks back toward 1 to fit (player.js). */
+export const TEXT_SIZE = { normal: 1, large: 1.35, xl: 1.7 }
+/** Most lines an enlarged text element may wrap to before it is shrunk. */
+export const TEXT_MAX_LINES = 2
+
 /** Seconds an element takes to animate in, and to fade out when it has a `duration`. */
 export const ENTER_SEC = 0.5
 export const EXIT_SEC = 0.3
@@ -130,6 +135,7 @@ export function styles(width, height, codeLines = 0) {
       const a = anchor(el.position)
       return { position: 'absolute', left: `${a.left}%`, top: `${a.top}%`, transformOrigin: '50% 50%' }
     },
+    textFont: (scale = 1) => px(unit * 0.062 * scale),
     text: {
       maxWidth: px(width * 0.8),
       width: 'max-content',

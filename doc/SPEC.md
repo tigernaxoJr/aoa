@@ -372,7 +372,7 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 
 | 區塊 | 內容 |
 |---|---|
-| `gates` | 執行特定腳本前必須取得的使用者確認：`onlineTtsConsent`（擋 `tts`）。含說明內容、記錄欄位與拒絕時的處理 |
+| `gates` | 執行特定腳本前必須取得的使用者確認：`onlineTtsConsent`（擋 `tts`）、`domEditConsent`（scene 錄製時以 `script` 動作改寫頁面，例如報表資料太少時填入示意資料；擋該 scene 的 `capture`）。含說明內容、記錄欄位與拒絕時的處理 |
 | `steps` | 主流程 `init` → `analyze` → `storyboard` → `build_scene` → `assemble`。每步定義 `command`、`scope`（project / scene）、`requires`（允許的 project / scene 狀態、gates）、`skipWhen`、`reads` / `writes`、有序的 `actions`（含狀態轉換）、`checkpoint`、`guide`（Skill 章節） |
 | `operations` | 隨時可執行的操作：`sync`、`status`、`approve`、`translate` |
 | `derivedProjectStatus` | 由 scene 狀態推導 `project.status` 的規則；`state.mjs` 每次寫入 scene 後重算 |
@@ -391,12 +391,13 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 1. 讀取產品網址（Playwright 擷取頁面文字與主要截圖）、本機原始碼（README、package.json、路由/頁面）、使用者描述。
 2. 產出 `brief/product-brief.md`：產品一句話、目標受眾、痛點、核心功能（≤5）、USP、品牌色與字型、CTA。
 3. （可選）若有 `referenceVideoUrl` 或使用者提供的參考影片檔：以 FFmpeg 抽取關鍵影格，分析節奏、色調、字幕樣式、轉場，寫入 `brief/style.json`。無法取得影片時跳過並註明，不臆測。
+4. **Checkpoint**：摘要產品重點，與使用者確認觀看對象、影片風格（`project.style`），並依內容提出 2–3 個長度選項與理由；確認後寫入 `targetAudience`、`style`、`format.targetDurationSec`。
 
 **Step 3 — storyboard**
 1. 依 brief 規劃 **3–8 個 scene**，建議骨架：Hook → Problem → Solution → Feature(s) → Benefit → CTA。
 2. 每個 scene 產生 `scene.json` + `script.md`；總旁白估算時長需接近 `targetDurationSec`（中文約 4 字/秒、英文約 2.5 字/秒）。
 3. 執行 `pnpm run validate`。
-4. **Checkpoint**：停下來請使用者審閱分鏡（在終端或 UI），確認後才進入 Step 4。
+4. **Checkpoint**：停下來請使用者審閱分鏡與完整旁白稿（在終端或 UI），確認後才進入 Step 4（產生語音與渲染）。
 
 **Step 4 — build_scene（逐 scene、可單獨重跑）**
 1. 若 `locked: true` 或狀態為 `rendered/approved` 且未過期 → 跳過。
@@ -472,7 +473,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 |---|---|---|---|
 | `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態、是否過期與建議的下一個指令；`--json` 輸出機器可讀結果（供 Web UI / Companion）。輸入已變更（`inputHash` 不符）只是警告，不算錯誤 | 否 |
 | `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
-| `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖） | 否 |
+| `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖、頁面文字、可 highlight 的元素與 selector）；`highlight` 一次框一個元素，找不到時警告並略過；`script` 需 `domEditConsent` | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4`（H.264 + AAC 48 kHz 立體聲、BT.709，無旁白時為靜音音軌）；失敗時保留既有輸出 | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
 | `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊、轉場、字幕燒入、BGM 在同一次 FFmpeg 編碼完成 | 否 |
@@ -807,7 +808,7 @@ agent-video-platform/
 | D9 | Agent 指引形式 | JSON guide(Q) / slash commands(D) / Skill + MCP(GPT) | 靜態 API + Skill 為主；slash commands 為薄包裝；MCP 為 Phase 5 | 單一來源維護規則，多入口使用 |
 | D10 | 參考影片風格分析 | 必要步驟(D) | 可選；無法取得影片時跳過 | Agent 無法直接「觀看」線上影片，需本機抽影格 |
 | D11 | 腳本是否改 JSON | 未規範 | 產出類腳本不改 JSON；狀態由 Agent 決定、經 `state.mjs` 寫入 | 集中狀態寫入，避免競態（見 D18 寫入協定） |
-| D12 | 使用者審閱 | review 步驟(Q, GPT) | storyboard 與每 scene 渲染後各有 checkpoint | 在最便宜的階段攔截錯誤 |
+| D12 | 使用者審閱 | review 步驟(Q, GPT) | analyze（對象、風格、長度）、storyboard 與每 scene 渲染後各有 checkpoint | 在最便宜的階段攔截錯誤 |
 | D13 | UI ↔ Agent 通訊 | 各稿僅提「UI 讀寫檔案」，未處理反向通知 | MVP 採模式 A（檔案輪詢 + 使用者觸發）；Phase 5 加本機 Companion（模式 B）；不採檔案佇列 A' | 靜態部署不排除本機服務；A' 閒置 token 成本高；協議預先設計成可無痛升級 |
 | D14 | TTS 預設 | edge-tts(Gm) / 未指定 | 可替換 provider；預設 edge-tts，首次使用需同意；支援自帶 key、Piper、系統、手動錄音 | 繁中免費堪用者僅 edge-tts，但其為非官方介面，不能綁死 |
 | D15 | 渲染器授權 | 未處理 | 移除 Remotion，只保留逐幀截圖渲染器 | Remotion 對 >3 人公司需付費，使用者難以自行判斷級距；兩個渲染器畫面相同，維持兩套版面與授權詢問不划算。代價是渲染較慢 |

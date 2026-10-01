@@ -23,7 +23,7 @@
    ```bash
    pnpm run capture --url <網址> --out brief/screens/
    ```
-   會輸出整頁截圖與首屏截圖。需要登入的頁面，請使用者自行登入後再擷取，或改用使用者提供的截圖。
+   會輸出整頁截圖、首屏截圖、頁面文字，以及 `<slug>.elements.txt`：頁面上可見的標題、按鈕、連結、輸入框與它們的 selector，寫分鏡時用來挑選要 highlight 的元素（見 [script-guide.md#highlight](script-guide.md#highlight)）。需要登入的頁面，請使用者自行登入後再擷取，或改用使用者提供的截圖。
 
 **產品原始碼**（`sources.sourceCodePath`，唯讀）
 
@@ -115,13 +115,40 @@
 
    `pacing`：`slow`（平均鏡頭 > 4 秒）、`medium`（2.5–4 秒）、`fast`（< 2.5 秒）。只記錄從影格與音訊實際觀察到的特徵。
 
-### 完成
+### <a id="confirm"></a>完成：和使用者確認對象、風格與長度（checkpoint）
 
 ```bash
 pnpm run state project --status analyzed
 ```
 
-向使用者摘要 brief 的一句話定位、核心功能與不確定處，並建議下一步 `/video-storyboard`。
+寫分鏡前**必須停下**，用白話向使用者呈現：
+
+1. **產品摘要**：一句話定位、核心功能、不確定處。
+2. **對象與風格**：init 時的設定是否仍合適；分析後有更好的建議就提出（例如「產品偏技術，建議對象改成開發者、風格用操作教學」）。
+3. **建議長度**：依內容估算，並說明理由，給 2–3 個選項：
+
+   ```text
+   要講的重點：痛點 1 個、核心功能 3 個、CTA
+   → 精簡版 30 秒：hook → 產品介紹 → 最重要的 1 個功能 → CTA
+   → 標準版 45 秒（建議）：hook → 痛點 → 產品介紹 → 2 個功能 → CTA
+   → 完整版 75 秒：再加上操作步驟與第 3 個功能
+   ```
+
+   估算方式：每個要講的重點約 6–10 秒，hook 與 CTA 各約 4 秒；以 [script-guide.md](script-guide.md#structure) 的 scene 數對照表為準。對象越不懂技術、風格越活潑，越偏向短版。
+4. **太趕時怎麼處理**：「製作時如果某一段太趕（例如操作還沒做完就換下一段），要讓我自己把那段稍微拉長、事後告訴你，還是每次先問你？」寫入 `project.durationAdjust`（`auto` / `ask`；沒回答就是 `ask`）。規則見 [rendering-guide.md#pacing](rendering-guide.md#pacing)。
+
+使用者確認後，把結果寫入專案（`project.targetAudience`、`project.style`、`project.format.targetDurationSec`、`project.durationAdjust`），用 `pnpm run state project --patch-file <檔案>`：
+
+```json
+[
+  { "op": "replace", "path": "/project/targetAudience", "value": "中小企業老闆，不懂技術" },
+  { "op": "add", "path": "/project/style", "value": "活潑社群短片：節奏快、字大" },
+  { "op": "replace", "path": "/project/format/targetDurationSec", "value": 30 },
+  { "op": "add", "path": "/project/durationAdjust", "value": "auto" }
+]
+```
+
+確認後才進入 `/video-storyboard`。
 
 ---
 
@@ -140,7 +167,7 @@ pnpm run status
 | 變更 | 影響 | 處理 |
 |---|---|---|
 | `script.md`、scene 的聲音或語速 | 該 scene 旁白與時長 | 重做 tts → render |
-| `visual.*`、`durationSec`、scene 素材 | 該 scene 畫面 | 重做 capture（若 capture 設定變了）→ render |
+| `visual.*`（含 `capture.actions` 的 script 檔）、`durationSec`、scene 素材 | 該 scene 畫面 | 重做 capture（若 capture 設定變了）→ render |
 | `project.format` | 所有 scene | 全部 render（旁白不必重做，除非 TTS 設定也變） |
 | `project.tts`（專案層） | 未覆寫 provider / voice 的 scene | 這些 scene 重做 tts → render |
 | `video.project.json` 的 scene 順序 | 只影響合成 | 只重新 assemble |

@@ -31,6 +31,25 @@ pnpm run validate
 
 幀數由秒數 × `format.fps` 推得，不儲存。
 
+### <a id="pacing"></a>節奏太趕時
+
+產生旁白或渲染後，出現以下任一情況就算太趕：
+
+- `render:scene` 警告錄影比 scene 長（`the recording … is longer than the scene`）：操作還沒做完畫面就切走。
+- 旁白一講完就換下一段，畫面上的操作、highlight 或疊加文字來不及看清楚（例如最後一個元素在結束前不到 1 秒才出現）。
+- 實際總長超出目標長度 10% 以上。
+
+依 `project.durationAdjust` 處理：
+
+| 設定 | 可以自行做的 | 做完 |
+|---|---|---|
+| `auto` | 只改**長度**：把該 scene 的 `durationSec` 設為「旁白音長 + 0.5 秒 + 需要的緩衝」，每段最多多加 3 秒；或在 `script.md` 句子之間加 `<!-- pause -->`；或縮短 `capture.actions` 中的 `wait`。全片總長不超過目標長度的 +15% | 在該 scene 的預覽回報中說明調了什麼、為什麼（例如「第 4 段操作比旁白長，多留了 2 秒」） |
+| `ask`（預設） | 不改，先停下 | 說明哪一段太趕、建議的調整與調整後的總長，等使用者選擇 |
+
+不論哪種設定，以下都**必須先問使用者**：刪改旁白文字（使用者已確認過稿子）、增減 scene、超出上述限度、改目標長度。也不要靠加快語速解決（`narration.speed` 保持 1.0）。
+
+改 `durationSec` 用 `pnpm run state <id> --patch-file`，再依第 1 節重做該 scene（旁白沒改時不必重做 `tts`）。
+
 ## <a id="visual-types"></a>3. 各 visual.type 的畫面
 
 | `visual.type` | 背景 | 需要的素材 |
@@ -50,6 +69,7 @@ pnpm run validate
 | `at` | 出現時間（scene 內秒數）。超過 scene 長度的元素會被略過並警告 |
 | `duration` | 顯示秒數，結束前 0.3 秒淡出；省略則留到 scene 結束 |
 | `animation` | 進場 0.5 秒：`fadeIn`（預設）· `slideInLeft/Right/Up/Down` · `zoomIn` · `typewriter`（只用於文字，逐字出現）· `none` |
+| `size` | 文字字級：`normal`（預設，畫面短邊 6.2%）、`large`（×1.35）、`xl`（×1.7）。放大的字若超過兩行或超出畫面，會逐步縮小，最小回到 `normal` |
 | `position` | `center`（預設）、`top`、`bottom`、`left`、`right`、四個角落，或 `{ "x": 30, "y": 70 }`（元素中心點，畫面百分比）。預設位置保留 8% 安全邊距 |
 
 寫法建議：

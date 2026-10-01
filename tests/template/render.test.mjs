@@ -35,6 +35,23 @@ const whitest = (file, t, x, y, w, h) => {
 const near = (actual, expected, label) =>
   assert.ok(actual.every((v, i) => Math.abs(v - expected[i]) < 48), `${label}: got rgb(${actual}) expected ~rgb(${expected})`)
 
+/** Bounding box { top, bottom, left, right } of the near-white pixels in a 640×360 frame at t, or null. */
+const whiteBox = (file, t) => {
+  const px = ff('-ss', String(t), '-i', file, '-frames:v', '1', '-vf', 'format=rgb24', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-')
+  let box = null
+  for (let y = 0; y < 360; y++) {
+    for (let x = 0; x < 640; x++) {
+      const i = (y * 640 + x) * 3
+      if (Math.min(px[i], px[i + 1], px[i + 2]) <= 200) continue
+      box ??= { top: y, bottom: y, left: x, right: x }
+      box.bottom = y
+      box.left = Math.min(box.left, x)
+      box.right = Math.max(box.right, x)
+    }
+  }
+  return box
+}
+
 let p
 afterEach(() => p?.cleanup())
 
@@ -109,6 +126,38 @@ describe('render-scene', () => {
   test('draws every layer at the planned time', async (t) => {
     const out = await render(t)
     if (out) checkLayered(out)
+  })
+
+  test('enlarged text is bigger, but shrinks to two lines inside the frame', async (t) => {
+    const text = (content, size, at) => ({ type: 'text', content, size, at, duration: 0.5, animation: 'none' })
+    const scene = baseScene('scene-001', {
+      durationSec: 1.5,
+      visual: {
+        type: 'motion-graphic',
+        description: 'text sizes',
+        elements: [
+          text('大字', 'normal', 0),
+          text('大字', 'xl', 0.5),
+          text('這是一段很長很長的畫面文字，放大之後一定會超過兩行，所以要自動縮小回來', 'xl', 1.0),
+        ],
+      },
+    })
+    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
+    cpSync(templateSrc, p.path('src'), { recursive: true })
+    const r = await p.runAsync('render-scene.mjs', ['scene-001'])
+    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
+    assert.equal(r.code, 0, r.stderr)
+    const out = p.path('scenes/001-hook/output/scene.mp4')
+
+    const height = (b) => b.bottom - b.top
+    const normal = whiteBox(out, 0.1)
+    const xl = whiteBox(out, 0.6)
+    assert.ok(height(xl) > height(normal) * 1.5, `xl ${height(xl)}px vs normal ${height(normal)}px`)
+
+    // Unshrunk, the long text would wrap to 4 lines at xl (~190 px); fitted it is 2 short lines.
+    const long = whiteBox(out, 1.2)
+    assert.ok(height(long) < 2 * 1.3 * 360 * 0.062 * 1.3, `long text is ${height(long)}px tall`)
+    assert.ok(long.top > 0 && long.bottom < 359 && long.left > 0 && long.right < 639, 'long text stays inside the frame')
   })
 
   test('duration follows the narration plus 0.5 s', async (t) => {

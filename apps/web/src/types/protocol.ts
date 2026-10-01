@@ -29,6 +29,14 @@ export interface VideoProjectJson {
     };
     targetAudience?: string;
     /**
+     * 製作中發現某段太趕時：auto = Agent 可自行在限度內調整 scene 長度並事後回報；ask = 每次先詢問使用者。
+     */
+    durationAdjust?: "auto" | "ask";
+    /**
+     * 影片風格與語氣（例如：專業簡報、活潑社群短片），與使用者確認後填寫。
+     */
+    style?: string;
+    /**
      * BCP 47 語言標籤，例如 zh-TW、en、en-US。
      */
     language: string;
@@ -177,16 +185,33 @@ export interface SceneJson {
         height: number;
       };
       actions?: {
-        do: "navigate" | "scroll" | "click" | "hover" | "type" | "highlight" | "wait";
+        do: "navigate" | "scroll" | "click" | "hover" | "type" | "highlight" | "script" | "wait";
         url?: string;
         selector?: string;
         text?: string;
         /**
+         * script 動作在頁面中執行的 JavaScript 檔（例如在資料很少的報表頁填入示意資料）。需要 capture.domEditConsent。
+         */
+        file?: string;
+        /**
          * scroll 的絕對捲動位置（px），與 selector 擇一。
          */
         y?: number;
+        /**
+         * wait 的毫秒數；highlight 時為框住後停留的毫秒數（預設 1200）。
+         */
         ms?: number;
       }[];
+      /**
+       * 使用者同意在錄製時以 script 動作修改頁面內容（例如填入示意資料）的紀錄。
+       */
+      domEditConsent?: {
+        granted: boolean;
+        /**
+         * ISO 8601 / RFC 3339 日期時間，須含時區。
+         */
+        grantedAt?: string;
+      };
     };
     /**
      * 程式碼展示，file 與 content 擇一。
@@ -231,6 +256,10 @@ export interface SceneJson {
        * 顯示秒數；省略則持續到 scene 結束。
        */
       duration?: number;
+      /**
+       * type = text 的字級。large / xl 放大，但會自動縮回到不超過兩行、不超出畫面。
+       */
+      size?: "normal" | "large" | "xl";
       animation?:
         "none" | "fadeIn" | "slideInLeft" | "slideInRight" | "slideInUp" | "slideInDown" | "zoomIn" | "typewriter";
       /**

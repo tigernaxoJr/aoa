@@ -47,6 +47,12 @@ export function buildPlan(root, project, ref, scene) {
     elements: [],
     audio: audioSec == null ? null : { file: audioFile, durationSec: audioSec },
   }
+  if (scene.visual.type === 'web-capture') {
+    const recSec = probeDuration(plan.background.file)
+    if (recSec > duration + 0.5) {
+      warnings.push(`the recording (${recSec.toFixed(2)}s) is longer than the scene (${duration.toFixed(2)}s); the last ${(recSec - duration).toFixed(1)}s is cut`)
+    }
+  }
 
   for (const [i, el] of (scene.visual.elements ?? []).entries()) {
     if (el.at >= duration) {
@@ -62,7 +68,7 @@ export function buildPlan(root, project, ref, scene) {
       animation: el.animation ?? 'fadeIn',
       position: el.position ?? 'center',
     }
-    if (el.type === 'text') item.content = el.content
+    if (el.type === 'text') Object.assign(item, { content: el.content, size: el.size ?? 'normal' })
     else item.file = need(resolve(el.src), `visual.elements[${i}].src`)
     if (el.type === 'video') item.span = end - el.at
     plan.elements.push(item)

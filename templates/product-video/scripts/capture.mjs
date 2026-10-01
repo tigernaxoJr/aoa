@@ -1,17 +1,29 @@
 // pnpm run capture <scene-id>                         → <scene>/assets/capture.mp4 (web-capture) or capture.png (screenshot)
 // pnpm run capture --url <url> --out <dir> [--width 1440 --height 900]
-//                                                       → <dir>/<slug>-top.png, <slug>-full.png, <slug>.txt (for analyze)
+//                                                       → <dir>/<slug>-top.png, <slug>-full.png, <slug>.txt,
+//                                                         <slug>.elements.txt (for analyze; selectors to highlight)
 // Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
 import { launchBrowser as launch } from './lib/browser.mjs'
 import { ffmpeg, VIDEO_ENCODE } from './lib/media.mjs'
-import { UsageError, findRoot, findSceneRef, isInside, loadProject, readJson, sceneFile } from './lib/project.mjs'
+import { UsageError, findRoot, findSceneRef, isInside, loadProject, readJson, resolveProjectPath, sceneFile } from './lib/project.mjs'
 
 const SETTLE_MS = 400
 const NAV_TIMEOUT_MS = 30_000
+/** A highlight whose element does not show up within this time is skipped, not fatal. */
+const HIGHLIGHT_TIMEOUT_MS = 5_000
+const HIGHLIGHT_HOLD_MS = 1_200
+const HIGHLIGHT_ATTR = 'data-avp-highlight'
+const HIGHLIGHT_CSS = `[${HIGHLIGHT_ATTR}] {
+  outline: 4px solid rgba(56, 189, 248, 0.95) !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 0 12px rgba(56, 189, 248, 0.25) !important;
+  border-radius: 6px;
+  transition: outline-color 300ms, box-shadow 300ms;
+}`
 
 run(async (argv) => {
   const { positional, flags } = parseArgs(argv, { url: 1, out: 1, width: 1, height: 1 })
@@ -39,7 +51,9 @@ async function capturePage(root, flags) {
     await page.screenshot({ path: join(outDir, `${slug}-full.png`), fullPage: true })
     const text = await page.evaluate(() => document.body.innerText)
     writeFileSync(join(outDir, `${slug}.txt`), `${flags.url}\n\n${text}\n`)
-    console.log(`captured ${flags.url} → ${flags.out}/${slug}-{top,full}.png, ${slug}.txt`)
+    const elements = await page.evaluate(listElements)
+    writeFileSync(join(outDir, `${slug}.elements.txt`), `# selector\ttext (${flags.url})\n${elements.map((e) => `${e.selector}\t${e.text}`).join('\n')}\n`)
+    console.log(`captured ${flags.url} → ${flags.out}/${slug}-{top,full}.png, ${slug}.txt, ${slug}.elements.txt`)
   } finally {
     await browser.close()
   }
@@ -59,6 +73,20 @@ async function captureScene(root, id) {
   const viewport = capture.viewport ?? { width: format.width, height: format.height }
   const assets = join(root, ref.dir, 'assets')
   mkdirSync(assets, { recursive: true })
+  // script actions change what the product page shows, so they need the user's consent (gate domEditConsent).
+  const scripts = new Map()
+  for (const a of capture.actions ?? []) {
+    if (a.do !== 'script') continue
+    if (!capture.domEditConsent?.granted) {
+      throw new UsageError(
+        `gate domEditConsent: ${id} runs ${a.file} to change the page while recording. ` +
+          'Ask the user, then record consent in visual.capture.domEditConsent, or remove the script action.',
+      )
+    }
+    const file = resolveProjectPath(root, join(root, ref.dir), a.file)
+    if (!existsSync(file)) throw new UsageError(`${id}: script ${a.file} not found`)
+    scripts.set(a.file, readFileSync(file, 'utf8'))
+  }
 
   const browser = await launch()
   const videoDir = mkdtempSync(join(tmpdir(), 'avp-capture-'))
@@ -75,7 +103,7 @@ async function captureScene(root, id) {
     await page.waitForTimeout(SETTLE_MS)
     for (const [i, action] of (capture.actions ?? []).entries()) {
       try {
-        await perform(page, action)
+        await perform(page, action, scripts)
       } catch (err) {
         throw new Error(`action ${i + 1} (${action.do}${action.selector ? ` ${action.selector}` : ''}) failed: ${err.message.split('\n')[0]}`)
       }
@@ -113,7 +141,7 @@ async function goto(page, url) {
   }
 }
 
-async function perform(page, a) {
+async function perform(page, a, scripts) {
   switch (a.do) {
     case 'navigate':
       await goto(page, a.url)
@@ -137,15 +165,34 @@ async function perform(page, a) {
     case 'type':
       await page.locator(a.selector).first().pressSequentially(a.text, { delay: 60 })
       break
-    case 'highlight':
-      await page.locator(a.selector).first().evaluate((el) => {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        el.style.transition = 'outline-color 300ms, box-shadow 300ms'
-        el.style.outline = '4px solid rgba(56, 189, 248, 0.95)'
-        el.style.outlineOffset = '4px'
-        el.style.boxShadow = '0 0 0 12px rgba(56, 189, 248, 0.25)'
-      })
-      await page.waitForTimeout(700)
+    case 'highlight': {
+      // Cosmetic: a missing element only warns, so one stale selector never costs the whole recording.
+      const el = page.locator(a.selector).first()
+      try {
+        await el.waitFor({ state: 'visible', timeout: HIGHLIGHT_TIMEOUT_MS })
+      } catch {
+        console.warn(`warning: highlight ${a.selector}: no visible element; skipped`)
+        break
+      }
+      // One highlight at a time: the previous one is cleared.
+      await page.evaluate(([attr, css]) => {
+        if (!document.getElementById('avp-highlight')) {
+          const style = Object.assign(document.createElement('style'), { id: 'avp-highlight', textContent: css })
+          document.head.append(style)
+        }
+        for (const n of document.querySelectorAll(`[${attr}]`)) n.removeAttribute(attr)
+      }, [HIGHLIGHT_ATTR, HIGHLIGHT_CSS])
+      await el.evaluate((n, attr) => {
+        n.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        n.setAttribute(attr, '')
+      }, HIGHLIGHT_ATTR)
+      await page.waitForTimeout(a.ms ?? HIGHLIGHT_HOLD_MS)
+      break
+    }
+    case 'script':
+      // Wrapped so the file can use statements and top-level await; runs even under a strict CSP.
+      await page.evaluate(`(async () => {\n${scripts.get(a.file)}\n})()`)
+      await page.waitForTimeout(SETTLE_MS)
       break
     case 'wait':
       await page.waitForTimeout(a.ms)
@@ -153,6 +200,32 @@ async function perform(page, a) {
     default:
       throw new UsageError(`unknown action ${a.do}`)
   }
+}
+
+/**
+ * Visible headings, buttons, links, inputs and test ids, each with a selector capture can use
+ * (CSS, or Playwright's :has-text()). Runs in the page.
+ */
+function listElements() {
+  const q = (s) => JSON.stringify(s)
+  const seen = new Set()
+  const out = []
+  for (const el of document.querySelectorAll('h1, h2, h3, button, a[href], input, textarea, select, [role=button], [data-testid]')) {
+    const r = el.getBoundingClientRect()
+    if (r.width < 4 || r.height < 4 || getComputedStyle(el).visibility === 'hidden') continue
+    const text = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || '').trim().replace(/\s+/g, ' ').slice(0, 40)
+    const tag = el.tagName.toLowerCase()
+    let selector
+    if (el.dataset.testid) selector = `[data-testid=${q(el.dataset.testid)}]`
+    else if (el.id && /^[A-Za-z][\w-]*$/.test(el.id)) selector = `#${el.id}`
+    else if (text && !text.includes('"')) selector = `${tag}:has-text(${q(text)})`
+    else continue
+    if (seen.has(selector)) continue
+    seen.add(selector)
+    out.push({ selector, text })
+    if (out.length >= 200) break
+  }
+  return out
 }
 
 function slugify(url) {

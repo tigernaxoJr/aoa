@@ -59,6 +59,12 @@
         "name": { "type": "string", "minLength": 1, "maxLength": 200 },
         "sources": { "$ref": "#/$defs/sources" },
         "targetAudience": { "type": "string" },
+        "durationAdjust": {
+          "description": "製作中發現某段太趕時：auto = Agent 可自行在限度內調整 scene 長度並事後回報；ask = 每次先詢問使用者。",
+          "enum": ["auto", "ask"],
+          "default": "ask"
+        },
+        "style": { "description": "影片風格與語氣（例如：專業簡報、活潑社群短片），與使用者確認後填寫。", "type": "string" },
         "language": { "$ref": "common.schema.json#/$defs/locale" },
         "translatedFrom": {
           "description": "由 /video-translate 產生時記錄來源專案（SPEC §4.4）。",
