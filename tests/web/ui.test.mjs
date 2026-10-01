@@ -141,54 +141,132 @@ async function openApp(t, p, hash = '') {
   return { page, read, writeFile }
 }
 
-test('home page walks a non-technical user to a plain-language message for the agent', async (t) => {
+/** Makes an OPFS folder with the given files and opens it as the project folder, as if picked in step 1. */
+async function prepareFolder(page, name, files = {}) {
+  await page.evaluate(
+    async ([name, files]) => {
+      const root = await navigator.storage.getDirectory()
+      await root.removeEntry(name, { recursive: true }).catch(() => {})
+      const dir = await root.getDirectoryHandle(name, { create: true })
+      for (const [file, text] of Object.entries(files)) {
+        const w = await (await dir.getFileHandle(file, { create: true })).createWritable()
+        await w.write(text)
+        await w.close()
+      }
+      await window.__avp.open(dir)
+    },
+    [name, files],
+  )
+}
+
+const readOpfs = (page, path) =>
+  page.evaluate(async (path) => {
+    let dir = await navigator.storage.getDirectory()
+    const parts = path.split('/')
+    for (const part of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(part)
+    return (await (await dir.getFileHandle(parts.at(-1))).getFile()).text()
+  }, path)
+
+/** Waits until the page has mirrored the form into acme-video/video.start.json. */
+async function waitForStart(page, text) {
+  for (let i = 0; i < 50; i++) {
+    if ((await readOpfs(page, 'acme-video/video.start.json').catch(() => '')).includes(text)) return
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  assert.fail(`video.start.json never contained ${text}`)
+}
+
+test('home page: prepare a folder first, then a plain-language message tells the agent to build the project there', async (t) => {
   if (!browser) return t.skip('no browser available')
   const context = await browser.newContext()
   t.after(() => context.close())
   const page = await context.newPage()
   await page.goto(`${origin}${BASE}/`)
+  assert.match(await page.getByTestId('step-run').textContent(), /請先在步驟 1 準備/, 'no message before the folder is prepared')
+
+  await prepareFolder(page, 'not-empty', { 'notes.txt': 'x' })
+  assert.match(await page.getByTestId('step-folder').getByRole('alert').textContent(), /已經有其他檔案/, 'a folder with other files is refused')
+  assert.equal(await page.getByTestId('project-folder').count(), 0)
+
+  await prepareFolder(page, 'acme-video', { '.DS_Store': '' })
+  await page.getByTestId('project-folder').getByText('acme-video').waitFor()
+  assert.match(await page.getByTestId('waiting').textContent(), /等 Agent 在「acme-video」建立專案/)
   assert.match(await page.getByTestId('step-run').textContent(), /請先在步驟 2 填入/, 'no message before any source')
 
-  await page.getByTestId('agent-ready').click()
   await page.getByPlaceholder('https://example.com').fill('https://acme.test')
   const message = await page.getByTestId('launch-message').textContent()
   assert.equal(
     message,
-    `請讀取 ${origin}${BASE}/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
+    `請讀取 ${origin}${BASE}/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n我已經在網頁上準備好影片專案資料夾「acme-video」，就是你現在開著的資料夾：請直接在這裡建立專案，產品資訊也記在裡面的 video.start.json。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
   )
+  assert.match(await page.getByTestId('step-run').textContent(), /選步驟 1 的「acme-video」/)
   const visible = await page.locator('main').innerText()
   assert.doesNotMatch(visible, /終端機中開啟|p?npm install|cd /, 'the main path never asks for a terminal')
   assert.equal(await page.getByTestId('launch-command').isVisible(), false, 'the terminal command stays folded away')
+
+  // The form is mirrored into the folder for the agent.
+  await waitForStart(page, 'https://acme.test')
+  const start = JSON.parse(await readOpfs(page, 'acme-video/video.start.json'))
+  assert.deepEqual({ ...start, updatedAt: undefined }, { productUrl: 'https://acme.test', sourceCodePath: null, sourceFolder: null, description: null, updatedAt: undefined })
+
+  // Once the agent writes the project, the page switches to the workbench by itself.
+  const project = baseProject()
+  project.project.name = '自動切換專案'
+  await page.evaluate(async (text) => {
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('acme-video')
+    const w = await (await dir.getFileHandle('video.project.json', { create: true })).createWritable()
+    await w.write(text)
+    await w.close()
+  }, JSON.stringify(project))
+  await page.getByTestId('project-name').getByText('自動切換專案').waitFor({ timeout: 10_000 })
 })
 
-test('guided start: picking the source folder prefills from package.json / README and passes only its name', async (t) => {
+test('guided start: the source folder is a full path; picking a folder prefills and records hints, never credentials', async (t) => {
   if (!browser) return t.skip('no browser available')
   const context = await browser.newContext()
   t.after(() => context.close())
   const page = await context.newPage()
   await page.goto(`${origin}${BASE}/`)
+  await prepareFolder(page, 'acme-video')
   await page.evaluate(async () => {
     const root = await navigator.storage.getDirectory()
     await root.removeEntry('acme-app', { recursive: true }).catch(() => {})
     const dir = await root.getDirectoryHandle('acme-app', { create: true })
-    const put = async (name, text) => {
-      const w = await (await dir.getFileHandle(name, { create: true })).createWritable()
+    const put = async (d, name, text) => {
+      const w = await (await d.getFileHandle(name, { create: true })).createWritable()
       await w.write(text)
       await w.close()
     }
-    await put('package.json', JSON.stringify({ name: 'acme-deploy', homepage: 'https://acme.test' }))
-    await put('README.md', '# Acme\n\n[![build](https://x/badge.svg)](https://x)\n\nAcme 讓你**一鍵部署**網站，不用設定伺服器。\n\n## 安裝\n')
+    await put(dir, 'package.json', JSON.stringify({ name: 'acme-deploy', homepage: 'https://acme.test' }))
+    await put(dir, 'README.md', '# Acme\n\n[![build](https://x/badge.svg)](https://x)\n\nAcme 讓你**一鍵部署**網站，不用設定伺服器。\n\n## 安裝\n')
+    await put(await dir.getDirectoryHandle('.git', { create: true }), 'config', '[remote "origin"]\n\turl = https://bob:secret@github.com/acme/deploy.git\n')
+    await dir.getDirectoryHandle('src', { create: true })
     await window.__avp.pickSource(dir)
   })
   assert.equal(await page.getByTestId('source-folder').getByText('acme-app').count(), 1)
   assert.match(await page.getByTestId('source-filled').textContent(), /說明與網址/)
-  const message = await page.getByTestId('launch-message').textContent()
+  assert.match(await page.getByTestId('source-path-missing').textContent(), /不會給完整路徑/, 'explains why the path must be pasted')
+  let message = await page.getByTestId('launch-message').textContent()
   assert.match(message, /・產品網址：https:\/\/acme\.test/)
   assert.match(message, /・產品原始碼在我電腦上名為「acme-app」的資料夾（請幫我找到它；找不到就問我）/)
   assert.match(message, /・產品說明：acme-deploy：Acme 讓你一鍵部署網站，不用設定伺服器。/)
 
+  await page.getByTestId('source-path').fill('/home/me/code/other')
+  assert.equal(await page.getByTestId('source-path-mismatch').count(), 1, 'warns when the path names a different folder')
+  await page.getByTestId('source-path').fill('/home/me/code/acme-app')
+  assert.equal(await page.getByTestId('source-path-mismatch').count(), 0)
+  assert.equal(await page.getByTestId('source-path-missing').count(), 0)
+  message = await page.getByTestId('launch-message').textContent()
+  assert.match(message, /・產品原始碼：\/home\/me\/code\/acme-app\n/, 'the full path goes to the agent')
+
+  await waitForStart(page, '/home/me/code/acme-app')
+  const start = JSON.parse(await readOpfs(page, 'acme-video/video.start.json'))
+  assert.equal(start.sourceCodePath, '/home/me/code/acme-app')
+  assert.deepEqual(start.sourceFolder, { name: 'acme-app', packageName: 'acme-deploy', gitRemote: 'https://github.com/acme/deploy.git', entries: ['README.md', 'package.json', 'src'] })
+
   await page.reload()
-  assert.equal(await page.getByTestId('launch-message').textContent(), message, 'inputs survive a reload')
+  await page.getByTestId('launch-message').waitFor()
+  assert.equal(await page.getByTestId('launch-message').textContent(), message, 'inputs and the prepared folder survive a reload')
 })
 
 test('opened project shows scenes; browser inputHash matches the Node scripts', async (t) => {

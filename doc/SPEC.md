@@ -629,7 +629,7 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.1 本機檔案存取
 
-- 使用 **File System Access API**：使用者點擊「開啟專案資料夾」→ `window.showDirectoryPicker({ mode: "readwrite" })` → 取得 `FileSystemDirectoryHandle`。
+- 使用 **File System Access API**：使用者在首頁步驟 1 點擊「選擇或建立資料夾」（新專案時在 Agent 開始之前，見 §9.2）→ `window.showDirectoryPicker({ mode: "readwrite" })` → 取得 `FileSystemDirectoryHandle`。
 - **不使用** `fetch("file://…")`（瀏覽器禁止）。
 - 支援瀏覽器：Chrome / Edge（桌面版）；需 HTTPS 或 localhost。Firefox / Safari 顯示唯讀提示或引導改用支援的瀏覽器。
 - Directory handle 存入 IndexedDB，下次開啟時請求重新授權即可，免重新選擇。
@@ -638,11 +638,14 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.2 畫面
 
-1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）：
-   1. 打開 Agent：沒有的話下載 Claude 桌面版並登入；開新對話時選一個存放影片的資料夾（例如「文件」）。
-   2. 產品資訊：產品網址、原始碼資料夾（以資料夾選擇器挑選，讀取 `package.json` / README 帶入說明與網址；瀏覽器無法取得完整路徑，因此只傳資料夾名稱，由 Agent 尋找）、產品說明。至少一項；輸入內容保存在 `localStorage`。
-   3. 複製一段白話訊息貼給 Agent：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
-   4. Agent 建好專案後，選擇該專案資料夾開啟工作台。
+1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）。先選資料夾，網頁從一開始就以 File System Access API 掌握專案資料夾：
+   1. 準備資料夾：以 `showDirectoryPicker({ mode: "readwrite" })` 選擇或在對話框中新建一個空資料夾（只允許空資料夾，或只含 `video.start.json` 與系統隱藏檔；已有 `video.project.json` 則直接開啟工作台）。Handle 存入 IndexedDB。
+   2. 產品資訊：產品網址、原始碼資料夾、產品說明，至少一項；輸入內容保存在 `localStorage`，並同步寫入專案資料夾的 `video.start.json`。原始碼資料夾以**完整路徑**為主：瀏覽器無法取得選取資料夾的完整路徑，因此由使用者貼上（頁面依作業系統說明如何複製路徑）；資料夾選擇器只用來讀取 `package.json` / README 帶入說明與網址，並記下 `sourceFolder`（名稱、`packageName`、`gitRemote`（去除帳密）、最上層 `entries`），沒填路徑時供 Agent 依名稱尋找並比對。
+   3. 打開 Agent（沒有的話下載 Claude 桌面版並登入），開新對話時選擇**步驟 1 的同一個資料夾**，貼上白話訊息：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋「我已準備好影片專案資料夾『X』，請直接在這裡建立專案，產品資訊記在 video.start.json」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。Agent 在目前目錄 init（SKILL §1–2）。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
+   4. 網頁輪詢該資料夾，`video.project.json` 一出現就自動切換到工作台。
+   - 不支援 File System Access API 的瀏覽器跳過步驟 1：訊息不含資料夾，Agent 在工作資料夾中自建 `<產品>-video`，網頁不提供工作台。
+
+   `video.start.json`（網頁寫、Agent 讀，init 後保留不再更新）：`productUrl`、`sourceCodePath`、`sourceFolder`（`{ name, packageName, gitRemote, entries }` 或 `null`）、`description`、`updatedAt`。
 2. **Workflow**：五步驟進度條，顯示目前 project 狀態與下一步建議指令。
 3. **Scene Board**：scene 卡片看板（標題、purpose、時長、狀態徽章、縮圖），可拖曳排序。
 4. **Scene Editor**：編輯 `script.md`、視覺描述、voice、強制時長；鎖定/核准按鈕；以 `<video>` 從 handle 讀 blob 預覽 `scene.mp4`。
@@ -666,7 +669,7 @@ Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1�
 
 - **與本機腳本共用協議邏輯**：`templates/product-video/scripts/lib/core.mjs` 不依賴 Node 或 DOM，提供 inputHash 的內容序列（`hashParts`）、下一步建議（`suggestNext`）、狀態轉換檢查與 `derivedProjectStatus`。Node 端以串流 SHA-256、瀏覽器以 WebCrypto 計算，結果逐位元組相同，因此 UI 能正確顯示「渲染後內容已變更」。雜湊依檔案大小與修改時間快取，輪詢時不重讀影片素材。
 - **輪詢**：每 2 秒取各檔（專案、scene、旁白稿、輸出、素材、鎖檔、final）的 `lastModified` 與大小組成指紋，變了才重新載入；分頁隱藏或寫入中時暫停。
-- **畫面**：首頁（未開啟專案）＝ Source 啟動指令產生器 + 開啟資料夾 + Guide API 連結；開啟後為 Workflow（五步驟進度、專案狀態、下一步指令、待更新提示與 `/video-sync` 複製）、Scene Board（拖曳或上下按鈕排序）、Scene Editor、Final。窄螢幕單欄排列。
+- **畫面**：首頁（尚無專案）＝ 準備資料夾 + Source 啟動訊息產生器 + 等待 Agent 建立專案 + Guide API 連結；開啟後為 Workflow（五步驟進度、專案狀態、下一步指令、待更新提示與 `/video-sync` 複製）、Scene Board（拖曳或上下按鈕排序）、Scene Editor、Final。窄螢幕單欄排列。
 - **測試**：原生資料夾選擇器無法自動化，E2E 以 OPFS（`navigator.storage.getDirectory()`，同樣是 `FileSystemDirectoryHandle`）搭配 `window.__avp.open(handle)` 開啟；fixture 由本機腳本產生，驗證瀏覽器與 Node 的 inputHash 一致（`tests/web/ui.test.mjs`）。
 
 ---

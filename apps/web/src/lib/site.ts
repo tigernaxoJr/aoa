@@ -3,11 +3,22 @@
 export const SITE_URL: string = __SITE_URL__
 export const api = (path: string) => `${SITE_URL}/api/${path}`
 
+/** Written by the page into a prepared project folder; the agent reads it at init (SPEC §9.2). */
+export const START_FILE = 'video.start.json'
+
+/** What the picked source folder looks like, so the agent can tell it apart from same-named folders. */
+export interface SourceHints {
+  packageName: string | null
+  gitRemote: string | null
+  entries: string[]
+}
+
 export interface SourceInput {
   productUrl: string
   /** Name of a folder the user picked (browsers never reveal its full path). */
   sourceFolder: string
-  /** A path the user typed instead of picking. */
+  sourceHints: SourceHints | null
+  /** The full path, typed or pasted by the user. */
   sourceCodePath: string
   description: string
 }
@@ -18,30 +29,50 @@ const quote = (s: string) => s.replace(/"/g, '\\"')
 function sources(src: SourceInput) {
   const parts: string[] = []
   if (src.productUrl.trim()) parts.push(`產品網址：${src.productUrl.trim()}`)
-  if (src.sourceFolder.trim()) parts.push(`產品原始碼在我電腦上名為「${src.sourceFolder.trim()}」的資料夾（請幫我找到它；找不到就問我）`)
-  else if (src.sourceCodePath.trim()) parts.push(`產品原始碼：${src.sourceCodePath.trim()}`)
+  if (src.sourceCodePath.trim()) parts.push(`產品原始碼：${src.sourceCodePath.trim()}`)
+  else if (src.sourceFolder.trim()) parts.push(`產品原始碼在我電腦上名為「${src.sourceFolder.trim()}」的資料夾（請幫我找到它；找不到就問我）`)
   if (src.description.trim()) parts.push(`產品說明：${src.description.trim().replace(/\s+/g, ' ')}`)
   return parts
+}
+
+/** The start file's contents: the same sources, plus the hints for finding the source folder. */
+export function startJson(src: SourceInput) {
+  const value = (s: string) => s.trim() || null
+  const folder = value(src.sourceFolder)
+  return `${JSON.stringify(
+    {
+      productUrl: value(src.productUrl),
+      sourceCodePath: value(src.sourceCodePath),
+      sourceFolder: folder && { name: folder, ...src.sourceHints },
+      description: value(src.description),
+      updatedAt: new Date().toISOString(),
+    },
+    null,
+    2,
+  )}\n`
 }
 
 /**
  * The message a user pastes into their agent (SPEC §9.2). Needs no installed Skill and assumes no
  * IT knowledge: the agent runs every command itself and explains any step the user must do.
+ * `projectFolder` names the folder the page prepared; the agent builds the project right there.
  */
-export function launchMessage(src: SourceInput) {
+export function launchMessage(src: SourceInput, projectFolder: string | null = null) {
   const parts = sources(src)
   return [
     `請讀取 ${api('agent-guide.md')}，依照裡面的步驟幫我製作產品介紹影片。`,
+    ...(projectFolder ? [`我已經在網頁上準備好影片專案資料夾「${projectFolder}」，就是你現在開著的資料夾：請直接在這裡建立專案，產品資訊也記在裡面的 ${START_FILE}。`] : []),
     ...parts.map((p) => `・${p}`),
     '我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。',
   ].join('\n')
 }
 
 /** The same request as a one-line terminal command, for people who use a shell. */
-export function launchCommand(src: SourceInput) {
+export function launchCommand(src: SourceInput, projectFolder: string | null = null) {
   const parts = sources(src)
   const what = parts.length ? `，${parts.join('；')}` : ''
-  return `claude "${quote(`讀取 ${api('agent-guide.md')}，製作產品介紹影片${what}`)}"`
+  const here = projectFolder ? `，在目前資料夾建立專案（產品資訊在 ${START_FILE}）` : ''
+  return `claude "${quote(`讀取 ${api('agent-guide.md')}，製作產品介紹影片${here}${what}`)}"`
 }
 
 export const STEPS = [

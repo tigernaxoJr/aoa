@@ -9,6 +9,7 @@ import sceneSchema from '@specs/scene.schema.json'
 import workflowJson from '@specs/workflow.json'
 import type { SceneJson, VideoProjectJson } from '../types/protocol'
 import { listFiles, readText, tryFile } from './fsa'
+import { START_FILE } from './site'
 
 export const PROJECT_FILE = 'video.project.json'
 export const LOCK_FILE = '.video-agent.lock'
@@ -149,9 +150,19 @@ async function loadScene(root: FileSystemDirectoryHandle, project: VideoProjectJ
   return state
 }
 
-export async function loadProject(root: FileSystemDirectoryHandle): Promise<ProjectState> {
+/** Files an OS drops into any folder; they don't make a folder unusable for a new project. */
+const IGNORABLE = /^(\..*|desktop\.ini|Thumbs\.db)$/i
+
+/** True when a folder without a project holds only the start file (or nothing), so a project can be built in it. */
+export async function readyForNewProject(root: FileSystemDirectoryHandle) {
+  for await (const [name] of root.entries()) if (name !== START_FILE && !IGNORABLE.test(name)) return false
+  return true
+}
+
+/** Null when the folder has no project yet (the agent has not run init). */
+export async function loadProject(root: FileSystemDirectoryHandle): Promise<ProjectState | null> {
   const file = await tryFile(root, PROJECT_FILE)
-  if (!file) throw new Error(`這個資料夾沒有 ${PROJECT_FILE}，不是影片專案。`)
+  if (!file) return null
   const project = JSON.parse(await file.text()) as VideoProjectJson
   const errors = schemaErrors('project', project).map((e) => `${PROJECT_FILE}: ${e}`)
   const scenes = errors.length ? [] : await Promise.all(project.scenes.map((ref) => loadScene(root, project, ref)))

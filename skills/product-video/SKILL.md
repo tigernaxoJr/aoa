@@ -14,12 +14,14 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 依序檢查：
 
 1. **目前目錄有 `video.project.json`** → 已是影片專案。讀取專案根目錄的 `AGENTS.md`，**之後一律以它的規則為準**；執行 `pnpm run status` 取得各 scene 狀態與建議的下一步，再依使用者要求執行對應步驟（§3）。
-2. **目前目錄沒有 `video.project.json`，但使用者提到某個影片專案目錄** → 請使用者確認後切換到該目錄，回到第 1 點。
-3. **都沒有** → 這是新專案，執行 §2 初始化。
+2. **目前目錄有 `video.start.json`、沒有 `video.project.json`** → 使用者已在網頁上準備好這個資料夾，並把產品資訊寫在 `video.start.json`。執行 §2 初始化，專案就建在目前目錄。
+3. **使用者說網頁已準備好資料夾「X」，但目前目錄沒有 `video.start.json`** → 他開對話時選錯了資料夾。在常見位置（「文件」「桌面」「下載」、工作資料夾與它的上一層）尋找名為 X 且含有 `video.start.json` 的資料夾；找到就用白話確認後切換過去，回到第 2 點。找不到就請他開一個新對話，選擇資料夾時改選 X。
+4. **目前目錄沒有 `video.project.json`，但使用者提到某個影片專案目錄** → 請使用者確認後切換到該目錄，回到第 1 點。
+5. **都沒有** → 這是新專案，執行 §2 初始化。
 
 ## 2. 初始化新專案（init）
 
-1. **確認位置**：預設在目前的工作資料夾裡建立新資料夾 `<產品名稱英文小寫>-video`（例如 `acme-video`），用白話向使用者確認：「我會在『文件』資料夾裡建立 acme-video 來放影片專案，可以嗎？」。不要要求使用者提供路徑。目錄必須是空的或不存在；不要建立在產品原始碼資料夾裡面。之後的指令都在這個專案資料夾中執行。
+1. **確認位置**：目前目錄有 `video.start.json` 時，專案就建在目前目錄，不另建子資料夾（網頁已確認它除了這個檔案以外是空的；網頁會一直顯示這個資料夾的進度，所以不能換位置）。否則預設在目前的工作資料夾裡建立新資料夾 `<產品名稱英文小寫>-video`（例如 `acme-video`），用白話向使用者確認：「我會在『文件』資料夾裡建立 acme-video 來放影片專案，可以嗎？」。不要要求使用者提供路徑。目錄必須是空的或不存在；不要建立在產品原始碼資料夾裡面。之後的指令都在這個專案資料夾中執行。
 2. **取得範本**：在專案目錄下載範本，以 manifest 的 `zip.sha256` 驗證後解壓，再刪除 zip。雜湊不符就停止並告知使用者，不使用該檔案。
    ```bash
    curl -fsSL -o product-video.zip {{SITE_URL}}/api/templates/product-video.zip
@@ -27,9 +29,9 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    node -e "console.log(require('crypto').createHash('sha256').update(require('fs').readFileSync('product-video.zip')).digest('hex'))"
    ```
    解壓：macOS / Linux 用 `unzip -q product-video.zip`；Windows 用 PowerShell `Expand-Archive product-video.zip -DestinationPath .`（Git Bash 內的 `tar` 無法解 zip）。
-3. **收集來源**：至少需要以下一項，缺少時詢問使用者：
+3. **收集來源**：有 `video.start.json` 時先讀它，欄位與下面相同，另有 `sourceFolder`（見原始碼路徑）；它是網頁表單的內容，以它為準，不必再問已經填寫的項目。至少需要以下一項，缺少時詢問使用者：
    - 產品網址（`sources.productUrl`）
-   - 產品原始碼路徑（`sources.sourceCodePath`，唯讀，不修改該目錄）。使用者可能只說出資料夾名稱（網頁無法取得完整路徑）：依序在工作資料夾、它的上一層、使用者的「文件」「桌面」「下載」與常見程式碼資料夾（如 `~/code`、`~/source/repos`）尋找同名資料夾；找到一個就用白話確認，找到多個請使用者選，找不到就請使用者把資料夾從檔案總管／Finder 拖進對話框，或說出它放在哪裡。
+   - 產品原始碼路徑（`sources.sourceCodePath`，唯讀，不修改該目錄）。先確認路徑存在。使用者可能只給資料夾名稱（網頁無法取得完整路徑），或路徑不存在：依序在工作資料夾、它的上一層、使用者的「文件」「桌面」「下載」與常見程式碼資料夾（如 `~/code`、`~/source/repos`）尋找同名資料夾。`video.start.json` 的 `sourceFolder` 記有該資料夾的 `packageName`（package.json 的 name）、`gitRemote`（`.git/config` 的遠端網址）與 `entries`（最上層的檔案與資料夾名稱），用來比對候選資料夾、排除只是同名的。找到一個就用白話確認，找到多個請使用者選，找不到就請使用者把資料夾從檔案總管／Finder 拖進對話框，或說出它放在哪裡。
    - 產品文字描述（`sources.description`）
    - （可選）風格參考影片網址（`sources.referenceVideoUrl`）
 4. **確認格式**：語言、目標受眾、畫面比例（16:9 橫式 / 9:16 直式 / 1:1 / 4:5）、目標長度。使用者沒有偏好時沿用範本預設（zh-TW、16:9、1920×1080、30fps、45 秒）。
@@ -84,5 +86,5 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 
 - **checkpoint 一定停下**：分鏡完成後、每個 scene 渲染後，列出結果並等使用者確認或提出修改。
 - **修改只重做受影響的部分**：使用者說「第三段文案改成…」，只改該 scene 的 `script.md`，只重做該 scene，再重新合成。
-- **告訴使用者怎麼看成果**：用「文件 > acme-video > scenes > 003-solution > output > scene.mp4」這種資料夾順序描述位置，並建議打開網頁工作台 {{SITE_URL}}/ ，在步驟 4 選擇專案資料夾，就能預覽每一段、直接修改旁白。
+- **告訴使用者怎麼看成果**：用「文件 > acme-video > scenes > 003-solution > output > scene.mp4」這種資料夾順序描述位置，並建議打開網頁工作台 {{SITE_URL}}/ 預覽每一段、直接修改旁白。專案是網頁準備的（有 `video.start.json`）時，網頁已經開著這個資料夾，會自動顯示；否則請他在網頁步驟 1 選擇這個專案資料夾。
 - **Web UI**：使用者可能同時開著 Agent Video Producer 網頁工作台，它會直接修改專案檔。使用者說「我在網頁上改好了」時，執行 `/video-sync`。
