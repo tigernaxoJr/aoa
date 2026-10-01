@@ -169,7 +169,8 @@
         "text": { "type": "string" },
         "file": { "description": "script 動作在頁面中執行的 JavaScript 檔（例如在資料很少的報表頁填入示意資料）。需要 capture.domEditConsent。", "$ref": "common.schema.json#/$defs/relPath" },
         "y": { "description": "scroll 的絕對捲動位置（px），與 selector 擇一。", "type": "integer", "minimum": 0 },
-        "ms": { "description": "wait 的毫秒數；highlight 時為框住後停留的毫秒數（預設 1200）。", "type": "integer", "minimum": 0, "maximum": 30000 }
+        "ms": { "description": "wait 的毫秒數；highlight 時為框住後停留的毫秒數（預設 1200）。", "type": "integer", "minimum": 0, "maximum": 30000 },
+        "cut": { "description": "true 時把這個動作從開始到結束（含等待頁面穩定）整段從錄影剪掉。Agent 判斷該段畫面沒有意義時使用，例如單頁應用切換路由的過場、載入中的骨架畫面。", "type": "boolean" }
       },
       "allOf": [
         { "if": { "properties": { "do": { "const": "navigate" } } }, "then": { "required": ["url"] } },

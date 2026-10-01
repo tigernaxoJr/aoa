@@ -74,7 +74,7 @@ const PAGE = `<html><body style="margin:0;font:40px sans-serif"><h1>Hello</h1><d
 <div style="height:800px"></div></body></html>`
 
 async function withServer(fn) {
-  const code = `const s=require('http').createServer((q,r)=>{r.writeHead(200,{'content-type':'text/html'});r.end(${JSON.stringify(PAGE)})}).listen(0,'127.0.0.1',()=>console.log(s.address().port))`
+  const code = `const s=require('http').createServer((q,r)=>{setTimeout(()=>{r.writeHead(200,{'content-type':'text/html'});r.end(${JSON.stringify(PAGE)})},q.url.includes('slow')?2000:0)}).listen(0,'127.0.0.1',()=>console.log(s.address().port))`
   const server = spawn(process.execPath, ['-e', code])
   try {
     const port = await new Promise((resolve) => server.stdout.once('data', (d) => resolve(String(d).trim())))
@@ -110,6 +110,25 @@ test('capture records a web-capture scene at the project format', async (t) => {
     const info = spawnSync(ffprobe, ['-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=width,height,r_frame_rate', '-of', 'csv=p=0', out], { encoding: 'utf8' }).stdout.trim()
     assert.equal(info, '1920,1080,30/1')
     assert.ok(duration(out) > 1)
+  })
+})
+
+test('capture cuts page loads and cut actions out of the recording', async (t) => {
+  await withServer(async (url) => {
+    const scene = baseScene('scene-001', {
+      visual: {
+        type: 'web-capture',
+        description: 'open a slow page',
+        capture: { url, actions: [{ do: 'navigate', url: `${url}slow` }, { do: 'wait', ms: 1500, cut: true }, { do: 'wait', ms: 500 }] },
+      },
+    })
+    p = makeProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene }] })
+    const r = await p.runAsync('capture.mjs', ['scene-001'])
+    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
+    assert.equal(r.code, 0, r.stderr)
+    // Uncut it would be ≥ 2 s (server delay) + 2 s of waits + settle; kept: the 0.5 s wait and the final settle.
+    const sec = duration(p.path('scenes/001-hook/assets/capture.mp4'))
+    assert.ok(sec > 0.5 && sec < 1.5, `duration ${sec}`)
   })
 })
 

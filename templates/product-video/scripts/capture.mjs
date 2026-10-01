@@ -8,11 +8,15 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
 import { launchBrowser as launch } from './lib/browser.mjs'
-import { ffmpeg, VIDEO_ENCODE } from './lib/media.mjs'
+import { cutFilter, ffmpeg, VIDEO_ENCODE } from './lib/media.mjs'
 import { UsageError, findRoot, findSceneRef, isInside, loadProject, readJson, resolveProjectPath, sceneFile } from './lib/project.mjs'
 
 const SETTLE_MS = 400
 const NAV_TIMEOUT_MS = 30_000
+/** After a page load, wait at most this long for the network to go quiet. */
+const IDLE_TIMEOUT_MS = 5_000
+/** Extra time cut after each page load; the recording can start slightly before our clock. */
+const CUT_PAD_SEC = 0.1
 /** A highlight whose element does not show up within this time is skipped, not fatal. */
 const HIGHLIGHT_TIMEOUT_MS = 5_000
 const HIGHLIGHT_HOLD_MS = 1_200
@@ -96,14 +100,36 @@ async function captureScene(root, id) {
       deviceScaleFactor: 1,
       ...(type === 'web-capture' ? { recordVideo: { dir: videoDir, size: viewport } } : {}),
     })
-    const page = await context.newPage()
     const started = Date.now()
+    const page = await context.newPage()
+    const now = () => (Date.now() - started) / 1000
+    // Page loads (the first one, `navigate`, a click on a link) show blank or half-drawn frames;
+    // each is cut from request to settled page (SPEC §7.6). Same-document (SPA) routes send no request,
+    // so the agent marks those (or any span not worth showing) with `cut: true`.
+    let navStart = null
+    let lastLoad = -1
+    page.on('request', (r) => {
+      if (navStart == null && r.isNavigationRequest() && r.frame() === page.mainFrame()) navStart = now()
+    })
+    page.on('load', () => (lastLoad = now()))
+    const cuts = []
+    const cutNavigation = async () => {
+      if (navStart == null) return
+      if (lastLoad < navStart) await page.waitForEvent('load', { timeout: NAV_TIMEOUT_MS })
+      await page.waitForLoadState('networkidle', { timeout: IDLE_TIMEOUT_MS }).catch(() => {})
+      await page.waitForTimeout(SETTLE_MS)
+      cuts.push([navStart, now() + CUT_PAD_SEC])
+      navStart = null
+    }
     await goto(page, capture.url)
-    const loadedAt = (Date.now() - started) / 1000
-    await page.waitForTimeout(SETTLE_MS)
+    await cutNavigation()
+    cuts[0][0] = 0
     for (const [i, action] of (capture.actions ?? []).entries()) {
       try {
+        const actionStart = now()
         await perform(page, action, scripts)
+        await cutNavigation()
+        if (action.cut) cuts.push([actionStart, now() + CUT_PAD_SEC])
       } catch (err) {
         throw new Error(`action ${i + 1} (${action.do}${action.selector ? ` ${action.selector}` : ''}) failed: ${err.message.split('\n')[0]}`)
       }
@@ -117,12 +143,14 @@ async function captureScene(root, id) {
       return 0
     }
 
+    // Playwright pads the end with ≥ 1 s of the last frame; keep only what we recorded.
+    const endAt = now()
     await context.close() // finalizes the recording
     const webm = readdirSync(videoDir).find((f) => f.endsWith('.webm'))
     if (!webm) throw new Error('browser produced no recording')
     // Drop the page-load frames and convert to constant frame rate (SPEC §7.6).
     const out = join(assets, 'capture.mp4')
-    ffmpeg(['-ss', loadedAt.toFixed(3), '-i', join(videoDir, webm), '-an', '-r', String(format.fps), '-vf', `scale=${format.width}:${format.height}:force_original_aspect_ratio=decrease,pad=${format.width}:${format.height}:(ow-iw)/2:(oh-ih)/2`, ...VIDEO_ENCODE, out])
+    ffmpeg(['-t', endAt.toFixed(3), '-i', join(videoDir, webm), '-an', '-vf', `${cutFilter(cuts, format.fps)},scale=${format.width}:${format.height}:force_original_aspect_ratio=decrease,pad=${format.width}:${format.height}:(ow-iw)/2:(oh-ih)/2`, ...VIDEO_ENCODE, out])
     console.log(`${id}: recording → ${ref.dir}/assets/capture.mp4`)
     return 0
   } finally {

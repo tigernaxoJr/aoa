@@ -100,6 +100,16 @@ export function normalizeVideo(src, { trimStart = 0, trimEnd = null, fps, frames
   ])
 }
 
+/**
+ * Video filter that converts a variable-frame-rate recording to `fps` and drops the given
+ * [start, end] spans (seconds), closing the gaps.
+ */
+export function cutFilter(cuts, fps) {
+  if (!cuts.length) return `fps=${fps}`
+  const drop = cuts.map(([a, b]) => `between(t,${a.toFixed(3)},${b.toFixed(3)})`).join('+')
+  return `fps=${fps},select='not(${drop})',setpts=N/(${fps}*TB)`
+}
+
 /** Duration of the first video stream in seconds (container duration can include audio padding). */
 export function probeVideoDuration(file) {
   const { path } = locate('ffprobe')
