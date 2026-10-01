@@ -1,5 +1,5 @@
 // Validates specs/examples: every file in valid/ must pass, every file in invalid/ must fail.
-// The schema kind is taken from the file suffix (*.project.json / *.scene.json).
+// The schema kind is taken from the file suffix (*.project.json / *.scene.json / *.activity.json).
 // Also validates specs/workflow.json and cross-checks it against the status enums.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -12,21 +12,22 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
 const ajv = new Ajv2020({ allErrors: true, strict: true, strictTypes: false, strictRequired: false })
 addFormats(ajv)
-for (const name of ['common', 'project', 'scene', 'workflow']) {
+for (const name of ['common', 'project', 'scene', 'activity', 'workflow']) {
   ajv.addSchema(readJson(join(specsDir, `${name}.schema.json`)))
 }
 const validators = {
   project: ajv.getSchema('project.schema.json'),
   scene: ajv.getSchema('scene.schema.json'),
+  activity: ajv.getSchema('activity.schema.json'),
 }
 
 let failures = 0
 for (const expectValid of [true, false]) {
   const dir = join(specsDir, 'examples', expectValid ? 'valid' : 'invalid')
   for (const file of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
-    const kind = file.match(/\.(project|scene)\.json$/)?.[1]
+    const kind = file.match(/\.(project|scene|activity)\.json$/)?.[1]
     if (!kind) {
-      console.error(`✗ ${file}: name must end with .project.json or .scene.json`)
+      console.error(`✗ ${file}: name must end with .project.json, .scene.json or .activity.json`)
       failures++
       continue
     }

@@ -88,6 +88,11 @@
       "additionalProperties": false,
       "properties": {
         "productUrl": { "type": ["string", "null"], "format": "uri", "pattern": "^https?://" },
+        "requiresLogin": {
+          "description": "產品網址要登入才看得到。為 true 時，使用者須先以 pnpm run login 在瀏覽器視窗自行登入，capture 才能執行（gate productLogin）。帳密不寫入任何檔案。",
+          "type": "boolean",
+          "default": false
+        },
         "sourceCodePath": {
           "description": "產品原始碼位置，唯讀輸入，可在專案外（相對或絕對路徑）。",
           "type": ["string", "null"],

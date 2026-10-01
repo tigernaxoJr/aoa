@@ -103,6 +103,7 @@ pnpm run render:scene scene-001 scene-002 scene-003   # 可加 --jobs 2 限制�
 |---|---|---|---|
 | `durationSec is null and there is no narration audio` | 沒有旁白音檔 | 執行 `tts`，或設定 `durationSec` | `render` |
 | `… (run pnpm run capture) not found` | 缺擷取素材 | 執行 `capture` | `capture` |
+| `gate productLogin: …` | 產品要登入，還沒登入或登入已過期 | 依 [workflow.md#login](workflow.md#login) 請使用者登入後重新 capture；不算失敗，不記 `--failed` | — |
 | `no usable browser` | 找不到瀏覽器 | 告知使用者執行 `pnpm exec playwright install chromium` 或安裝 Chrome / Edge | `render` |
 | `ffmpeg failed: …` | 素材格式無法讀取 | 檢查該素材能否播放；請使用者提供其他格式 | `render` |
 | `… is not a readable video`（`state --rendered`） | 輸出檔損壞 | 重新渲染 | `render` |
@@ -150,4 +151,4 @@ pnpm run state project --status completed
 
 ### 完成
 
-回報 `output/final.mp4` 的路徑與總長度（`assemble` 最後一行會印出），以及有無字幕檔、BGM。`assemble` 印出的 `warning:`（例如缺少字幕、找不到 BGM）要一併告訴使用者。
+回報 `output/final.mp4` 的路徑與總長度（`assemble` 最後一行會印出），以及有無字幕檔、BGM。`assemble` 印出的 `warning:`（例如缺少字幕、找不到 BGM）要一併告訴使用者。有保存登入資料（`sources.requiresLogin`）時，問使用者要不要清除（見 [workflow.md#login](workflow.md#login) 第 4 點）。

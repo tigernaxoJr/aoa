@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { PURPOSE_LABEL, STATUS_LABEL } from '../lib/site'
 import { state, write } from '../lib/store'
+import { useActivity } from '../lib/activity'
 import type { SceneState } from '../lib/project'
 import { reorder } from '../lib/writes'
 
@@ -9,6 +10,9 @@ const selected = defineModel<string | null>('selected', { required: true })
 const scenes = computed(() => state.value!.scenes)
 const dragging = ref<string | null>(null)
 const over = ref<string | null>(null)
+const act = useActivity()
+/** The scene the agent says it is working on right now. */
+const working = computed(() => (act.value?.current && !act.value.waitingForUser ? act.value.scene : null))
 
 function badge(s: SceneState) {
   if (!s.scene) return { text: STATUS_LABEL.missing, cls: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200' }
@@ -80,6 +84,9 @@ function drop(target: string) {
             {{ PURPOSE_LABEL[s.scene?.purpose ?? ''] ?? s.scene?.purpose }} · {{ duration(s) }}<span v-if="s.scene?.locked"> · 已鎖定</span>
           </span>
         </button>
+        <span v-if="working === s.id" class="flex shrink-0 items-center gap-1.5 text-xs text-sky-700 dark:text-sky-300" data-testid="scene-working">
+          <span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />製作中
+        </span>
         <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium" :class="badge(s).cls" data-testid="scene-status">{{ badge(s).text }}</span>
         <span class="flex shrink-0 flex-col">
           <button type="button" class="px-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 dark:hover:text-slate-200" :disabled="i === 0" :aria-label="`上移 ${s.id}`" @click="moveBy(s.id, -1)">▲</button>

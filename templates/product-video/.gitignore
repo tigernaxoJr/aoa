@@ -1,8 +1,10 @@
 node_modules/
 .tmp/
 .video-agent.lock
+video.activity.json
 *.tmp
 .env
 .env.*
+.auth/
 output/
 scenes/*/output/

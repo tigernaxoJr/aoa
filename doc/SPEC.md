@@ -104,6 +104,7 @@ my-video-project/
 │   ├── common.schema.json
 │   ├── project.schema.json
 │   ├── scene.schema.json
+│   ├── activity.schema.json
 │   ├── workflow.schema.json
 │   └── workflow.json
 ├── brief/
@@ -372,7 +373,7 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 
 | 區塊 | 內容 |
 |---|---|
-| `gates` | 執行特定腳本前必須取得的使用者確認：`onlineTtsConsent`（擋 `tts`）、`domEditConsent`（scene 錄製時以 `script` 動作改寫頁面，例如報表資料太少時填入示意資料；擋該 scene 的 `capture`）。含說明內容、記錄欄位與拒絕時的處理 |
+| `gates` | 執行特定腳本前必須取得的使用者確認：`onlineTtsConsent`（擋 `tts`）、`domEditConsent`（scene 錄製時以 `script` 動作改寫頁面，例如報表資料太少時填入示意資料；擋該 scene 的 `capture`）、`productLogin`（產品要登入才看得到：`sources.requiresLogin`，或擷取時被導到登入頁；擋 `capture`，由使用者以 `pnpm run login` 自己登入，見 §11）。含說明內容、記錄欄位與拒絕時的處理 |
 | `steps` | 主流程 `init` → `analyze` → `storyboard` → `build_scene` → `assemble`。每步定義 `command`、`scope`（project / scene）、`requires`（允許的 project / scene 狀態、gates）、`skipWhen`、`reads` / `writes`、有序的 `actions`（含狀態轉換）、`checkpoint`、`guide`（Skill 章節） |
 | `operations` | 隨時可執行的操作：`sync`、`status`、`approve`、`translate` |
 | `derivedProjectStatus` | 由 scene 狀態推導 `project.status` 的規則；`state.mjs` 每次寫入 scene 後重算 |
@@ -459,6 +460,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
     "validate":     "node scripts/validate.mjs",
     "tts":          "node scripts/tts.mjs",
     "capture":      "node scripts/capture.mjs",
+    "login":        "node scripts/login.mjs",
     "render:scene": "node scripts/render-scene.mjs",
     "assemble":     "node scripts/assemble.mjs",
     "state":        "node scripts/state.mjs",
@@ -476,7 +478,8 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 |---|---|---|---|
 | `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態、是否過期與建議的下一個指令；`--json` 輸出機器可讀結果（供 Web UI / Companion）。輸入已變更（`inputHash` 不符）只是警告，不算錯誤 | 否 |
 | `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
-| `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖、頁面文字、可 highlight 的元素與 selector）；`highlight` 一次框一個元素，找不到時警告並略過；`script` 需 `domEditConsent` | 否 |
+| `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖、頁面文字、可 highlight 的元素與 selector）；`highlight` 一次框一個元素，找不到時警告並略過；`script` 需 `domEditConsent`。有保存的登入時以它開頁；`sources.requiresLogin` 卻沒有登入、或開頁被導到登入頁時以 `gate productLogin` 失敗 | 否 |
+| `login.mjs [url]` | `sources.productUrl` | 打開**可見**的瀏覽器視窗（優先用已安裝的 Chrome / Edge），使用者自己登入後關閉；登入狀態（cookie、localStorage、IndexedDB）存到 `.auth/login.json`（列入 `.gitignore`，Agent 不讀）。只在看過登入頁、又離開登入頁後才算登入成功，視窗下方的提示隨之由藍轉綠。`--clear` 刪除 | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4`（H.264 + AAC 48 kHz 立體聲、BT.709，無旁白時為靜音音軌）；失敗時保留既有輸出 | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
 | `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊直接複製，只重新編碼轉場片段；聲音（含 BGM）整條混音編碼。scene 編碼參數不一致時整支重新編碼 | 否 |
@@ -646,17 +649,20 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 ### 9.2 畫面
 
 1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）。先選資料夾，網頁從一開始就以 File System Access API 掌握專案資料夾：
-   1. 準備資料夾：以 `showDirectoryPicker({ mode: "readwrite" })` 選擇或在對話框中新建一個空資料夾（只允許空資料夾，或只含 `video.start.json` 與系統隱藏檔；已有 `video.project.json` 則直接開啟工作台）。Handle 存入 IndexedDB。
-   2. 產品資訊：產品網址、原始碼資料夾、產品說明，至少一項；輸入內容保存在 `localStorage`，並同步寫入專案資料夾的 `video.start.json`。原始碼資料夾以**完整路徑**為主：瀏覽器無法取得選取資料夾的完整路徑，因此由使用者貼上（頁面依作業系統說明如何複製路徑）；資料夾選擇器只用來讀取 `package.json` / README 帶入說明與網址，並記下 `sourceFolder`（名稱、`packageName`、`gitRemote`（去除帳密）、最上層 `entries`），沒填路徑時供 Agent 依名稱尋找並比對。
-   3. 打開 Agent（沒有的話下載 Claude 桌面版並登入），開新對話時選擇**步驟 1 的同一個資料夾**，貼上白話訊息：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋「我已準備好影片專案資料夾『X』，請直接在這裡建立專案，產品資訊記在 video.start.json」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。Agent 在目前目錄 init（SKILL §1–2）。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
-   4. 網頁輪詢該資料夾，`video.project.json` 一出現就自動切換到工作台。
+   1. 準備資料夾：以 `showDirectoryPicker({ mode: "readwrite" })` 選擇或在對話框中新建一個空資料夾（只允許空資料夾，或只含 `video.start.json`、`video.activity.json` 與系統隱藏檔；已有 `video.project.json` 則直接開啟工作台）。Handle 存入 IndexedDB。
+   2. 產品資訊：產品網址、原始碼資料夾、產品說明，至少一項；填了網址時可勾「這個網站要登入才看得到」（不提供帳密欄位，勾選後說明 Agent 會開視窗讓使用者自己登入、建議用展示帳號）；輸入內容保存在 `localStorage`，並同步寫入專案資料夾的 `video.start.json`。原始碼資料夾以**完整路徑**為主：瀏覽器無法取得選取資料夾的完整路徑，因此由使用者貼上（頁面依作業系統說明如何複製路徑）；資料夾選擇器只用來讀取 `package.json` / README 帶入說明與網址，並記下 `sourceFolder`（名稱、`packageName`、`gitRemote`（去除帳密）、最上層 `entries`），沒填路徑時供 Agent 依名稱尋找並比對。
+   3. 打開 Agent（沒有的話下載 Claude 桌面版並登入），開新對話（資料夾選步驟 1 的資料夾或它的上層都可以，不必再精確選一次），貼上白話訊息：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋「我已準備好影片專案資料夾『X』，裡面的 video.start.json 記有產品資訊與識別碼 <id>，請先找到這個資料夾，直接在那裡建立專案」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。瀏覽器無法取得資料夾的完整路徑，所以由 Agent 從目前目錄往下、再到常見位置尋找 `id` 相符的 `video.start.json`，切換過去後 init（SKILL §1–2）。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
+   4. 網頁輪詢該資料夾，顯示 `video.activity.json`（Agent 正在做什麼），`video.project.json` 一出現就自動切換到工作台。
    - 不支援 File System Access API 的瀏覽器跳過步驟 1：訊息不含資料夾，Agent 在工作資料夾中自建 `<產品>-video`，網頁不提供工作台。
 
-   `video.start.json`（網頁寫、Agent 讀，init 後保留不再更新）：`productUrl`、`sourceCodePath`、`sourceFolder`（`{ name, packageName, gitRemote, entries }` 或 `null`）、`description`、`updatedAt`。
-2. **Workflow**：五步驟進度條，顯示目前 project 狀態與下一步建議指令。
-3. **Scene Board**：scene 卡片看板（標題、purpose、時長、狀態徽章、縮圖），可拖曳排序。
-4. **Scene Editor**：編輯 `script.md`、視覺描述、voice、強制時長；鎖定/核准按鈕；以 `<video>` 從 handle 讀 blob 預覽 `scene.mp4`。
-5. **Final**：預覽 `final.mp4`，列出過期 scene。
+   `video.start.json`（網頁寫、Agent 讀，init 後保留不再更新）：`id`（8 碼隨機識別碼，資料夾第一次準備時產生，之後沿用）、`productUrl`、`requiresLogin`、`sourceCodePath`、`sourceFolder`（`{ name, packageName, gitRemote, entries }` 或 `null`）、`description`、`updatedAt`。
+
+   `video.activity.json`（Agent 寫、網頁讀，格式見 `activity.schema.json`，不納入版本控制，不經過鎖）：`message`（一句白話）、`waitingForUser`、`step`、`scene`、`updatedAt`。Agent 在每個步驟或 scene 開始時、每次停下來等使用者回覆前覆寫它，專案建立前就開始寫。網頁不能叫醒 Agent，所以這是使用者在網頁上得知「該回對話了」的唯一管道；讀不到或不合格式時不顯示。
+2. **Activity**：首頁步驟 4 與工作台頂端顯示 Agent 動態。`waitingForUser` 時醒目提示回到對話；工作中的訊息超過 10 分鐘未更新視為 Agent 已停下，只以灰字顯示為「最後的動態」。
+3. **Workflow**：五步驟進度條，顯示目前 project 狀態與下一步建議指令。
+4. **Scene Board**：scene 卡片看板（標題、purpose、時長、狀態徽章、縮圖；Agent 正在處理的 scene 標「製作中」），可拖曳排序。
+5. **Scene Editor**：編輯 `script.md`、視覺描述、voice、強制時長；鎖定/核准按鈕；以 `<video>` 從 handle 讀 blob 預覽 `scene.mp4`。
+6. **Final**：預覽 `final.mp4`，列出過期 scene。
 
 ### 9.3 UI 寫入規則
 
@@ -744,7 +750,8 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 - 範本內容（腳本、指令）由網站提供並在本機執行 → 範本 zip 需附 SHA-256 雜湊並公開於 `manifest.json`，Agent 下載後驗證。
 - 所有檔案路徑需驗證不得跳出專案根目錄（防止 `../` 路徑穿越）。
 - JSON 檔不得包含 API key、帳密等敏感資訊；需要時使用 `.env`（並列入 `.gitignore`）。
-- Web capture 只擷取使用者提供的網址；需要登入的頁面由使用者自行在 Playwright 開啟的瀏覽器中登入，Agent 不處理密碼。
+- Web capture 只擷取使用者提供的網址。
+- 需要登入的產品（`sources.requiresLogin`，gate `productLogin`）：Agent 不索取、不輸入、不保存帳密。Agent 先提醒錄影會拍到登入後的內容（建議展示帳號，或經 `domEditConsent` 換成示意資料），再執行 `pnpm run login`：打開一個獨立的瀏覽器視窗，使用者照平常方式登入（含兩步驟驗證、SSO），關閉視窗即完成，不需回終端機操作。登入狀態存於專案的 `.auth/login.json`（`.gitignore`、檔案權限 600、Agent 不讀），capture 載入它開頁；被導到登入頁時回報 `gate productLogin`，Agent 以白話請使用者重新登入。不使用使用者平常的瀏覽器設定檔（Chrome 不允許自動化操作它，也會讓錄影程式接觸所有網站的登入）。影片完成後 Agent 詢問是否以 `pnpm run login --clear` 清除。
 
 ---
 
@@ -757,6 +764,7 @@ agent-video-platform/
 │   ├── common.schema.json
 │   ├── project.schema.json
 │   ├── scene.schema.json
+│   ├── activity.schema.json
 │   ├── workflow.schema.json
 │   ├── workflow.json
 │   └── examples/{valid,invalid}/   # pnpm run test:specs

@@ -6,6 +6,7 @@
     "name": "Product Launch Demo",
     "sources": {
       "productUrl": "https://example.com",
+      "requiresLogin": true,
       "sourceCodePath": "../my-product",
       "description": "使用者補充的產品說明",
       "referenceVideoUrl": null

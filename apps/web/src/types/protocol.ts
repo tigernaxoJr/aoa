@@ -18,6 +18,10 @@ export interface VideoProjectJson {
     sources: {
       productUrl?: string | null;
       /**
+       * 產品網址要登入才看得到。為 true 時，使用者須先以 pnpm run login 在瀏覽器視窗自行登入，capture 才能執行（gate productLogin）。帳密不寫入任何檔案。
+       */
+      requiresLogin?: boolean;
+      /**
        * 產品原始碼位置，唯讀輸入，可在專案外（相對或絕對路徑）。
        */
       sourceCodePath?: string | null;
@@ -345,4 +349,30 @@ export interface SceneJson {
    * via the `patternProperty` "^x-".
    */
   [k: string]: unknown;
+}
+
+/**
+ * Agent 目前在做什麼、是否在等使用者回覆（SPEC §9.2）。只有 Agent 寫入、網頁只讀；不納入版本控制。專案建立前就可以存在（與 video.start.json 並列）。
+ */
+export interface VideoActivityJson {
+  /**
+   * 給使用者看的一句白話，例如「正在錄第 3 段的畫面」「分鏡寫好了，請在對話中確認」。
+   */
+  message: string;
+  /**
+   * true：Agent 停下來等使用者在對話中回覆（checkpoint、gate、提問）。
+   */
+  waitingForUser: boolean;
+  /**
+   * 目前的工作流程步驟或操作（workflow.json 的 id）；不在任何步驟時為 null。
+   */
+  step?: string | null;
+  /**
+   * 正在處理的 scene；沒有時為 null。
+   */
+  scene?: string | null;
+  /**
+   * ISO 8601 / RFC 3339 日期時間，須含時區。
+   */
+  updatedAt: string;
 }

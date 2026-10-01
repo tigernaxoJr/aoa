@@ -194,20 +194,35 @@ test('home page: prepare a folder first, then a plain-language message tells the
   assert.match(await page.getByTestId('step-run').textContent(), /請先在步驟 2 填入/, 'no message before any source')
 
   await page.getByPlaceholder('https://example.com').fill('https://acme.test')
+  // The form is mirrored into the folder for the agent, with an id it uses to find the folder.
+  await waitForStart(page, 'https://acme.test')
+  const start = JSON.parse(await readOpfs(page, 'acme-video/video.start.json'))
+  assert.match(start.id, /^[0-9a-f]{8}$/)
+  assert.deepEqual({ ...start, updatedAt: undefined }, { id: start.id, productUrl: 'https://acme.test', requiresLogin: false, sourceCodePath: null, sourceFolder: null, description: null, updatedAt: undefined })
+
   const message = await page.getByTestId('launch-message').textContent()
   assert.equal(
     message,
-    `請讀取 ${origin}${BASE}/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n我已經在網頁上準備好影片專案資料夾「acme-video」，就是你現在開著的資料夾：請直接在這裡建立專案，產品資訊也記在裡面的 video.start.json。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
+    `請讀取 ${origin}${BASE}/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n我已經在網頁上準備好影片專案資料夾「acme-video」，裡面的 video.start.json 記有產品資訊與識別碼 ${start.id}。請先找到這個資料夾（可能就是你現在開著的資料夾），直接在那裡建立專案。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
   )
-  assert.match(await page.getByTestId('step-run').textContent(), /選步驟 1 的「acme-video」/)
+  assert.match(await page.getByTestId('step-run').textContent(), /Agent 會自己找到「acme-video」/)
   const visible = await page.locator('main').innerText()
   assert.doesNotMatch(visible, /終端機中開啟|p?npm install|cd /, 'the main path never asks for a terminal')
   assert.equal(await page.getByTestId('launch-command').isVisible(), false, 'the terminal command stays folded away')
 
-  // The form is mirrored into the folder for the agent.
-  await waitForStart(page, 'https://acme.test')
-  const start = JSON.parse(await readOpfs(page, 'acme-video/video.start.json'))
-  assert.deepEqual({ ...start, updatedAt: undefined }, { productUrl: 'https://acme.test', sourceCodePath: null, sourceFolder: null, description: null, updatedAt: undefined })
+  // A product behind a sign-in: the user ticks a box; no password field, ever.
+  assert.equal(await page.getByTestId('requires-login-help').count(), 0)
+  await page.getByTestId('requires-login').check()
+  assert.match(await page.getByTestId('requires-login-help').textContent(), /不用在這裡填帳號密碼/)
+  assert.equal(await page.locator('input[type=password]').count(), 0)
+  assert.match(await page.getByTestId('launch-message').textContent(), /・這個網站要登入才看得到：請打開視窗讓我自己登入，我不會把帳號密碼告訴你\n/)
+  await waitForStart(page, '"requiresLogin": true')
+  await page.getByTestId('requires-login').uncheck()
+  await waitForStart(page, '"requiresLogin": false')
+
+  // Reopening the folder keeps its id, so a message already pasted still finds it.
+  await page.evaluate(async () => window.__avp.open(await (await navigator.storage.getDirectory()).getDirectoryHandle('acme-video')))
+  await page.getByTestId('launch-message').getByText(start.id).waitFor()
 
   // Once the agent writes the project, the page switches to the workbench by itself.
   const project = baseProject()
@@ -355,4 +370,43 @@ test('the pairing link connects the Companion; "立即重新產生" rebuilds the
   const scene = JSON.parse(readFileSync(p.path('scenes/001-hook/scene.json'), 'utf8'))
   assert.equal(scene.status, 'rendered')
   assert.equal(scene.updatedBy, 'companion')
+})
+
+const activityJson = (fields) => JSON.stringify({ waitingForUser: false, step: null, scene: null, updatedAt: new Date().toISOString(), ...fields })
+
+test('activity: before the project exists, the page shows what the agent is waiting for', async (t) => {
+  if (!browser) return t.skip('no browser available')
+  const context = await browser.newContext()
+  t.after(() => context.close())
+  const page = await context.newPage()
+  await page.goto(`${origin}${BASE}/`)
+  await prepareFolder(page, 'acme-video', { 'video.activity.json': activityJson({ message: '要不要使用線上語音？請在對話中回答', waitingForUser: true, step: 'init' }) })
+  await page.getByTestId('project-folder').getByText('acme-video').waitFor()
+  const banner = page.getByTestId('step-review').getByTestId('activity')
+  assert.equal(await banner.getAttribute('data-state'), 'waiting', 'a folder holding only the start and activity files is accepted')
+  assert.match(await banner.textContent(), /Agent 在等你回覆：要不要使用線上語音？請在對話中回答/)
+  assert.match(await banner.textContent(), /回到 Agent 的對話/)
+})
+
+test('activity: the workbench shows current work, marks the scene, and fades an old message', async (t) => {
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page, writeFile } = app
+  await page.getByTestId('scene-scene-001').waitFor()
+  assert.equal(await page.getByTestId('activity').count(), 0, 'nothing shown without an activity file')
+
+  await writeFile('video.activity.json', activityJson({ message: '正在錄第 2 段的畫面', step: 'build_scene', scene: 'scene-002' }))
+  await page.locator('[data-testid="activity"][data-state="working"]').getByText('正在錄第 2 段的畫面').waitFor({ timeout: 10_000 })
+  assert.equal(await page.getByTestId('scene-scene-002').getByTestId('scene-working').count(), 1)
+  assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-working').count(), 0)
+
+  const hourAgo = new Date(Date.now() - 3_600_000).toISOString()
+  await writeFile('video.activity.json', activityJson({ message: '正在錄第 3 段的畫面', scene: 'scene-003', updatedAt: hourAgo }))
+  await page.locator('[data-testid="activity"][data-state="idle"]', { hasText: '最後的動態（1 小時前）：正在錄第 3 段的畫面' }).waitFor({ timeout: 10_000 })
+  assert.equal(await page.getByTestId('scene-working').count(), 0, 'an agent that went quiet is not shown as working')
+
+  await writeFile('video.activity.json', '{ "message": ')
+  await page.getByTestId('activity').waitFor({ state: 'detached', timeout: 10_000 })
 })

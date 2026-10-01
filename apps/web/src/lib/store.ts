@@ -4,13 +4,16 @@ import { reactive, shallowRef } from 'vue'
 import { run as runAction } from './companion'
 import { ensurePermission, isSupported, tryFile } from './fsa'
 import { forgetHandle, loadHandle, saveHandle } from './idb'
-import { PROJECT_FILE, fingerprint, loadProject, readyForNewProject, type ProjectState } from './project'
+import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
+import type { VideoActivityJson } from '../types/protocol'
 import { LockedError } from './writes'
 
 const POLL_MS = 2000
 
 export const root = shallowRef<FileSystemDirectoryHandle | null>(null)
 export const state = shallowRef<ProjectState | null>(null)
+/** What the agent says it is doing (SPEC §9.2); shown before and after the project exists. */
+export const activity = shallowRef<VideoActivityJson | null>(null)
 export const ui = reactive({
   supported: isSupported(),
   /** A folder remembered from last visit that still needs the user to re-grant access. */
@@ -38,6 +41,7 @@ export async function reload() {
   try {
     const next = await loadProject(root.value)
     state.value = next
+    activity.value = await loadActivity(root.value)
     ui.waiting = !next
     print = await fingerprint(root.value, next)
     ui.error = null
@@ -109,6 +113,7 @@ export async function reconnect() {
 export async function close() {
   root.value = null
   state.value = null
+  activity.value = null
   ui.waiting = false
   if (timer) clearInterval(timer)
   timer = null

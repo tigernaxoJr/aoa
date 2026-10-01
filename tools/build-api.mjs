@@ -19,7 +19,7 @@ import { absolutizeLinks, section, stripFrontmatter } from './lib/markdown.mjs'
 const root = fileURLToPath(new URL('../', import.meta.url))
 const skillDir = join(root, 'skills', 'product-video')
 const templateDir = join(root, 'templates', 'product-video')
-const SCHEMAS = ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'workflow.schema.json']
+const SCHEMAS = ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'activity.schema.json', 'workflow.schema.json']
 /** Paths never shipped in the template zip (relative, forward slashes). */
 const TEMPLATE_EXCLUDE = [/(^|\/)node_modules\//, /^\.tmp\//, /^output\//, /^scenes\/[^/]+\/output\//, /(^|\/)\.video-agent\.lock$/]
 /** Fixed timestamp so identical inputs give byte-identical zips (and stable hashes). */

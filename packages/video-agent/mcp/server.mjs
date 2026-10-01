@@ -86,12 +86,13 @@ export function createServer({ projectDir = process.cwd() } = {}) {
         directory: z.string().describe('New or empty directory for the project'),
         name: z.string().min(1),
         productUrl: z.string().url().optional(),
+        requiresLogin: z.boolean().optional().describe('productUrl needs signing in: before capture, run pnpm run login so the user signs in in a window (gate productLogin); never ask for the password'),
         sourceCodePath: z.string().optional(),
         description: z.string().optional(),
         language: z.string().optional().describe('BCP 47 tag, default zh-TW'),
       },
     },
-    tool(async ({ directory, name, productUrl, sourceCodePath, description, language }) => {
+    tool(async ({ directory, name, productUrl, requiresLogin, sourceCodePath, description, language }) => {
       if (!productUrl && !sourceCodePath && !description) throw new AgentError('give at least one of productUrl, sourceCodePath, description')
       const dir = resolve(projectDir, directory)
       const manifest = await unpackTemplate(dir)
@@ -99,7 +100,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
       const doc = JSON.parse(readFileSync(file, 'utf8'))
       doc.project.id = randomUUID()
       doc.project.name = name
-      doc.project.sources = { ...doc.project.sources, productUrl: productUrl ?? null, sourceCodePath: sourceCodePath ?? null, description: description ?? null }
+      doc.project.sources = { ...doc.project.sources, productUrl: productUrl ?? null, ...(productUrl && requiresLogin ? { requiresLogin: true } : {}), sourceCodePath: sourceCodePath ?? null, description: description ?? null }
       if (language) doc.project.language = language
       doc.updatedAt = new Date().toISOString()
       doc.updatedBy = BY

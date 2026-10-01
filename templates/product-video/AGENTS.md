@@ -46,11 +46,12 @@
    - 產生的素材只能放在 `assets/` 或 `scenes/*/assets/`；渲染結果只能放在 `output/` 或 `scenes/*/output/`。
 7. **不儲存幀數。** 時長一律以秒記錄（`durationSec`），`null` 表示由旁白音長決定。
 8. **資料不離開本機。** 不上傳使用者的原始碼、素材或影片到任何遠端服務。使用連網 TTS 前必須通過 `onlineTtsConsent` gate（§5）。
-9. **不處理機密。** 不讀取 `.env`，不把 API key、密碼、token 寫進任何 JSON 或旁白稿。需要登入的產品頁面，請使用者自行在瀏覽器中登入。
+9. **不處理機密。** 不讀取 `.env` 與 `.auth/`（保存的登入資料），不把 API key、密碼、token 寫進任何 JSON 或旁白稿。不向使用者索取帳號密碼，`capture` 的 `type` 動作也不輸入密碼。需要登入的產品頁面，以 `pnpm run login` 打開視窗，由使用者自己登入（gate `productLogin`，§5）。
 10. **失敗時保留現場。** 不刪除既有檔案；以 `pnpm run state <id> --failed …` 記錄錯誤。同一 scene 自動重試至多 2 次（看 `attempts`），之後停下並告訴使用者原因與重試方式。
 11. **未經同意不安裝工具。** 缺少 Node.js、Playwright 瀏覽器或 TTS 工具時，用白話說明用途並取得同意；同意後可代為執行一般安裝，不使用系統管理員權限、不改系統設定。需要使用者點擊確認時，給逐步說明。
 12. **太趕時依 `project.durationAdjust` 處理。** `auto` 時可自行在限度內拉長 scene 並事後回報，`ask` 時先問；刪改已確認的旁白、增減 scene 一律先問。做法見 Skill `rendering-guide.md#pacing`。
 13. **假設使用者不懂電腦操作。** 所有指令由你執行，不要求使用者開終端機或打指令；使用者用白話下指示（「繼續」「第三段改成…」），由你對應到工作流程步驟。說明避免術語，回報檔案位置用「文件 > 專案 > output > final.mp4」這類資料夾順序，並可建議用網頁工作台預覽。
+14. **隨時更新 `video.activity.json`。** 網頁工作台用它顯示你正在做什麼、是否在等使用者。每開始一個步驟或 scene、每次停下來等使用者回覆（checkpoint、gate、提問）之前，直接覆寫整個檔案（格式見 `schemas/activity.schema.json`）：`message` 是一句白話，等使用者時 `waitingForUser: true` 並說明要他回答什麼，`step` 為 `workflow.json` 的步驟 id，`scene` 為正在處理的 scene id（沒有時為 `null`），`updatedAt` 為現在時間。它不經過 `pnpm run state`、不需要鎖、不納入版本控制。
 
 ## 4. 寫入狀態：`pnpm run state`
 
@@ -87,6 +88,7 @@ pnpm run state scene-003 --patch-file .tmp/patch.json
 | Gate | 何時需要 | 未通過時不得執行 |
 |---|---|---|
 | `onlineTtsConsent` | TTS provider 為 `edge-tts`、`azure`、`openai`、`elevenlabs` | `tts` |
+| `productLogin` | `sources.requiresLogin` 為 true，或 `capture` 輸出 `gate productLogin`（被導到登入頁、登入過期） | `capture`；以 `pnpm run login` 讓使用者自己登入，不寫入 JSON |
 | `domEditConsent` | scene 的 `capture.actions` 有 `script`（錄製時改寫頁面，例如報表資料太少時填入示意資料） | 該 scene 的 `capture` |
 
 要向使用者說明的內容、使用者拒絕時的處理方式，見 `schemas/workflow.json` 的 `gates`。確認結果以 `pnpm run state` 寫入 `project.tts.consent` 或該 scene 的 `visual.capture.domEditConsent`。
@@ -111,5 +113,6 @@ draft → assets_ready → rendering → rendered → approved
 | `pnpm run validate` | 驗證所有 JSON 與路徑；非 0 代表有錯 |
 | `pnpm run tts <id>` | 產生旁白音檔與字幕時間軸 |
 | `pnpm run capture <id>` | 擷取網頁畫面 |
+| `pnpm run login` | 打開瀏覽器視窗讓使用者自己登入產品；`--clear` 清除保存的登入 |
 | `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`） |
 | `pnpm run assemble` | 依順序合成 `output/final.mp4` |

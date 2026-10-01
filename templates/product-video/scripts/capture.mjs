@@ -2,12 +2,14 @@
 // pnpm run capture --url <url> --out <dir> [--width 1440 --height 900]
 //                                                       → <dir>/<slug>-top.png, <slug>-full.png, <slug>.txt,
 //                                                         <slug>.elements.txt (for analyze; selectors to highlight)
+// Both open the page signed in when the user has signed in with `pnpm run login` (gate productLogin).
 // Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
 import { launchBrowser as launch } from './lib/browser.mjs'
+import { checkSignedIn, signInOptions } from './lib/login.mjs'
 import { cutFilter, ffmpeg, VIDEO_ENCODE } from './lib/media.mjs'
 import { UsageError, findRoot, findSceneRef, isInside, loadProject, readJson, resolveProjectPath, sceneFile } from './lib/project.mjs'
 
@@ -46,11 +48,13 @@ async function capturePage(root, flags) {
   mkdirSync(outDir, { recursive: true })
   const viewport = { width: Number(flags.width ?? 1440), height: Number(flags.height ?? 900) }
   const slug = slugify(flags.url)
+  const signIn = signInOptions(root, loadProject(root))
 
   const browser = await launch()
   try {
-    const page = await browser.newPage({ viewport })
+    const page = await browser.newPage({ viewport, ...signIn })
     await goto(page, flags.url)
+    checkSignedIn(flags.url, page.url(), Boolean(signIn.storageState))
     await page.screenshot({ path: join(outDir, `${slug}-top.png`) })
     await page.screenshot({ path: join(outDir, `${slug}-full.png`), fullPage: true })
     const text = await page.evaluate(() => document.body.innerText)
@@ -91,6 +95,7 @@ async function captureScene(root, id) {
     if (!existsSync(file)) throw new UsageError(`${id}: script ${a.file} not found`)
     scripts.set(a.file, readFileSync(file, 'utf8'))
   }
+  const signIn = signInOptions(root, project)
 
   const browser = await launch()
   const videoDir = mkdtempSync(join(tmpdir(), 'avp-capture-'))
@@ -98,6 +103,7 @@ async function captureScene(root, id) {
     const context = await browser.newContext({
       viewport,
       deviceScaleFactor: 1,
+      ...signIn,
       ...(type === 'web-capture' ? { recordVideo: { dir: videoDir, size: viewport } } : {}),
     })
     const started = Date.now()
@@ -122,6 +128,7 @@ async function captureScene(root, id) {
       navStart = null
     }
     await goto(page, capture.url)
+    checkSignedIn(capture.url, page.url(), Boolean(signIn.storageState))
     await cutNavigation()
     cuts[0][0] = 0
     for (const [i, action] of (capture.actions ?? []).entries()) {

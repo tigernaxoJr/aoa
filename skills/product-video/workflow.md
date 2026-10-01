@@ -23,7 +23,7 @@
    ```bash
    pnpm run capture --url <網址> --out brief/screens/
    ```
-   會輸出整頁截圖、首屏截圖、頁面文字，以及 `<slug>.elements.txt`：頁面上可見的標題、按鈕、連結、輸入框與它們的 selector，寫分鏡時用來挑選要 highlight 的元素（見 [script-guide.md#highlight](script-guide.md#highlight)）。需要登入的頁面，請使用者自行登入後再擷取，或改用使用者提供的截圖。
+   會輸出整頁截圖、首屏截圖、頁面文字，以及 `<slug>.elements.txt`：頁面上可見的標題、按鈕、連結、輸入框與它們的 selector，寫分鏡時用來挑選要 highlight 的元素（見 [script-guide.md#highlight](script-guide.md#highlight)）。`sources.requiresLogin` 為 true 時，擷取前先依 [login](#login) 請使用者自己登入；擷取時出現 `gate productLogin`（被導到登入頁）也一樣。
 
 **產品原始碼**（`sources.sourceCodePath`，唯讀）
 
@@ -149,6 +149,43 @@ pnpm run state project --status analyzed
 ```
 
 確認後才進入 `/video-storyboard`。
+
+---
+
+## <a id="login"></a>login：登入產品網站（gate productLogin）
+
+產品網址要登入才看得到（`sources.requiresLogin: true`，或 capture 輸出 `gate productLogin`）時使用。使用者自己在一個瀏覽器視窗裡登入，**你不問、不看、不保存帳號密碼**，也不讀取 `.auth/`。
+
+### 1. 開視窗前先說明（一次說完，等使用者回「好」）
+
+1. **錄影會拍到什麼**：「錄影會拍到登入後畫面上的內容，例如客戶名稱、email、金額。如果有不想公開的資料，建議用展示用的帳號；或者錄影時我可以把那些地方換成示意資料，會先跟你確認。」（換成示意資料的做法同 [script-guide.md#demo-data](script-guide.md#demo-data)，需要 `domEditConsent`。）
+2. **接下來會發生什麼**：
+   > 「我會打開一個新的瀏覽器視窗。為了安全，它和你平常用的瀏覽器分開，所以要再登入一次。視窗上方可能寫著『Chrome 正受到自動測試軟體控制』，這是正常的。請像平常一樣登入（需要手機驗證碼也照常輸入），帳號密碼只在那個視窗裡輸入，我看不到。畫面下方的藍色提示變成綠色『已經登入了』之後，關掉那個視窗就好。」
+
+### 2. 執行
+
+```bash
+pnpm run login            # 預設打開 sources.productUrl；也可給網址：pnpm run login https://app.example.com
+```
+
+指令會一直等到使用者關掉視窗（最多 30 分鐘），執行時間長是正常的。不要提醒使用者回終端機按任何鍵。
+
+| 輸出 | 意思 | 接著 |
+|---|---|---|
+| `login: signed in` | 登入成功並已保存 | 告訴使用者「登入好了」，繼續原本的步驟 |
+| `… no sign-in page was seen; ask the user …` | 有保存，但沒看到登入頁（有些網站在首頁直接登入） | 問使用者剛才有沒有登入成功；有就繼續，capture 若再出現 `gate productLogin` 就重新登入一次 |
+| `closed before the user signed in` | 沒有登入就關了視窗 | 問使用者要再試一次，還是改用他提供的截圖或錄影 |
+| `no usable browser` | 找不到瀏覽器 | 見 SKILL §2 安裝瀏覽器 |
+
+### 3. 登入過期
+
+capture 輸出 `gate productLogin: … the saved sign-in has expired` 時，不要顯示技術訊息，只說：「登入好像過期了，我再開一次視窗，麻煩你重新登入。」再從第 2 步執行。這不算 scene 失敗，不要用 `--failed` 記錄。
+
+### 4. 做完後
+
+合成完成後問使用者：「要不要清除剛才保存的登入資料？之後要重做影片時，再登入一次就好。」建議清除；使用者同意就執行 `pnpm run login --clear`。
+
+使用者不想登入時：只擷取不需登入的公開頁面，或請他提供截圖、錄影（`visual.type: user-asset`）。
 
 ---
 

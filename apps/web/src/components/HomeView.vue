@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { writeText } from '../lib/fsa'
-import { START_FILE, api, launchCommand, launchMessage, startJson, type SourceHints } from '../lib/site'
+import { tryFile, writeText } from '../lib/fsa'
+import { START_FILE, api, launchCommand, launchMessage, newFolderId, startJson, type SourceHints } from '../lib/site'
 import { baseName, pathHelp, platform, readSourceFolder } from '../lib/source'
-import { pickFolder, reconnect, root, ui } from '../lib/store'
+import { activity, pickFolder, reconnect, root, ui } from '../lib/store'
+import ActivityBanner from './ActivityBanner.vue'
 import CopyButton from './CopyButton.vue'
 
 const STORAGE_KEY = 'avp-start'
@@ -11,12 +12,13 @@ const os = platform()
 
 interface Start {
   productUrl: string
+  requiresLogin: boolean
   sourceFolder: string
   sourceHints: SourceHints | null
   sourceCodePath: string
   description: string
 }
-const form = reactive<Start>({ productUrl: '', sourceFolder: '', sourceHints: null, sourceCodePath: '', description: '' })
+const form = reactive<Start>({ productUrl: '', requiresLogin: false, sourceFolder: '', sourceHints: null, sourceCodePath: '', description: '' })
 try {
   Object.assign(form, JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}'))
 } catch {}
@@ -28,25 +30,44 @@ watch(form, () => {
 
 /** The prepared project folder; the agent will build the project in it. */
 const folder = computed(() => (ui.waiting && root.value ? root.value.name : null))
-const needsFolder = computed(() => ui.supported && !folder.value)
+
+/** The id the agent matches to find the folder; kept from an existing start file so a message already pasted stays valid. */
+const folderId = ref<string | null>(null)
+watch(
+  folder,
+  async () => {
+    folderId.value = null
+    const dir = root.value
+    if (!folder.value || !dir) return
+    let id: unknown
+    try {
+      id = JSON.parse((await (await tryFile(dir, START_FILE))?.text()) ?? '{}').id
+    } catch {}
+    if (root.value === dir) folderId.value = typeof id === 'string' && id ? id : newFolderId()
+  },
+  { immediate: true },
+)
+const prepared = computed(() => (folder.value && folderId.value ? { name: folder.value, id: folderId.value } : null))
+const needsFolder = computed(() => ui.supported && !prepared.value)
 
 // Keep the start file in the prepared folder in step with the form, so the agent reads what the user sees.
 let pending: ReturnType<typeof setTimeout> | undefined
 watch(
-  [() => ({ ...form }), folder],
+  [() => ({ ...form }), prepared],
   () => {
     clearTimeout(pending)
     const dir = root.value
-    if (!folder.value || !dir) return
-    pending = setTimeout(() => writeText(dir, START_FILE, startJson(form)).catch((err) => (ui.error = (err as Error).message)), 300)
+    const at = prepared.value
+    if (!at || !dir) return
+    pending = setTimeout(() => writeText(dir, START_FILE, startJson(form, at.id)).catch((err) => (ui.error = (err as Error).message)), 300)
   },
   { immediate: true },
 )
 
 const filledFrom = ref<string | null>(null)
 const hasSource = computed(() => Boolean(form.productUrl.trim() || form.sourceFolder.trim() || form.sourceCodePath.trim() || form.description.trim()))
-const message = computed(() => launchMessage(form, folder.value))
-const command = computed(() => launchCommand(form, folder.value))
+const message = computed(() => launchMessage(form, prepared.value))
+const command = computed(() => launchCommand(form, prepared.value))
 const canPick = typeof window.showDirectoryPicker === 'function'
 const pathMismatch = computed(() => {
   const typed = baseName(form.sourceCodePath.trim())
@@ -152,6 +173,15 @@ const links = [
                 <span class="text-sm font-medium">產品網址</span>
                 <input v-model.trim="form.productUrl" type="url" placeholder="https://example.com" class="field" />
               </label>
+              <div v-if="form.productUrl" class="-mt-2">
+                <label class="flex items-start gap-2 text-sm">
+                  <input v-model="form.requiresLogin" type="checkbox" class="mt-1" data-testid="requires-login" />
+                  <span>這個網站要登入才看得到</span>
+                </label>
+                <p v-if="form.requiresLogin" class="mt-1 text-xs text-slate-500" data-testid="requires-login-help">
+                  不用在這裡填帳號密碼。錄影前，Agent 會打開一個瀏覽器視窗，請你像平常一樣登入，登入完關掉視窗就好；帳號密碼只在那個視窗輸入，Agent 看不到。建議用展示用的帳號，因為錄影會拍到登入後畫面上的內容。
+                </p>
+              </div>
 
               <div>
                 <label for="source-path" class="text-sm font-medium">產品原始碼資料夾（選填）</label>
@@ -203,7 +233,7 @@ const links = [
                 <li>
                   打開 Agent。還沒有的話，到 <a href="https://claude.ai/download" target="_blank" rel="noopener" class="link">claude.ai/download</a> 下載 Claude 桌面版，安裝後登入，切到上方的「Code」。其他 Coding Agent 也可以，只要它能讀網址、在你的電腦上工作。
                 </li>
-                <li v-if="folder">開一個新的對話。它會請你選一個資料夾：<strong>選步驟 1 的「{{ folder }}」</strong>。</li>
+                <li v-if="folder">開一個新的對話。它會請你選一個資料夾：選「{{ folder }}」或放它的地方（例如「文件」）都可以，Agent 會自己找到「{{ folder }}」。</li>
                 <li v-else>開一個新的對話。它會請你選一個資料夾：選你想存放影片的地方，例如「文件」。</li>
                 <li>按「複製這段話」，到 Agent 的對話框貼上（{{ os === 'mac' ? '⌘+V' : 'Ctrl+V' }}），再按送出。</li>
               </ol>
@@ -240,7 +270,8 @@ const links = [
           <span class="step-no">4</span>
           <div class="min-w-0 flex-1">
             <h2 class="font-semibold">在這裡看進度、修改</h2>
-            <p v-if="folder" class="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400" role="status" data-testid="waiting">
+            <div v-if="folder && activity" class="mt-2"><ActivityBanner /></div>
+            <p v-else-if="folder" class="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400" role="status" data-testid="waiting">
               <span class="inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />
               等 Agent 在「{{ folder }}」建立專案。建好後這個頁面會自動切換，你可以看到進度、修改旁白、預覽每一段影片。
             </p>
