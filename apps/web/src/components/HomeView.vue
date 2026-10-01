@@ -22,7 +22,7 @@ interface Start {
   sourceCodePath: string
   description: string
 }
-const form = reactive<Start>({ kind: 'product', story: '', audience: '', productUrl: '', requiresLogin: false, sourceFolder: '', sourceHints: null, sourceCodePath: '', description: '' })
+const form = reactive<Start>({ kind: 'story', story: '', audience: '', productUrl: '', requiresLogin: false, sourceFolder: '', sourceHints: null, sourceCodePath: '', description: '' })
 try {
   Object.assign(form, JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}'))
 } catch {}
@@ -74,9 +74,20 @@ const hasSource = computed(() =>
   isStory.value ? Boolean(form.story.trim()) : Boolean(form.productUrl.trim() || form.sourceFolder.trim() || form.sourceCodePath.trim() || form.description.trim()),
 )
 const KINDS: { kind: VideoKind; title: string; hint: string; icon: IconName }[] = [
-  { kind: 'product', title: '產品介紹影片', hint: '錄下產品畫面，配上旁白與字幕', icon: 'film' },
   { kind: 'story', title: '把故事做成動畫', hint: '畫出角色與場景，旁白和角色各有聲音', icon: 'sparkles' },
+  { kind: 'product', title: '產品介紹影片', hint: '錄下產品畫面，配上旁白與字幕', icon: 'film' },
 ]
+/** Title and intro per kind. Both are laid out in the same grid cell, so switching never moves what is below. */
+const INTRO: Record<VideoKind, { title: string; text: string }> = {
+  story: {
+    title: '把故事做成動畫影片',
+    text: '準備一個資料夾、寫下你的故事（只有一個點子也可以），再把產生的一段話貼給 Agent（例如 Claude）。它會陪你把故事補完整、畫角色、配聲音、做成動畫，這個網頁同步顯示進度。',
+  },
+  product: {
+    title: '做產品介紹影片',
+    text: '準備一個資料夾、填產品資訊，再把產生的一段話貼給 Agent（例如 Claude）。它會寫旁白、錄畫面、合成影片，這個網頁同步顯示進度。',
+  },
+}
 /** The step the user should do now: 1 folder, 2 product or story, 3 paste the message. */
 const current = computed(() => (needsFolder.value ? 1 : !hasSource.value ? 2 : 3))
 const message = computed(() => launchMessage(form, prepared.value))
@@ -136,13 +147,15 @@ const links = [
 <template>
   <div class="mx-auto max-w-3xl px-4 pt-10 pb-16 sm:pt-14">
     <div class="text-center">
-      <h1 class="text-2xl font-bold tracking-tight text-balance sm:text-4xl">讓 Agent 在你的電腦上<br />{{ isStory ? '把故事做成動畫影片' : '做產品介紹影片' }}</h1>
-      <p v-if="isStory" class="mx-auto mt-3 max-w-xl text-pretty text-slate-600 dark:text-slate-400">
-        準備一個資料夾、寫下你的故事（只有一個點子也可以），再把產生的一段話貼給 Agent（例如 Claude）。它會陪你把故事補完整、畫角色、配聲音、做成動畫，這個網頁同步顯示進度。
-      </p>
-      <p v-else class="mx-auto mt-3 max-w-xl text-pretty text-slate-600 dark:text-slate-400">
-        準備一個資料夾、填產品資訊，再把產生的一段話貼給 Agent（例如 Claude）。它會寫旁白、錄畫面、合成影片，這個網頁同步顯示進度。
-      </p>
+      <h1 class="text-2xl font-bold tracking-tight text-balance sm:text-4xl">
+        讓 Agent 在你的電腦上<br />
+        <span class="grid">
+          <span v-for="k in KINDS" :key="k.kind" class="col-start-1 row-start-1" :class="form.kind === k.kind ? '' : 'invisible'" :aria-hidden="form.kind !== k.kind">{{ INTRO[k.kind].title }}</span>
+        </span>
+      </h1>
+      <div class="mx-auto mt-3 grid max-w-xl text-pretty text-slate-600 dark:text-slate-400" data-testid="intro">
+        <p v-for="k in KINDS" :key="k.kind" class="col-start-1 row-start-1" :class="form.kind === k.kind ? '' : 'invisible'" :aria-hidden="form.kind !== k.kind">{{ INTRO[k.kind].text }}</p>
+      </div>
       <div class="mx-auto mt-6 grid max-w-xl grid-cols-2 gap-2" role="radiogroup" aria-label="影片類型" data-testid="video-kind">
         <button
           v-for="k in KINDS"

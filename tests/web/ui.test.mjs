@@ -184,6 +184,8 @@ test('home page: prepare a folder first, then a plain-language message tells the
   t.after(() => context.close())
   const page = await context.newPage()
   await page.goto(`${origin}${BASE}/`)
+  assert.equal(await page.getByTestId('kind-story').getAttribute('aria-checked'), 'true', 'a story is the default')
+  await page.getByTestId('kind-product').click()
   assert.match(await page.getByTestId('step-run').textContent(), /請先在步驟 1 準備/, 'no message before the folder is prepared')
 
   await prepareFolder(page, 'not-empty', { 'notes.txt': 'x' })
@@ -244,6 +246,7 @@ test('guided start: the source folder is a full path; picking a folder prefills 
   t.after(() => context.close())
   const page = await context.newPage()
   await page.goto(`${origin}${BASE}/`)
+  await page.getByTestId('kind-product').click()
   await prepareFolder(page, 'acme-video')
   await page.evaluate(async () => {
     const root = await navigator.storage.getDirectory()
@@ -503,6 +506,10 @@ test('home page, story: pick "把故事做成動畫", write the story, and the m
   t.after(() => context.close())
   const page = await context.newPage()
   await page.goto(`${origin}${BASE}/`)
+  const below = async () => (await page.getByTestId('video-kind').boundingBox()).y
+  const y = await below()
+  await page.getByTestId('kind-product').click()
+  assert.equal(await below(), y, 'switching kinds does not move the page')
   await page.getByTestId('kind-story').click()
   assert.equal(await page.getByTestId('kind-story').getAttribute('aria-checked'), 'true')
   assert.equal(await page.getByPlaceholder('https://example.com').count(), 0, 'no product fields for a story')
