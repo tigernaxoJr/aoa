@@ -38,7 +38,7 @@ const n = (x) => Number(x.toFixed(6))
  * Builds the -filter_complex graph. Inputs 0..N-1 are the scene files; input N is the looped BGM
  * when `bgm` is set. Output pads: [vout], [aout].
  */
-export function filterGraph({ items, total }, { fps, bgm = null, burn = null }) {
+export function filterGraph({ items, total }, { fps, bgm = null, burn = null, fontsDir = null }) {
   const lines = []
   items.forEach((item, i) => {
     lines.push(`[${i}:v]fps=${fps},settb=AVTB,format=yuv420p,setpts=PTS-STARTPTS[v${i}]`)
@@ -60,7 +60,7 @@ export function filterGraph({ items, total }, { fps, bgm = null, burn = null }) 
     a = `ax${i}`
   })
 
-  lines.push(burn ? `[${v}]ass=${burn}[vout]` : `[${v}]null[vout]`)
+  lines.push(burn ? `[${v}]ass=${burn}${fontsDir ? `:fontsdir=${fontsDir}` : ''}[vout]` : `[${v}]null[vout]`)
 
   if (!bgm) {
     lines.push(`[${a}]anull[aout]`)

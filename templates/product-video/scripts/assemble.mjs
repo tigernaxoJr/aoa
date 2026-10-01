@@ -68,7 +68,9 @@ run(async (argv) => {
   try {
     const burn = mode === 'burn' ? 'captions.ass' : null
     if (burn) writeFileSync(join(work, burn), toAss(cues, format, captions.style))
-    const graph = filterGraph(timeline, { fps: format.fps, bgm, burn })
+    // FFmpeg runs in `work`; a relative path keeps drive letters and backslashes out of the filter.
+    const fontsDir = relative(work, join(root, 'src', 'fonts')).split('\\').join('/')
+    const graph = filterGraph(timeline, { fps: format.fps, bgm, burn, fontsDir })
     const inputs = clips.flatMap((c) => ['-i', c.file])
     if (bgm) inputs.push('-stream_loop', '-1', '-i', bgm.file)
     console.log(`assembling ${clips.length} scene(s), ${timeline.total.toFixed(2)}s${bgm ? ', with BGM' : ''}${burn ? ', burning captions' : ''}`)

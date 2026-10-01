@@ -127,7 +127,8 @@ my-video-project/
 │   └── state.mjs               # 唯一的 JSON 寫入入口（§10.2）
 ├── src/                        # 渲染器程式碼（§7.6）
 │   ├── lib/motion.js           # 版面、動畫、配色（純函式）
-│   └── html/player.js          # scene 版面（純 DOM，`window.__seek(t)`）
+│   ├── html/player.js          # scene 版面（純 DOM，`window.__seek(t)`）
+│   └── fonts/                  # 內附字型（Noto Sans TC Bold、JetBrains Mono，OFL）
 └── output/
     └── final.mp4
 ```
@@ -521,7 +522,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 - `captions.mode`：`srt`（預設，只輸出 `output/final.srt`）｜`burn`（燒入並同時輸出 srt）｜`none`。
 - **燒入只在 assemble 進行**，不在 scene 渲染時燒入——修改字幕樣式只需重跑 assemble，不使 scene 過期；`captions` 設定因此不納入 scene 的 `inputHash`。
 - 合併：各 scene 的字幕依該 scene 在成片中的起點位移；跨過下一個 scene 起點（含轉場重疊）的部分截斷。
-- 燒入實作：產生 ASS 字幕（`PlayResX/Y` = 輸出解析度，故 `style.fontSize` 以成片像素計，省略時為高度 × 48/1080），以 FFmpeg `ass` 濾鏡（libass）繪製；白字深色描邊，`position` 對應下／中／上。指定字型未安裝時由 libass 改用系統中有對應字形的字型。內建 FFmpeg 的 libass 不支援 Unicode 斷行，長字幕依賴上述單條字數上限。
+- 燒入實作：產生 ASS 字幕（`PlayResX/Y` = 輸出解析度，故 `style.fontSize` 以成片像素計，省略時為高度 × 48/1080），以 FFmpeg `ass` 濾鏡（libass，`fontsdir` 指向 `src/fonts/`）繪製；白字深色描邊，`position` 對應下／中／上。字型先找 `src/fonts/`，找不到才用系統字型（各平台結果可能不同）。libass 不支援 woff2 與可變字型，`src/fonts/` 只放靜態字重的 OTF／TTF。內建 FFmpeg 的 libass 不支援 Unicode 斷行，長字幕依賴上述單條字數上限。
 
 **BGM**
 
@@ -536,6 +537,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 - **Render plan**：`scripts/lib/scene-plan.mjs` 將 scene.json + `project.format` 轉為 plan（時長、幀數、背景層、疊加元素、旁白）。渲染器只畫 plan；版面、動畫與配色由 `src/lib/motion.js` 的純函式定義。
 - **影片素材正規化**：所有影片層（錄影、`user-asset` 影片、影片元素）先以 FFmpeg 轉為專案 fps、依 trim 裁切、補到精確幀數（較短時停在最後一格），再交給渲染器。素材原聲不使用。
 - **素材存取**：渲染期間在 `127.0.0.1` 隨機埠啟動唯讀靜態伺服器，只提供專案根目錄內的檔案（支援 Range）。不使用 `file://`。
+- **字型**：畫面與燒入字幕只使用 `src/fonts/` 內附的字型（Noto Sans TC Bold、JetBrains Mono），不依賴系統字型，因此 Windows、macOS、Linux 輸出相同。
 - 暫存檔放在 `.tmp/render-<id>/`，結束即刪除。輸出先寫到 `*.partial.mp4`，成功後才替換 `output/scene.mp4`。
 - scene 間轉場（`transitionIn`）、字幕、BGM 皆不在 scene 渲染中處理，由 `assemble.mjs` 負責。
 - `src/` 不納入 `inputHash`：修改外觀不會自動使既有 scene 過期，需由 Agent 經使用者同意後將受影響的 scene 設為 `stale`。

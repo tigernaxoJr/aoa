@@ -2,7 +2,7 @@
 // (fast; render-scene is covered by render.test.mjs), plus the pure timeline functions.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { afterEach, describe, test } from 'node:test'
 import { filterGraph, layout, mergeCaptions, toAss, toSrt } from '../../templates/product-video/scripts/lib/timeline.mjs'
@@ -105,14 +105,17 @@ describe('assemble', () => {
     assert.match(r.stderr, /scene-001: status draft/)
   })
 
-  test('mixes looped BGM under the narration and burns captions', () => {
+  test('mixes looped BGM under the narration and burns captions with the bundled font', () => {
     const project = baseProject()
     project.project.audio = { bgm: 'assets/bgm.mp3', bgmVolume: 0.3, ducking: true }
     project.project.captions = { mode: 'burn', style: { fontSize: 28, position: 'bottom' } }
     renderedProject([{ color: 'black', captions: [{ start: 0, end: 1, text: '字幕燒入測試' }] }, { color: 'black', transition: 'wipe' }], { project })
     mkdirSync(p.path('assets'), { recursive: true })
     ff('-f', 'lavfi', '-i', 'sine=frequency=880:duration=0.4', p.path('assets/bgm.mp3')) // shorter than the video: must loop
-    const r = p.run('assemble.mjs')
+    // Hide the system fonts from libass, so the captions can only come from src/fonts.
+    cpSync(new URL('../../templates/product-video/src/fonts', import.meta.url), p.path('src/fonts'), { recursive: true })
+    p.write('fonts.conf', '<?xml version="1.0"?><fontconfig></fontconfig>')
+    const r = p.run('assemble.mjs', [], { FONTCONFIG_FILE: p.path('fonts.conf') })
     assert.equal(r.code, 0, r.stderr)
     assert.match(r.stdout, /with BGM, burning captions/)
     const out = p.path('output/final.mp4')

@@ -24,6 +24,13 @@ const probe = (file, entries) =>
 const streams = (file) => JSON.parse(probe(file, 'stream=codec_type,width,height,nb_read_frames,pix_fmt').stdout).streams
 /** RGB of one output pixel at time t. */
 const pixel = (file, t, x, y) => [...ff('-ss', String(t), '-i', file, '-frames:v', '1', '-vf', `format=rgb24,crop=1:1:${x}:${y}`, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-')]
+/** Brightest channel-minimum in a w×h region at time t: high only where something is near white. */
+const whitest = (file, t, x, y, w, h) => {
+  const px = [...ff('-ss', String(t), '-i', file, '-frames:v', '1', '-vf', `format=rgb24,crop=${w}:${h}:${x}:${y}`, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-')]
+  let best = 0
+  for (let i = 0; i < px.length; i += 3) best = Math.max(best, Math.min(px[i], px[i + 1], px[i + 2]))
+  return best
+}
 const near = (actual, expected, label) =>
   assert.ok(actual.every((v, i) => Math.abs(v - expected[i]) < 48), `${label}: got rgb(${actual}) expected ~rgb(${expected})`)
 
@@ -79,11 +86,14 @@ function checkLayered(out) {
   near(pixel(out, 0.1, 320, 180), [0, 0, 255], 'centered image')
   near(pixel(out, 0.2, 100, 60), RED, 'video element not yet visible')
   near(pixel(out, 1.0, 100, 60), [0, 255, 0], 'top-left video element after at=0.5')
+  assert.ok(whitest(out, 1.4, 200, 260, 240, 90) > 200, 'text is drawn with the bundled font')
 }
 
 async function render(t) {
   layeredProject()
-  const r = await p.runAsync('render-scene.mjs', ['scene-001'])
+  // Hide the system fonts (Linux), so the text can only come from src/fonts.
+  p.write('fonts.conf', '<?xml version="1.0"?><fontconfig></fontconfig>')
+  const r = await p.runAsync('render-scene.mjs', ['scene-001'], { FONTCONFIG_FILE: p.path('fonts.conf') })
   if (/no usable browser/.test(r.stderr)) {
     t.skip('no browser available')
     return null

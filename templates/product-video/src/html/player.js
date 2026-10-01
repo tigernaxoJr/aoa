@@ -79,8 +79,16 @@ window.__seek = async (t) => {
   while (pending.size) await Promise.all(pending)
 }
 
+// Bundled fonts, loaded up front: text that first appears mid-scene must not render in a fallback.
+const FONTS = [
+  ['Noto Sans TC', '../fonts/NotoSansTC-Bold.otf', '700'],
+  ['JetBrains Mono', '../fonts/JetBrainsMono-Regular.ttf', '400'],
+]
+
 window.__ready = (async () => {
-  await document.fonts.ready
+  for (const [family, file, weight] of FONTS) {
+    document.fonts.add(await new FontFace(family, `url(${new URL(file, import.meta.url)})`, { weight }).load())
+  }
   while (pending.size) await Promise.all(pending)
   return true
 })()

@@ -83,6 +83,8 @@ pnpm run validate
 
 配色、字型、字級都在 `src/lib/motion.js` 的 `THEME` 與 `styles()`；版面在 `src/html/player.js`。
 
+字型只用 `src/fonts/` 內附的檔案，不依賴使用者電腦上的字型，所以各平台畫面相同。要換字型時，把靜態字重的 OTF／TTF（不能是 woff2 或可變字型）放進 `src/fonts/`，在 `player.js` 的 `FONTS` 登記，再改 `THEME`；燒入字幕的 `captions.style.fontFamily` 也會先從 `src/fonts/` 找。
+
 `src/` 不納入 `inputHash`，所以改了 `src/` 之後，已渲染的 scene 不會自動被標為過期。只有在使用者要求時才改 `src/`；改完後告訴使用者哪些 scene 需要重做，經同意後對這些 scene 執行 `pnpm run state <id> --status stale`，再依第 1 節重做。`approved` 或 `locked` 的 scene 必須由使用者明確指定才重做。
 
 ---

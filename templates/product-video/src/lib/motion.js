@@ -2,8 +2,9 @@
 // (seconds from the scene start); no DOM here, so it can be unit-tested in Node.
 
 export const THEME = {
-  fontFamily: '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Noto Sans CJK TC", "Helvetica Neue", Arial, sans-serif',
-  monoFamily: '"JetBrains Mono", "Cascadia Code", Consolas, "SF Mono", Menlo, monospace',
+  // Both families ship in src/fonts/ (loaded by the player), so every OS renders the same glyphs.
+  fontFamily: '"Noto Sans TC", sans-serif',
+  monoFamily: '"JetBrains Mono", "Noto Sans TC", monospace',
   background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0c4a6e 100%)',
   text: '#ffffff',
   accent: '#38bdf8',

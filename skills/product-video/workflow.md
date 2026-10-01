@@ -187,7 +187,7 @@ pnpm run status
 - `project.language`：目標 locale
 - `project.name`：翻譯，或加上語言後綴
 - `project.tts.voice`：依 [SKILL.md §4](SKILL.md) 選擇目標語言的聲音；連網 TTS 的同意需重新取得（服務相同也要，因為內容不同）
-- `captions.style.fontFamily`：確認字型支援目標語言（如 Noto Sans TC → Noto Sans / Noto Sans JP）
+- `captions.style.fontFamily`：確認字型支援目標語言（如 Noto Sans TC → Noto Sans / Noto Sans JP）；內附字型只有 Noto Sans TC，其他語言的字型要放進 `src/fonts/`，否則會用系統字型，各平台結果不同
 
 ### 3. 翻譯內容
 
