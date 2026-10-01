@@ -6,7 +6,7 @@ import { cpSync, existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { afterEach, describe, test } from 'node:test'
-import { probeDuration } from '../../templates/product-video/scripts/lib/media.mjs'
+import { keyframes, probeDuration } from '../../templates/product-video/scripts/lib/media.mjs'
 import { anchor, elementState, visibleText } from '../../templates/product-video/src/lib/motion.js'
 import { baseProject, baseScene, makeProject } from './helpers.mjs'
 
@@ -125,7 +125,10 @@ async function render(t) {
 describe('render-scene', () => {
   test('draws every layer at the planned time', async (t) => {
     const out = await render(t)
-    if (out) checkLayered(out)
+    if (!out) return
+    checkLayered(out)
+    // 1.5 s at 24 fps: keyframes 0.5 s from each end, where assemble's transitions begin and end.
+    assert.deepEqual(keyframes(out, 24), [0, 12, 24])
   })
 
   test('enlarged text is bigger, but shrinks to two lines inside the frame', async (t) => {
@@ -191,6 +194,45 @@ describe('render-scene', () => {
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
     assert.equal(r.code, 1)
     assert.match(r.stderr, /durationSec is null and there is no narration audio/)
+  })
+
+  test('captions.mode burn draws the scene captions with the bundled font', async (t) => {
+    const project = smallProject()
+    project.project.captions = { mode: 'burn', style: { fontSize: 28, position: 'bottom' } }
+    const scene = baseScene('scene-001', { durationSec: 1, visual: { type: 'motion-graphic', description: 'blank' } })
+    p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene }] })
+    cpSync(templateSrc, p.path('src'), { recursive: true })
+    p.write('scenes/001-hook/assets/captions.json', [{ start: 0, end: 0.5, text: '字幕燒入測試' }])
+    // Hide the system fonts from libass, so the captions can only come from src/fonts.
+    p.write('fonts.conf', '<?xml version="1.0"?><fontconfig></fontconfig>')
+    const r = await p.runAsync('render-scene.mjs', ['scene-001'], { FONTCONFIG_FILE: p.path('fonts.conf') })
+    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
+    assert.equal(r.code, 0, r.stderr)
+    const out = p.path('scenes/001-hook/output/scene.mp4')
+    assert.ok(whitest(out, 0.25, 0, 260, 640, 80) > 200, 'captions are burned into the bottom of the frame')
+    assert.ok(whitest(out, 0.75, 0, 260, 640, 80) < 100, 'the cue ends at 0.5 s')
+  })
+
+  test('several scenes render in parallel; one failure does not stop the others', async (t) => {
+    const code = (id) => baseScene(id, { durationSec: 0.5, visual: { type: 'code', description: 'code', code: { language: 'js', content: `// ${id}\n` } } })
+    const broken = baseScene('scene-003', { durationSec: 0.5, visual: { type: 'screenshot', description: 's', capture: { url: 'https://example.com' } } })
+    p = makeProject({
+      project: smallProject(),
+      scenes: [
+        { id: 'scene-001', dir: 'scenes/001-a', scene: code('scene-001') },
+        { id: 'scene-002', dir: 'scenes/002-b', scene: code('scene-002') },
+        { id: 'scene-003', dir: 'scenes/003-c', scene: broken },
+      ],
+    })
+    cpSync(templateSrc, p.path('src'), { recursive: true })
+    assert.match((await p.runAsync('render-scene.mjs', ['scene-001', 'scene-009'])).stderr, /scene-009/, 'unknown ids fail up front')
+    const r = await p.runAsync('render-scene.mjs', ['scene-001', 'scene-002', 'scene-003', '--jobs', '2'])
+    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
+    assert.equal(r.code, 1)
+    assert.match(r.stdout, /rendering 3 scenes, 2 at a time/)
+    assert.match(r.stdout, /rendered: scene-001, scene-002; failed: scene-003/)
+    assert.ok(existsSync(p.path('scenes/001-a/output/scene.mp4')))
+    assert.ok(existsSync(p.path('scenes/002-b/output/scene.mp4')))
   })
 
   test('a failed render keeps the previous output', async () => {

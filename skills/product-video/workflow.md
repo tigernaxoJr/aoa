@@ -179,7 +179,7 @@ pnpm run status
 
 1. `status` 為 `rendered` / `approved`、但 `inputHash` 不相符的 scene：`pnpm run state <id> --status stale`。
 2. **`locked: true` 的 scene 即使過期也不重做**，列出來請使用者決定。
-3. 依播放順序對每個需要處理的 scene 執行 build_scene。sync 時不在每個 scene 停下，全部完成後一次回報。
+3. 依播放順序對每個需要處理的 scene 執行 build_scene。sync 時不在每個 scene 停下，全部完成後一次回報。有多個 scene 要渲染時，先完成各自的 `tts`、`capture` 與狀態，再一次 `render:scene <id> <id>…` 平行渲染（[rendering-guide.md](rendering-guide.md#flow)）。
 4. 失敗的 scene 依 `AGENTS.md` 規則處理，不影響其他 scene 繼續；最後在回報中列出。
 
 ### 3. 合成

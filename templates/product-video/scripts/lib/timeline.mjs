@@ -1,5 +1,5 @@
 // Assemble timeline (SPEC §6.2 Step 5, §7.5): scene placement with transitions, the FFmpeg filter
-// graph, and caption files. Pure functions; assemble.mjs does the I/O.
+// graph, and caption files (toAss is also used by render-scene, which burns captions in). Pure functions; assemble.mjs does the I/O.
 
 /** Target transition length; shortened for short scenes and snapped to whole frames. */
 export const TRANSITION_SEC = 0.5
@@ -35,32 +35,43 @@ export function layout(clips, fps) {
 const n = (x) => Number(x.toFixed(6))
 
 /**
- * Builds the -filter_complex graph. Inputs 0..N-1 are the scene files; input N is the looped BGM
- * when `bgm` is set. Output pads: [vout], [aout].
+ * Video half of a graph: input i is placed per items[i] ({ start, overlap, xfade } in seconds) and
+ * joined to the previous one by xfade or a cut. `prefix(i)` adds filters at the start of input i.
+ * Output pad: [vout].
  */
-export function filterGraph({ items, total }, { fps, bgm = null, burn = null, fontsDir = null }) {
-  const lines = []
+function videoLines(items, fps, prefix = () => '') {
+  const lines = items.map((_, i) => `[${i}:v]${prefix(i)}fps=${fps},settb=AVTB,format=yuv420p,setpts=PTS-STARTPTS[v${i}]`)
+  let v = 'v0'
+  items.slice(1).forEach((item, k) => {
+    const i = k + 1
+    lines.push(
+      item.xfade
+        ? `[${v}][v${i}]xfade=transition=${item.xfade}:duration=${n(item.overlap)}:offset=${n(item.start)}[vx${i}]`
+        : `[${v}][v${i}]concat=n=2:v=1:a=0[vx${i}]`,
+    )
+    v = `vx${i}`
+  })
+  lines.push(`[${v}]null[vout]`)
+  return lines
+}
+
+/**
+ * Builds the -filter_complex graph. Inputs 0..N-1 are the scene files; input N is the looped BGM
+ * when `bgm` is set. Output pads: [vout], [aout]; only [aout] when `video` is false (the video is
+ * stream-copied instead, see copyPlan).
+ */
+export function filterGraph({ items, total }, { fps, bgm = null, video = true }) {
+  const lines = video ? videoLines(items, fps) : []
   items.forEach((item, i) => {
-    lines.push(`[${i}:v]fps=${fps},settb=AVTB,format=yuv420p,setpts=PTS-STARTPTS[v${i}]`)
     // Pad or cut each scene's audio to its video length, so audio and video never drift apart.
     lines.push(`[${i}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,apad,atrim=duration=${n(item.duration)},asetpts=PTS-STARTPTS[a${i}]`)
   })
-  let v = 'v0'
   let a = 'a0'
   items.slice(1).forEach((item, k) => {
     const i = k + 1
-    if (item.xfade) {
-      lines.push(`[${v}][v${i}]xfade=transition=${item.xfade}:duration=${n(item.overlap)}:offset=${n(item.start)}[vx${i}]`)
-      lines.push(`[${a}][a${i}]acrossfade=d=${n(item.overlap)}:c1=tri:c2=tri[ax${i}]`)
-    } else {
-      lines.push(`[${v}][v${i}]concat=n=2:v=1:a=0[vx${i}]`)
-      lines.push(`[${a}][a${i}]concat=n=2:v=0:a=1[ax${i}]`)
-    }
-    v = `vx${i}`
+    lines.push(item.xfade ? `[${a}][a${i}]acrossfade=d=${n(item.overlap)}:c1=tri:c2=tri[ax${i}]` : `[${a}][a${i}]concat=n=2:v=0:a=1[ax${i}]`)
     a = `ax${i}`
   })
-
-  lines.push(burn ? `[${v}]ass=${burn}${fontsDir ? `:fontsdir=${fontsDir}` : ''}[vout]` : `[${v}]null[vout]`)
 
   if (!bgm) {
     lines.push(`[${a}]anull[aout]`)
@@ -79,6 +90,61 @@ export function filterGraph({ items, total }, { fps, bgm = null, burn = null, fo
     }
   }
   return lines.join(';\n')
+}
+
+/**
+ * Splits the final video into spans that are stream-copied from one scene and spans that are
+ * re-encoded. A copied span runs from keyframe to keyframe and stays clear of transitions;
+ * everything else (each transition plus the frames out to the nearest keyframes) is re-encoded.
+ * `keyframes[i]` lists scene i's keyframes as frame numbers. Positions in the result are frames:
+ *   { copy: { scene, from, to } }               frames [from, to) of the scene
+ *   { encode: [{ scene, from, to, start, xfade, overlap }], frames }
+ *                                               scene pieces placed at `start` within the span
+ */
+export function copyPlan({ items }, keyframes, fps) {
+  const f = (t) => Math.round(t * fps)
+  const scenes = items.map((item) => ({ start: f(item.start), duration: f(item.duration), overlap: f(item.overlap), xfade: item.xfade }))
+  const total = scenes.at(-1).start + scenes.at(-1).duration
+  const spans = []
+  let cursor = 0
+  scenes.forEach((s, i) => {
+    const tail = scenes[i + 1]?.overlap ?? 0
+    const from = s.overlap ? keyframes[i].find((k) => k >= s.overlap) : 0
+    const to = tail ? keyframes[i].findLast((k) => k <= s.duration - tail) : s.duration
+    if (from === undefined || to === undefined || to <= from) return // the whole scene is re-encoded
+    if (s.start + from > cursor) spans.push(encodeSpan(scenes, cursor, s.start + from))
+    spans.push({ copy: { scene: i, from, to } })
+    cursor = s.start + to
+  })
+  if (total > cursor) spans.push(encodeSpan(scenes, cursor, total))
+  return spans
+}
+
+/** The scene pieces covering frames [a, b) of the final video, placed relative to a. */
+function encodeSpan(scenes, a, b) {
+  const parts = []
+  scenes.forEach((s, i) => {
+    if (s.start >= b || s.start + s.duration <= a) return
+    const from = Math.max(a - s.start, 0)
+    parts.push({ scene: i, from, to: Math.min(b - s.start, s.duration), start: s.start + from - a, xfade: parts.length ? s.xfade : null, overlap: s.overlap })
+  })
+  return { encode: parts, frames: b - a }
+}
+
+/**
+ * Graph for one re-encoded span: input i is parts[i]'s scene, already seeked to frame `seek[i]`
+ * (a keyframe at or before parts[i].from). Output pad: [vout].
+ */
+export function spanGraph(parts, seek, fps) {
+  const items = parts.map((p) => ({ start: p.start / fps, overlap: p.overlap / fps, xfade: p.xfade }))
+  const trim = (i) => `setpts=PTS-STARTPTS,trim=start_frame=${parts[i].from - seek[i]}:end_frame=${parts[i].to - seek[i]},`
+  return videoLines(items, fps, trim).join(';\n')
+}
+
+/** FFmpeg concat-demuxer list: [{ file, frames }], each placed for exactly its length. */
+export function concatList(pieces, fps) {
+  const quote = (f) => `'${f.split('\\').join('/').replace(/'/g, "'\\''")}'`
+  return pieces.map((p) => `file ${quote(p.file)}\nduration ${n(p.frames / fps)}\n`).join('')
 }
 
 /**

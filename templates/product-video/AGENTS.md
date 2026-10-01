@@ -37,7 +37,7 @@
 
 1. **依步驟執行，不跳步。** 遇到 checkpoint 必須停下，等使用者明確確認後才繼續。
 2. **修改既有 JSON 一律透過 `pnpm run state`**（見 §4），不得直接編輯 `video.project.json` 或既有的 `scene.json`。只有新建 `scene.json` 時可直接寫入檔案，寫完立即執行 `pnpm run validate`。
-3. **一次只處理一個 scene。** 修改只重做受影響的 scene，不重新產生整部影片。
+3. **只重做受影響的 scene。** 修改只重做受影響的 scene，不重新產生整部影片。多個 scene 都要渲染時，可一次交給 `render:scene` 平行處理。
 4. **不動鎖定或已核准的 scene。** `locked: true` 或 `status: approved` 的 scene，除非使用者明確要求，否則不修改、不重做。
 5. **尊重使用者的修改。** 編輯任何檔案前先重新讀取（Web UI 或使用者可能剛改過）。不覆蓋使用者寫的內容；原樣保留所有 `x-` 開頭的欄位。
 6. **路徑規則。**
@@ -101,7 +101,7 @@ draft → assets_ready → rendering → rendered → approved
 ```
 
 - `render.inputHash` 與目前內容不符時，scene 視為過期，即使 `status` 仍是 `rendered`。`pnpm run status` 會標示出來。
-- 字幕樣式與 BGM 只在合成時使用，改它們不需要重做 scene，只要重新合成。
+- BGM 只在合成時使用，改它不需要重做 scene，只要重新合成。字幕樣式也是，除非 `captions.mode` 是 `burn`（字幕畫在每個 scene 裡，改了要重新渲染所有 scene）。
 
 ## 7. 常用指令
 
@@ -111,5 +111,5 @@ draft → assets_ready → rendering → rendered → approved
 | `pnpm run validate` | 驗證所有 JSON 與路徑；非 0 代表有錯 |
 | `pnpm run tts <id>` | 產生旁白音檔與字幕時間軸 |
 | `pnpm run capture <id>` | 擷取網頁畫面 |
-| `pnpm run render:scene <id>` | 渲染單一 scene |
+| `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`） |
 | `pnpm run assemble` | 依順序合成 `output/final.mp4` |

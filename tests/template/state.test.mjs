@@ -97,6 +97,20 @@ test('editing the script after render marks the scene outdated', () => {
   assert.ok(out.warnings.some((w) => /inputs changed since last render/.test(w)))
 })
 
+test('caption settings make scenes outdated only in burn mode', () => {
+  p = makeProject({ scenes: twoScenes() })
+  renderScene(p, 'scene-001', 'scenes/001-hook')
+  const outdated = () => JSON.parse(p.run('validate.mjs', ['--report', '--json']).stdout).report.scenes[0].outdated
+  const setCaptions = (value) => {
+    const r = p.run('state.mjs', ['project', '--patch', JSON.stringify([{ op: 'add', path: '/project/captions', value }])])
+    assert.equal(r.code, 0, r.stderr)
+  }
+  setCaptions({ mode: 'srt', style: { position: 'top' } })
+  assert.equal(outdated(), false, 'srt captions only affect assemble')
+  setCaptions({ mode: 'burn', style: { position: 'top' } })
+  assert.equal(outdated(), true, 'burned captions are part of the scene')
+})
+
 test('locking or approving a scene does not make it outdated', () => {
   p = makeProject({ scenes: twoScenes() })
   renderScene(p, 'scene-001', 'scenes/001-hook')

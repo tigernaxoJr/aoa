@@ -22,6 +22,16 @@ pnpm run validate
 - 旁白沒有改動、`assets/narration.mp3` 仍在時，可以跳過 `tts`。擷取素材也一樣。
 - `render:scene` 只產生檔案，不改 JSON。狀態一律用 `pnpm run state` 寫回。
 
+### 多個 scene 一起渲染
+
+`/video-scene all` 或 `/video-sync` 有多個 scene 要渲染時，先對每個 scene 做完 `tts`、`capture`，狀態依序設為 `assets_ready`、`rendering`，再把它們一次交給 `render:scene`，會平行渲染（預設同時跑 CPU 核心數一半的 scene）：
+
+```bash
+pnpm run render:scene scene-001 scene-002 scene-003   # 可加 --jobs 2 限制同時數量
+```
+
+最後一行列出 `rendered:` 與 `failed:` 的 scene。成功的各自 `pnpm run state <id> --rendered`；失敗的依第 6 節以 `--failed render …` 記錄（錯誤訊息在該 scene id 開頭的輸出行）。電腦記憶體不足或很卡時，用 `--jobs 1`。
+
 ## <a id="duration"></a>2. 時長
 
 | `durationSec` | 實際長度 |
@@ -128,12 +138,13 @@ pnpm run state project --status completed
 | 順序 | `video.project.json` 的 `scenes` | 依陣列順序串接 |
 | 轉場 | 各 scene 的 `visual.transitionIn` | `fade`、`slide-left`、`slide-right`、`wipe`、`zoom` 與前一個 scene 重疊 0.5 秒（scene 很短時縮短）；`none` 直接切換；第一個 scene 的轉場不使用。聲音在轉場期間交叉淡化 |
 | 字幕 | 各 scene 的 `assets/captions.json` | 依 scene 在成片中的起點位移，寫成 `output/final.srt`；跨到下一個 scene 的字幕會被截斷 |
-| 燒入字幕 | `captions.mode: burn` | 另外把字幕畫進影片；`captions.style` 的 `fontSize` 以成片像素為單位，`position` 為 `bottom` / `middle` / `top` |
+| 燒入字幕 | `captions.mode: burn` | 字幕在 `render:scene` 時就畫進各 scene，assemble 不再處理；`captions.style` 的 `fontSize` 以成片像素為單位，`position` 為 `bottom` / `middle` / `top` |
 | BGM | `audio.bgm` | 循環播放到影片結束，音量 `bgmVolume`，頭尾各淡入淡出 1 秒；`ducking: true` 時旁白出現處自動壓低 |
 
 - `captions.mode: none` 不產生 `final.srt`。
 - `audio.bgm` 指定的檔案不存在時，略過 BGM 並警告，不算失敗。BGM 由使用者自備，不要替使用者下載音樂。
-- 字幕樣式、BGM、scene 順序都只影響合成：修改它們只需重新 `pnpm run assemble`，不需要重做 scene。
+- BGM、scene 順序只影響合成：修改它們只需重新 `pnpm run assemble`，不需要重做 scene。字幕樣式在 `srt` 模式下也一樣；**`burn` 模式下修改 `captions`（含切換成或離開 `burn`）會使所有 scene 過期**，要重新渲染全部 scene，動手前先告訴使用者需要等待。
+- assemble 直接串接各 scene 的畫面，只重新編碼每個轉場那 0.5 秒，通常幾秒內完成，不必事先提醒使用者等待。
 - 轉場會讓成片比各 scene 加總短（每個轉場 0.5 秒）。旁白預設留有 0.5 秒尾音，轉場只會蓋到這段靜音；若 scene 用 `durationSec` 強制秒數且旁白講到最後一刻，轉場會蓋到旁白結尾，這時把該 scene 下一個的 `transitionIn` 改為 `none`。
 - 合成失敗時，既有的 `output/final.mp4` 不會被刪除或覆蓋。
 

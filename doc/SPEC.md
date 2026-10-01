@@ -248,7 +248,7 @@ my-video-project/
 | `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純動畫，無擷取素材）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
 | `narration.provider` | TTS 提供者，省略時沿用 `project.tts.provider`。見 §7.4 |
 | `durationSec` | `null` 表示由 TTS 音檔長度決定（音長 + 0.5s 緩衝）；有值則為強制秒數。幀數一律由 `durationSec × fps` 推得，**不存幀數**。 |
-| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format` 計算的 SHA-256。與目前內容不符即視為過期。 |
+| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format`（`captions.mode` 為 `burn` 時連同 `captions`）計算的 SHA-256。與目前內容不符即視為過期。 |
 | `locked` | `true` 時 Agent 不得修改此 scene（除非使用者明確要求）。使用者在 UI 手動核准後可設為 `true`。 |
 
 ### 4.2.1 共通規則（由 Schema 強制）
@@ -404,14 +404,15 @@ GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 
 2. **TTS**：`pnpm run tts <id>` → `assets/narration.mp3`；以 `ffprobe` 取得音長，決定 `durationSec`（若未強制指定）。
 3. **Capture**：依 `visual.type` 執行 `pnpm run capture <id>`（Playwright 截圖或錄製網頁操作）→ `assets/`。
 4. 狀態設為 `assets_ready`。
-5. **Render**：`pnpm run render:scene <id>` → `output/scene.mp4`；寫入 `render.inputHash`、`renderedAt`，狀態 `rendered`。
+5. **Render**：`pnpm run render:scene <id>` → `output/scene.mp4`（多個 scene 可一次傳入，平行渲染，見 §7.6）；寫入 `render.inputHash`、`renderedAt`，狀態 `rendered`。
 6. 執行 `pnpm run validate`。
 7. **Checkpoint**：回報該 scene 預覽路徑，使用者可要求修改；修改只重跑該 scene。
 
 **Step 5 — assemble**
 1. 檢查所有 scene 為 `rendered` 或 `approved` 且 `inputHash` 相符；否則列出需重做的 scene 並停止。
 2. 依 `video.project.json.scenes` 順序以 FFmpeg 串接：有 `transitionIn` 的 scene 以 `xfade` 與前一個 scene 重疊 0.5 秒（不超過兩者各自長度的一半，並對齊整幀），聲音同時以 `acrossfade` 交叉淡化；`none` 直接串接。每個 scene 的聲音先補齊或截到其視訊長度，避免音畫漂移。
-3. **字幕**：合併各 scene 的 `assets/captions.json`（依 scene 起始時間位移）為 `output/final.srt`；`captions.mode` 為 `burn` 時再以 FFmpeg 燒入畫面。
+   - 各 scene 視訊編碼參數相同（codec、profile、解析度、幀率、色彩標記、SPS/PPS）時，視訊不整支重新編碼：scene 在關鍵幀處以 segment muxer 直接切開複製，只有轉場前後到最近關鍵幀之間的片段以相同參數重新編碼（含 xfade），最後以 concat demuxer 串接（`-c:v copy`，每段依其幀數定位）；聲音另外整條混音與編碼。render-scene 在距頭尾各 0.5 秒處強制 IDR 關鍵幀，所以重新編碼的長度通常剛好等於轉場長度。編碼參數不同、或重新編碼的片段與 scene 參數不符時，退回整支重新編碼。
+3. **字幕**：合併各 scene 的 `assets/captions.json`（依 scene 起始時間位移）為 `output/final.srt`；`captions.mode` 為 `burn` 時字幕已在 scene 渲染時燒入（§7.5）。
 4. **BGM**：若 `audio.bgm` 檔案存在，以 FFmpeg `sidechaincompress` 在旁白出現時壓低音量，頭尾淡入淡出；不存在則略過。
 5. 輸出 `output/final.mp4`，project 狀態設為 `completed`。
 
@@ -478,7 +479,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖、頁面文字、可 highlight 的元素與 selector）；`highlight` 一次框一個元素，找不到時警告並略過；`script` 需 `domEditConsent` | 否 |
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4`（H.264 + AAC 48 kHz 立體聲、BT.709，無旁白時為靜音音軌）；失敗時保留既有輸出 | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
-| `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊、轉場、字幕燒入、BGM 在同一次 FFmpeg 編碼完成 | 否 |
+| `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊直接複製，只重新編碼轉場片段；聲音（含 BGM）整條混音編碼。scene 編碼參數不一致時整支重新編碼 | 否 |
 
 `state.mjs` 介面（Agent 使用方式見範本 `AGENTS.md` §4）：
 
@@ -523,9 +524,10 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
   - 其他 provider / `manual`：依句子（句號、問號、換行）切分，按字數比例分配音長。
 - 單條字幕上限：中文 16 字、英文 42 字元，超過則再切。
 - `captions.mode`：`srt`（預設，只輸出 `output/final.srt`）｜`burn`（燒入並同時輸出 srt）｜`none`。
-- **燒入只在 assemble 進行**，不在 scene 渲染時燒入——修改字幕樣式只需重跑 assemble，不使 scene 過期；`captions` 設定因此不納入 scene 的 `inputHash`。
+- **燒入在 scene 渲染時進行**（`render-scene.mjs`），assemble 不燒字幕，視訊可直接串接。代價：`captions.mode` 為 `burn` 時，`captions` 設定納入每個 scene 的 `inputHash`，修改字幕樣式會使所有 scene 過期、需重新渲染；`srt` / `none` 時不納入，只需重跑 assemble。
+- 燒入的字幕只截到該 scene 結尾；有轉場時，前一段結尾的字幕會隨畫面一起淡出（`final.srt` 仍截在下一段起點）。
 - 合併：各 scene 的字幕依該 scene 在成片中的起點位移；跨過下一個 scene 起點（含轉場重疊）的部分截斷。
-- 燒入實作：產生 ASS 字幕（`PlayResX/Y` = 輸出解析度，故 `style.fontSize` 以成片像素計，省略時為高度 × 48/1080），以 FFmpeg `ass` 濾鏡（libass，`fontsdir` 指向 `src/fonts/`）繪製；白字深色描邊，`position` 對應下／中／上。字型先找 `src/fonts/`，找不到才用系統字型（各平台結果可能不同）。libass 不支援 woff2 與可變字型，`src/fonts/` 只放靜態字重的 OTF／TTF。內建 FFmpeg 的 libass 不支援 Unicode 斷行，長字幕依賴上述單條字數上限。
+- 燒入實作：產生 ASS 字幕（`PlayResX/Y` = 輸出解析度，故 `style.fontSize` 以成片像素計，省略時為高度 × 48/1080），在 scene 編碼時以 FFmpeg `ass` 濾鏡（libass，`fontsdir` 指向 `src/fonts/`）繪製；白字深色描邊，`position` 對應下／中／上。字型先找 `src/fonts/`，找不到才用系統字型（各平台結果可能不同）。libass 不支援 woff2 與可變字型，`src/fonts/` 只放靜態字重的 OTF／TTF。內建 FFmpeg 的 libass 不支援 Unicode 斷行，長字幕依賴上述單條字數上限。
 
 **BGM**
 
@@ -542,7 +544,9 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 - **素材存取**：渲染期間在 `127.0.0.1` 隨機埠啟動唯讀靜態伺服器，只提供專案根目錄內的檔案（支援 Range）。不使用 `file://`。
 - **字型**：畫面與燒入字幕只使用 `src/fonts/` 內附的字型（Noto Sans TC Bold、JetBrains Mono），不依賴系統字型，因此 Windows、macOS、Linux 輸出相同。
 - 暫存檔放在 `.tmp/render-<id>/`，結束即刪除。輸出先寫到 `*.partial.mp4`，成功後才替換 `output/scene.mp4`。
-- scene 間轉場（`transitionIn`）、字幕、BGM 皆不在 scene 渲染中處理，由 `assemble.mjs` 負責。
+- scene 間轉場（`transitionIn`）、`final.srt`、BGM 不在 scene 渲染中處理，由 `assemble.mjs` 負責；`captions.mode: burn` 的字幕在 scene 渲染時燒入（§7.5）。
+- **關鍵幀**：編碼時在距頭尾各 0.5 秒（`TRANSITION_SEC`）處強制 IDR 關鍵幀，讓 assemble 只需重新編碼轉場片段。
+- **平行渲染**：`render:scene` 一次傳入多個 id 時，各 scene 在獨立程序中平行渲染（`--jobs N`，預設為 CPU 核心數的一半，且每個約保留 1 GB 可用記憶體）。單一 scene 失敗不影響其他 scene；最後列出成功與失敗的 id，有失敗時退出碼為 1。
 - `src/` 不納入 `inputHash`：修改外觀不會自動使既有 scene 過期，需由 Agent 經使用者同意後將受影響的 scene 設為 `stale`。
 
 實作要求：

@@ -38,11 +38,12 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    - **觀看對象**：例如「潛在客戶（不懂技術）」「開發者」「公司內部主管」。
    - **影片風格**：給 2–3 個選項並標出建議，例如「專業簡報（沉穩、資訊清楚）」「活潑社群短片（節奏快、字大）」「產品操作教學（步驟清楚）」。
    - 語言、畫面比例（16:9 橫式 / 9:16 直式 / 1:1 / 4:5）：沒有偏好時沿用範本預設（zh-TW、16:9、1920×1080、30fps）。
+   - **字幕要不要直接印在畫面上**：「印在畫面上（社群播放常靜音，比較保險）」或「另附字幕檔（YouTube 等平台可開關，畫面乾淨）」；兩種都會產生字幕檔。前者寫入 `project.captions.mode: burn`，後者為預設 `srt`。要在渲染 scene 前決定：印在畫面上的字幕是在每個 scene 渲染時畫進去的，之後改字幕樣式或改選項都要重新渲染所有 scene。
    - **目標長度先不定案**：使用者已有明確要求就照用；否則先填預設 45 秒，告訴他「看完產品內容後我會建議適合的長度再跟你確認」，在 analyze 結束時決定（見 [workflow.md#confirm](workflow.md#confirm)）。
    使用者不確定對象或風格時，可以先填暫定值，分析完再一起確認。
 5. **填寫專案檔**：範本的 `video.project.json` 是可通過驗證的佔位內容，必須替換：
    - `project.id`：產生新的 UUID v4（範本為全 0，`pnpm run validate` 會視為未初始化）
-   - `project.name`、`project.sources`、`project.language`、`project.targetAudience`、`project.style`、`project.format`
+   - `project.name`、`project.sources`、`project.language`、`project.targetAudience`、`project.style`、`project.format`、`project.captions`（選擇印在畫面上時）
    - `project.tts.voice`：依語言選擇（見 §4）
    - `updatedAt`：目前時間
    新專案沒有其他寫入者，這一次可以直接編輯 `video.project.json`；之後一律依 `AGENTS.md` 透過 `pnpm run state` 修改。
