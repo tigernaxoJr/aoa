@@ -1,4 +1,4 @@
-// `video-agent serve`: the local Companion (SPEC §2.1 mode B, §10.1). A WebSocket on 127.0.0.1 that
+// The local Companion (`pnpm run companion`, SPEC §2.1 mode B, §10.1). A WebSocket on 127.0.0.1 that
 // the Web UI pairs with to push file changes and run whitelisted, deterministic actions. It keeps no
 // state of its own: everything lives in the project files, so stopping it falls back to mode A.
 import { randomBytes, timingSafeEqual } from 'node:crypto'
@@ -7,8 +7,8 @@ import { createServer } from 'node:http'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { WebSocketServer } from 'ws'
-import { siteUrl as defaultSiteUrl } from '../core/guide.mjs'
-import { assembleVideo, buildScene, findProject, runProcess, runScript, status } from '../core/project.mjs'
+import { findRoot } from './project.mjs'
+import { assembleVideo, buildScene, runProcess, runScript, status } from './runner.mjs'
 
 export const PORTS = [47831, 47840]
 const BY = 'companion'
@@ -65,8 +65,8 @@ function claudeSync(root, onLine) {
   return runProcess(command, args, { cwd: root, onLine })
 }
 
-export async function startCompanion({ projectDir = process.cwd(), port, persistToken = false, site = defaultSiteUrl(), log = console.log } = {}) {
-  const root = findProject(projectDir)
+export async function startCompanion({ projectDir = process.cwd(), port, persistToken = false, site, log = console.log } = {}) {
+  const root = findRoot(projectDir)
   const token = loadToken(persistToken)
   const http = createServer((req, res) => res.writeHead(404).end())
   const wss = new WebSocketServer({
@@ -179,7 +179,7 @@ export async function startCompanion({ projectDir = process.cwd(), port, persist
   }
 
   const pairUrl = `${site}/#pair=${bound}:${token}`
-  log(`video-agent companion for ${root}\nlistening on 127.0.0.1:${bound}\nopen this link to pair the web UI:\n  ${pairUrl}`)
+  log(`companion for ${root}\nlistening on 127.0.0.1:${bound}\nopen this link to pair the web UI:\n  ${pairUrl}`)
   return {
     port: bound,
     token,

@@ -67,7 +67,7 @@
 |---|---|---|---|---|---|
 | **A. 檔案輪詢** | 靜態 | Claude Code | UI 輪詢檔案（自動） | 使用者在終端機下指令（手動） | **MVP** |
 | A'. 檔案佇列 | 靜態 | Claude Code 常駐監看 | UI 輪詢檔案 | UI 寫 `requests/*.json`，Agent 監看並處理 | 不採用 |
-| **B. 本機 Companion** | 靜態 | Claude Code + `pnpm dlx video-agent serve` | WebSocket 推送 | WebSocket → Companion 執行腳本或 `claude -p` | Phase 5 |
+| **B. 本機 Companion** | 靜態 | Claude Code + 專案的 `pnpm run companion` | WebSocket 推送 | WebSocket → Companion 執行腳本或 `claude -p` | Phase 5 |
 
 **模式 A 的限制（MVP 必須在 UI 明示）**：Claude Code 是請求驅動的，不會背景監聽檔案；瀏覽器也無法喚起它。因此 UI → Agent 方向不是即時的——UI 修改只會把 scene 標為 `stale`，UI 顯示「N 個 scene 待更新」並提供一鍵複製 `/video-sync` 指令，由使用者在終端機觸發。
 
@@ -691,7 +691,7 @@ Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1�
 
 ## 10. MCP 與 Companion（Phase 5）
 
-實作：`packages/video-agent/`（npm 套件 `video-agent`）。
+實作：MCP 為 `packages/video-agent/`（執行檔 `video-agent`；不發佈到 npm，`package.json` 設為 `private`，npm 上同名的 `video-agent` 是無關的套件，不要使用）；Companion 隨專案範本提供（`scripts/companion.mjs`，見 §10.1）。
 
 | | Guide（網站內容的 MCP 包裝） | Project（本機專案） |
 |---|---|---|
@@ -700,28 +700,34 @@ Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1�
 | Tools | — | `project_status`、`validate_project`、`create_project`、`create_scene`、`update_scene`、`update_project`、`render_scene`、`assemble_video` |
 
 - **沒有獨立的 Cloud MCP 伺服器**：網站部署於 GitHub Pages，只能提供靜態檔，無法運行 MCP。Guide 類 resources / prompts 改由本機 `video-agent mcp` 提供，內容依序取自 `VIDEO_AGENT_GUIDE_DIR` → 套件打包時內附的 `guide/`（`prepack` 以 `build-api.mjs` 產生）→ repo 的 `dist/api` → 以 HTTP 讀取 `VIDEO_AGENT_SITE_URL`（預設本站）。內容與 `/api/*` 完全相同（D21）。
-- **不含協議邏輯**：所有專案操作都執行專案自己的 `scripts/*.mjs`，行為與專案的範本版本一致；JSON 只經 `state.mjs` 寫入，`updatedBy` 為 `mcp` / `companion`。
+- **不含協議邏輯**：所有專案操作都執行專案自己的 `scripts/*.mjs`（重做流程與合成也由專案的 `scripts/lib/runner.mjs` 執行），行為與專案的範本版本一致；JSON 只經 `state.mjs` 寫入，`updatedBy` 為 `mcp` / `companion`。
 - `create_project`：下載範本並以 manifest 的 SHA-256 驗證後解壓到空目錄，填入 `project.id`（UUID v4）、名稱、來源、語言；之後仍須 `pnpm install` 並經使用者確認後以 `update_project` 記錄 gates。
 - `create_scene`：寫入新的 `scene.json` + `script.md`，再以 JSON Patch 加入 `scenes`；註冊失敗（例如 Schema 不符）時只移除本次建立的目錄。
 - `update_scene` / `update_project`：JSON Patch，經 `state.mjs` 驗證並檢查狀態轉換。
 - `render_scene`：執行 build_scene 的確定性部分（見下方「重做流程」），失敗時以 `state --failed` 記錄。`assemble_video`：`assemble` 後將專案設為 `completed`。
-- 註冊方式（Claude Code）：`claude mcp add video-agent -- pnpm dlx video-agent mcp`（或以 `node <repo>/packages/video-agent/bin/video-agent.mjs mcp` 指定本機路徑）。
+- 註冊方式（Claude Code）：從本 repo 以本機路徑註冊，`claude mcp add video-agent -- node <repo>/packages/video-agent/bin/video-agent.mjs mcp`。不從 npm 下載。
 
-**重做流程（`core/project.mjs` 的 `buildScene`，MCP 與 Companion 共用）**：專案若為 `script_generated` / `ready_to_assemble` / `completed` 先設為 `producing` → scene 為 `rendered` / `approved` 時先設為 `stale`（workflow 不允許直接跳回 `assets_ready`）；殘留在 `rendering` 的先記為失敗 → `tts` → `capture` → `assets_ready` → `rendering` → `render:scene` → `--rendered`。任一步失敗即停止並記錄。鎖定（`locked`）的 scene 拒絕執行。Gates 由各腳本本身把關。
+**重做流程（專案 `scripts/lib/runner.mjs` 的 `buildScene`，MCP 與 Companion 共用）**：專案若為 `script_generated` / `ready_to_assemble` / `completed` 先設為 `producing` → scene 為 `rendered` / `approved` 時先設為 `stale`（workflow 不允許直接跳回 `assets_ready`）；殘留在 `rendering` 的先記為失敗 → `tts` → `capture` → `assets_ready` → `rendering` → `render:scene` → `--rendered`。任一步失敗即停止並記錄。鎖定（`locked`）的 scene 拒絕執行。Gates 由各腳本本身把關。
 
-### 10.1 `video-agent` 套件（Local MCP + Companion）
+### 10.1 Local MCP 與 Companion
 
-Local MCP 與 Companion 生命週期不同（前者隨 Agent 對話由 stdio 啟動與結束；後者須獨立常駐，才能在 Agent 未開啟時服務 UI），因此**同一 npm 套件、兩個入口、共用核心**：
+兩者生命週期不同：Local MCP 隨 Agent 對話由 stdio 啟動與結束；Companion 須獨立常駐，才能在 Agent 未開啟時服務 UI。
+
+- **Local MCP** 是獨立的套件（`packages/video-agent/`，不發佈到 npm），因為它要在專案建立前就註冊到 Agent。
+- **Companion 隨專案範本提供**，不另外安裝：程式碼跟著範本 zip（以 SHA-256 驗證）下載、隨「同步範本」更新，只依賴範本已安裝的套件（`ws`）；執行的重做流程與專案腳本永遠同版本。`video-agent serve` 只是在專案目錄執行它的捷徑。
 
 ```text
 packages/video-agent/
-├── bin/video-agent.mjs  # CLI：mcp | serve
-├── core/                # project.mjs（找專案、執行專案腳本、重做流程）、guide.mjs（Guide API、範本下載與驗證）
-├── mcp/                 # `video-agent mcp [--project <dir>]` → stdio MCP server（由 Agent 啟動）
-└── serve/               # `video-agent serve [--project <dir>] [--port <n>] [--persist-token]` → 127.0.0.1 WebSocket
+├── bin/video-agent.mjs  # CLI：mcp | serve（serve 執行專案的 scripts/companion.mjs）
+├── core/                # project.mjs（找專案、執行專案腳本；重做流程與合成委派給專案的 runner）、guide.mjs（Guide API、範本下載與驗證）
+└── mcp/                 # `video-agent mcp [--project <dir>]` → stdio MCP server（由 Agent 啟動）
+
+<專案>/scripts/
+├── companion.mjs        # `pnpm run companion [--port <n>] [--persist-token]` → 127.0.0.1 WebSocket
+└── lib/companion.mjs、lib/runner.mjs（執行專案腳本、重做流程、合成）
 ```
 
-`video-agent serve`：
+Companion（`pnpm run companion`）：
 
 - **Port**：預設 `47831`，被占用時依序嘗試至 `47840`；`--port` 可強制指定。只綁定 `127.0.0.1`。
 - **配對**：啟動時產生隨機 token（`--persist-token` 時保存在 `~/.video-agent/token`，權限 600），於終端機印出配對連結

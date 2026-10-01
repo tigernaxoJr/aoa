@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, before, test } from 'node:test'
-import { startCompanion } from '../../packages/video-agent/serve/server.mjs'
+import { startCompanion } from '../../templates/product-video/scripts/lib/companion.mjs'
 import { FAKE_TTS, fullProject, motionScene } from '../agent/helpers.mjs'
 import { baseProject, baseScene, makeProject } from '../template/helpers.mjs'
 

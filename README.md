@@ -24,7 +24,7 @@
 | `skills/product-video/` | Agent 的 Skill（`SKILL.md`、`workflow.md`、`script-guide.md`、`rendering-guide.md`） |
 | `templates/product-video/` | 本機影片專案範本：TTS、擷取、渲染、合成腳本與 `AGENTS.md` |
 | `apps/web/` | Vue 工作台（File System Access API 讀寫本機專案） |
-| `packages/video-agent/` | 本機 MCP server 與 Companion（`video-agent mcp` / `video-agent serve`） |
+| `packages/video-agent/` | 本機 MCP server（`video-agent mcp`；`video-agent serve` 會啟動專案的 Companion） |
 | `tools/` | `build-api.mjs`（產生靜態 Guide API 與 zip）、`gen-types.mjs`（由 Schema 產生 TS 型別） |
 | `tests/` | `template/`、`site/`、`web/`、`agent/` 測試 |
 | `doc/` | 設計規格與原始草稿 |
@@ -56,7 +56,7 @@ claude mcp add video-agent -- node "$PWD/packages/video-agent/bin/video-agent.mj
 ```
 
 - `video-agent mcp`：讓 Agent 透過 MCP 讀取 Guide 並操作專案（建立、更新 scene、渲染、合成）。
-- `video-agent serve`：在 `127.0.0.1` 啟動 Companion，工作台配對後可直接按鈕重做 scene 或合成，不必切到 Agent。
+- Companion：隨專案範本提供，在專案中執行 `pnpm run companion`（或 `video-agent serve`）會在 `127.0.0.1` 啟動它，工作台配對後可直接按鈕重做 scene 或合成，不必切到 Agent。
 
 細節見 [SPEC §10](doc/SPEC.md#10-mcp-與-companionphase-5)。
 

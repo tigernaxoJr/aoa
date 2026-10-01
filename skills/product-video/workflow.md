@@ -234,6 +234,8 @@ pnpm run status
 輸出：output/final.mp4（47.2 秒）
 ```
 
+這次的變更來自網頁、而且是第一次時，依 [SKILL.md §6](SKILL.md) 判斷是否提議開啟本機助手。
+
 ---
 
 ## <a id="translate"></a>translate：翻譯為其他語言

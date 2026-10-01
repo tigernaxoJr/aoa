@@ -87,7 +87,7 @@ export function build({ siteUrl, out }) {
   const templateFiles = listFiles(templateDir)
     .map((file) => relative(templateDir, file).split('\\').join('/'))
     .filter((rel) => !TEMPLATE_EXCLUDE.some((re) => re.test(rel)))
-    .map((rel) => [rel, rel.endsWith('.md') ? sub(readFileSync(join(templateDir, rel), 'utf8')) : readFileSync(join(templateDir, rel))])
+    .map((rel) => [rel, /\.(md|mjs)$/.test(rel) ? sub(readFileSync(join(templateDir, rel), 'utf8')) : readFileSync(join(templateDir, rel))])
   templateFiles.push(...[...SCHEMAS, 'workflow.json'].map((f) => [`schemas/${f}`, readFileSync(join(root, 'specs', f))]))
   templateFiles.push(...claudeCommands(workflow, siteUrl).map((c) => [c.path, c.content]))
   templateFiles.sort(([a], [b]) => (a < b ? -1 : 1))

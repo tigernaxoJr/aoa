@@ -1,11 +1,11 @@
-// `video-agent serve`: origin and token checks, the action whitelist, running deterministic work on
+// The Companion (`pnpm run companion`): origin and token checks, the action whitelist, running deterministic work on
 // the project, change notifications, and the restricted `claude -p /video-sync` invocation.
 import assert from 'node:assert/strict'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import WebSocket from 'ws'
-import { startCompanion } from '../../packages/video-agent/serve/server.mjs'
+import { startCompanion } from '../../templates/product-video/scripts/lib/companion.mjs'
 import { FAKE_TTS, fullProject, motionScene } from './helpers.mjs'
 
 const SITE = 'https://example.test/index-url-director'
