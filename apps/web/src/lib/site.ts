@@ -118,3 +118,54 @@ export const PURPOSE_LABEL: Record<string, string> = {
   cta: '行動呼籲',
   custom: '自訂',
 }
+
+/** What the project's next step means for the user, in plain words; the slash command stays for copying. */
+export function nextStep(next: { command: string | null; reason: string }, scenes: number) {
+  const cmd = next.command?.split(' ')[0]
+  const n = Number(next.reason.match(/^(\d+)/)?.[1] ?? 0)
+  switch (cmd) {
+    case '/video-analyze':
+      return { title: '下一步：分析產品', hint: 'Agent 會研究你提供的網址與資料，整理出影片要講的重點。' }
+    case '/video-storyboard':
+      return { title: '下一步：寫分鏡與旁白', hint: 'Agent 會把影片拆成幾段 scene，並寫好每段的旁白。' }
+    case '/video-scene':
+      return next.command === '/video-scene all'
+        ? { title: `下一步：製作剩下的${n ? ` ${n} 段` : ''} scene`, hint: '旁白、畫面與影片都由 Agent 產生；你可以先檢查已完成的段落。' }
+        : { title: '有 scene 製作失敗', hint: '請 Agent 重做失敗的段落；點選該段可以看到錯誤原因。' }
+    case '/video-sync':
+      return { title: `有${n ? ` ${n} 段` : ''} scene 修改過，需要重做`, hint: '你在網頁上的修改要讓 Agent 套用，重新產生那幾段影片。' }
+    case '/video-assemble':
+      return { title: '所有 scene 都完成了，可以合成影片', hint: 'Agent 會把每段接起來，加上字幕與背景音樂，輸出完整影片。' }
+  }
+  if (next.reason.startsWith('done')) return { title: '影片完成', hint: '完整影片與所有 scene 一致，可以下載或分享了。' }
+  if (next.reason.startsWith('locked')) return { title: '已鎖定的 scene 有變動', hint: 'Agent 不會修改鎖定的段落；請確認後解除鎖定，或在對話中告訴 Agent 怎麼處理。' }
+  if (next.reason.startsWith('fix')) return { title: '專案檔有問題', hint: '請讓 Agent 執行 pnpm run validate 並修正。' }
+  return { title: scenes ? '下一步' : '等待 Agent', hint: next.reason }
+}
+
+export type Tone = 'neutral' | 'info' | 'success' | 'warn' | 'danger'
+
+export const TONE_CLASS: Record<Tone, string> = {
+  neutral: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  info: 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200',
+  success: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200',
+  warn: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
+  danger: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
+}
+
+export const TONE_DOT: Record<Tone, string> = {
+  neutral: 'bg-slate-300 dark:bg-slate-600',
+  info: 'bg-sky-500',
+  success: 'bg-emerald-500',
+  warn: 'bg-amber-500',
+  danger: 'bg-red-500',
+}
+
+const STATUS_TONE: Record<string, Tone> = { approved: 'success', rendered: 'info', stale: 'warn', failed: 'danger', rendering: 'info', assets_ready: 'neutral' }
+
+/** A scene's status as shown to the user: its label and color. */
+export function sceneBadge(s: { scene: { status: string } | null; outdated: boolean }): { text: string; tone: Tone } {
+  if (!s.scene) return { text: STATUS_LABEL.missing, tone: 'danger' }
+  if (s.outdated && s.scene.status !== 'stale') return { text: '內容已變更', tone: 'warn' }
+  return { text: STATUS_LABEL[s.scene.status] ?? s.scene.status, tone: STATUS_TONE[s.scene.status] ?? 'neutral' }
+}

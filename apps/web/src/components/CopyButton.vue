@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import Icon from './Icon.vue'
 
 const props = defineProps<{ text: string; label?: string; primary?: boolean }>()
 const copied = ref(false)
@@ -16,11 +17,8 @@ async function copy() {
 </script>
 
 <template>
-  <button
-    type="button"
-    :class="primary ? 'btn-primary' : 'shrink-0 rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800'"
-    @click="copy"
-  >
-    {{ copied ? '已複製' : (label ?? '複製') }}
+  <button type="button" :class="primary ? 'btn-primary' : 'btn-secondary btn-sm'" @click="copy">
+    <Icon :name="copied ? 'check' : 'copy'" :size="primary ? 16 : 14" />
+    <span aria-live="polite">{{ copied ? '已複製' : (label ?? '複製') }}</span>
   </button>
 </template>

@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
-import { PURPOSE_LABEL, STATUS_LABEL } from '../lib/site'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { PURPOSE_LABEL, TONE_CLASS, sceneBadge } from '../lib/site'
 import { companion } from '../lib/companion'
 import { runCompanion, state, ui, write } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
 import { approve, markStale, saveSceneFields, saveScript, setLocked } from '../lib/writes'
+import Icon from './Icon.vue'
 
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ close: [] }>()
+/** Unsaved edits, so the page can ask before they are thrown away. */
+const dirtyModel = defineModel<boolean>('dirty', { default: false })
 
 const s = computed(() => state.value!.scenes.find((x) => x.id === props.id) ?? null)
 const scene = computed(() => s.value?.scene ?? null)
@@ -37,6 +40,7 @@ function fromDisk(): Draft {
   }
 }
 const dirty = computed(() => JSON.stringify(draft) !== JSON.stringify(original))
+watch(dirty, (d) => (dirtyModel.value = d), { immediate: true })
 
 // Switching scenes always loads it; a disk change only refreshes the form when there are no unsaved edits.
 watch(() => props.id, () => scene.value && (Object.assign(draft, fromDisk()), Object.assign(original, fromDisk())), { immediate: true })
@@ -72,77 +76,72 @@ async function save() {
 function discard() {
   Object.assign(draft, fromDisk())
 }
+
+const form = ref<HTMLFormElement | null>(null)
+const os = /Mac|iPhone|iPad/.test(navigator.platform) ? 'mac' : 'other'
+// ⌘S / Ctrl+S saves (instead of the browser's "save page"); Esc closes when nothing is being typed into a menu.
+function onKey(e: KeyboardEvent) {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault()
+    if (dirty.value && !ui.saving) form.value?.requestSubmit()
+  } else if (e.key === 'Escape' && !e.defaultPrevented && !(e.target instanceof HTMLVideoElement)) emit('close')
+}
+onMounted(() => window.addEventListener('keydown', onKey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
 </script>
 
 <template>
-  <section v-if="s && scene" class="card p-4 sm:p-5" :data-testid="`editor-${id}`">
+  <section v-if="s && scene" class="card relative p-4 sm:p-5" :data-testid="`editor-${id}`">
     <header class="flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <p class="text-xs text-slate-500">{{ id }} · {{ PURPOSE_LABEL[scene.purpose] ?? scene.purpose }} · {{ scene.visual.type }}</p>
-        <h2 class="mt-0.5 truncate text-lg font-semibold">{{ scene.title }}</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">{{ id }} · {{ PURPOSE_LABEL[scene.purpose] ?? scene.purpose }} · {{ scene.visual.type }}</p>
+        <h2 class="mt-0.5 flex items-center gap-2 text-lg font-semibold">
+          <span class="truncate">{{ scene.title }}</span>
+          <span v-if="badge" class="chip" :class="TONE_CLASS[badge.tone]">{{ badge.text }}</span>
+          <Icon v-if="scene.locked" name="lock" :size="14" class="text-slate-400" />
+        </h2>
       </div>
-      <button type="button" class="shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" aria-label="關閉編輯" @click="emit('close')">✕</button>
+      <button type="button" class="icon-btn -mt-1 -mr-1" aria-label="關閉編輯" title="關閉（Esc）" @click="emit('close')"><Icon name="x" /></button>
     </header>
 
-    <p v-if="scene.status === 'failed' && scene.error" class="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
-      {{ scene.error.step }} 失敗：{{ scene.error.message }}<span v-if="scene.error.hint"><br />建議：{{ scene.error.hint }}</span>
-    </p>
-    <p v-if="scene.locked" class="mt-3 rounded-lg bg-slate-100 p-3 text-sm dark:bg-slate-800">已鎖定：Agent 不會修改或重做這個 scene。你仍可以編輯，但 <code>/video-sync</code> 不會套用，直到解除鎖定。</p>
+    <div v-if="scene.status === 'failed' && scene.error" class="callout mt-3 bg-red-50 text-red-900 dark:bg-red-950/60 dark:text-red-200">
+      <Icon name="alert" class="mt-0.5" />
+      <p>{{ scene.error.step }} 失敗：{{ scene.error.message }}<span v-if="scene.error.hint" class="mt-1 block">建議：{{ scene.error.hint }}</span></p>
+    </div>
+    <div v-if="scene.locked" class="callout mt-3 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+      <Icon name="lock" class="mt-0.5" />
+      <p>已鎖定：Agent 不會修改或重做這個 scene。你仍可以編輯，但 <code>/video-sync</code> 不會套用，直到解除鎖定。</p>
+    </div>
 
-    <video v-if="videoUrl" :key="videoUrl" :src="videoUrl" controls class="mt-4 aspect-video w-full rounded-lg bg-black" data-testid="scene-video" />
-    <p v-else class="mt-4 flex aspect-video w-full items-center justify-center rounded-lg bg-slate-100 text-sm text-slate-500 dark:bg-slate-800">尚未渲染</p>
+    <video v-if="videoUrl" :key="videoUrl" :src="videoUrl" controls class="mt-4 aspect-video w-full rounded-xl bg-black" data-testid="scene-video" />
+    <div v-else class="mt-4 flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+      <Icon name="film" :size="28" class="text-slate-300 dark:text-slate-600" />
+      尚未渲染
+    </div>
 
-    <form class="mt-4 space-y-4" @submit.prevent="save">
-      <label class="block">
-        <span class="text-sm font-medium">標題</span>
-        <input v-model="draft.title" required maxlength="120" class="field" />
-      </label>
-      <label class="block">
-        <span class="text-sm font-medium">旁白（script.md）</span>
-        <textarea v-model="draft.script" rows="6" class="field font-mono" data-testid="script-input" />
-        <span class="mt-1 block text-xs text-slate-500">一行一句；用 <code>&lt;!-- pause 0.5 --&gt;</code> 插入停頓。</span>
-      </label>
-      <label class="block">
-        <span class="text-sm font-medium">畫面描述</span>
-        <textarea v-model="draft.description" required rows="2" class="field" />
-      </label>
-      <div class="grid gap-4 sm:grid-cols-3">
-        <label class="block sm:col-span-2">
-          <span class="text-sm font-medium">聲音</span>
-          <input v-model="draft.voice" :placeholder="state!.project.project.tts.voice ?? '專案預設'" class="field" />
-        </label>
-        <label class="block">
-          <span class="text-sm font-medium">語速 {{ Number(draft.speed).toFixed(1) }}×</span>
-          <input v-model.number="draft.speed" type="range" min="0.5" max="2" step="0.1" class="mt-3 w-full" />
-        </label>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <label class="flex items-center gap-2 text-sm">
-          <input v-model="draft.forced" type="checkbox" />
-          固定時長
-        </label>
-        <input v-if="draft.forced" v-model.number="draft.durationSec" type="number" min="0.5" max="120" step="0.5" class="field mt-0 w-28" aria-label="秒數" />
-        <span v-else class="text-sm text-slate-500">依旁白長度 + 0.5 秒</span>
-      </div>
-
-      <p v-if="dirty && rendered" class="text-sm text-amber-700 dark:text-amber-400">儲存後這個 scene 會標為「需要重做」，由 Agent 執行 <code>/video-sync</code> 重新產生。</p>
-
-      <div class="flex flex-wrap gap-2">
-        <button type="submit" class="btn-primary" :disabled="!dirty || ui.saving" data-testid="save">儲存</button>
-        <button v-if="dirty" type="button" class="btn-secondary" @click="discard">放棄修改</button>
-      </div>
-    </form>
-
-    <div class="mt-5 flex flex-wrap gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+    <!-- Review: the decisions about this scene's current video. -->
+    <div class="mt-3 flex flex-wrap items-center gap-2">
       <button
         v-if="scene.status === 'rendered' && !s.outdated"
         type="button"
-        class="btn-secondary"
+        class="btn-success"
         :disabled="ui.saving"
         data-testid="approve"
         @click="write((root, st) => approve(root, st, id), '已核准')"
       >
-        核准
+        <Icon name="check" :size="14" />核准
+      </button>
+      <button
+        v-if="companion.state === 'ready' && !scene.locked"
+        type="button"
+        class="btn-primary"
+        :disabled="ui.saving || !!companion.running || dirty"
+        :title="dirty ? '請先儲存修改' : '在本機重新產生旁白、畫面與影片'"
+        data-testid="rebuild"
+        @click="runCompanion('rebuild', `重新產生 ${id}`, id)"
+      >
+        <Icon name="refresh" :size="14" />立即重新產生
       </button>
       <button
         v-if="['rendered', 'approved'].includes(scene.status)"
@@ -154,20 +153,74 @@ function discard() {
         標記需要重做
       </button>
       <button
-        v-if="companion.state === 'ready' && !scene.locked"
         type="button"
-        class="btn-primary"
-        :disabled="ui.saving || !!companion.running || dirty"
-        :title="dirty ? '請先儲存修改' : '在本機重新產生旁白、畫面與影片'"
-        data-testid="rebuild"
-        @click="runCompanion('rebuild', `重新產生 ${id}`, id)"
+        class="btn-ghost ml-auto"
+        :disabled="ui.saving"
+        :aria-pressed="scene.locked"
+        :title="scene.locked ? '讓 Agent 可以再修改這個 scene' : '不讓 Agent 修改或重做這個 scene'"
+        @click="write((root, st) => setLocked(root, st, id, !scene!.locked), scene!.locked ? '已解除鎖定' : '已鎖定')"
       >
-        立即重新產生
+        <Icon :name="scene.locked ? 'unlock' : 'lock'" :size="14" />{{ scene.locked ? '解除鎖定' : '鎖定' }}
       </button>
-      <button type="button" class="btn-secondary" :disabled="ui.saving" @click="write((root, st) => setLocked(root, st, id, !scene!.locked), scene!.locked ? '已解除鎖定' : '已鎖定')">
-        {{ scene.locked ? '解除鎖定' : '鎖定' }}
-      </button>
-      <span class="ml-auto self-center text-xs text-slate-500">{{ STATUS_LABEL[scene.status] ?? scene.status }}<span v-if="s.outdated">（內容已變更）</span></span>
     </div>
+
+    <form ref="form" class="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800" @submit.prevent="save">
+      <fieldset class="space-y-4">
+        <legend class="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">內容</legend>
+        <label class="block">
+          <span class="label">標題</span>
+          <input v-model="draft.title" required maxlength="120" class="field" />
+        </label>
+        <label class="block">
+          <span class="label">旁白</span>
+          <textarea v-model="draft.script" rows="6" class="field font-mono leading-relaxed" data-testid="script-input" />
+          <span class="hint">一行一句；用 <code>&lt;!-- pause 0.5 --&gt;</code> 插入停頓。存在 script.md。</span>
+        </label>
+        <label class="block">
+          <span class="label">畫面描述</span>
+          <textarea v-model="draft.description" required rows="2" class="field" />
+        </label>
+      </fieldset>
+
+      <fieldset class="mt-6 space-y-4">
+        <legend class="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">聲音與時長</legend>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <label class="block sm:col-span-2">
+            <span class="label">聲音</span>
+            <input v-model="draft.voice" :placeholder="state!.project.project.tts.voice ?? '專案預設'" class="field" />
+          </label>
+          <label class="block">
+            <span class="label">語速 <span class="font-mono text-sky-700 dark:text-sky-400">{{ Number(draft.speed).toFixed(1) }}×</span></span>
+            <input v-model.number="draft.speed" type="range" min="0.5" max="2" step="0.1" class="mt-3 w-full accent-sky-600" />
+          </label>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="flex items-center gap-2 text-sm">
+            <input v-model="draft.forced" type="checkbox" class="h-4 w-4 accent-sky-600" />
+            固定時長
+          </label>
+          <span v-if="draft.forced" class="flex items-center gap-2 text-sm">
+            <input v-model.number="draft.durationSec" type="number" min="0.5" max="120" step="0.5" class="field mt-0 w-24" aria-label="秒數" />秒
+          </span>
+          <span v-else class="text-sm text-slate-500 dark:text-slate-400">依旁白長度 + 0.5 秒</span>
+        </div>
+      </fieldset>
+
+      <!-- Save bar: sticks to the bottom of the screen while there are unsaved edits. -->
+      <div
+        class="-mx-4 mt-6 flex flex-wrap items-center gap-2 border-t px-4 py-3 sm:-mx-5 sm:px-5"
+        :class="dirty ? 'sticky bottom-0 z-10 rounded-b-2xl border-sky-200 bg-sky-50/95 backdrop-blur dark:border-sky-900 dark:bg-slate-900/95' : 'border-slate-100 dark:border-slate-800'"
+      >
+        <p v-if="dirty" class="mr-auto text-sm">
+          <span class="font-medium">有尚未儲存的修改</span>
+          <span v-if="rendered" class="block text-xs text-amber-700 dark:text-amber-400">儲存後這個 scene 會標為「需要重做」，由 Agent 執行 <code>/video-sync</code> 重新產生。</span>
+        </p>
+        <p v-else class="mr-auto text-sm text-slate-500 dark:text-slate-400">修改會存回專案資料夾。</p>
+        <button v-if="dirty" type="button" class="btn-ghost" @click="discard">放棄修改</button>
+        <button type="submit" class="btn-primary" :disabled="!dirty || ui.saving" data-testid="save">
+          儲存 <span class="kbd hidden border-white/30 bg-white/10 text-white sm:inline dark:border-white/30 dark:bg-white/10 dark:text-white">{{ os === 'mac' ? '⌘S' : 'Ctrl+S' }}</span>
+        </button>
+      </div>
+    </form>
   </section>
 </template>

@@ -446,3 +446,27 @@ test('activity: the workbench shows current work, marks the scene, and fades an 
   await writeFile('video.activity.json', '{ "message": ')
   await page.getByTestId('activity').waitFor({ state: 'detached', timeout: 10_000 })
 })
+
+test('unsaved edits: switching scenes asks first; the full video is a list entry', async (t) => {
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page } = app
+  await page.getByTestId('scene-scene-001').getByRole('button', { name: /開場/ }).click()
+  await page.getByTestId('script-input').fill('還沒存的修改。')
+
+  page.once('dialog', (d) => d.dismiss())
+  await page.getByTestId('scene-scene-002').getByRole('button', { name: /行動呼籲/ }).click()
+  assert.equal(await page.getByTestId('editor-scene-001').count(), 1, 'cancelling keeps the editor and the edit')
+  assert.equal(await page.getByTestId('script-input').inputValue(), '還沒存的修改。')
+
+  page.once('dialog', (d) => d.accept())
+  await page.getByTestId('final-entry').click()
+  await page.getByTestId('final-outdated').waitFor()
+  assert.equal(await page.getByTestId('editor-scene-001').count(), 0)
+
+  // Outdated scenes listed under the full video open their editor.
+  await page.getByTestId('final-outdated').getByRole('button', { name: /補充/ }).click()
+  await page.getByTestId('editor-scene-003').waitFor()
+})
