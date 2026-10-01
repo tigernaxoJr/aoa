@@ -496,3 +496,91 @@ test('a project from an older template: one click updates its tools and drops re
   assert.equal(await page.getByRole('alert').count(), 0, 'the project is valid again')
   assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-status').textContent(), '已渲染')
 })
+
+test('home page, story: pick "把故事做成動畫", write the story, and the message points the agent at the story guide', async (t) => {
+  if (!browser) return t.skip('no browser available')
+  const context = await browser.newContext()
+  t.after(() => context.close())
+  const page = await context.newPage()
+  await page.goto(`${origin}${BASE}/`)
+  await page.getByTestId('kind-story').click()
+  assert.equal(await page.getByTestId('kind-story').getAttribute('aria-checked'), 'true')
+  assert.equal(await page.getByPlaceholder('https://example.com').count(), 0, 'no product fields for a story')
+
+  await prepareFolder(page, 'acme-video', {})
+  await page.getByTestId('project-folder').getByText('acme-video').waitFor()
+  assert.match(await page.getByTestId('step-run').textContent(), /請先在步驟 2 寫下你的故事/)
+  await page.getByTestId('story-text').fill('一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。')
+  await page.getByTestId('story-audience').fill('4–7 歲的小朋友')
+  await waitForStart(page, '4–7 歲的小朋友')
+  const start = JSON.parse(await readOpfs(page, 'acme-video/video.start.json'))
+  assert.deepEqual({ ...start, updatedAt: undefined }, { id: start.id, kind: 'story', story: '一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。', audience: '4–7 歲的小朋友', updatedAt: undefined })
+
+  const message = await page.getByTestId('launch-message').textContent()
+  assert.match(message, new RegExp(`^請讀取 ${origin}${BASE}/api/story-guide\\.md，依照裡面的步驟幫我把故事做成動畫影片。\n`))
+  assert.match(message, /記有故事內容與識別碼/)
+  assert.match(message, /・故事：一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。\n・觀看對象：4–7 歲的小朋友\n/)
+  assert.match(await page.getByTestId('launch-command').textContent(), /故事：一隻小狐狸以為月亮掉進了池塘。 牠想把月亮撈起來。/, 'the shell line has no line breaks')
+
+  // The choice is remembered, and switching back restores the product form.
+  await page.reload()
+  assert.equal(await page.getByTestId('kind-story').getAttribute('aria-checked'), 'true')
+  await page.getByTestId('kind-product').click()
+  await page.getByPlaceholder('https://example.com').waitFor()
+})
+
+test('story project: story steps, cast hint, and the browser hash covers shared art and character voices', async (t) => {
+  const project = baseProject({ status: 'script_generated' })
+  Object.assign(project.project, {
+    name: '小狐狸找月亮',
+    kind: 'story',
+    sources: { story: '小狐狸以為月亮掉進了池塘。' },
+    format: { aspectRatio: '16:9', width: 640, height: 360, fps: 24 },
+    cast: [
+      { id: 'fox', name: '小狐狸', voice: 'zh-TW-HsiaoYuNeural', art: '@/assets/cast/fox/' },
+      { id: 'owl', name: '貓頭鷹', voice: 'zh-TW-YunJheNeural' },
+    ],
+  })
+  const scene = baseScene('scene-001', {
+    title: '池塘',
+    purpose: 'conflict',
+    durationSec: 1,
+    visual: { type: 'motion-graphic', description: '池塘邊', motion: { file: 'assets/motion.js', uses: ['@/assets/cast/fox/'] } },
+  })
+  const p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-pond', scene, script: '夜深了。\n【小狐狸】月亮掉進水裡了！\n' }] })
+  t.after(() => p.cleanup())
+  p.write('scenes/001-pond/assets/motion.js', 'export default async () => () => {}\n')
+  p.write('assets/cast/fox/fox.svg', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10"/>\n')
+  p.write('scenes/001-pond/assets/captions.json', '[]\n')
+  mkdirSync(p.path('scenes/001-pond/output'), { recursive: true })
+  const r = spawnSync(require('ffmpeg-static'), ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=c=navy:s=640x360:r=24:d=1', '-pix_fmt', 'yuv420p', p.path('scenes/001-pond/output/scene.mp4')])
+  assert.equal(r.status, 0, String(r.stderr))
+  for (const args of [['--status', 'assets_ready'], ['--status', 'rendering'], ['--rendered']]) {
+    const s = p.run('state.mjs', ['scene-001', ...args])
+    assert.equal(s.code, 0, s.stderr)
+  }
+
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page } = app
+  await page.getByTestId('project-name').waitFor()
+  const status = () => page.getByTestId('scene-scene-001').getByTestId('scene-status').textContent()
+  assert.equal(await status(), '已渲染', 'the browser hashes motion.uses folders and speaking voices like Node')
+  const bar = await page.getByRole('list', { name: '工作流程' }).textContent()
+  assert.match(bar, /整理故事.*美術與角色.*分鏡與對白/)
+  assert.doesNotMatch(bar, /分析產品/)
+
+  await page.getByTestId('scene-scene-001').getByRole('button', { name: /池塘/ }).click()
+  assert.match(await page.getByTestId('cast-hint').textContent(), /【小狐狸】、【貓頭鷹】/)
+
+  // Redrawing the fox makes the scene outdated without anyone touching scene.json.
+  await page.evaluate(async () => {
+    let dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('proj')
+    for (const part of ['assets', 'cast', 'fox']) dir = await dir.getDirectoryHandle(part)
+    const w = await (await dir.getFileHandle('fox.svg')).createWritable()
+    await w.write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20"/>\n')
+    await w.close()
+  })
+  for (let i = 0; i < 100 && (await status()) !== '內容已變更'; i++) await new Promise((resolve) => setTimeout(resolve, 100))
+  assert.equal(await status(), '內容已變更')
+})

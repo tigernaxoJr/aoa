@@ -1,0 +1,18 @@
+{
+  "specVersion": "1.0.0",
+  "project": {
+    "id": "5d1f0a7e-9c2b-4e61-8a3f-2b7c4d9e1f61",
+    "name": "沒有故事",
+    "kind": "story",
+    "sources": {
+      "productUrl": "https://example.com"
+    },
+    "language": "zh-TW",
+    "format": { "aspectRatio": "16:9", "width": 1920, "height": 1080, "fps": 30 },
+    "tts": { "provider": "manual" }
+  },
+  "scenes": [],
+  "status": "initialized",
+  "updatedAt": "2026-10-01T10:00:00Z",
+  "updatedBy": "agent"
+}

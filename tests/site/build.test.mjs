@@ -65,12 +65,35 @@ test('builds are reproducible', () => {
 
 test('no {{SITE_URL}} placeholder survives, in files or inside the zips', () => {
   for (const file of textFiles(out)) assert.doesNotMatch(readFileSync(file, 'utf8'), /\{\{SITE_URL\}\}/, file)
-  for (const zip of ['api/skills/product-video.zip', 'api/templates/product-video.zip']) {
+  for (const zip of ['api/skills/product-video.zip', 'api/skills/story-video.zip', 'api/templates/product-video.zip']) {
     for (const [path, data] of Object.entries(unzip(zip))) {
       if (path.endsWith('.md')) assert.doesNotMatch(strFromU8(data), /\{\{SITE_URL\}\}/, `${zip}:${path}`)
     }
   }
   assert.match(strFromU8(unzip('api/skills/product-video.zip')['product-video/SKILL.md']), new RegExp(`${SITE}/api/templates/product-video.zip`))
+})
+
+test('story-video Skill ships the shared rendering guide and links to product-video by URL', () => {
+  const index = JSON.parse(read('api/index.json'))
+  assert.equal(index.entries.story, `${SITE}/api/story-guide.md`)
+  assert.equal(index.checksums.storySkill, sha256(read('api/skills/story-video.zip')))
+  const entries = unzip('api/skills/story-video.zip')
+  assert.deepEqual(Object.keys(entries).sort(), ['story-video/SKILL.md', 'story-video/design-guide.md', 'story-video/rendering-guide.md', 'story-video/story-guide.md'])
+  const local = new Set(Object.keys(entries).map((p) => p.slice('story-video/'.length)))
+  for (const [path, data] of Object.entries(entries)) {
+    for (const [, target] of strFromU8(data).matchAll(/\]\(([^)\s]+)\)/g)) {
+      if (/^https?:\/\//.test(target) || target.startsWith('#')) continue
+      assert.ok(local.has(target.split('#')[0]), `${path}: ${target} is not in the zip`)
+    }
+  }
+  const design = strFromU8(entries['story-video/design-guide.md'])
+  assert.match(design, /\]\(rendering-guide\.md#motion\)/, 'shared guide is linked locally')
+  const rendering = strFromU8(entries['story-video/rendering-guide.md'])
+  assert.match(rendering, new RegExp(`\\]\\(${SITE}/api/skills/product-video/script-guide\\.md#custom-motion\\)`), 'its product-only links go to the product Skill')
+  const guide = read('api/story-guide.md').toString()
+  assert.match(guide, /故事影片 Agent 指引/)
+  assert.match(guide, new RegExp(`${SITE}/api/skills/story-video\\.zip`))
+  for (const [, target] of guide.matchAll(/\]\(([^)\s]+)\)/g)) assert.match(target, /^https?:\/\//, target)
 })
 
 test('prompts and rules are cut from the Skill with absolute links', () => {

@@ -138,7 +138,7 @@ window.__ready = (async () => {
   if (bg.kind === 'module') {
     const { default: setup } = await import(bg.src)
     if (typeof setup !== 'function') throw new Error('motion module must export default setup(ctx)')
-    motionSeek = await setup({ root: bgNode, width, height, fps, durationSec: plan.durationSec, theme: THEME })
+    motionSeek = await setup({ root: bgNode, width, height, fps, durationSec: plan.durationSec, theme: THEME, cues: plan.cues ?? [], cast: plan.cast ?? [] })
     if (typeof motionSeek !== 'function') throw new Error('motion module setup(ctx) must return seek(t)')
   }
   for (const o of overlays) if (o.item.type === 'text') fitText(o)

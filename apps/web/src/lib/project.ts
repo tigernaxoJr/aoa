@@ -1,6 +1,6 @@
 // Reads a video project through a directory handle: JSON + schema validation, scripts, outputs,
 // the lock file, and each scene's current input hash (same algorithm as scripts/lib/hash.mjs).
-import { MISSING, deriveStatus, hashFiles, hashParts, suggestNext } from '@core'
+import { MISSING, deriveStatus, hashFiles, hashParts, hashedDirs, projectRelative, scriptSpeakers, suggestNext } from '@core'
 import Ajv2020 from 'ajv/dist/2020'
 import addFormats from 'ajv-formats'
 import commonSchema from '@specs/common.schema.json'
@@ -110,15 +110,17 @@ async function sha256Hex(chunks: Uint8Array[]) {
 }
 
 export async function inputHash(root: FileSystemDirectoryHandle, project: VideoProjectJson, dir: string, scene: SceneJson) {
-  const assets = await listFiles(root, `${dir}/assets`)
+  const assets = (await Promise.all(hashedDirs(dir, scene).map((d) => listFiles(root, d)))).flat()
   const files = hashFiles(dir, scene, assets)
   const found = await Promise.all(files.map((f) => tryFile(root, f)))
-  const key = JSON.stringify([scene, project.project.format, files.map((f, i) => [f, found[i]?.size, found[i]?.lastModified])])
+  const key = JSON.stringify([scene, project.project.format, project.project.captions, project.project.cast, files.map((f, i) => [f, found[i]?.size, found[i]?.lastModified])])
   const cached = hashCache.get(key)
   if (cached) return cached
+  const scriptFile = found[files.indexOf(projectRelative(dir, scene.narration.scriptFile) ?? '')]
+  const speakers = scriptFile ? scriptSpeakers(await scriptFile.text()) : []
   const enc = new TextEncoder()
   const chunks: Uint8Array[] = []
-  for (const part of hashParts(project, scene, files)) {
+  for (const part of hashParts(project, scene, files, speakers)) {
     let data: Uint8Array
     if (part.file === undefined) data = enc.encode(part.text)
     else {
@@ -248,7 +250,8 @@ export async function loadActivity(root: FileSystemDirectoryHandle): Promise<Vid
 export async function fingerprint(root: FileSystemDirectoryHandle, state: ProjectState | null): Promise<string> {
   const paths = [PROJECT_FILE, LOCK_FILE, FINAL_FILE, ACTIVITY_FILE]
   for (const s of state?.scenes ?? []) paths.push(`${s.dir}/scene.json`, s.scriptPath, s.outputPath)
-  const assets = await Promise.all((state?.scenes ?? []).map((s) => listFiles(root, `${s.dir}/assets`)))
+  const dirs = new Set((state?.scenes ?? []).flatMap((s) => hashedDirs(s.dir, s.scene ?? {})))
+  const assets = await Promise.all([...dirs].map((d) => listFiles(root, d)))
   paths.push(...assets.flat())
   const files = await Promise.all(paths.map((p) => tryFile(root, p)))
   return paths.map((p, i) => `${p}:${files[i]?.lastModified ?? '-'}:${files[i]?.size ?? '-'}`).join('|')

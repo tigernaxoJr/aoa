@@ -1,0 +1,16 @@
+{
+  "id": "scene-003",
+  "title": "池塘裡的月亮",
+  "purpose": "conflict",
+  "narration": {
+    "scriptFile": "script.md"
+  },
+  "visual": {
+    "type": "motion-graphic",
+    "description": "小狐狸趴在池塘邊伸手撈水中的月亮，水波把月亮打散",
+    "motion": { "file": "assets/motion.js", "uses": ["@/assets/cast/fox/", "@/assets/sets/pond.svg"] }
+  },
+  "durationSec": null,
+  "status": "draft",
+  "locked": false
+}

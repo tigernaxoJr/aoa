@@ -10,10 +10,13 @@ declare module '*.vue' {
 
 declare module '@core' {
   export const MISSING: string
+  export function hashedDirs(sceneDir: string, scene: unknown): string[]
   export function hashFiles(sceneDir: string, scene: unknown, assetFiles: string[]): string[]
-  export function hashParts(project: unknown, scene: unknown, files: string[]): ({ label: string; text: string; file?: undefined } | { label: string; file: string; text?: undefined })[]
+  export function projectRelative(sceneDir: string, p: string): string | null
+  export function scriptSpeakers(script: string): string[]
+  export function hashParts(project: unknown, scene: unknown, files: string[], speakers?: string[]): ({ label: string; text: string; file?: undefined } | { label: string; file: string; text?: undefined })[]
   export function suggestNext(
-    project: { status: string },
+    project: { status: string; project?: { kind?: string } },
     scenes: { id: string; status: string; outdated: boolean; locked: boolean; error: string | null }[],
     errors?: string[],
   ): { command: string | null; reason: string }

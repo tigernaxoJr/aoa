@@ -1,6 +1,6 @@
-# 產品介紹影片專案
+# 影片專案
 
-這個目錄是一個以 [Agent Video Producer]({{SITE_URL}}/) 協議建立的影片專案。影片拆成多個 scene，每段可以單獨修改、重做，所有檔案和運算都留在你的電腦上。
+這個目錄是一個以 [Agent Video Producer]({{SITE_URL}}/) 協議建立的影片專案：產品介紹影片，或把故事做成的動畫影片（`video.project.json` 的 `project.kind` 為 `story`）。影片拆成多個 scene，每段可以單獨修改、重做，所有檔案和運算都留在你的電腦上。
 
 ## 怎麼使用
 
@@ -12,7 +12,9 @@
 
 | 指令 | 作用 |
 |---|---|
-| `/video-analyze` | 分析產品，產生 `brief/product-brief.md` |
+| `/video-analyze` | 產品影片：分析產品，產生 `brief/product-brief.md` |
+| `/video-story` | 故事影片：和你一起把故事整理完整，產生 `brief/story.md` |
+| `/video-design` | 故事影片：畫角色與場景、挑每個角色的聲音，給你看設定稿和試聽 |
 | `/video-storyboard` | 規劃分鏡與旁白，完成後會請你審閱；影片合成後也能重新規劃，只重做有變更的段落 |
 | `/video-scene <id\|all>` | 產生 scene 的旁白、畫面與影片，每段完成後請你預覽 |
 | `/video-assemble` | 合成 `output/final.mp4` 與字幕檔 |

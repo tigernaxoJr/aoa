@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { STEPS, nextStep } from '../lib/site'
+import { nextStep, stepsFor } from '../lib/site'
 import { companion } from '../lib/companion'
 import { runCompanion, state } from '../lib/store'
 import CopyButton from './CopyButton.vue'
@@ -10,7 +10,8 @@ const status = computed(() => state.value!.project.status)
 const next = computed(() => state.value!.next)
 const plain = computed(() => nextStep(next.value, state.value!.scenes.length))
 /** The step after the last completed one is "current". */
-const current = computed(() => STEPS.findIndex((s) => !(s.done as readonly string[]).includes(status.value)))
+const steps = computed(() => stepsFor(state.value!.project.project.kind))
+const current = computed(() => steps.value.findIndex((s) => !s.done.includes(status.value)))
 /** Redo every stale scene with the Companion (deterministic), then assemble. */
 async function redoAll() {
   for (const s of stale.value) {
@@ -24,7 +25,7 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
 <template>
   <section class="card overflow-hidden">
     <ol class="flex items-start px-4 pt-5 sm:px-6" aria-label="工作流程" :title="`專案狀態：${status}`">
-      <li v-for="(step, i) in STEPS" :key="step.id" class="relative flex min-w-0 flex-1 flex-col items-center text-center" :aria-current="i === current ? 'step' : undefined">
+      <li v-for="(step, i) in steps" :key="step.id" class="relative flex min-w-0 flex-1 flex-col items-center text-center" :aria-current="i === current ? 'step' : undefined">
         <span
           v-if="i > 0"
           class="absolute top-3.5 right-1/2 h-0.5 w-full"

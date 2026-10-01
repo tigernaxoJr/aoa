@@ -12,7 +12,7 @@
     "id": { "$ref": "common.schema.json#/$defs/sceneId" },
     "title": { "type": "string", "minLength": 1, "maxLength": 120 },
     "purpose": {
-      "enum": ["hook", "problem", "solution", "feature", "how-it-works", "benefit", "social-proof", "cta", "custom"]
+      "enum": ["hook", "problem", "solution", "feature", "how-it-works", "benefit", "social-proof", "cta", "opening", "setup", "conflict", "climax", "resolution", "ending", "custom"]
     },
     "narration": { "$ref": "#/$defs/narration" },
     "visual": { "$ref": "#/$defs/visual" },
@@ -216,7 +216,13 @@
       "additionalProperties": false,
       "required": ["file"],
       "properties": {
-        "file": { "description": "ES module，預設匯出 setup(ctx)，回傳 seek(t)。通常放在 assets/motion.js。", "$ref": "common.schema.json#/$defs/relPath", "pattern": "\\.m?js$" }
+        "file": { "description": "ES module，預設匯出 setup(ctx)，回傳 seek(t)。通常放在 assets/motion.js。", "$ref": "common.schema.json#/$defs/relPath", "pattern": "\\.m?js$" },
+        "uses": {
+          "description": "模組匯入的共用檔案或資料夾（例如 @/assets/cast/fox/），納入 inputHash：這些檔案一改，scene 就需要重做。資料夾以 / 結尾，包含底下所有檔案。",
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/relPath" },
+          "uniqueItems": true
+        }
       }
     },
     "userAsset": {

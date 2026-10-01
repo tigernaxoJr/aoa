@@ -1,0 +1,38 @@
+{
+  "specVersion": "1.0.0",
+  "project": {
+    "id": "5d1f0a7e-9c2b-4e61-8a3f-2b7c4d9e1f60",
+    "name": "小狐狸找月亮",
+    "kind": "story",
+    "sources": {
+      "story": "一隻小狐狸以為月亮掉進了池塘，想把它撈起來。"
+    },
+    "customMotion": "allow",
+    "language": "zh-TW",
+    "format": {
+      "aspectRatio": "16:9",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30
+    },
+    "tts": {
+      "provider": "edge-tts",
+      "voice": "zh-TW-HsiaoChenNeural",
+      "consent": { "onlineTts": true, "grantedAt": "2026-10-01T09:00:00Z" }
+    },
+    "cast": [
+      {
+        "id": "fox",
+        "name": "小狐狸",
+        "description": "橘色、大尾巴、好奇心很強",
+        "voice": "zh-TW-HsiaoYuNeural",
+        "art": "@/assets/cast/fox/"
+      },
+      { "id": "owl", "name": "貓頭鷹", "provider": "piper", "voice": "zh_CN-huayan-medium" }
+    ]
+  },
+  "scenes": [],
+  "status": "designed",
+  "updatedAt": "2026-10-01T10:00:00Z",
+  "updatedBy": "agent"
+}

@@ -14,15 +14,44 @@ export function canonical(value) {
   return JSON.stringify(value)
 }
 
-/** Project-relative paths a scene's content refers to (script, code file, asset, motion module, element sources). */
+/** A script line spoken by a character: `【小狐狸】今天的月亮好圓。` (story projects). */
+export const SPEAKER = /^【([^【】\s]+)】\s*(.*)$/
+
+/** Sorted names of the characters who speak in a script. */
+export function scriptSpeakers(script) {
+  const names = new Set()
+  for (const line of script.split(/\r?\n/)) {
+    const m = line.trim().match(SPEAKER)
+    if (m) names.add(m[1])
+  }
+  return [...names].sort()
+}
+
+/** A `motion.uses` entry ending in `/` names a whole folder. */
+const isDir = (p) => p.endsWith('/')
+
+/**
+ * Paths a scene's content refers to (script, code file, asset, motion module and the shared files
+ * it uses, element sources). Folders from `motion.uses` are left out; see hashedDirs().
+ */
 export function referencedPaths(scene) {
   return [
     scene.narration?.scriptFile ?? 'script.md',
     scene.visual?.code?.file,
     scene.visual?.motion?.file,
+    ...(scene.visual?.motion?.uses ?? []).filter((p) => !isDir(p)),
     scene.visual?.asset?.src,
     ...(scene.visual?.elements ?? []).map((el) => el.src),
   ].filter(Boolean)
+}
+
+/**
+ * Project-relative folders whose every file the input hash covers: the scene's assets/ and the
+ * folders in `motion.uses`. Callers list them and pass the files to hashFiles().
+ */
+export function hashedDirs(sceneDir, scene) {
+  const used = (scene.visual?.motion?.uses ?? []).filter(isDir).map((p) => projectRelative(sceneDir, p))
+  return [`${sceneDir}/assets`, ...used.filter((d) => d !== null)]
 }
 
 /**
@@ -48,19 +77,30 @@ export const MISSING = '<missing>'
  * What the input hash covers, in order: [{ label, text } | { label, file }]. `files` is the sorted
  * list from hashFiles(). Each part contributes `label` + NUL, its bytes (text as UTF-8, file
  * contents, or MISSING), then NUL; SHA-256 over that sequence is `render.inputHash`. Callers read the
- * files, synchronously (Node) or asynchronously (browser).
+ * files, synchronously (Node) or asynchronously (browser). `speakers` is scriptSpeakers() of the
+ * scene's script.
  */
-export function hashParts(project, scene, files) {
+export function hashParts(project, scene, files, speakers = []) {
   const content = Object.fromEntries(Object.entries(scene).filter(([k]) => !HASH_EXCLUDED.has(k)))
+  const cast = (project.project.cast ?? []).filter((m) => speakers.includes(m.name))
   return [
     { label: 'scene', text: canonical(content) },
     // Burned captions are drawn when the scene renders, so their settings belong to the scene too.
-    { label: 'project', text: canonical({ format: project.project.format, ...(project.project.captions?.mode === 'burn' && { captions: project.project.captions }) }) },
+    // The voices of the characters who speak in this scene (scriptSpeakers()) shape its audio.
+    // Absent when nobody speaks, so product hashes stay as they were.
+    {
+      label: 'project',
+      text: canonical({
+        format: project.project.format,
+        ...(project.project.captions?.mode === 'burn' && { captions: project.project.captions }),
+        ...(cast.length && { cast }),
+      }),
+    },
     ...files.map((file) => ({ label: `file:${file}`, file })),
   ]
 }
 
-/** Sorted, de-duplicated list of files the hash covers, given the scene's assets/ listing. */
+/** Sorted, de-duplicated list of files the hash covers, given the files listed under hashedDirs(). */
 export function hashFiles(sceneDir, scene, assetFiles) {
   const files = new Set(assetFiles)
   for (const p of referencedPaths(scene)) {
@@ -77,8 +117,13 @@ export function hashFiles(sceneDir, scene, assetFiles) {
 export function suggestNext(project, scenes, errors = []) {
   if (errors.length) return { command: null, reason: 'fix the validation errors first' }
   const status = project.status
+  if (project.project?.kind === 'story') {
+    if (status === 'initialized') return { command: '/video-story', reason: 'project is initialized' }
+    if (status === 'analyzed') return { command: '/video-design', reason: 'story is ready' }
+    if (status === 'designed') return { command: '/video-storyboard', reason: 'cast and art are ready' }
+  }
   if (status === 'initialized') return { command: '/video-analyze', reason: 'project is initialized' }
-  if (status === 'analyzed') return { command: '/video-storyboard', reason: 'brief is ready' }
+  if (['analyzed', 'designed'].includes(status)) return { command: '/video-storyboard', reason: 'brief is ready' }
   const failed = scenes.filter((s) => s.status === 'failed')
   if (failed.length) return { command: `/video-scene ${failed[0].id}`, reason: `${failed.length} scene(s) failed: ${failed[0].error}` }
   const stale = scenes.filter((s) => (s.outdated || s.status === 'stale') && !s.locked)
@@ -125,7 +170,7 @@ export function checkTransition(workflow, target, from, to) {
  */
 export function deriveStatus(projectStatus, facts, finalMtime) {
   if (facts.length === 0) return null
-  if (['failed', 'initialized', 'analyzed'].includes(projectStatus)) return null
+  if (['failed', 'initialized', 'analyzed', 'designed'].includes(projectStatus)) return null
   if (facts.every((f) => f?.upToDate)) {
     const newest = Math.max(...facts.map((f) => f.outputMtime))
     return finalMtime > newest ? 'completed' : 'ready_to_assemble'

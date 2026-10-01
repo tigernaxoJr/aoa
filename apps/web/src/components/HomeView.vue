@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { tryFile, writeText } from '../lib/fsa'
-import { START_FILE, api, launchCommand, launchMessage, newFolderId, startJson, type SourceHints } from '../lib/site'
+import { START_FILE, api, launchCommand, launchMessage, newFolderId, startJson, type SourceHints, type VideoKind } from '../lib/site'
 import { baseName, pathHelp, platform, readSourceFolder } from '../lib/source'
 import { activity, pickFolder, reconnect, root, ui } from '../lib/store'
 import ActivityBanner from './ActivityBanner.vue'
 import CopyButton from './CopyButton.vue'
-import Icon from './Icon.vue'
+import Icon, { type IconName } from './Icon.vue'
 
 const STORAGE_KEY = 'avp-start'
 const os = platform()
 
 interface Start {
+  kind: VideoKind
+  story: string
+  audience: string
   productUrl: string
   requiresLogin: boolean
   sourceFolder: string
@@ -19,7 +22,7 @@ interface Start {
   sourceCodePath: string
   description: string
 }
-const form = reactive<Start>({ productUrl: '', requiresLogin: false, sourceFolder: '', sourceHints: null, sourceCodePath: '', description: '' })
+const form = reactive<Start>({ kind: 'product', story: '', audience: '', productUrl: '', requiresLogin: false, sourceFolder: '', sourceHints: null, sourceCodePath: '', description: '' })
 try {
   Object.assign(form, JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}'))
 } catch {}
@@ -66,8 +69,15 @@ watch(
 )
 
 const filledFrom = ref<string | null>(null)
-const hasSource = computed(() => Boolean(form.productUrl.trim() || form.sourceFolder.trim() || form.sourceCodePath.trim() || form.description.trim()))
-/** The step the user should do now: 1 folder, 2 product, 3 paste the message. */
+const isStory = computed(() => form.kind === 'story')
+const hasSource = computed(() =>
+  isStory.value ? Boolean(form.story.trim()) : Boolean(form.productUrl.trim() || form.sourceFolder.trim() || form.sourceCodePath.trim() || form.description.trim()),
+)
+const KINDS: { kind: VideoKind; title: string; hint: string; icon: IconName }[] = [
+  { kind: 'product', title: '產品介紹影片', hint: '錄下產品畫面，配上旁白與字幕', icon: 'film' },
+  { kind: 'story', title: '把故事做成動畫', hint: '畫出角色與場景，旁白和角色各有聲音', icon: 'sparkles' },
+]
+/** The step the user should do now: 1 folder, 2 product or story, 3 paste the message. */
 const current = computed(() => (needsFolder.value ? 1 : !hasSource.value ? 2 : 3))
 const message = computed(() => launchMessage(form, prepared.value))
 const command = computed(() => launchCommand(form, prepared.value))
@@ -114,9 +124,11 @@ onMounted(() => {
 
 const links = [
   ['Agent 指引', api('agent-guide.md')],
+  ['故事影片 Agent 指引', api('story-guide.md')],
   ['資源索引', api('index.json')],
   ['工作流程', api('workflow.json')],
   ['Skill', api('skills/product-video.zip')],
+  ['故事影片 Skill', api('skills/story-video.zip')],
   ['專案範本', api('templates/product-video.zip')],
 ]
 </script>
@@ -124,10 +136,29 @@ const links = [
 <template>
   <div class="mx-auto max-w-3xl px-4 pt-10 pb-16 sm:pt-14">
     <div class="text-center">
-      <h1 class="text-2xl font-bold tracking-tight text-balance sm:text-4xl">讓 Agent 在你的電腦上<br />做產品介紹影片</h1>
-      <p class="mx-auto mt-3 max-w-xl text-pretty text-slate-600 dark:text-slate-400">
+      <h1 class="text-2xl font-bold tracking-tight text-balance sm:text-4xl">讓 Agent 在你的電腦上<br />{{ isStory ? '把故事做成動畫影片' : '做產品介紹影片' }}</h1>
+      <p v-if="isStory" class="mx-auto mt-3 max-w-xl text-pretty text-slate-600 dark:text-slate-400">
+        準備一個資料夾、寫下你的故事（只有一個點子也可以），再把產生的一段話貼給 Agent（例如 Claude）。它會陪你把故事補完整、畫角色、配聲音、做成動畫，這個網頁同步顯示進度。
+      </p>
+      <p v-else class="mx-auto mt-3 max-w-xl text-pretty text-slate-600 dark:text-slate-400">
         準備一個資料夾、填產品資訊，再把產生的一段話貼給 Agent（例如 Claude）。它會寫旁白、錄畫面、合成影片，這個網頁同步顯示進度。
       </p>
+      <div class="mx-auto mt-6 grid max-w-xl grid-cols-2 gap-2" role="radiogroup" aria-label="影片類型" data-testid="video-kind">
+        <button
+          v-for="k in KINDS"
+          :key="k.kind"
+          type="button"
+          role="radio"
+          :aria-checked="form.kind === k.kind"
+          class="flex flex-col items-center gap-1 rounded-xl border px-3 py-3 text-center transition"
+          :class="form.kind === k.kind ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-500/30 dark:bg-sky-950/40' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'"
+          :data-testid="`kind-${k.kind}`"
+          @click="form.kind = k.kind"
+        >
+          <span class="flex items-center gap-1.5 text-sm font-semibold"><Icon :name="k.icon" :size="16" class="text-sky-600" />{{ k.title }}</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">{{ k.hint }}</span>
+        </button>
+      </div>
       <ul class="mt-5 flex flex-wrap justify-center gap-2 text-xs text-slate-600 sm:text-sm dark:text-slate-300">
         <li class="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"><Icon name="sparkles" :size="14" class="text-sky-600" />不需要會寫程式或打指令</li>
         <li class="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-800 dark:bg-slate-900"><Icon name="shield" :size="14" class="text-emerald-600" />檔案都留在你的電腦，不會上傳</li>
@@ -175,13 +206,34 @@ const links = [
         </div>
       </li>
 
-      <!-- 2. Product -->
+      <!-- 2. Product or story -->
       <li class="relative pb-6 pl-12" data-testid="step-product">
         <span class="absolute top-9 bottom-0 left-4 w-0.5 -translate-x-1/2" :class="hasSource ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'" aria-hidden="true" />
         <span class="step-no absolute top-0 left-0" :class="hasSource ? 'step-done' : current === 2 ? 'step-current' : ''">
           <Icon v-if="hasSource" name="check" :size="16" /><template v-else>2</template>
         </span>
         <div class="card p-5" :class="current === 2 ? 'ring-2 ring-sky-500/40' : ''">
+          <template v-if="isStory">
+            <h2 class="font-semibold">告訴 Agent 你的故事</h2>
+            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">貼上整篇故事、寫個大綱，或只寫一個點子都可以；不完整的地方，Agent 會一題一題問你。</p>
+            <div class="mt-5 space-y-5">
+              <label class="block">
+                <span class="label">故事</span>
+                <textarea
+                  v-model="form.story"
+                  rows="7"
+                  placeholder="例如：一隻小狐狸以為月亮掉進了池塘，想盡辦法要把它撈起來……"
+                  class="field"
+                  data-testid="story-text"
+                />
+              </label>
+              <label class="block">
+                <span class="label">給誰看 <span class="font-normal text-slate-500">（選填）</span></span>
+                <input v-model.trim="form.audience" type="text" placeholder="例如：4–7 歲的小朋友、社群上的大人" class="field" data-testid="story-audience" />
+              </label>
+            </div>
+          </template>
+          <template v-else>
           <h2 class="font-semibold">告訴 Agent 產品是什麼</h2>
           <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">至少填一項；給得越多，影片越準確。</p>
           <div class="mt-5 space-y-5">
@@ -235,6 +287,7 @@ const links = [
               <textarea v-model="form.description" rows="3" placeholder="一兩句話：產品做什麼、給誰用" class="field" />
             </label>
           </div>
+          </template>
         </div>
       </li>
 
@@ -245,7 +298,7 @@ const links = [
         <div class="card p-5" :class="current === 3 ? 'ring-2 ring-sky-500/40' : 'opacity-80'">
           <h2 class="font-semibold">打開 Agent，貼上這段話</h2>
           <p v-if="needsFolder" class="mt-2 text-sm text-slate-500 dark:text-slate-400">請先在步驟 1 準備放影片的資料夾。</p>
-          <p v-else-if="!hasSource" class="mt-2 text-sm text-slate-500 dark:text-slate-400">請先在步驟 2 填入產品網址、原始碼資料夾或一句說明。</p>
+          <p v-else-if="!hasSource" class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ isStory ? '請先在步驟 2 寫下你的故事或點子。' : '請先在步驟 2 填入產品網址、原始碼資料夾或一句說明。' }}</p>
           <template v-else>
             <ol class="mt-3 space-y-2.5 text-sm">
               <li class="flex gap-2.5">
@@ -276,8 +329,14 @@ const links = [
               <ul class="mt-2 grid gap-1.5 text-slate-700 sm:grid-cols-2 dark:text-slate-300">
                 <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" /><span v-if="folder">在「{{ folder }}」裡建立影片專案</span><span v-else>在你選的資料夾裡建立影片專案，並告訴你它在哪裡</span></li>
                 <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />電腦缺少需要的工具時，告訴你怎麼安裝，或在你同意後替你處理</li>
-                <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />問你幾個問題：影片語言與長度、旁白能否使用線上語音服務</li>
-                <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />分析產品、寫分鏡；每完成一段就停下來請你確認</li>
+                <template v-if="isStory">
+                  <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />問你幾個問題：給誰看、喜歡的畫風、能否使用線上語音服務</li>
+                  <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />和你一起把故事補完整，畫出角色、挑好聲音，每一步都請你確認</li>
+                </template>
+                <template v-else>
+                  <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />問你幾個問題：影片語言與長度、旁白能否使用線上語音服務</li>
+                  <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />分析產品、寫分鏡；每完成一段就停下來請你確認</li>
+                </template>
               </ul>
               <p class="mt-3 text-slate-600 dark:text-slate-400">在對話中直接回答它就好。看不懂它的問題時，可以回它「請用更簡單的方式說明」。</p>
             </div>

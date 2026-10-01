@@ -1,0 +1,17 @@
+{
+  "specVersion": "1.0.0",
+  "project": {
+    "id": "5d1f0a7e-9c2b-4e61-8a3f-2b7c4d9e1f62",
+    "name": "角色名含括號",
+    "kind": "story",
+    "sources": { "story": "一個故事" },
+    "language": "zh-TW",
+    "format": { "aspectRatio": "16:9", "width": 1920, "height": 1080, "fps": 30 },
+    "tts": { "provider": "manual" },
+    "cast": [{ "id": "fox", "name": "【小狐狸】" }]
+  },
+  "scenes": [],
+  "status": "initialized",
+  "updatedAt": "2026-10-01T10:00:00Z",
+  "updatedBy": "agent"
+}

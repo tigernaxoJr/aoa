@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { NIL_UUID, PROJECT_FILE, UsageError, readJson, resolveProjectPath, sceneFile, scenePaths } from './project.mjs'
 import { loadSchemas, schemaErrors } from './schema.mjs'
+import { parseScript } from './narration.mjs'
 import { inspectScenes } from './status.mjs'
 
 const RATIOS = { '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:5': 4 / 5 }
@@ -37,6 +38,22 @@ export function validateProject(root, overrides = new Map()) {
       }
     } catch (err) {
       errors.push(`${PROJECT_FILE}: audio.bgm ${err.message}`)
+    }
+  }
+
+  const castNames = new Set()
+  const castIds = new Set()
+  for (const member of p.cast ?? []) {
+    if (castIds.has(member.id)) errors.push(`${PROJECT_FILE}: duplicate cast id ${member.id}`)
+    if (castNames.has(member.name)) errors.push(`${PROJECT_FILE}: duplicate cast name ${member.name}`)
+    castIds.add(member.id)
+    castNames.add(member.name)
+    if (member.art) {
+      try {
+        if (!existsSync(resolveProjectPath(root, root, member.art))) warnings.push(`${PROJECT_FILE}: cast ${member.id} art ${member.art} not found`)
+      } catch (err) {
+        errors.push(`${PROJECT_FILE}: cast ${member.id} art ${err.message}`)
+      }
     }
   }
 
@@ -76,6 +93,16 @@ export function validateProject(root, overrides = new Map()) {
       errors.push(`${label}: script file ${scene.narration.scriptFile} not found`)
     } else if (!narrationText(script) && scene.durationSec === null) {
       errors.push(`${label}: script is empty, so durationSec must be set`)
+    } else {
+      const unknown = new Set(parseScript(script).filter((b) => b.speaker && !castNames.has(b.speaker)).map((b) => b.speaker))
+      for (const name of unknown) errors.push(`${label}: 【${name}】 is not in project.cast; add the character or fix the name`)
+    }
+    for (const used of scene.visual.motion?.uses ?? []) {
+      try {
+        if (!existsSync(resolveProjectPath(root, sceneDir, used))) errors.push(`${label}: visual.motion.uses ${used} not found`)
+      } catch {
+        // reported by the scenePaths check above
+      }
     }
   }
   if (errors.length) return { errors, warnings, project, inspected: null }

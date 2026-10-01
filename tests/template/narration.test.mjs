@@ -48,3 +48,18 @@ test('blockCues falls back when word timings do not match the text', () => {
   assert.equal(cues[0].start, 0)
   assert.equal(cues[0].end, 2)
 })
+
+test('parseScript gives 【name】 lines to that character and the rest to the narrator', () => {
+  const blocks = parseScript('夜深了。\n【小狐狸】月亮掉進水裡了！\n【小狐狸】我要把它撈起來。\n【貓頭鷹】那只是倒影喔。\n<!-- pause 0.3 -->\n小狐狸愣住了。\n')
+  assert.deepEqual(blocks, [
+    { type: 'text', lines: ['夜深了。'] },
+    { type: 'text', lines: ['月亮掉進水裡了！', '我要把它撈起來。'], speaker: '小狐狸' },
+    { type: 'text', lines: ['那只是倒影喔。'], speaker: '貓頭鷹' },
+    { type: 'pause', sec: 0.3 },
+    { type: 'text', lines: ['小狐狸愣住了。'] },
+  ])
+})
+
+test('parseScript keeps ordinary brackets that do not start a line', () => {
+  assert.deepEqual(parseScript('他說【小心】就跑了。\n'), [{ type: 'text', lines: ['他說【小心】就跑了。'] }])
+})

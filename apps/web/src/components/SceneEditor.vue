@@ -14,6 +14,8 @@ const dirtyModel = defineModel<boolean>('dirty', { default: false })
 
 const s = computed(() => state.value!.scenes.find((x) => x.id === props.id) ?? null)
 const scene = computed(() => s.value?.scene ?? null)
+/** Story projects: the characters a script line can be given to with 【name】. */
+const cast = computed(() => state.value!.project.project.cast ?? [])
 
 interface Draft {
   title: string
@@ -172,9 +174,12 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
           <input v-model="draft.title" required maxlength="120" class="field" />
         </label>
         <label class="block">
-          <span class="label">旁白</span>
+          <span class="label">{{ cast.length ? '旁白與對白' : '旁白' }}</span>
           <textarea v-model="draft.script" rows="6" class="field font-mono leading-relaxed" data-testid="script-input" />
           <span class="hint">一行一句；用 <code>&lt;!-- pause 0.5 --&gt;</code> 插入停頓。存在 script.md。</span>
+          <span v-if="cast.length" class="hint" data-testid="cast-hint">
+            角色說的話在行首寫【名字】，例如「【{{ cast[0].name }}】你好！」；沒有標的行是旁白。角色：<template v-for="(m, i) in cast" :key="m.id"><template v-if="i">、</template>【{{ m.name }}】</template>
+          </span>
         </label>
         <label class="block">
           <span class="label">畫面描述</span>

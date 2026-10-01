@@ -13,7 +13,11 @@ export interface VideoProjectJson {
     id: string;
     name: string;
     /**
-     * 至少提供一種產品來源。
+     * 影片類型：product = 產品介紹（Skill product-video）；story = 把故事做成 SVG 動畫影片（Skill story-video）。
+     */
+    kind?: "product" | "story";
+    /**
+     * 影片的來源資料；至少要有哪些依 project.kind 而定。
      */
     sources: {
       productUrl?: string | null;
@@ -27,10 +31,43 @@ export interface VideoProjectJson {
       sourceCodePath?: string | null;
       description?: string | null;
       /**
+       * 故事全文、大綱或點子（kind 為 story 時使用）。整理後的定稿在 brief/story.md。
+       */
+      story?: string | null;
+      /**
        * 風格參考影片（可選，SPEC §6.2 Step 2）。
        */
       referenceVideoUrl?: string | null;
     };
+    /**
+     * 故事的角色與各自的聲音（kind 為 story 時使用）。script.md 中以【name】開頭的行由該角色說；其餘為旁白，用 project.tts。
+     */
+    cast?: {
+      /**
+       * 英文小寫識別碼，也是美術資料夾名稱（@/assets/cast/<id>/）。
+       */
+      id: string;
+      /**
+       * script.md 中【】內使用的名字。
+       */
+      name: string;
+      /**
+       * 外型與個性，給畫圖與挑聲音參考。
+       */
+      description?: string;
+      /**
+       * 省略時沿用 project.tts.provider。
+       */
+      provider?: "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual";
+      /**
+       * 省略時沿用 project.tts.voice。
+       */
+      voice?: string;
+      /**
+       * 角色部件 SVG 所在資料夾，通常為 @/assets/cast/<id>/。
+       */
+      art?: string;
+    }[];
     targetAudience?: string;
     /**
      * 製作中發現某段太趕時：auto = Agent 可自行在限度內調整 scene 長度並事後回報；ask = 每次先詢問使用者。
@@ -129,7 +166,15 @@ export interface VideoProjectJson {
   /**
    * SPEC §4.5。
    */
-  status: "initialized" | "analyzed" | "script_generated" | "producing" | "ready_to_assemble" | "completed" | "failed";
+  status:
+    | "initialized"
+    | "analyzed"
+    | "designed"
+    | "script_generated"
+    | "producing"
+    | "ready_to_assemble"
+    | "completed"
+    | "failed";
   /**
    * ISO 8601 / RFC 3339 日期時間，須含時區。
    */
@@ -151,7 +196,22 @@ export interface VideoProjectJson {
 export interface SceneJson {
   id: string;
   title: string;
-  purpose: "hook" | "problem" | "solution" | "feature" | "how-it-works" | "benefit" | "social-proof" | "cta" | "custom";
+  purpose:
+    | "hook"
+    | "problem"
+    | "solution"
+    | "feature"
+    | "how-it-works"
+    | "benefit"
+    | "social-proof"
+    | "cta"
+    | "opening"
+    | "setup"
+    | "conflict"
+    | "climax"
+    | "resolution"
+    | "ending"
+    | "custom";
   narration: {
     /**
      * 專案內的相對路徑，使用正斜線。不得為絕對路徑、不得含 `..` 片段、不得含反斜線。scene.json 中的路徑相對於該 scene 目錄；以 `@/` 開頭表示相對於專案根目錄（例如 `@/assets/logo.png`）。
@@ -255,6 +315,10 @@ export interface SceneJson {
        * ES module，預設匯出 setup(ctx)，回傳 seek(t)。通常放在 assets/motion.js。
        */
       file: string;
+      /**
+       * 模組匯入的共用檔案或資料夾（例如 @/assets/cast/fox/），納入 inputHash：這些檔案一改，scene 就需要重做。資料夾以 / 結尾，包含底下所有檔案。
+       */
+      uses?: string[];
     };
     /**
      * 疊加在畫面上的元素。

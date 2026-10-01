@@ -47,6 +47,12 @@ export function buildPlan(root, project, ref, scene) {
     elements: [],
     audio: audioSec == null ? null : { file: audioFile, durationSec: audioSec },
   }
+  if (plan.background.kind === 'module') {
+    // Who says what when, so a motion module can animate the speaking character.
+    const captionsFile = join(sceneDir, DEFAULTS.captionsFile)
+    plan.cues = existsSync(captionsFile) ? JSON.parse(readFileSync(captionsFile, 'utf8')) : []
+    plan.cast = (project.project.cast ?? []).map(({ id, name }) => ({ id, name }))
+  }
   if (scene.visual.type === 'web-capture') {
     const recSec = probeDuration(plan.background.file)
     if (recSec > duration + 0.5) {

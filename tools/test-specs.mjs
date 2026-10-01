@@ -93,38 +93,42 @@ if (validators.project(readJson(templateProject))) {
   for (const e of validators.project.errors) console.error(`    ${e.instancePath || '/'} ${e.message}`)
 }
 
-// SKILL.md frontmatter per the Agent Skills format.
-const skillFile = join(rootDir, 'skills', 'product-video', 'SKILL.md')
-const frontmatter = readFileSync(skillFile, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? ''
-const field = (key) => frontmatter.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1].trim()
-const skillName = field('name')
-const skillDescription = field('description')
-const skillErrors = []
-if (!skillName || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skillName) || skillName.length > 64) {
-  skillErrors.push('name must be lowercase-hyphenated, ≤ 64 chars')
-}
-if (skillName !== 'product-video') skillErrors.push('name must match its directory (product-video)')
-if (!skillDescription || skillDescription.length > 1024) skillErrors.push('description required, ≤ 1024 chars')
-if (skillErrors.length) {
-  failures++
-  console.error(`✗ skills/product-video/SKILL.md: ${skillErrors.join('; ')}`)
-} else {
-  console.log('✓ skills/product-video/SKILL.md frontmatter')
+// Each Skill: SKILL.md frontmatter per the Agent Skills format.
+const SKILLS = ['product-video', 'story-video']
+for (const skill of SKILLS) {
+  const frontmatter = readFileSync(join(rootDir, 'skills', skill, 'SKILL.md'), 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? ''
+  const field = (key) => frontmatter.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1].trim()
+  const skillName = field('name')
+  const skillDescription = field('description')
+  const skillErrors = []
+  if (!skillName || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skillName) || skillName.length > 64) {
+    skillErrors.push('name must be lowercase-hyphenated, ≤ 64 chars')
+  }
+  if (skillName !== skill) skillErrors.push(`name must match its directory (${skill})`)
+  if (!skillDescription || skillDescription.length > 1024) skillErrors.push('description required, ≤ 1024 chars')
+  if (skillErrors.length) {
+    failures++
+    console.error(`✗ skills/${skill}/SKILL.md: ${skillErrors.join('; ')}`)
+  } else {
+    console.log(`✓ skills/${skill}/SKILL.md frontmatter`)
+  }
 }
 
-// Skill links: relative links in skills/product-video/*.md and workflow.json `guide` fields
-// must point to existing files and anchors (`<a id="...">`).
-// Files or file#anchor targets listed in PENDING are planned but not yet written; links to them only warn.
+// Skill links: relative links in skills/*/*.md (including ../<other skill>/file.md) and workflow.json
+// `guide` fields must point to existing files and anchors (`<a id="...">`).
+// Files or file#anchor targets listed in PENDING (as skill/file) are planned but not yet written; links to them only warn.
 const PENDING = new Set()
-const skillDir = join(rootDir, 'skills', 'product-video')
 const skillDocs = new Map(
-  readdirSync(skillDir)
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => [f, readFileSync(join(skillDir, f), 'utf8')]),
+  SKILLS.flatMap((skill) =>
+    readdirSync(join(rootDir, 'skills', skill))
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => [`${skill}/${f}`, readFileSync(join(rootDir, 'skills', skill, f), 'utf8')]),
+  ),
 )
 const anchorsOf = (text) => new Set([...text.matchAll(/<a id="([^"]+)"><\/a>/g)].map((m) => m[1]))
 const linkErrors = []
 const pendingRefs = new Set()
+/** `target` is skill/file[#anchor]. */
 const checkLink = (from, target) => {
   const [file, anchor] = target.split('#')
   if (!skillDocs.has(file)) {
@@ -137,14 +141,17 @@ const checkLink = (from, target) => {
     else linkErrors.push(`${from} → ${target}: anchor not found`)
   }
 }
-for (const [file, text] of skillDocs) {
+for (const [doc, text] of skillDocs) {
+  const skill = doc.split('/')[0]
   for (const [, target] of text.matchAll(/\]\(([^)\s]+)\)/g)) {
     if (/^[a-z]+:/i.test(target)) continue // external URL
-    checkLink(file, target.startsWith('#') ? `${file}${target}` : target)
+    if (target.startsWith('#')) checkLink(doc, `${doc}${target}`)
+    else if (target.startsWith('../')) checkLink(doc, target.slice(3))
+    else checkLink(doc, `${skill}/${target}`)
   }
 }
 for (const step of [...workflow.steps, ...workflow.operations]) {
-  if (step.guide) checkLink(`workflow.json:${step.id}`, step.guide.replace(/^skills\/product-video\//, ''))
+  if (step.guide) checkLink(`workflow.json:${step.id}`, step.guide.replace(/^skills\//, ''))
 }
 if (linkErrors.length) {
   failures += linkErrors.length

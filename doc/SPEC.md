@@ -264,6 +264,25 @@ my-video-project/
 
 旁白稿獨立成 Markdown，讓使用者可直接用編輯器或 UI 修改。純文字，一段即一句旁白；可用 `<!-- pause 0.5 -->` 插入停頓。
 
+故事專案（§4.6）中，以 `【角色名】` 開頭的行由 `project.cast` 中同名的角色說，`tts` 改用該角色的 `provider` / `voice` 合成，字幕 cue 多一個 `speaker` 欄位；其餘行是旁白。
+
+### 4.6 影片類型 `project.kind`
+
+同一套協議、範本、渲染器與工作台支援兩種影片，以 `project.kind` 區分（預設 `product`，舊專案不需修改）：
+
+| | `product`：產品介紹 | `story`：故事動畫 |
+|---|---|---|
+| Skill / 入口 | `product-video` / `/api/agent-guide.md` | `story-video` / `/api/story-guide.md` |
+| `sources` 至少需要 | `productUrl`、`sourceCodePath`、`description` 之一 | `story` 或 `description` |
+| 流程 | init → analyze → storyboard → build_scene → assemble | init → develop_story → design → storyboard → build_scene → assemble |
+| 畫面 | 網頁錄影、截圖為主 | 每段都是 `motion-graphic` + 動畫模組（SVG） |
+| 聲音 | 旁白一種聲音 | 旁白 + `project.cast[]` 每個角色各自的聲音 |
+
+- `workflow.json` 的步驟以 `kinds` 標示只適用於哪些類型。
+- 故事專案的角色美術放在 `assets/cast/<id>/`（一個 SVG 內以 `<g id>` 分出部件、`data-pivot` 標示支點），場景在 `assets/sets/`；動畫模組以範本的 `src/lib/rig.js` 擺姿勢，並把用到的共用檔列在 `visual.motion.uses`（資料夾以 `/` 結尾）。
+- `inputHash` 另外涵蓋 `motion.uses` 的檔案，以及該 scene 中有說話的角色的 `cast` 設定（D22）。
+- 動畫模組的 `setup(ctx)` 多收到 `cues`（含 `speaker` 的字幕時間軸）與 `cast`，讓說話的角色動嘴、做動作。
+
 ### 4.4 多語系
 
 - **一個專案 = 一個語言**（`project.language`）。MVP 不支援同一專案輸出多語版本。
@@ -280,7 +299,7 @@ my-video-project/
 **Project `status`**
 
 ```text
-initialized → analyzed → script_generated → producing → ready_to_assemble → completed
+initialized → analyzed → [designed] → script_generated → producing → ready_to_assemble → completed
                                                    ↘            ↘
                                                     failed ←─────┘
 ```
@@ -288,7 +307,8 @@ initialized → analyzed → script_generated → producing → ready_to_assembl
 | 值 | 意義 |
 |---|---|
 | `initialized` | 專案骨架已建立 |
-| `analyzed` | `brief/product-brief.md`（及可選 `style.json`）已產生 |
+| `analyzed` | product：`brief/product-brief.md`（及可選 `style.json`）已產生；story：`brief/story.md` 已定稿 |
+| `designed` | 只有 story：`brief/design.md`、角色與場景 SVG、`project.cast` 的聲音已確認 |
 | `script_generated` | 所有 scene 已規劃，scene.json + script.md 已產生 |
 | `producing` | 至少一個 scene 正在產生素材或渲染 |
 | `ready_to_assemble` | 所有 scene 皆為 `approved` 或 `rendered` 且未過期 |
@@ -592,6 +612,8 @@ skills/product-video/
 
 安裝方式：Agent 下載 `/api/skills/product-video.zip` 解壓到專案 `.claude/skills/`（或使用者層級 skills 目錄）。不安裝也可以：`/api/agent-guide.md` 與 `/api/skills/product-video/*.md` 提供相同內容供線上讀取。
 
+故事影片的 Skill 在 `skills/story-video/`（`SKILL.md`、`story-guide.md`、`design-guide.md`），共用的步驟（找專案、同步範本、安裝、本機助手、sync、translate）以 `../product-video/…` 連到產品 Skill。打包時 `rendering-guide.md` 一併複製進 `story-video.zip`，其他跨 Skill 連結改寫成產品 Skill 的網址；入口為 `/api/story-guide.md`。
+
 - `SKILL.md` 負責「判斷目前狀態」與「初始化新專案」（此時專案內尚無 `AGENTS.md`）；初始化之後的規則以專案 `AGENTS.md` 為準，SKILL 不重複規則。
 - `workflow.md`（各步驟做法，含 `brief/product-brief.md` 與 `brief/style.json` 的格式）、`script-guide.md`（分鏡與旁白寫作）以 `<a id="…">` 明確錨點供 `workflow.json` 的 `guide` 引用；`pnpm run test:specs` 檢查所有 Skill 內部連結與錨點。
 - `SKILL.md` 中的網站網址寫成 `{{SITE_URL}}`，由 `build-api.mjs` 打包時替換。
@@ -840,3 +862,4 @@ agent-video-platform/
 | D19 | 其他 Agent 相容性 | GPT 提及「未來支援其他 Agent」 | MVP 只測 Claude Code；AGENTS.md / Skill 中立寫法；指令檔單一來源產生各家格式，逐一驗收後才標示支援 | 協議層已通用，差異只在指令格式；支援宣告需有測試背書 |
 | D20 | 網站部署與指令來源 | 未規範（§9.4 僅提 Cloudflare / GitHub Pages） | GitHub Pages（`gh-pages` 分支），網址 `/index-url-director`，base path 從 repo 名稱推得（可用 `SITE_URL` 覆寫）；Guide API 一律絕對網址；指令檔與 prompts/rules 皆由既有單一來源（workflow.json、Skill）產生；init 以 Skill 或 agent-guide 為入口 | 子路徑部署下根相對路徑會失效；避免 YAML 與 workflow.json、prompts 與 Skill 雙重維護；init 時專案指令尚不存在 |
 | D21 | Cloud MCP | §10 原規劃由網站提供 Cloud MCP | 不另設雲端 MCP；Guide 類 resources / prompts 併入本機 `video-agent mcp`，內容來自內附或網站的 `/api/*`；專案操作只呼叫專案自己的腳本 | 網站為 GitHub Pages 靜態部署，無法運行 MCP；本機伺服器已隨 Agent 啟動，多一個雲端端點沒有額外價值；呼叫專案腳本可確保與專案的協議版本一致 |
+| D22 | 故事影片 | 無 | 以 `project.kind` 區分，同一範本與渲染器，另立 `story-video` Skill 與 `develop_story` / `design` 兩步；角色聲音以 script.md 行首【名字】指定；角色美術一次畫好、以 `rig.js` 擺姿勢 | 渲染、TTS、合成與工作台都與產品無關，分叉範本只會讓兩邊漂移；一個角色檔重複使用才能讓角色從頭到尾一致，也省 token；只把該段有說話的角色聲音算進 hash，換一個角色的聲音不必重做整部片 |

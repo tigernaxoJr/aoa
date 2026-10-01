@@ -26,9 +26,10 @@ export function claudeCommands(workflow, siteUrl) {
       if (args.length) {
         lines.push('', '參數：', ...args.map((a) => `- \`${a.name}\`${a.required ? '（必填）' : ''}${a.description ? `：${a.description}` : ''}`))
       }
+      if (step.kinds) lines.push('', `只適用於 \`project.kind\` 為 ${step.kinds.map((k) => `\`${k}\``).join('、')} 的專案。`)
       if (step.guide) {
-        const guide = step.guide.replace(/^skills\/product-video\//, '')
-        lines.push('', `做法見 product-video Skill 的 \`${guide}\`；未安裝 Skill 時讀取 ${siteUrl}/api/skills/product-video/${guide}`)
+        const [, skill, guide] = step.guide.match(/^skills\/([^/]+)\/(.+)$/)
+        lines.push('', `做法見 ${skill} Skill 的 \`${guide}\`；未安裝 Skill 時讀取 ${siteUrl}/api/skills/${skill}/${guide}`)
       }
       out.push({ path: `.claude/commands/${name}.md`, content: `${lines.join('\n')}\n` })
     }

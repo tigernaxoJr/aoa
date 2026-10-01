@@ -71,10 +71,20 @@ export async function renderHtml({ root, plan, work, server, out, log, subtitles
     const errors = []
     page.on('pageerror', (err) => errors.push(err.message))
     await page.goto(url(html))
-    await page.waitForFunction(() => window.__ready, null, { timeout: 30_000 }).catch(() => {
-      throw new Error(`player did not start${errors.length ? `: ${[...new Set(errors)].join('; ')}` : ''}`)
-    })
-    await page.evaluate(() => window.__ready)
+    // Read why the player failed from its own promise: a pageerror for the same rejection may not
+    // have arrived yet when the wait gives up.
+    const failure = await page
+      .waitForFunction(() => window.__ready !== undefined, null, { timeout: 30_000 })
+      .then(() =>
+        page.evaluate(() =>
+          Promise.race([
+            window.__ready.then(() => null, (err) => String(err?.message ?? err)),
+            new Promise((resolve) => setTimeout(() => resolve('timed out'), 30_000)),
+          ]),
+        ),
+      )
+      .catch((err) => err.message)
+    if (failure) throw new Error(`player did not start: ${[...new Set([failure, ...errors])].join('; ')}`)
     const stage = page.locator('#stage')
     let reported = 0
     for (let f = 0; f < frames; f++) {

@@ -114,6 +114,13 @@
             }
           }
         },
+        "kinds": {
+          "description": "只適用於這些 project.kind；省略時適用於所有類型。",
+          "type": "array",
+          "items": { "enum": ["product", "story"] },
+          "minItems": 1,
+          "uniqueItems": true
+        },
         "scope": { "description": "project：整個專案執行一次；scene：對每個指定 scene 各自執行。", "enum": ["project", "scene"] },
         "requires": {
           "type": "object",

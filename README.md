@@ -1,17 +1,22 @@
 # Agent Video Producer
 
-讓 Coding Agent（如 Claude Code）在使用者自己的電腦上製作產品介紹影片。
+讓 Coding Agent（如 Claude Code）在使用者自己的電腦上製作影片，有兩種：
+
+- **產品介紹影片**：分析產品網址或原始碼，錄畫面、配旁白。
+- **故事動畫影片**：把使用者的故事（全文、大綱或只有點子）補完整，用 SVG 畫出角色與場景，旁白與每個角色各自配音。
 
 這不是「AI 幫你產生影片」的 SaaS：網站只提供協議（JSON Schema）、工作流程、Skill、專案範本與視覺化工作台；推理由本機 Agent 負責，原始碼、素材、語音、渲染與最終影片都留在本機。
 
 - 網站與工作台：https://tigernaxojr.github.io/index-url-director/
-- Agent 入口：https://tigernaxojr.github.io/index-url-director/api/index.json
+- Agent 入口：https://tigernaxojr.github.io/index-url-director/api/index.json（產品影片讀 `agent-guide.md`，故事影片讀 `story-guide.md`）
 - 完整設計規格：[doc/SPEC.md](doc/SPEC.md)
 
 ## 怎麼使用
 
-1. 打開網站工作台，依步驟選擇一個空資料夾並填寫產品資訊（網址、原始碼或文字描述）。
-2. 在該資料夾開啟 Agent，告訴它「幫我做產品介紹影片」。Agent 會讀取 [Skill](skills/product-video/SKILL.md)，下載並驗證專案範本，接著依序分析產品、規劃分鏡與旁白、逐段產生語音與畫面，最後用 FFmpeg 合成 `output/final.mp4` 與字幕檔。
+1. 打開網站工作台，選擇「產品介紹影片」或「把故事做成動畫」，依步驟選擇一個空資料夾並填寫產品資訊（網址、原始碼或文字描述）或故事。
+2. 把網頁產生的一段話貼給 Agent。
+   - 產品影片：Agent 讀取 [product-video Skill](skills/product-video/SKILL.md)，下載並驗證專案範本，接著依序分析產品、規劃分鏡與旁白、逐段產生語音與畫面，最後用 FFmpeg 合成 `output/final.mp4` 與字幕檔。
+   - 故事影片：Agent 讀取 [story-video Skill](skills/story-video/SKILL.md)，用同一份範本，依序和使用者整理故事、設計角色與聲音（設定稿與試聽檔）、寫分鏡與對白、逐段畫 SVG 動畫，最後合成。
 3. 影片以 scene 為單位，可以在工作台預覽、修改旁白，再請 Agent 只重做受影響的段落。
 
 產生的專案怎麼操作，見範本的 [README](templates/product-video/README.md)。
@@ -21,8 +26,9 @@
 | 路徑 | 內容 |
 |---|---|
 | `specs/` | 協議的唯一來源：`project` / `scene` / `common` / `workflow` Schema、`workflow.json` 與驗證範例 |
-| `skills/product-video/` | Agent 的 Skill（`SKILL.md`、`workflow.md`、`script-guide.md`、`rendering-guide.md`） |
-| `templates/product-video/` | 本機影片專案範本：TTS、擷取、渲染、合成腳本與 `AGENTS.md` |
+| `skills/product-video/` | 產品影片的 Skill（`SKILL.md`、`workflow.md`、`script-guide.md`、`rendering-guide.md`） |
+| `skills/story-video/` | 故事影片的 Skill（`SKILL.md`、`story-guide.md`、`design-guide.md`；渲染沿用 `rendering-guide.md`） |
+| `templates/product-video/` | 兩種影片共用的本機專案範本：TTS、擷取、渲染、合成腳本、角色動畫工具 `src/lib/rig.js` 與 `AGENTS.md` |
 | `apps/web/` | Vue 工作台（File System Access API 讀寫本機專案） |
 | `packages/video-agent/` | 本機 MCP server（`video-agent mcp`；`video-agent serve` 會啟動專案的 Companion） |
 | `tools/` | `build-api.mjs`（產生靜態 Guide API 與 zip）、`gen-types.mjs`（由 Schema 產生 TS 型別） |

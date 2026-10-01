@@ -32,7 +32,9 @@ export function createServer({ projectDir = process.cwd() } = {}) {
 
   // Guide resources (static site content)
   const resources = [
-    ['guide', 'video://guide', 'agent-guide.md', 'text/markdown', 'Agent guide: how to run the whole workflow'],
+    ['guide', 'video://guide', 'agent-guide.md', 'text/markdown', 'Agent guide: how to run the whole workflow (product videos)'],
+    ['story-guide', 'video://guide/story', 'story-guide.md', 'text/markdown', 'Agent guide for story videos (project.kind "story"): story, cast and SVG animation'],
+    ['story-design', 'video://guide/story/design', 'skills/story-video/design-guide.md', 'text/markdown', 'Story videos: art style, character rigs, voices and motion modules'],
     ['workflow', 'video://workflow', 'workflow.json', 'application/json', 'Workflow steps, gates, transitions (SPEC §6)'],
     ['schema-common', 'video://schemas/common', 'schemas/common.schema.json', 'application/json', 'Shared JSON Schema definitions'],
     ['schema-project', 'video://schemas/project', 'schemas/project.schema.json', 'application/json', 'video.project.json schema'],
@@ -81,10 +83,13 @@ export function createServer({ projectDir = process.cwd() } = {}) {
     {
       description:
         'Create a new video project from the site template (checksum-verified) in an empty directory and fill in its identity and sources. ' +
+        'kind "product" (default) needs productUrl, sourceCodePath or description; kind "story" needs story (full text, outline or idea; see video://guide/story). ' +
         'Afterwards: run pnpm install there, and record the onlineTtsConsent gate with update_project after asking the user.',
       inputSchema: {
         directory: z.string().describe('New or empty directory for the project'),
         name: z.string().min(1),
+        kind: z.enum(['product', 'story']).optional().describe('product (default): product introduction; story: turn a story into an SVG animation'),
+        story: z.string().optional().describe('kind story: the story, an outline or just an idea, as the user gave it'),
         productUrl: z.string().url().optional(),
         requiresLogin: z.boolean().optional().describe('productUrl needs signing in: before capture, run pnpm run login so the user signs in in a window (gate productLogin); never ask for the password'),
         sourceCodePath: z.string().optional(),
@@ -92,21 +97,30 @@ export function createServer({ projectDir = process.cwd() } = {}) {
         language: z.string().optional().describe('BCP 47 tag, default zh-TW'),
       },
     },
-    tool(async ({ directory, name, productUrl, requiresLogin, sourceCodePath, description, language }) => {
-      if (!productUrl && !sourceCodePath && !description) throw new AgentError('give at least one of productUrl, sourceCodePath, description')
+    tool(async ({ directory, name, kind = 'product', story, productUrl, requiresLogin, sourceCodePath, description, language }) => {
+      if (kind === 'story' && !story && !description) throw new AgentError('a story project needs story (or description)')
+      if (kind === 'product' && !productUrl && !sourceCodePath && !description) throw new AgentError('give at least one of productUrl, sourceCodePath, description')
       const dir = resolve(projectDir, directory)
       const manifest = await unpackTemplate(dir)
       const file = join(dir, PROJECT_FILE)
       const doc = JSON.parse(readFileSync(file, 'utf8'))
       doc.project.id = randomUUID()
       doc.project.name = name
-      doc.project.sources = { ...doc.project.sources, productUrl: productUrl ?? null, ...(productUrl && requiresLogin ? { requiresLogin: true } : {}), sourceCodePath: sourceCodePath ?? null, description: description ?? null }
+      if (kind === 'story') {
+        doc.project.kind = 'story'
+        // Every story scene is a custom animation, so there is nothing to ask scene by scene.
+        doc.project.customMotion = 'allow'
+        doc.project.sources = { story: story ?? null, description: description ?? null }
+      } else {
+        doc.project.sources = { ...doc.project.sources, productUrl: productUrl ?? null, ...(productUrl && requiresLogin ? { requiresLogin: true } : {}), sourceCodePath: sourceCodePath ?? null, description: description ?? null }
+      }
       if (language) doc.project.language = language
       doc.updatedAt = new Date().toISOString()
       doc.updatedBy = BY
       // A brand-new project has no other writers, so this one direct write is allowed (SPEC §7.3).
       writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`)
-      return text({ directory: dir, specVersion: manifest.specVersion, files: manifest.files.length, next: ['pnpm install', 'record gates with update_project', 'analyze (prompt "analyze")'] })
+      const next = kind === 'story' ? 'develop the story (/video-story, video://guide/story)' : 'analyze (prompt "analyze")'
+      return text({ directory: dir, specVersion: manifest.specVersion, files: manifest.files.length, next: ['pnpm install', 'record gates with update_project', next] })
     }),
   )
   server.registerTool(

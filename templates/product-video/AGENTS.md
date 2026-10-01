@@ -1,6 +1,10 @@
-# Product Video Project — Agent 規則
+# Video Project — Agent 規則
 
-本目錄是一個「產品介紹影片」專案，遵循 Agent Video Producer 協議（specVersion 1.0）。
+本目錄是一個影片專案，遵循 Agent Video Producer 協議（specVersion 1.0）。`video.project.json` 的 `project.kind` 決定類型：
+
+- `product`（預設）：產品介紹影片，詳細做法在 Skill `product-video`。
+- `story`：把使用者的故事做成 SVG 動畫影片，旁白與角色各自配音，詳細做法在 Skill `story-video`。
+
 你的任務是依工作流程，在本機一步步產生影片。所有運算與檔案都留在本機。
 
 ---
@@ -13,11 +17,14 @@
 | `schemas/project.schema.json` | `video.project.json` 的格式 |
 | `schemas/scene.schema.json` | `scenes/*/scene.json` 的格式 |
 | `video.project.json` | 專案設定與 scene 播放順序 |
-| `brief/product-brief.md` | 產品分析結果（analyze 之後才存在） |
+| `brief/product-brief.md` | 產品分析結果（product，analyze 之後才存在） |
+| `brief/story.md`、`brief/design.md` | 故事定稿、美術設定（story） |
 
-詳細做法（文案寫法、渲染實作）在 Skill `product-video` 中；`workflow.json` 每個步驟的 `guide` 欄位指出對應章節。
+詳細做法（文案寫法、渲染實作）在上述 Skill 中；`workflow.json` 每個步驟的 `guide` 欄位指出對應章節。步驟有 `kinds` 時只適用於那些 `project.kind`。
 
 ## 2. 工作流程
+
+產品介紹（`product`）：
 
 | 步驟 | 指令 | 完成後 project.status | 需停下確認 |
 |---|---|---|---|
@@ -26,6 +33,19 @@
 | 3 分鏡與旁白 | `/video-storyboard` | `script_generated` | **是**：分鏡與完整旁白稿審閱 |
 | 4 產生 scene | `/video-scene <id\|all>` | `producing` → `ready_to_assemble` | **是**：每個 scene 預覽 |
 | 5 合成 | `/video-assemble` | `completed` | 回報結果 |
+
+故事（`story`）：
+
+| 步驟 | 指令 | 完成後 project.status | 需停下確認 |
+|---|---|---|---|
+| 1 初始化 | 由 Skill 或網站 `story-guide.md` 執行 | `initialized` | — |
+| 2 整理故事 | `/video-story` | `analyzed` | **是**：故事定稿、對象、風格與長度 |
+| 3 美術與角色 | `/video-design` | `designed` | **是**：角色設定稿與每個角色的聲音 |
+| 4 分鏡、旁白與對白 | `/video-storyboard` | `script_generated` | **是**：分鏡與完整稿審閱 |
+| 5 產生 scene | `/video-scene <id\|all>` | `producing` → `ready_to_assemble` | **是**：每個 scene 預覽 |
+| 6 合成 | `/video-assemble` | `completed` | 回報結果 |
+
+故事專案的 `script.md` 中，以 `【角色名】` 開頭的行由 `project.cast` 裡同名的角色、用他的聲音說；其餘是旁白。動畫模組匯入的共用美術（`@/assets/cast/…`、`@/assets/sets/…`）要列在 `visual.motion.uses`，改了美術才會自動標示需要重做。
 
 影片做到一半或已合成後，仍可再執行 `/video-storyboard` 重新規劃分鏡：只修改被點名的段落，保留的段落沿用現有影片，確認後以 `/video-sync` 只重做有變更的段落並重新合成。
 
@@ -50,7 +70,7 @@
 10. **失敗時保留現場。** 不刪除既有檔案；以 `pnpm run state <id> --failed …` 記錄錯誤。同一 scene 自動重試至多 2 次（看 `attempts`），之後停下並告訴使用者原因與重試方式。
 11. **未經同意不安裝工具。** 缺少 Node.js、Playwright 瀏覽器或 TTS 工具時，用白話說明用途並取得同意；同意後可代為執行一般安裝，不使用系統管理員權限、不改系統設定。需要使用者點擊確認時，給逐步說明。
 12. **太趕時依 `project.durationAdjust` 處理。** `auto` 時可自行在限度內拉長 scene 並事後回報，`ask` 時先問；刪改已確認的旁白、增減 scene 一律先問。做法見 Skill `rendering-guide.md#pacing`。
-13. **自訂動畫依 `project.customMotion` 處理。** 寫動畫模組（`visual.motion`：SVG、Canvas、GSAP、Three.js、GLSL）或畫新的 SVG 插圖會耗用較多 token：`allow` 可自行使用，`ask` 在分鏡審閱時逐段請使用者決定，`deny` 不使用。重複使用 `assets/svg/` 已存的 SVG 不受限。做法見 Skill `script-guide.md#custom-motion`、`rendering-guide.md#motion`。
+13. **自訂動畫依 `project.customMotion` 處理**（`story` 專案每段都是自訂動畫，`customMotion` 設為 `allow`，不逐段詢問）。寫動畫模組（`visual.motion`：SVG、Canvas、GSAP、Three.js、GLSL）或畫新的 SVG 插圖會耗用較多 token：`allow` 可自行使用，`ask` 在分鏡審閱時逐段請使用者決定，`deny` 不使用。重複使用 `assets/svg/` 已存的 SVG 不受限。做法見 Skill `script-guide.md#custom-motion`、`rendering-guide.md#motion`。
 14. **假設使用者不懂電腦操作。** 所有指令由你執行，不要求使用者開終端機或打指令；使用者用白話下指示（「繼續」「第三段改成…」），由你對應到工作流程步驟。說明避免術語，回報檔案位置用「文件 > 專案 > output > final.mp4」這類資料夾順序，並可建議用網頁工作台預覽。
 15. **隨時更新 `video.activity.json`。** 網頁工作台用它顯示你正在做什麼、是否在等使用者。每開始一個步驟或 scene、每次停下來等使用者回覆（checkpoint、gate、提問）之前，直接覆寫整個檔案（格式見 `schemas/activity.schema.json`）：`message` 是一句白話，等使用者時 `waitingForUser: true` 並說明要他回答什麼，`step` 為 `workflow.json` 的步驟 id，`scene` 為正在處理的 scene id（沒有時為 `null`），`updatedAt` 為現在時間。它不經過 `pnpm run state`、不需要鎖、不納入版本控制。
 
@@ -112,7 +132,8 @@ draft → assets_ready → rendering → rendered → approved
 |---|---|
 | `pnpm run status` | 各 scene 狀態、是否過期、下一步建議 |
 | `pnpm run validate` | 驗證所有 JSON 與路徑；非 0 代表有錯 |
-| `pnpm run tts <id>` | 產生旁白音檔與字幕時間軸 |
+| `pnpm run tts <id>` | 產生旁白音檔與字幕時間軸（【角色】的行用角色的聲音） |
+| `pnpm run tts --sample <角色id\|narrator>` | 產生試聽檔 `brief/voices/<id>.mp3`；`--text "…"` 指定句子 |
 | `pnpm run capture <id>` | 擷取網頁畫面 |
 | `pnpm run login` | 打開瀏覽器視窗讓使用者自己登入產品；`--clear` 清除保存的登入 |
 | `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`） |

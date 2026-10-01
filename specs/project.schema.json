@@ -34,7 +34,7 @@
   "$defs": {
     "projectStatus": {
       "description": "SPEC §4.5。",
-      "enum": ["initialized", "analyzed", "script_generated", "producing", "ready_to_assemble", "completed", "failed"]
+      "enum": ["initialized", "analyzed", "designed", "script_generated", "producing", "ready_to_assemble", "completed", "failed"]
     },
     "sceneRef": {
       "type": "object",
@@ -57,7 +57,17 @@
       "properties": {
         "id": { "type": "string", "format": "uuid" },
         "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "kind": {
+          "description": "影片類型：product = 產品介紹（Skill product-video）；story = 把故事做成 SVG 動畫影片（Skill story-video）。",
+          "enum": ["product", "story"],
+          "default": "product"
+        },
         "sources": { "$ref": "#/$defs/sources" },
+        "cast": {
+          "description": "故事的角色與各自的聲音（kind 為 story 時使用）。script.md 中以【name】開頭的行由該角色說；其餘為旁白，用 project.tts。",
+          "type": "array",
+          "items": { "$ref": "#/$defs/castMember" }
+        },
         "targetAudience": { "type": "string" },
         "durationAdjust": {
           "description": "製作中發現某段太趕時：auto = Agent 可自行在限度內調整 scene 長度並事後回報；ask = 每次先詢問使用者。",
@@ -85,10 +95,47 @@
         "audio": { "$ref": "#/$defs/audio" },
         "captions": { "$ref": "#/$defs/captions" },
         "tts": { "$ref": "#/$defs/tts" }
+      },
+      "if": { "properties": { "kind": { "const": "story" } }, "required": ["kind"] },
+      "then": {
+        "description": "故事專案至少要有故事文字或點子描述。",
+        "properties": {
+          "sources": {
+            "anyOf": [
+              { "required": ["story"], "properties": { "story": { "type": "string", "minLength": 1 } } },
+              { "required": ["description"], "properties": { "description": { "type": "string", "minLength": 1 } } }
+            ]
+          }
+        }
+      },
+      "else": {
+        "description": "產品專案至少要有一種產品來源。",
+        "properties": {
+          "sources": {
+            "anyOf": [
+              { "required": ["productUrl"], "properties": { "productUrl": { "type": "string" } } },
+              { "required": ["sourceCodePath"], "properties": { "sourceCodePath": { "type": "string" } } },
+              { "required": ["description"], "properties": { "description": { "type": "string", "minLength": 1 } } }
+            ]
+          }
+        }
+      }
+    },
+    "castMember": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "description": "英文小寫識別碼，也是美術資料夾名稱（@/assets/cast/<id>/）。", "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+        "name": { "description": "script.md 中【】內使用的名字。", "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[^【】\\s]+$" },
+        "description": { "description": "外型與個性，給畫圖與挑聲音參考。", "type": "string" },
+        "provider": { "description": "省略時沿用 project.tts.provider。", "$ref": "common.schema.json#/$defs/ttsProvider" },
+        "voice": { "description": "省略時沿用 project.tts.voice。", "type": "string", "minLength": 1 },
+        "art": { "description": "角色部件 SVG 所在資料夾，通常為 @/assets/cast/<id>/。", "$ref": "common.schema.json#/$defs/relPath" }
       }
     },
     "sources": {
-      "description": "至少提供一種產品來源。",
+      "description": "影片的來源資料；至少要有哪些依 project.kind 而定。",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -104,17 +151,16 @@
           "minLength": 1
         },
         "description": { "type": ["string", "null"] },
+        "story": {
+          "description": "故事全文、大綱或點子（kind 為 story 時使用）。整理後的定稿在 brief/story.md。",
+          "type": ["string", "null"]
+        },
         "referenceVideoUrl": {
           "description": "風格參考影片（可選，SPEC §6.2 Step 2）。",
           "type": ["string", "null"],
           "format": "uri"
         }
-      },
-      "anyOf": [
-        { "required": ["productUrl"], "properties": { "productUrl": { "type": "string" } } },
-        { "required": ["sourceCodePath"], "properties": { "sourceCodePath": { "type": "string" } } },
-        { "required": ["description"], "properties": { "description": { "type": "string", "minLength": 1 } } }
-      ]
+      }
     },
     "format": {
       "description": "寬高須符合 aspectRatio（由 validate.mjs 檢查）。H.264 需偶數寬高。",

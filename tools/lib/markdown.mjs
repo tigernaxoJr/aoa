@@ -44,11 +44,13 @@ export function stripFrontmatter(markdown) {
 
 /**
  * Rewrites relative links `](file.md#x)` and in-page links `](#x)` to absolute URLs under `base`
- * (the published directory of the source file named `file`). External links are left alone.
+ * (the published directory of the source file named `file`). External links, and links to files in
+ * `keep` (including in-page links when `file` is one of them), are left alone.
  */
-export function absolutizeLinks(markdown, base, file) {
+export function absolutizeLinks(markdown, base, file, keep = []) {
   return markdown.replace(/\]\(([^)\s]+)\)/g, (all, target) => {
     if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return all
+    if (keep.includes(target.startsWith('#') ? file : target.split('#')[0])) return all
     return `](${base}/${target.startsWith('#') ? `${file}${target}` : target})`
   })
 }

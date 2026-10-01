@@ -18,6 +18,9 @@ import { absolutizeLinks, section, stripFrontmatter } from './lib/markdown.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const skillDir = join(root, 'skills', 'product-video')
+const storySkillDir = join(root, 'skills', 'story-video')
+/** product-video documents shipped inside the story-video Skill too (its rendering is the same). */
+const STORY_SHARED = ['rendering-guide.md']
 const templateDir = join(root, 'templates', 'product-video')
 const SCHEMAS = ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'activity.schema.json', 'workflow.schema.json']
 /** Paths never shipped in the template zip (relative, forward slashes). */
@@ -69,6 +72,20 @@ export function build({ siteUrl, out }) {
   const skillZip = zip(Object.entries(skillDocs).map(([f, text]) => [`product-video/${f}`, text]))
   write('api/skills/product-video.zip', skillZip)
 
+  // Story Skill: its own documents plus the shared product-video ones. Links into product-video
+  // point at the shared copy when there is one, otherwise at the published product-video Skill.
+  const storySkillUrl = `${siteUrl}/api/skills/story-video`
+  const storyDocs = Object.fromEntries([
+    ...readdirSync(storySkillDir)
+      .filter((f) => f.endsWith('.md'))
+      .sort()
+      .map((f) => [f, linkSibling(sub(readFileSync(join(storySkillDir, f), 'utf8')), 'product-video', skillUrl, STORY_SHARED)]),
+    ...STORY_SHARED.map((f) => [f, absolutizeLinks(skillDocs[f], skillUrl, f, STORY_SHARED)]),
+  ])
+  for (const [f, text] of Object.entries(storyDocs)) write(`api/skills/story-video/${f}`, text)
+  const storySkillZip = zip(Object.entries(storyDocs).sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, text]) => [`story-video/${f}`, text]))
+  write('api/skills/story-video.zip', storySkillZip)
+
   // Prompts and rules
   for (const [rel, { title, from }] of Object.entries(EXTRACTS)) {
     const parts = from.map(([file, anchor]) => {
@@ -82,6 +99,8 @@ export function build({ siteUrl, out }) {
   // Agent guide: the Skill entry point for agents that do not install Skills
   const skillBody = absolutizeLinks(stripFrontmatter(skillDocs['SKILL.md']).replace(/^# .*\n+/, ''), skillUrl, 'SKILL.md')
   write('api/agent-guide.md', agentGuide(siteUrl, skillBody))
+  const storyBody = absolutizeLinks(stripFrontmatter(storyDocs['SKILL.md']).replace(/^# .*\n+/, ''), storySkillUrl, 'SKILL.md')
+  write('api/story-guide.md', agentGuide(siteUrl, storyBody, { skill: 'story-video', title: '故事影片', checksum: 'storySkill' }))
 
   // Template: repo template + synced schemas + generated command files
   const templateFiles = listFiles(templateDir)
@@ -115,7 +134,13 @@ export function build({ siteUrl, out }) {
     skillDocs: `${skillUrl}/SKILL.md`,
     template: `${siteUrl}/api/templates/product-video.zip`,
     templateManifest: `${siteUrl}/api/templates/product-video/manifest.json`,
-    checksums: { skill: sha256(skillZip), template: sha256(templateZip) },
+    // One template and workflow serve both kinds of video (project.kind); each has its own entry and Skill.
+    entries: { product: `${siteUrl}/api/agent-guide.md`, story: `${siteUrl}/api/story-guide.md` },
+    skills: {
+      product: { zip: `${siteUrl}/api/skills/product-video.zip`, docs: `${skillUrl}/SKILL.md` },
+      story: { zip: `${siteUrl}/api/skills/story-video.zip`, docs: `${storySkillUrl}/SKILL.md` },
+    },
+    checksums: { skill: sha256(skillZip), storySkill: sha256(storySkillZip), template: sha256(templateZip) },
   }
   write('api/index.json', `${JSON.stringify(index, null, 2)}\n`)
 
@@ -125,17 +150,17 @@ export function build({ siteUrl, out }) {
   return { index, manifest }
 }
 
-function agentGuide(siteUrl, skillBody) {
-  return `# Agent Video Producer — Agent 指引
+function agentGuide(siteUrl, skillBody, { skill = 'product-video', title = '', checksum = 'skill' } = {}) {
+  return `# Agent Video Producer — ${title ? `${title} ` : ''}Agent 指引
 
-> 給任何能讀檔、執行指令的 Coding Agent。本文件與 product-video Skill 的 \`SKILL.md\` 內容相同；支援 Agent Skills 的 Agent 可改為安裝 Skill（見文末）。
+> 給任何能讀檔、執行指令的 Coding Agent。本文件與 ${skill} Skill 的 \`SKILL.md\` 內容相同；支援 Agent Skills 的 Agent 可改為安裝 Skill（見文末）。
 > 網站只提供規則與範本，不執行任何 AI 或渲染；所有工作都在使用者的電腦上完成。
 
 ${skillBody.trim()}
 
 ## 安裝 Skill（可選）
 
-下載 ${siteUrl}/api/skills/product-video.zip，解壓到 Agent 的 skills 目錄（Claude Code：使用者層級 \`~/.claude/skills/\`，或專案內 \`.claude/skills/\`）。zip 的 SHA-256 在 ${siteUrl}/api/index.json 的 \`checksums.skill\`。
+下載 ${siteUrl}/api/skills/${skill}.zip，解壓到 Agent 的 skills 目錄（Claude Code：使用者層級 \`~/.claude/skills/\`，或專案內 \`.claude/skills/\`）。zip 的 SHA-256 在 ${siteUrl}/api/index.json 的 \`checksums.${checksum}\`。
 
 ## 資源
 
@@ -144,8 +169,18 @@ ${skillBody.trim()}
 | 資源索引 | ${siteUrl}/api/index.json |
 | 工作流程 | ${siteUrl}/api/workflow.json |
 | 專案範本 | ${siteUrl}/api/templates/product-video.zip（雜湊：${siteUrl}/api/templates/product-video/manifest.json） |
-| Skill 文件 | ${siteUrl}/api/skills/product-video/SKILL.md |
+| Skill 文件 | ${siteUrl}/api/skills/${skill}/SKILL.md |
 `
+}
+
+/**
+ * Rewrites links into a sibling Skill (`](../<sibling>/file.md#x)`): to the local copy when `file`
+ * is in `shared`, otherwise to the sibling's published URL.
+ */
+function linkSibling(markdown, sibling, siblingUrl, shared) {
+  return markdown.replace(new RegExp(`\\]\\(\\.\\./${sibling}/([^)\\s]+)\\)`, 'g'), (all, target) =>
+    shared.includes(target.split('#')[0]) ? `](${target})` : `](${siblingUrl}/${target})`,
+  )
 }
 
 function landingPage(index) {

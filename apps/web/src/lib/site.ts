@@ -13,7 +13,15 @@ export interface SourceHints {
   entries: string[]
 }
 
+/** What the video is about: a product introduction or a story the user tells (project.kind). */
+export type VideoKind = 'product' | 'story'
+
 export interface SourceInput {
+  kind: VideoKind
+  /** kind story: the story, an outline or just an idea. */
+  story: string
+  /** kind story: who will watch it (optional). */
+  audience: string
   productUrl: string
   /** The product page needs signing in; the agent then has the user sign in in a window of its own. */
   requiresLogin: boolean
@@ -30,6 +38,11 @@ const quote = (s: string) => s.replace(/"/g, '\\"')
 
 function sources(src: SourceInput) {
   const parts: string[] = []
+  if (src.kind === 'story') {
+    if (src.story.trim()) parts.push(`故事：${src.story.trim()}`)
+    if (src.audience.trim()) parts.push(`觀看對象：${src.audience.trim()}`)
+    return parts
+  }
   if (src.productUrl.trim()) parts.push(`產品網址：${src.productUrl.trim()}`)
   if (src.productUrl.trim() && src.requiresLogin) parts.push('這個網站要登入才看得到：請打開視窗讓我自己登入，我不會把帳號密碼告訴你')
   if (src.sourceCodePath.trim()) parts.push(`產品原始碼：${src.sourceCodePath.trim()}`)
@@ -44,6 +57,9 @@ export const newFolderId = () => crypto.randomUUID().slice(0, 8)
 /** The start file's contents: the folder's id, the same sources, and the hints for finding the source folder. */
 export function startJson(src: SourceInput, id: string) {
   const value = (s: string) => s.trim() || null
+  if (src.kind === 'story') {
+    return `${JSON.stringify({ id, kind: 'story', story: value(src.story), audience: value(src.audience), updatedAt: new Date().toISOString() }, null, 2)}\n`
+  }
   const folder = value(src.sourceFolder)
   return `${JSON.stringify(
     {
@@ -68,11 +84,14 @@ export function startJson(src: SourceInput, id: string) {
  */
 export function launchMessage(src: SourceInput, projectFolder: { name: string; id: string } | null = null) {
   const parts = sources(src)
+  const story = src.kind === 'story'
   return [
-    `請讀取 ${api('agent-guide.md')}，依照裡面的步驟幫我製作產品介紹影片。`,
+    story
+      ? `請讀取 ${api('story-guide.md')}，依照裡面的步驟幫我把故事做成動畫影片。`
+      : `請讀取 ${api('agent-guide.md')}，依照裡面的步驟幫我製作產品介紹影片。`,
     ...(projectFolder
       ? [
-          `你的工作資料夾是我在網頁上準備好的「${projectFolder.name}」：裡面的 ${START_FILE} 記有產品資訊與識別碼 ${projectFolder.id}。我開對話時沒有特別選它，請你自己找到這個資料夾、把工作目錄切換過去，所有檔案都放在那裡，不要在其他地方建立專案。`,
+          `你的工作資料夾是我在網頁上準備好的「${projectFolder.name}」：裡面的 ${START_FILE} 記有${story ? '故事內容' : '產品資訊'}與識別碼 ${projectFolder.id}。我開對話時沒有特別選它，請你自己找到這個資料夾、把工作目錄切換過去，所有檔案都放在那裡，不要在其他地方建立專案。`,
         ]
       : []),
     ...parts.map((p) => `・${p}`),
@@ -82,19 +101,39 @@ export function launchMessage(src: SourceInput, projectFolder: { name: string; i
 
 /** The same request as a one-line terminal command, for people who use a shell. */
 export function launchCommand(src: SourceInput, projectFolder: { name: string; id: string } | null = null) {
-  const parts = sources(src)
+  // One shell line: a pasted story keeps its words but not its line breaks.
+  const parts = sources(src).map((p) => p.replace(/\s+/g, ' '))
   const what = parts.length ? `，${parts.join('；')}` : ''
+  if (src.kind === 'story') {
+    const here = projectFolder ? `，在目前資料夾建立專案（故事在 ${START_FILE}，識別碼 ${projectFolder.id}）` : ''
+    return `claude "${quote(`讀取 ${api('story-guide.md')}，把故事做成動畫影片${here}${what}`)}"`
+  }
   const here = projectFolder ? `，在目前資料夾建立專案（產品資訊在 ${START_FILE}，識別碼 ${projectFolder.id}）` : ''
   return `claude "${quote(`讀取 ${api('agent-guide.md')}，製作產品介紹影片${here}${what}`)}"`
 }
 
-export const STEPS = [
-  { id: 'init', label: '初始化', done: ['initialized', 'analyzed', 'script_generated', 'producing', 'ready_to_assemble', 'completed'] },
-  { id: 'analyze', label: '分析產品', done: ['analyzed', 'script_generated', 'producing', 'ready_to_assemble', 'completed'] },
-  { id: 'storyboard', label: '分鏡與旁白', done: ['script_generated', 'producing', 'ready_to_assemble', 'completed'] },
-  { id: 'build_scene', label: '產生 scene', done: ['ready_to_assemble', 'completed'] },
-  { id: 'assemble', label: '合成', done: ['completed'] },
-] as const
+const AFTER_SCRIPT = ['script_generated', 'producing', 'ready_to_assemble', 'completed']
+
+/** The workflow steps shown above the workbench, and the project statuses at which each is done. */
+export function stepsFor(kind: string | undefined): { id: string; label: string; done: string[] }[] {
+  const middle =
+    kind === 'story'
+      ? [
+          { id: 'develop_story', label: '整理故事', done: ['analyzed', 'designed', ...AFTER_SCRIPT] },
+          { id: 'design', label: '美術與角色', done: ['designed', ...AFTER_SCRIPT] },
+          { id: 'storyboard', label: '分鏡與對白', done: AFTER_SCRIPT },
+        ]
+      : [
+          { id: 'analyze', label: '分析產品', done: ['analyzed', 'designed', ...AFTER_SCRIPT] },
+          { id: 'storyboard', label: '分鏡與旁白', done: AFTER_SCRIPT },
+        ]
+  return [
+    { id: 'init', label: '初始化', done: ['initialized', 'analyzed', 'designed', ...AFTER_SCRIPT] },
+    ...middle,
+    { id: 'build_scene', label: '產生 scene', done: ['ready_to_assemble', 'completed'] },
+    { id: 'assemble', label: '合成', done: ['completed'] },
+  ]
+}
 
 export const STATUS_LABEL: Record<string, string> = {
   draft: '草稿',
@@ -116,6 +155,12 @@ export const PURPOSE_LABEL: Record<string, string> = {
   benefit: '效益',
   'social-proof': '信任',
   cta: '行動呼籲',
+  opening: '開場',
+  setup: '鋪陳',
+  conflict: '衝突',
+  climax: '高潮',
+  resolution: '解決',
+  ending: '結局',
   custom: '自訂',
 }
 
@@ -126,6 +171,10 @@ export function nextStep(next: { command: string | null; reason: string }, scene
   switch (cmd) {
     case '/video-analyze':
       return { title: '下一步：分析產品', hint: 'Agent 會研究你提供的網址與資料，整理出影片要講的重點。' }
+    case '/video-story':
+      return { title: '下一步：整理故事', hint: 'Agent 會讀你的故事；只有點子或大綱時，會一題一題問你，一起把故事補完整。' }
+    case '/video-design':
+      return { title: '下一步：設計角色與聲音', hint: 'Agent 會畫出角色和場景的設定稿，並為每個角色挑聲音讓你試聽。' }
     case '/video-storyboard':
       return { title: '下一步：寫分鏡與旁白', hint: 'Agent 會把影片拆成幾段 scene，並寫好每段的旁白。' }
     case '/video-scene':

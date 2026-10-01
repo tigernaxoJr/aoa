@@ -1,14 +1,18 @@
 // script.md parsing and caption timing (SPEC §4.3, §7.5).
+import { SPEAKER } from './core.mjs'
 
 /**
- * Splits a script into blocks: { type: 'text', lines: string[] } separated by
+ * Splits a script into blocks: { type: 'text', lines: string[], speaker? } separated by
  * { type: 'pause', sec } for `<!-- pause 0.5 -->` markers. Other comments and blank lines are dropped.
+ * A line starting with 【name】 is spoken by that character (the marker is not part of the text);
+ * consecutive lines of the same speaker share a block, and unmarked lines are the narrator's.
  */
 export function parseScript(script) {
   const blocks = []
   let lines = []
+  let speaker = null
   const flush = () => {
-    if (lines.length) blocks.push({ type: 'text', lines })
+    if (lines.length) blocks.push({ type: 'text', lines, ...(speaker && { speaker }) })
     lines = []
   }
   const tokens = script.split(/(<!--[\s\S]*?-->)/)
@@ -22,7 +26,15 @@ export function parseScript(script) {
     if (token.startsWith('<!--')) continue
     for (const line of token.split(/\r?\n/)) {
       const trimmed = line.trim()
-      if (trimmed) lines.push(trimmed)
+      if (!trimmed) continue
+      const marked = trimmed.match(SPEAKER)
+      const who = marked ? marked[1] : null
+      const text = marked ? marked[2].trim() : trimmed
+      if (who !== speaker) {
+        flush()
+        speaker = who
+      }
+      if (text) lines.push(text)
     }
   }
   flush()
