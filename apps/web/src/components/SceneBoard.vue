@@ -26,10 +26,24 @@ function badge(s: SceneState) {
   return { text: STATUS_LABEL[s.scene.status] ?? s.scene.status, cls: cls[s.scene.status] ?? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' }
 }
 
+const seconds = (s: SceneState) => s.scene?.render?.actualDurationSec ?? s.scene?.durationSec ?? null
+
 function duration(s: SceneState) {
-  const sec = s.scene?.render?.actualDurationSec ?? s.scene?.durationSec
+  const sec = seconds(s)
   return sec ? `${sec.toFixed(1)} 秒` : '依旁白'
 }
+
+/** "已完成 2/3 · 約 12.0 秒": rendered and unchanged scenes, and the length known so far. */
+const summary = computed(() => {
+  const done = scenes.value.filter((s) => s.upToDate).length
+  const known = scenes.value.map(seconds).filter((sec): sec is number => !!sec)
+  const unknown = scenes.value.length - known.length
+  const total = known.length ? ` · 約 ${known.reduce((a, b) => a + b, 0).toFixed(1)} 秒` : ''
+  return `已完成 ${done}/${scenes.value.length}${total}${known.length && unknown ? `（另 ${unknown} 段依旁白）` : ''}`
+})
+
+/** "list" for ordering and status, "script" to read every scene's narration in one pass. */
+const view = ref<'list' | 'script'>('list')
 
 async function move(ids: string[]) {
   await write((root, st) => reorder(root, st, ids), '已更新順序，需要重新合成')
@@ -56,12 +70,42 @@ function drop(target: string) {
 
 <template>
   <section class="card p-4 sm:p-5">
-    <div class="flex items-baseline justify-between">
-      <h2 class="font-semibold">Scene</h2>
-      <p class="text-xs text-slate-500">拖曳或用箭頭調整播放順序</p>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="font-semibold">
+        Scene
+        <span v-if="scenes.length" class="ml-2 text-sm font-normal text-slate-500" data-testid="scene-summary">{{ summary }}</span>
+      </h2>
+      <div v-if="scenes.length" class="flex rounded-lg border border-slate-200 p-0.5 text-xs dark:border-slate-700" role="group" aria-label="檢視方式">
+        <button
+          v-for="[v, label] in [['list', '清單'], ['script', '腳本']] as const"
+          :key="v"
+          type="button"
+          class="rounded-md px-2.5 py-1"
+          :class="view === v ? 'bg-slate-900 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          :aria-pressed="view === v"
+          :data-testid="`view-${v}`"
+          @click="view = v"
+        >
+          {{ label }}
+        </button>
+      </div>
     </div>
     <p v-if="!scenes.length" class="mt-4 text-sm text-slate-500">還沒有 scene。請在 Agent 中執行 <code>/video-storyboard</code>。</p>
-    <ol class="mt-4 space-y-2">
+    <ol v-else-if="view === 'script'" class="mt-4 space-y-4" data-testid="script-view">
+      <li v-for="(s, i) in scenes" :key="s.id" class="flex gap-3">
+        <span class="w-6 shrink-0 pt-0.5 text-center font-mono text-sm text-slate-400">{{ i + 1 }}</span>
+        <button type="button" class="min-w-0 flex-1 text-left" @click="selected = s.id">
+          <span class="block text-sm font-medium" :class="selected === s.id ? 'text-sky-700 dark:text-sky-300' : ''">
+            {{ s.scene?.title ?? s.id }}
+            <span class="font-normal text-slate-500">· {{ PURPOSE_LABEL[s.scene?.purpose ?? ''] ?? s.scene?.purpose }} · {{ duration(s) }}</span>
+          </span>
+          <span v-if="s.script?.trim()" class="mt-1 block whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">{{ s.script.trim() }}</span>
+          <span v-else class="mt-1 block text-sm italic text-slate-400">（尚無旁白）</span>
+        </button>
+      </li>
+    </ol>
+    <p v-if="scenes.length && view === 'list'" class="mt-1 text-xs text-slate-500">拖曳或用箭頭調整播放順序</p>
+    <ol v-if="view === 'list'" class="mt-4 space-y-2">
       <li
         v-for="(s, i) in scenes"
         :key="s.id"

@@ -297,6 +297,16 @@ test('opened project shows scenes; browser inputHash matches the Node scripts', 
   assert.equal(await status('scene-002'), '已渲染')
   assert.equal(await status('scene-003'), '草稿')
   assert.equal(await page.getByTestId('next-command').textContent(), '/video-scene all')
+  assert.match(await page.getByTestId('scene-summary').textContent(), /^已完成 2\/3 · 約 \d+\.\d 秒$/)
+
+  // Script view: every scene's narration, in playback order.
+  await page.getByTestId('view-script').click()
+  const script = await page.getByTestId('script-view').textContent()
+  const at = ['第一句旁白。', '立即試用。', '這是一段旁白。'].map((line) => script.indexOf(line))
+  assert.ok(at[0] >= 0 && at[0] < at[1] && at[1] < at[2], script)
+  await page.getByTestId('script-view').getByText('立即試用。').click()
+  await page.getByTestId('view-list').click()
+  assert.match(await page.getByTestId('scene-scene-002').getAttribute('class'), /border-sky-500/, 'clicking a script entry selects that scene')
 })
 
 test('editing a rendered scene marks it stale, re-derives the project, and shows the sync banner', async (t) => {
@@ -370,6 +380,32 @@ test('the pairing link connects the Companion; "立即重新產生" rebuilds the
   const scene = JSON.parse(readFileSync(p.path('scenes/001-hook/scene.json'), 'utf8'))
   assert.equal(scene.status, 'rendered')
   assert.equal(scene.updatedBy, 'companion')
+})
+
+test('the page reconnects by itself when the Companion restarts', async (t) => {
+  if (!browser) return t.skip('no browser available')
+  // --persist-token keeps the pairing valid across restarts; point it at a throwaway home.
+  const home = process.env.HOME
+  process.env.HOME = mkdtempSync(join(tmpdir(), 'avp-home-'))
+  t.after(() => {
+    rmSync(process.env.HOME, { recursive: true, force: true })
+    process.env.HOME = home
+  })
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const start = (port) => startCompanion({ projectDir: p.root, port, persistToken: true, site: `${origin}${BASE}`, log: () => {} })
+  let c = await start(0)
+  t.after(() => c.close())
+
+  const app = await openApp(t, p, `#pair=${c.port}:${c.token}`)
+  const { page } = app
+  const status = page.getByTestId('companion-status')
+  await status.getByText('本機助手已連線').waitFor()
+
+  await c.close()
+  await status.getByText('本機助手已連線').waitFor({ state: 'detached' })
+  c = await start(c.port)
+  await status.getByText('本機助手已連線').waitFor({ timeout: 15_000 })
 })
 
 const activityJson = (fields) => JSON.stringify({ waitingForUser: false, step: null, scene: null, updatedAt: new Date().toISOString(), ...fields })

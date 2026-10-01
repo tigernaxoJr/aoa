@@ -645,7 +645,7 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 - **不使用** `fetch("file://…")`（瀏覽器禁止）。
 - 支援瀏覽器：Chrome / Edge（桌面版）；需 HTTPS 或 localhost。Firefox / Safari 顯示唯讀提示或引導改用支援的瀏覽器。
 - Directory handle 存入 IndexedDB，下次開啟時請求重新授權即可，免重新選擇。
-- **更新偵測**：每 2 秒輪詢 `video.project.json` 與各 `scene.json` 的 `lastModified`（File System Observer API 可用時優先使用）；連上 Companion 時改用其 WebSocket 推送（見 §2.1）。
+- **更新偵測**：每 2 秒輪詢 `video.project.json` 與各 `scene.json` 的 `lastModified`（File System Observer API 可用時優先使用）；連上 Companion 時改用其 WebSocket 推送（見 §2.1），輪詢降為每 10 秒一次，只補檔案監看漏掉的事件；Companion 斷線後頁面自動重連（1 → 30 秒退避），連上時重新載入一次。
 - **反向通知**：模式 A 下 UI 無法喚起 Agent，只能標記 `stale` 並提示使用者執行 `/video-sync`。
 
 ### 9.2 畫面

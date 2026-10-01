@@ -1,7 +1,7 @@
 // App state: the open project folder, the loaded project, polling (SPEC §9.1), and a single path
 // for running writes so conflicts and lock waits are reported the same way everywhere.
 import { reactive, shallowRef } from 'vue'
-import { run as runAction } from './companion'
+import { companion, run as runAction } from './companion'
 import { ensurePermission, isSupported, tryFile } from './fsa'
 import { forgetHandle, loadHandle, saveHandle } from './idb'
 import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
@@ -9,6 +9,8 @@ import type { VideoActivityJson } from '../types/protocol'
 import { LockedError } from './writes'
 
 const POLL_MS = 2000
+/** With the Companion pushing changes, polling only backs up a missed file-watch event. */
+const POLL_PUSHED_MS = 10_000
 
 export const root = shallowRef<FileSystemDirectoryHandle | null>(null)
 export const state = shallowRef<ProjectState | null>(null)
@@ -28,6 +30,7 @@ export const ui = reactive({
 
 let print = ''
 let timer: ReturnType<typeof setInterval> | null = null
+let polled = 0
 
 export function notify(kind: 'ok' | 'warn' | 'error', text: string) {
   ui.notice = { kind, text }
@@ -52,6 +55,8 @@ export async function reload() {
 
 async function poll() {
   if (!root.value || ui.saving || document.hidden) return
+  if (companion.state === 'ready' && Date.now() - polled < POLL_PUSHED_MS) return
+  polled = Date.now()
   try {
     if ((await fingerprint(root.value, state.value)) !== print) await reload()
   } catch {

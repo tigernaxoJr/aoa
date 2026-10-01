@@ -20,6 +20,10 @@ let socket: WebSocket | null = null
 let seq = 0
 const pending = new Map<string, Pending>()
 let onChanged: () => void = () => {}
+/** Reconnects after the Companion restarts or starts late; backs off so a stopped one costs little. */
+const RETRY_MS = [1000, 2000, 5000, 10000, 30000]
+let retries = 0
+let retryTimer: ReturnType<typeof setTimeout> | null = null
 
 function loadPairing(): Pairing | null {
   try {
@@ -46,6 +50,8 @@ export function takePairingFromUrl(): boolean {
 export function connect(pairing: Pairing | null = loadPairing(), changed?: () => void) {
   if (changed) onChanged = changed
   if (!pairing) return
+  if (retryTimer) clearTimeout(retryTimer)
+  retryTimer = null
   socket?.close()
   companion.state = 'connecting'
   companion.error = null
@@ -54,8 +60,11 @@ export function connect(pairing: Pairing | null = loadPairing(), changed?: () =>
   ws.onopen = () => ws.send(JSON.stringify({ type: 'hello', token: pairing.token }))
   ws.onmessage = (event) => {
     const msg = JSON.parse(String(event.data))
-    if (msg.type === 'ready') companion.state = 'ready'
-    else if (msg.type === 'changed') onChanged()
+    if (msg.type === 'ready') {
+      companion.state = 'ready'
+      retries = 0
+      onChanged() // changes made while disconnected were never pushed
+    } else if (msg.type === 'changed') onChanged()
     else if (msg.type === 'log' && msg.line) companion.lastLine = msg.line
     else if (msg.type === 'result') {
       const job = pending.get(msg.id)
@@ -77,6 +86,7 @@ export function connect(pairing: Pairing | null = loadPairing(), changed?: () =>
     } else {
       companion.state = companion.state === 'ready' ? 'off' : 'error'
       companion.error = companion.state === 'error' ? '連不上本機助手，請確認 video-agent serve 正在執行。' : null
+      retryTimer = setTimeout(() => connect(pairing), RETRY_MS[Math.min(retries++, RETRY_MS.length - 1)])
     }
   }
 }
@@ -85,6 +95,8 @@ export function forget() {
   try {
     localStorage.removeItem(KEY)
   } catch {}
+  if (retryTimer) clearTimeout(retryTimer)
+  retryTimer = null
   socket?.close()
   socket = null
   companion.state = 'off'
