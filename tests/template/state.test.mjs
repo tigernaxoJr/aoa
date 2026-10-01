@@ -4,7 +4,7 @@ import { mkdirSync, utimesSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
 import { afterEach, test } from 'node:test'
-import { makeProject, twoScenes } from './helpers.mjs'
+import { baseScene, makeProject, twoScenes } from './helpers.mjs'
 
 const ffmpeg = createRequire(import.meta.url)('ffmpeg-static')
 
@@ -170,6 +170,51 @@ test('project scenes can be registered with a patch', () => {
   const r = p.run('state.mjs', ['project', '--patch', patch])
   assert.equal(r.code, 0, r.stderr)
   assert.deepEqual(p.read('video.project.json').scenes.map((s) => s.id), ['scene-001', 'scene-003', 'scene-002'])
+})
+
+/** Renders both scenes, assembles a stand-in final.mp4 newer than them and marks the project completed. */
+function completeProject(project) {
+  renderScene(project, 'scene-001', 'scenes/001-hook')
+  renderScene(project, 'scene-002', 'scenes/002-cta')
+  fakeRender(project.path('output', 'final.mp4'))
+  const later = new Date(Date.now() + 5000)
+  utimesSync(project.path('output', 'final.mp4'), later, later)
+  const r = project.run('state.mjs', ['project', '--status', 'completed'])
+  assert.equal(r.code, 0, r.stderr)
+}
+
+test('revising the storyboard of a completed project re-derives its status', () => {
+  p = makeProject({ scenes: twoScenes() })
+  completeProject(p)
+  p.write('scenes/003-feature/scene.json', baseScene('scene-003'))
+  p.write('scenes/003-feature/script.md', '新增的一段。\n')
+  const scenes = [
+    { id: 'scene-001', dir: 'scenes/001-hook' },
+    { id: 'scene-003', dir: 'scenes/003-feature' },
+    { id: 'scene-002', dir: 'scenes/002-cta' },
+  ]
+  let r = p.run('state.mjs', ['project', '--patch', JSON.stringify([{ op: 'replace', path: '/scenes', value: scenes }])])
+  assert.equal(r.code, 0, r.stderr)
+  assert.match(r.stdout, /project: completed → producing/)
+
+  // Kept scenes stay rendered and up to date; only the new one needs building.
+  r = p.run('validate.mjs', ['--report', '--json'])
+  const report = JSON.parse(r.stdout).report
+  assert.deepEqual(report.scenes.map((s) => [s.id, s.status, s.outdated]), [
+    ['scene-001', 'rendered', false],
+    ['scene-003', 'draft', false],
+    ['scene-002', 'rendered', false],
+  ])
+})
+
+test('removing or reordering scenes of a completed project requires assembling again', () => {
+  p = makeProject({ scenes: twoScenes() })
+  completeProject(p)
+  const r = p.run('state.mjs', ['project', '--patch', JSON.stringify([{ op: 'remove', path: '/scenes/1' }])])
+  assert.equal(r.code, 0, r.stderr)
+  assert.match(r.stdout, /project: completed → ready_to_assemble/)
+  const out = JSON.parse(p.run('validate.mjs', ['--report', '--json']).stdout)
+  assert.equal(out.report.next.command, '/video-assemble')
 })
 
 test('a fresh lock blocks writers; a stale lock is taken over', () => {

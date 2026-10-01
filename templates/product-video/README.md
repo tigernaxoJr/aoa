@@ -13,7 +13,7 @@
 | 指令 | 作用 |
 |---|---|
 | `/video-analyze` | 分析產品，產生 `brief/product-brief.md` |
-| `/video-storyboard` | 規劃分鏡與旁白，完成後會請你審閱 |
+| `/video-storyboard` | 規劃分鏡與旁白，完成後會請你審閱；影片合成後也能重新規劃，只重做有變更的段落 |
 | `/video-scene <id\|all>` | 產生 scene 的旁白、畫面與影片，每段完成後請你預覽 |
 | `/video-assemble` | 合成 `output/final.mp4` 與字幕檔 |
 | `/video-sync` | 你改過文案或設定後，只重做受影響的部分 |

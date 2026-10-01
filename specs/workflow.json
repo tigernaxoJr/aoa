@@ -91,9 +91,11 @@
       "title": "規劃分鏡與旁白",
       "command": "/video-storyboard",
       "scope": "project",
-      "requires": { "projectStatus": ["analyzed", "script_generated"] },
+      "requires": { "projectStatus": ["analyzed", "script_generated", "producing", "ready_to_assemble", "completed"] },
       "reads": [
         { "path": "brief/product-brief.md" },
+        { "path": "{dir}/scene.json", "optional": true, "note": "重新規劃時讀取現有分鏡" },
+        { "path": "{dir}/script.md", "optional": true, "note": "重新規劃時讀取現有分鏡" },
         { "path": "brief/style.json", "optional": true }
       ],
       "writes": [
@@ -103,6 +105,11 @@
       ],
       "actions": [
         { "id": "plan", "do": "規劃 3–8 個 scene，建議骨架：hook → problem → solution → feature → benefit → cta。" },
+        {
+          "id": "revise",
+          "do": "已有 scene 時改為修訂現有分鏡：只改使用者要求的部分，先提出逐段的保留／修改／新增／移除清單並等使用者確認，確認後才寫入；保留的 scene 沿用原 id 與目錄。此時 write 只建立新增的 scene，register 只更新 scenes 陣列，不設定 project 狀態（state 會依 scene 自動重算）。最後執行 sync，只重做有變更的 scene 並重新合成。做法見 script-guide.md#revise。",
+          "when": "project.scenes 不為空"
+        },
         { "id": "write", "do": "每個 scene 建立 scenes/{三位數}-{slug}/scene.json 與 script.md，status 為 draft，durationSec 預設 null。" },
         { "id": "timing", "do": "估算旁白總時長（中文約 4 字/秒、英文約 2.5 字/秒），需接近 project.format.targetDurationSec。" },
         {
@@ -115,7 +122,7 @@
         },
         { "id": "validate", "do": "pnpm run validate" }
       ],
-      "checkpoint": "列出分鏡總覽（每個 scene 的標題、purpose、畫面、預估秒數），再逐段列出完整旁白稿與畫面文字，請使用者審閱。使用者明確確認前不得執行 tts、capture 或 render；確認後才可進入 build_scene。",
+      "checkpoint": "列出分鏡總覽（每個 scene 的標題、purpose、畫面、預估秒數），再逐段列出完整旁白稿與畫面文字，請使用者審閱。使用者明確確認前不得執行 tts、capture 或 render；確認後才可進入 build_scene。重新規劃時，總覽多一欄標示每段是保留、修改、新增或移除，並在寫入任何檔案前請使用者確認；確認後寫入並執行 sync。",
       "guide": "skills/product-video/script-guide.md"
     },
     {

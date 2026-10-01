@@ -27,6 +27,8 @@
 | 4 產生 scene | `/video-scene <id\|all>` | `producing` → `ready_to_assemble` | **是**：每個 scene 預覽 |
 | 5 合成 | `/video-assemble` | `completed` | 回報結果 |
 
+影片做到一半或已合成後，仍可再執行 `/video-storyboard` 重新規劃分鏡：只修改被點名的段落，保留的段落沿用現有影片，確認後以 `/video-sync` 只重做有變更的段落並重新合成。
+
 隨時可用：`/video-status`（狀態摘要）、`/video-sync`（只重做有變更的 scene 並重新合成）、`/video-approve <id>`（核准）、`/video-translate <locale>`（複製專案並翻譯）。
 
 不確定下一步時，執行 `pnpm run status`，它會列出每個 scene 的狀態、是否過期，以及建議的下一個指令。
@@ -52,7 +54,7 @@
 
 ## 4. 寫入狀態：`pnpm run state`
 
-`state` 會取得鎖檔、重新讀取目標檔、套用修改、原子寫入、執行驗證，並自動更新 `updatedAt` 與 `updatedBy: "agent"`。寫入 scene 後會依 `workflow.json` 的 `derivedProjectStatus` 重算 `project.status`。
+`state` 會取得鎖檔、重新讀取目標檔、套用修改、原子寫入、執行驗證，並自動更新 `updatedAt` 與 `updatedBy: "agent"`。寫入 scene 後，或以 patch 修改 `video.project.json` 的 `scenes`（新增、移除、調整順序）時，會依 `workflow.json` 的 `derivedProjectStatus` 重算 `project.status`；scene 清單變了就不會是 `completed`，需要重新合成。
 
 ```bash
 # 改狀態

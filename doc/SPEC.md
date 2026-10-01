@@ -431,6 +431,8 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 重新 assemble
 ```
 
+**重新規劃分鏡**：專案已有 scene（含 `completed`）時仍可執行 `/video-storyboard`，改為修訂現有分鏡：先列出每段保留／修改／新增／移除並經使用者確認，才寫入檔案；保留的 scene 沿用原 id 與目錄（目錄路徑算在 `inputHash` 內）。以 patch 修改 `scenes` 陣列時，`state.mjs` 依 `derivedProjectStatus` 重算 project 狀態，且 scene 清單變更後最多為 `ready_to_assemble`（`final.mp4` 已不符）。之後以 sync 只重做修改與新增的 scene 並重新合成。
+
 ---
 
 ## 7. 本機工具鏈

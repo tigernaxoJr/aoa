@@ -95,6 +95,13 @@ run((argv) => {
     const result = validateProject(root, overrides)
     assertValid(result)
 
+    // A revised storyboard (scenes added, removed or reordered) re-derives the project status. The
+    // final video no longer matches the scene list, so it is at most ready_to_assemble.
+    if (isProject && doc.status === before.status && JSON.stringify(doc.scenes) !== JSON.stringify(before.scenes)) {
+      const derived = deriveProjectStatus(root, result.project, result.inspected)
+      if (derived) doc.status = derived === 'completed' ? 'ready_to_assemble' : derived
+    }
+
     const changes = [[file, doc, `${target}: ${before.status} → ${doc.status}`]]
     if (!isProject) {
       const current = result.project

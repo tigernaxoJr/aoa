@@ -1,6 +1,6 @@
 # 分鏡與旁白寫作指引
 
-用於 `/video-storyboard`：根據 `brief/product-brief.md`（與可選的 `brief/style.json`）規劃 scene，產生每個 scene 的 `scene.json` 與 `script.md`。
+用於 `/video-storyboard`：根據 `brief/product-brief.md`（與可選的 `brief/style.json`）規劃 scene，產生每個 scene 的 `scene.json` 與 `script.md`。影片做到一半或已經合成後要重新規劃分鏡，見 [§6](#revise)。
 
 ---
 
@@ -151,7 +151,7 @@
 
 ---
 
-## 4. 建立檔案
+## 4. <a id="files"></a>建立檔案
 
 1. scene id 依建立順序編號：`scene-001`、`scene-002`…；目錄為 `scenes/{三位數}-{purpose 或簡短英文 slug}/`，例如 `scenes/004-branch-preview/`。
 2. 每個 scene 寫入 `scene.json` 與 `script.md`（新建檔案可直接寫入）。
@@ -164,7 +164,7 @@
    ]
    ```
 
-4. 執行 `pnpm run validate`，並將 project 狀態設為 `script_generated`。
+4. 執行 `pnpm run validate`，並將 project 狀態設為 `script_generated`（只在第一次規劃時；重新規劃見 [§6](#revise)）。
 
 ---
 
@@ -197,3 +197,36 @@
 - 可以提醒使用者也能在網頁工作台直接修改旁白，改完說「我改好了」即可。
 - 使用者提出修改時，**只改被點名的 scene**，改完再呈現一次更新後的表格。
 - 使用者要求新增或刪除 scene 時，同步更新 `video.project.json` 的 `scenes`；刪除的 scene 目錄保留，由使用者自行決定是否刪除。
+
+---
+
+## 6. <a id="revise"></a>重新規劃分鏡（已有 scene 時）
+
+專案已經有 scene（包括 `output/final.mp4` 已合成）時，使用者說「重新規劃分鏡」「開場和結尾換掉、中間加一段比較」等，也是執行 `/video-storyboard`，但改為**修訂現有分鏡**：沒被點名的段落原樣保留，之後只重做有變更的段落。
+
+1. **讀取現況**：執行 `pnpm run status`，讀取每個 scene 的 `scene.json` 與 `script.md`（Web UI 或使用者可能剛改過）。
+2. **提出修訂，先不寫檔**：只改使用者要求的部分，其餘照舊。總覽表多一欄「變更」：
+
+   ```text
+   目標 45 秒｜預估 47.0 秒｜6 個 scene（保留 3、修改 1、新增 1、移除 1）
+
+   | # | scene     | 變更 | 用途    | 旁白                         | 畫面               | 秒數 |
+   |---|-----------|------|---------|------------------------------|--------------------|------|
+   | 1 | scene-001 | 修改 | hook    | 還在手動部署嗎？             | 終端機報錯         | 3.5  |
+   | 2 | scene-002 | 保留 | problem | （不變）                     | （不變）           | 7.5  |
+   | 3 | scene-007 | 新增 | feature | 推上 GitHub，預覽網址就好了。 | 錄製 PR 頁面       | 8.0  |
+   | … |           |      |         |                              |                    |      |
+   | — | scene-004 | 移除 | feature | —                            | —                  | —    |
+   ```
+
+   修改與新增的段落逐段列出完整旁白稿與畫面文字（同 [§5](#review)）；保留的段落不必重列。說明哪些段落會重做、其餘沿用現有影片，再請使用者確認。**確認前不寫入任何檔案**，避免使用者反悔時已做好的段落被改掉。
+3. **寫入**（使用者確認後）：
+   - **保留**：不動。scene id 與目錄都不改，即使播放順序變了，也不要為了讓編號連續而重新命名目錄；目錄名稱算在內容指紋（`inputHash`）裡，改名會讓該段變成需要重做。
+   - **修改**：直接改 `script.md`；`scene.json` 以 `pnpm run state <id> --patch-file` 修改。
+   - **新增**：id 與目錄編號接在目前最大的編號後面（已有 `scene-006` 就從 `scene-007`、`scenes/007-…` 開始），依 [§4](#files) 建立檔案。
+   - **移除**：只從 `scenes` 陣列移除，目錄保留，由使用者自行決定是否刪除。
+   - **順序**：用一個 `pnpm run state project --patch-file` 一次寫入新的 `scenes` 陣列（例如 `{ "op": "replace", "path": "/scenes", "value": [...] }`）。**不要**再把 project 設為 `script_generated`：`state` 會依各 scene 狀態自動重算，且只要 scene 清單變了，就不會再是 `completed`。
+4. **重做與合成**：執行 `pnpm run validate`，再依 [workflow.md#sync](workflow.md#sync) 執行 sync：只重做修改與新增的段落，然後重新合成。只調整順序或移除段落時，不重做任何段落，直接重新合成。
+
+- `locked: true` 或 `approved` 的段落，使用者沒有明確點名就不修改；修訂內容涉及它們時先問。
+- 修訂後預估總長與目標長度相差超過 10% 時，和 §5 一樣先說明並詢問。
