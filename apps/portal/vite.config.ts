@@ -8,7 +8,8 @@
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Plugin, ResolvedConfig } from 'vite'
-import { ARTICLES, articleView, renderArticle, type ArticleEntry, type RenderedArticle } from './src/articles'
+import { ARTICLES, articleView, readerHeader, renderArticle, type ArticleEntry, type RenderedArticle } from './src/articles'
+import { langSwitch } from './src/i18n'
 import { appConfig, here, siteUrl } from '../vite.shared'
 
 const repo = here(import.meta.url, '../../')
@@ -48,6 +49,16 @@ function articles(): Plugin {
   let config: ResolvedConfig
   return {
     name: 'aofa-articles',
+    // Home pages: English at the root, 繁體中文 under zh-TW/; both get the same switch.
+    transformIndexHtml(html, ctx) {
+      if (!html.includes('<!--lang-switch-->')) return html
+      const zh = /zh-TW[\\/]index\.html$/.test(ctx.filename)
+      // Absolute alternates (Vite would try to resolve relative <link href> values as assets).
+      const alternates = [`<link rel="alternate" hreflang="en" href="${siteUrl}/" />`, `<link rel="alternate" hreflang="zh-Hant" href="${siteUrl}/zh-TW/" />`].join('\n    ')
+      return html
+        .replace('<!--hreflang-->', alternates)
+        .replace('<!--lang-switch-->', zh ? langSwitch('zh-Hant', '../', './') : langSwitch('en', './', './zh-TW/'))
+    },
     configResolved(resolved) {
       config = resolved
     },
@@ -72,7 +83,8 @@ function articles(): Plugin {
       for (const [fileName, content] of rawFiles()) this.emitFile({ type: 'asset', fileName, source: content })
     },
     // After Vite has written the hashed reader shell, render each article into its own page.
-    closeBundle() {
+    closeBundle(error?: Error) {
+      if (error) return // let the real build error surface
       const outDir = config.build.outDir
       const shell = readFileSync(join(outDir, 'article.html'), 'utf8')
       const rendered = new Map(ARTICLES.map((entry) => [entry.path, renderArticle(source(entry))]))
@@ -84,12 +96,13 @@ function articles(): Plugin {
           .replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(article.title)} · AOA</title>`)
           .replace(/<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${escapeAttr(article.description)}" />`)
           .replace('<!--article-head-->', headTags(entry, article))
+          .replace('<!--article-header-->', readerHeader(entry, config.base))
           .replace('<!--article-body-->', articleView(entry, article, config.base, titles))
         const file = join(outDir, `${entry.path}.html`)
         mkdirSync(dirname(file), { recursive: true })
         writeFileSync(file, page)
       }
-      const pages = ['', ...ARTICLES.map((a) => `${a.path}.html`)]
+      const pages = ['', 'zh-TW/', ...ARTICLES.map((a) => `${a.path}.html`)]
       writeFileSync(
         join(outDir, 'sitemap.xml'),
         `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages
@@ -109,7 +122,11 @@ export default appConfig(here(import.meta.url, '.'), '', {
   plugins: [articles()],
   build: {
     rollupOptions: {
-      input: { main: here(import.meta.url, './index.html'), article: here(import.meta.url, './article.html') },
+      input: {
+        main: here(import.meta.url, './index.html'),
+        zh: here(import.meta.url, './zh-TW/index.html'),
+        article: here(import.meta.url, './article.html'),
+      },
     },
   },
 })

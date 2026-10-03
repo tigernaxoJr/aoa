@@ -12,20 +12,8 @@
   </head>
   <body class="bg-paper text-stone-900 antialiased selection:bg-accent selection:text-white dark:text-stone-100">
     <div id="reading-progress" class="fixed inset-x-0 top-0 z-40 h-0.5 origin-left scale-x-0 bg-accent"></div>
-    <header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
-      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <a href="%BASE_URL%" class="flex items-baseline gap-3">
-          <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
-          <span class="hidden font-mono text-[11px] text-stone-500 sm:inline">Agent-Offloaded Architecture</span>
-        </a>
-        <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
-          <a href="%BASE_URL%#workbenches" class="hover:text-stone-900 dark:hover:text-white">範例工具</a>
-          <a href="%BASE_URL%#principles" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">原則</a>
-          <a href="%BASE_URL%#docs" class="hover:text-stone-900 dark:hover:text-white">文獻</a>
-          <a href="https://github.com/tigernaxojr/aofa" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
-        </nav>
-      </div>
-    </header>
+    <!-- Header in the article's language (src/articles.ts readerHeader). -->
+    <div id="reader-header"><!--article-header--></div>
 
     <!-- Pre-rendered at build time (vite.config.ts); filled in the browser during development. -->
     <main id="article-root"><!--article-body--></main>

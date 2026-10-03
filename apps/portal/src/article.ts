@@ -2,7 +2,8 @@
 // table-of-contents highlighting and the reading progress bar. During development the page is
 // article.html?p=<path>, and the article is fetched and rendered with the same code as the build.
 import './style.css'
-import { ARTICLES, articleView, renderArticle } from './articles'
+import { ARTICLES, articleView, readerHeader, renderArticle } from './articles'
+import { initLanguage } from './i18n'
 
 const root = document.getElementById('article-root')!
 
@@ -19,6 +20,7 @@ async function renderInBrowser() {
   document.title = `${article.title} · AOA`
   document.documentElement.lang = entry.lang
   root.innerHTML = articleView(entry, article, base)
+  document.getElementById('reader-header')!.innerHTML = readerHeader(entry, base)
   // Relative links in the article assume the page sits next to its Markdown file.
   root.querySelectorAll<HTMLAnchorElement>('.article-body a[href], header a[href$=".md"]').forEach((a) => {
     const href = a.getAttribute('href')!
@@ -57,4 +59,5 @@ function enhance() {
   update()
 }
 
+initLanguage()
 ;(root.querySelector('.article-body') ? Promise.resolve() : renderInBrowser()).then(enhance)

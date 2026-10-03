@@ -3,6 +3,7 @@
 //  - in the browser (article.ts) during development, where article.html?p=<path> renders on the fly.
 // Sources live once at the repo root (docs/, paper/, posts/); <path> is the file without ".md".
 import { Marked, type Tokens } from 'marked'
+import { langSwitch } from './i18n'
 
 export interface ArticleEntry {
   path: string
@@ -113,6 +114,37 @@ export function renderArticle(md: string): RenderedArticle {
 
 const t = (lang: ArticleEntry['lang'], zh: string, en: string) => (lang === 'en' ? en : zh)
 
+/** The home page in the article's language. */
+const homeOf = (lang: ArticleEntry['lang'], base: string) => (lang === 'en' ? base : `${base}zh-TW/`)
+
+/**
+ * The sticky site header for an article page, in the article's language. The language switch jumps
+ * to the translated article when there is one, else to the other language's home page.
+ */
+export function readerHeader(entry: ArticleEntry, base: string): string {
+  const home = homeOf(entry.lang, base)
+  const self = `${base}${entry.path}.html`
+  const other = entry.translation ? `${base}${entry.translation}.html` : undefined
+  const enHref = entry.lang === 'en' ? self : (other ?? base)
+  const zhHref = entry.lang === 'zh-Hant' ? self : (other ?? `${base}zh-TW/`)
+  const link = 'hidden hover:text-stone-900 sm:inline dark:hover:text-white'
+  return `<header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="${home}" class="flex items-baseline gap-3">
+          <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+          <span class="hidden font-mono text-[11px] text-stone-500 md:inline">Agent-Offloaded Architecture</span>
+        </a>
+        <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
+          <a href="${home}#workbenches" class="${link}">${t(entry.lang, '範例工具', 'Tools')}</a>
+          <a href="${home}#architecture" class="${link}">${t(entry.lang, '架構', 'Architecture')}</a>
+          <a href="${home}#docs" class="${link}">${t(entry.lang, '文獻', 'Read')}</a>
+          <a href="https://github.com/tigernaxojr/aoa" target="_blank" rel="noopener noreferrer" class="hidden font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent sm:inline dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
+          ${langSwitch(entry.lang, enHref, zhHref)}
+        </nav>
+      </div>
+    </header>`
+}
+
 /**
  * The reader's <main> content. `base` is the site base path ("/" or "/repo/"); `titles` maps article
  * paths to titles for the "read more" cards (falls back to the file name).
@@ -133,8 +165,8 @@ export function articleView(entry: ArticleEntry, article: RenderedArticle, base:
 <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-14">
   <article class="min-w-0">
     <nav class="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400" aria-label="breadcrumb">
-      <a href="${base}" class="hover:text-stone-900 dark:hover:text-white">AOA</a><span aria-hidden="true">/</span>
-      <a href="${base}#docs" class="hover:text-stone-900 dark:hover:text-white">${t(lang, '規格文獻', 'Publications')}</a><span aria-hidden="true">/</span>
+      <a href="${homeOf(lang, base)}" class="hover:text-stone-900 dark:hover:text-white">AOA</a><span aria-hidden="true">/</span>
+      <a href="${homeOf(lang, base)}#docs" class="hover:text-stone-900 dark:hover:text-white">${t(lang, '文獻', 'Read')}</a><span aria-hidden="true">/</span>
       <span class="text-stone-700 dark:text-stone-300">${escapeHtml(entry.kind)}</span>
     </nav>
 
@@ -147,7 +179,7 @@ export function articleView(entry: ArticleEntry, article: RenderedArticle, base:
         <span class="text-stone-300 dark:text-stone-700" aria-hidden="true">·</span>
         ${entry.translation ? `<a class="${chip}" href="${base}${entry.translation}.html" hreflang="${lang === 'en' ? 'zh-Hant' : 'en'}">${lang === 'en' ? '繁體中文' : 'English'}</a>` : ''}
         <a class="${chip}" href="${name}.md">Markdown</a>
-        <a class="${chip}" href="https://github.com/tigernaxojr/aofa/blob/main/${entry.path}.md" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a class="${chip}" href="https://github.com/tigernaxojr/aoa/blob/main/${entry.path}.md" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </header>
 

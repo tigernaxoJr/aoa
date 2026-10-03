@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-**AOA (Agent-Offloaded Architecture)** is a software architecture pattern for the AI agent era: the service runs no AI inference or heavy computation, and offloads both to the agent the user already has.
+**AOA (Agent-Offloaded Architecture)** is a software architecture pattern for the AI agent era: a product offloads its agent work — LLM reasoning, tool use, and the tokens they consume — to the coding agent the user already has. The service keeps whatever else it needs, including a backend, databases, or lightweight models; what it does not run is the agent.
 
 On the frontend, AOA takes the form of a static web app that works with the user's agent through a local folder (this frontend form is sometimes called AOFA, Agent-Offloaded Frontend Architecture). Most of this document describes that form, the most direct way to apply AOA; Modes C and D (§5) show AOA with a backend and with no frontend at all.
 
@@ -88,9 +88,9 @@ The user's local development environment has changed dramatically in recent year
 
 ## 4. Four Core Principles
 
-### Principle 1: Compute-Asymmetric Decoupling (Zero-Inference Control Layer)
-- **Hard separation of compute boundaries**: The application layer — whether a purely static frontend or a cloud backend control layer with accounts and billing — **performs no AI model inference, media transcoding, or heavy computation**.
-- **Near-zero marginal compute cost for the vendor**: The cloud or presentation layer focuses on great human-computer interaction (HCI), workflow guidance, collaboration metadata, and protocol validation; inference and heavy computation are handled entirely by the user's agent (inference may use the user's own cloud plan or local models).
+### Principle 1: Offloaded Agent Work
+- **A clear agent boundary**: Work that needs an agent's reasoning and tools — and the tokens it consumes — runs in the user's agent. The application layer, whether a purely static frontend or a backend with accounts and billing, **does not run that agent work**; it may still run its own services, including lightweight models.
+- **Near-zero marginal agent cost for the vendor**: The service focuses on human-computer interaction (HCI), workflow guidance, collaboration metadata, and protocol validation; the agent's inference and the heavy execution it drives are handled by the user's agent (inference may use the user's own cloud plan or local models).
 
 ### Principle 2: Schema as the Contract
 - The presentation/control layer and the executing agent are **not coupled through opaque proprietary commands or black-box APIs**.

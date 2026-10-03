@@ -2,7 +2,7 @@
 
 [English](README.md) | **繁體中文** | [官方網站](https://aoa.tigernaxo.com/)
 
-**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種「後端不跑 AI」的 AI 產品架構模式：推理、檔案產生與執行都卸載給**使用者手上既有的 Coding Agent**（Claude Code、Codex、Cursor、Gemini CLI、Pi 等），服務本身只負責協議、介面與協同。在前端，網頁應用只是一份靜態的**協議工作台（Protocol Workbench）**，透過本機資料夾與使用者的 Agent 協作。
+**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種架構模式：產品把其中的 Agent 工作——LLM 推理、工具操作，以及它們消耗的 token——卸載給**使用者既有的 Coding Agent**（Claude Code、Codex、Cursor、Gemini CLI、Pi 等）。服務提供介面與規格，並保留它需要的其他部分，包括後端或輕量模型。在前端，網頁應用只是一份靜態的**協議工作台（Protocol Workbench）**，透過本機資料夾與使用者的 Agent 協作。
 
 ```
 [ 靜態 Web UI ]  ──File System Access API──▶  [ 本機資料夾 (SSOT) ]  ◀──▶  [ 使用者的 Coding Agent ]

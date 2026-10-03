@@ -37,14 +37,14 @@ test('every article is a static page with its content, title and SEO tags', () =
 
 test('relative links and #anchors in the portal and articles resolve', () => {
   const broken = []
-  for (const page of ['index.html', ...ARTICLES.map((p) => `${p}.html`)]) {
+  for (const page of ['index.html', 'zh-TW/index.html', ...ARTICLES.map((p) => `${p}.html`)]) {
     const html = read(page)
     for (const [, url, hash] of html.matchAll(/href="([^"#:]*)(#[^"]*)?"/g)) {
       if (!url) {
-        if (hash?.length > 1 && page !== 'index.html' && !html.includes(`id="${hash.slice(1)}"`)) broken.push(`${page} → ${hash}`)
+        if (hash?.length > 1 && !page.endsWith('index.html') && !html.includes(`id="${hash.slice(1)}"`)) broken.push(`${page} → ${hash}`)
         continue
       }
-      if (/^\.\/((video|slide)\/$|api\/)/.test(url)) continue // other apps and the Guide API, built separately
+      if (/^(\.\.?\/)((video|slide)\/$|api\/)/.test(url)) continue // other apps and the Guide API, built separately
       let target = url.startsWith('/') ? join(out, url) : join(out, dirname(page), url)
       if (url.endsWith('/')) target = join(target, 'index.html')
       if (!existsSync(target)) broken.push(`${page} → ${url}`)
@@ -62,4 +62,19 @@ test('licenses, sitemap and robots.txt are published', () => {
   assert.match(read('robots.txt'), /Sitemap: https:\/\/example\.test\/sitemap\.xml/)
   assert.equal(read('CNAME'), 'example.test\n', 'custom domain survives force_orphan deploys')
   assert.ok(existsSync(join(out, '.nojekyll')))
+})
+
+test('English is the default; 繁體中文 is one click away on every page', () => {
+  const en = read('index.html')
+  const zh = read('zh-TW/index.html')
+  assert.match(en, /<html lang="en"/)
+  assert.match(zh, /<html lang="zh-Hant"/)
+  assert.ok(!en.includes('<!--lang-switch-->') && !zh.includes('<!--lang-switch-->'), 'switch injected')
+  assert.match(en, /aria-label="Language \/ 語言"[\s\S]*?href="\.\/zh-TW\/"[^>]*>中文</)
+  assert.match(zh, /aria-label="Language \/ 語言"[\s\S]*?href="\.\.\/"[^>]*>EN</)
+  assert.match(en, /id="lang-hint" hidden/, 'Chinese-browser suggestion starts hidden')
+  // The reader header switches to the translated article when there is one.
+  assert.match(read('docs/architecture.html'), /href="\/docs\/architecture\.zh-TW\.html"[^>]*>中文</)
+  assert.match(read('docs/architecture.zh-TW.html'), /<a href="\/zh-TW\/#workbenches"/)
+  assert.ok(read('sitemap.xml').includes(`<loc>${SITE}/zh-TW/</loc>`))
 })

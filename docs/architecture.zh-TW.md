@@ -10,7 +10,7 @@
 
 ## 1. 摘要 (Executive Summary)
 
-**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種針對 AI Agent 時代提出的軟體架構模式：服務本身不跑 AI 推論、不做重度運算，兩者都卸載給使用者既有的 Agent。
+**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種針對 AI Agent 時代提出的軟體架構模式：產品把其中的 Agent 工作——LLM 推理、工具操作，以及它們消耗的 token——卸載給使用者既有的 Coding Agent。服務端仍可保留它需要的其他部分，包括後端、資料庫或輕量模型；它不執行的是 Agent。
 
 AOA 在前端的形式，是一個透過本機資料夾與使用者 Agent 協作的靜態網頁應用（這種前端形式有時也稱為 AOFA，Agent-Offloaded Frontend Architecture）。本文多數篇幅描述這種形式，因為它是套用 AOA 最直接的方式；模式 C、D（§5）則說明有後端，以及完全沒有前端時的 AOA。
 
@@ -90,9 +90,9 @@ AOA 提出責任邊界的反轉與重構：
 
 ## 4. AOA 四大核心架構原則 (Core Principles)
 
-### 原則一：Compute-Asymmetric Decoupling（算力非對稱解耦 / 零推論控制層）
-- **算力邊界徹底分離**：應用層（不論是純靜態前端，或是包含帳號、計費的雲端後端控制層）**完全不承擔 AI 模型推理、音視訊轉碼與巨型運算**。
-- **服務商邊際算力成本趨近於零**：雲端或展現層專注於提供極致的人機互動（HCI）、工作流程導引、協同中繼資料與協議校驗；推論與重度運算全數交由使用者端的 Agent 處理（推論可走使用者自己的雲端方案或本機模型）。
+### 原則一：Agent 工作卸載（Offloaded Agent Work）
+- **清楚的 Agent 邊界**：需要 Agent 推理與工具操作的工作，以及它消耗的 token，都在使用者的 Agent 上執行。應用層（不論是純靜態前端，或是包含帳號、計費的後端）**不執行這部分 Agent 工作**，但仍可執行自己的服務，包括輕量模型。
+- **服務商的 Agent 邊際成本趨近於零**：服務專注於人機互動（HCI）、工作流程導引、協同中繼資料與協議校驗；Agent 的推論以及它驅動的重度執行，交由使用者端的 Agent 處理（推論可走使用者自己的雲端方案或本機模型）。
 
 ### 原則二：Schema as the Contract（Schema 即合約）
 - 展現/控制層與執行 Agent 之間**不以不透明的私有指令或黑盒 API 耦合**。

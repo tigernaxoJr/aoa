@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](README.zh-TW.md) | [Website](https://aoa.tigernaxo.com/)
 
-**AOA (Agent-Offloaded Architecture)** is an architectural pattern for building AI products without running AI on your backend: reasoning, file generation, and execution are offloaded to the **coding agent the user already owns** (Claude Code, Codex, Cursor, Gemini CLI, Pi, etc.), while the service only provides protocol, interface, and coordination. On the frontend, the web application is just a static **protocol workbench** that works with the user's agent through a local folder.
+**AOA (Agent-Offloaded Architecture)** is an architectural pattern in which a product offloads its agent work — LLM reasoning, tool use, and the tokens they consume — to the **coding agent the user already has** (Claude Code, Codex, Cursor, Gemini CLI, Pi, etc.). The service provides the interface and the specification and keeps whatever else it needs, including a backend or lightweight models. On the frontend, the web application is just a static **protocol workbench** that works with the user's agent through a local folder.
 
 ```
 [ Static Web UI ]  ──File System Access API──▶  [ Local folder (SSOT) ]  ◀──▶  [ User's Coding Agent ]
