@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { isSupported } from '../lib/fsa'
-import { dirHandle, initializeProject, project, setDirectory } from '../lib/store'
+import { dirHandle, folderEntries, initializeProject, needsSetup, resetDirectory, setDirectory } from '../lib/store'
 
 const supported = isSupported()
 const error = ref<string | null>(null)
 const loading = ref(false)
 
-// New project form state
-const showCreateForm = ref(false)
+// New project form state (shown while the open folder is not a project yet)
 const title = ref('')
 const description = ref('')
 const audience = ref('一般專業觀眾 / 開發團隊')
@@ -24,8 +23,14 @@ async function pickFolder() {
       mode: 'readwrite',
     })
     await setDirectory(handle)
-    if (!project.value) {
-      showCreateForm.value = true
+    if (needsSetup.value) {
+      // The Agent unpacks the template here, so a new project needs an empty folder.
+      const names = await folderEntries(handle)
+      if (names.length) {
+        resetDirectory()
+        error.value = `「${handle.name}」不是空的資料夾，也不是簡報專案（找到 ${names.slice(0, 3).join('、')}${names.length > 3 ? ' 等' : ''}）。請選擇空資料夾開始新專案，或選擇既有的簡報專案資料夾。`
+        return
+      }
       title.value = handle.name || '新簡報專案'
     }
   } catch (err: any) {
@@ -53,7 +58,6 @@ async function handleCreate() {
       theme: theme.value,
       notes: notes.value.trim(),
     })
-    showCreateForm.value = false
   } catch (err: any) {
     error.value = err.message || '建立專案失敗'
   } finally {
@@ -131,13 +135,13 @@ async function handleCreate() {
 
     <!-- Create Project Form if directory has no slide.project.json -->
     <div
-      v-else-if="showCreateForm"
+      v-else-if="needsSetup"
       class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
       <div class="border-b border-slate-100 pb-5 dark:border-slate-800">
         <h2 class="text-lg font-semibold text-slate-900 dark:text-white">初始化簡報專案</h2>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          目前資料夾內尚未有簡報設定。請填寫基本需求，系統將產生專案參數與 Agent 啟動指令。
+          「{{ dirHandle?.name }}」是空資料夾。填寫需求後，網頁會寫入 <code>slide.start.json</code> 並產生給 Agent 的指令，由 Agent 下載範本並建立專案。
         </p>
       </div>
 
@@ -202,6 +206,13 @@ async function handleCreate() {
         </p>
 
         <div class="flex items-center justify-end gap-3 pt-4">
+          <button
+            type="button"
+            @click="resetDirectory"
+            class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 cursor-pointer dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            換一個資料夾
+          </button>
           <button
             type="submit"
             :disabled="loading"

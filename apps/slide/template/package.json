@@ -1,6 +1,7 @@
 {
   "name": "slidev-deck-project",
   "private": true,
+  "packageManager": "pnpm@11.22.0",
   "type": "module",
   "scripts": {
     "dev": "slidev --port 3030",
@@ -11,12 +12,14 @@
     "state": "node scripts/state.mjs"
   },
   "dependencies": {
-    "@slidev/cli": "^52.0.0",
-    "@slidev/theme-default": "latest",
-    "three": "^0.170.0",
-    "vue": "^3.5.0"
+    "@slidev/cli": "^53.0.0",
+    "@slidev/theme-default": "^0.25.0",
+    "three": "^0.186.0",
+    "vue": "^3.5.43"
   },
   "devDependencies": {
-    "playwright-chromium": "^1.50.0"
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "playwright-chromium": "^1.63.0"
   }
 }

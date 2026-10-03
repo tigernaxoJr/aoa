@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import PdfViewer from './components/PdfViewer.vue'
 import ProjectPicker from './components/ProjectPicker.vue'
@@ -10,15 +10,25 @@ import {
   hasPdf,
   isPolling,
   lastSync,
+  needsSetup,
   pollFiles,
   project,
   resetDirectory,
+  start,
 } from './lib/store'
 
 const activeTab = ref<'slides' | 'pdf' | 'prompt'>('slides')
+// A prepared folder has nothing to preview until the Agent runs: open on the prompt to copy.
+watch(
+  () => !!start.value && !project.value,
+  (waiting) => {
+    if (waiting) activeTab.value = 'prompt'
+  },
+  { immediate: true },
+)
 
 const folderName = computed(() => dirHandle.value?.name || '')
-const projectTitle = computed(() => project.value?.title || folderName.value || '未命名簡報')
+const projectTitle = computed(() => project.value?.title || start.value?.title || folderName.value || '未命名簡報')
 
 const syncTimeStr = computed(() => {
   if (!lastSync.value) return ''
@@ -90,8 +100,8 @@ async function reload() {
 
     <!-- Main Content -->
     <main class="mx-auto max-w-7xl px-4 py-5 sm:py-6">
-      <!-- If no directory selected yet -->
-      <ProjectPicker v-if="!dirHandle" />
+      <!-- No folder yet, or an empty folder that still needs the setup form -->
+      <ProjectPicker v-if="!dirHandle || needsSetup" />
 
       <!-- Workspace when folder is selected -->
       <div v-else class="space-y-6">

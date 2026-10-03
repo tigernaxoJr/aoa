@@ -1,0 +1,3 @@
+allowBuilds:
+  # Downloads the Chromium build that `slidev export` prints with.
+  playwright-chromium: true

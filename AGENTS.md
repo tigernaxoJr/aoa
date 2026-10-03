@@ -4,6 +4,13 @@
 
 ---
 
+## 0. 語言與溝通準則（Language & Communication）
+
+- **優先使用正體中文（繁體中文，Traditional Chinese）** 回答使用者問題、回報進度、撰寫說明與生成各項提示詞。
+- 專案程式碼註解、UI 介面文案、文件手冊與各項規範均優先以正體中文撰寫。
+
+---
+
 ## 1. 核心架構：AOFA (Agent Offload Front Architecture)
 
 本平台遵循 AOFA 架構模式：

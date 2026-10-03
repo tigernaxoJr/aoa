@@ -7,11 +7,14 @@ export const dirHandle = shallowRef<FileSystemDirectoryHandle | null>(null)
 export const project = ref<SlideProject | null>(null)
 export const activity = ref<SlideActivity | null>(null)
 export const slidesMarkdown = ref<string | null>(null)
+/** slide.start.json: what the user asked for, written by the web page before the Agent builds the project. */
+export const start = ref<SlideStartConfig | null>(null)
 export const pdfFile = shallowRef<File | null>(null)
 export const pdfUrl = ref<string | null>(null)
 export const isPolling = ref(false)
 export const lastSync = ref<Date | null>(null)
 export const syncError = ref<string | null>(null)
+const loaded = ref(false)
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -20,6 +23,9 @@ export const parsedDeck = computed<ParsedDeck>(() => {
 })
 
 export const hasPdf = computed(() => !!pdfFile.value)
+
+/** The folder is open but holds neither a project nor a start request: show the setup form. */
+export const needsSetup = computed(() => !!dirHandle.value && loaded.value && !project.value && !start.value)
 
 export async function setDirectory(handle: FileSystemDirectoryHandle) {
   stopPolling()
@@ -35,7 +41,9 @@ export function resetDirectory() {
     pdfUrl.value = null
   }
   dirHandle.value = null
+  loaded.value = false
   project.value = null
+  start.value = null
   activity.value = null
   slidesMarkdown.value = null
   pdfFile.value = null
@@ -54,6 +62,12 @@ export async function pollFiles() {
       project.value = JSON.parse(text) as SlideProject
     } catch {
       // not yet created
+    }
+
+    try {
+      start.value = JSON.parse(await readText(root, 'slide.start.json')) as SlideStartConfig
+    } catch {
+      // the folder was not prepared by this page
     }
 
     // 2. Read slide.activity.json
@@ -88,6 +102,7 @@ export async function pollFiles() {
     }
 
     lastSync.value = new Date()
+    loaded.value = true
     syncError.value = null
   } catch (err: any) {
     syncError.value = err.message || '讀取本機檔案失敗'
@@ -116,50 +131,39 @@ export interface SlideStartConfig {
   theme?: string
   aspectRatio?: string
   notes?: string
+  createdAt?: string
 }
 
-/** Writes slide.start.json and initial slide.project.json into the directory */
+/** Names in the folder, ignoring hidden entries (.git, .DS_Store, ...). */
+export async function folderEntries(handle: FileSystemDirectoryHandle): Promise<string[]> {
+  const names: string[] = []
+  for await (const name of (handle as any).keys() as AsyncIterable<string>) if (!name.startsWith('.')) names.push(name)
+  return names
+}
+
+/**
+ * Writes slide.start.json (the user's request) and a first activity. The Agent unpacks the template and
+ * writes slide.project.json from it; the page never writes the project file, so the template's copy is
+ * not overwritten and the project stays valid against the schema.
+ */
 export async function initializeProject(config: SlideStartConfig) {
   const root = dirHandle.value
   if (!root) throw new Error('No directory selected')
 
-  // 1. Write slide.start.json
-  const startData = {
-    ...config,
-    createdAt: new Date().toISOString(),
-  }
+  const startData: SlideStartConfig = { ...config, createdAt: new Date().toISOString() }
   await writeText(root, 'slide.start.json', JSON.stringify(startData, null, 2) + '\n')
+  start.value = startData
 
-  // 2. If slide.project.json does not exist, write a starter one
-  if (!project.value) {
-    const starterProject: SlideProject = {
-      specVersion: '1.0.0',
-      id: config.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'my-slide',
-      title: config.title,
-      description: config.description || '',
-      theme: config.theme || 'default',
-      aspectRatio: config.aspectRatio || '16/9',
-      status: 'initialized',
-      pagesCount: config.pagesCount || 5,
-      updatedAt: new Date().toISOString(),
-      updatedBy: 'user',
-    }
-    await writeText(root, 'slide.project.json', JSON.stringify(starterProject, null, 2) + '\n')
-    project.value = starterProject
+  const starterActivity: SlideActivity = {
+    message: '資料夾已準備好，等待 Agent 讀取 slide.start.json 開始製作',
+    step: 'init',
+    currentSlide: null,
+    totalSlides: config.pagesCount ?? null,
+    waitingForUser: false,
+    updatedAt: new Date().toISOString(),
   }
-
-  // 3. Write initial activity if none exists
-  if (!activity.value) {
-    const starterActivity: SlideActivity = {
-      message: '專案已建立，等待 Agent 讀取 slide.start.json 開始製作',
-      step: 'init',
-      totalSlides: config.pagesCount || 5,
-      waitingForUser: false,
-      updatedAt: new Date().toISOString(),
-    }
-    await writeText(root, 'slide.activity.json', JSON.stringify(starterActivity, null, 2) + '\n')
-    activity.value = starterActivity
-  }
+  await writeText(root, 'slide.activity.json', JSON.stringify(starterActivity, null, 2) + '\n')
+  activity.value = starterActivity
 
   await pollFiles()
 }

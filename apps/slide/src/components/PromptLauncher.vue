@@ -1,39 +1,30 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { dirHandle, project } from '../lib/store'
+import { api } from '../lib/site'
+import { dirHandle, project, start } from '../lib/store'
 import CopyButton from './CopyButton.vue'
 
 const folderName = computed(() => dirHandle.value?.name || '專案資料夾')
 
+// Existing projects only need the Skill; a prepared (empty) folder also needs the template steps,
+// which live in the Skill so the prompt stays short and the Agent verifies the zip's checksum.
 const agentPrompt = computed(() => {
-  const p = project.value
-  const title = p?.title || '新簡報'
-  const desc = p?.description || ''
-  const pages = p?.pagesCount || 5
-  const theme = p?.theme || 'default'
+  const title = project.value?.title || start.value?.title || '新簡報'
+  const skill = api('skills/slidev-deck/SKILL.md')
+  const lead = project.value
+    ? `請繼續製作「${folderName.value}」資料夾裡的 Slidev 簡報「${title}」。`
+    : `請在「${folderName.value}」資料夾為我製作一份 Slidev 簡報「${title}」。這個資料夾是網頁準備的，需求寫在 slide.start.json。`
+  return `${lead}
 
-  return `請在此目錄（${folderName.value}）為我製作一份高質感 Slidev 簡報：
+請先閱讀並遵循這份 Skill：${skill}
+（新專案依 Skill §1 下載範本、以 manifest 的 SHA-256 驗證後解壓，再依 slide.start.json 填寫 slide.project.json；不要另建子資料夾。）
 
-【簡報基本資訊】
-- 主題：${title}
-- 預估頁數：約 ${pages} 頁
-- 主題風格：${theme}
-${desc ? `- 說明與指引：${desc}` : ''}
-
-【執行規範】
-1. 請先檢查目錄內的 \`slide.start.json\` 與 \`slide.project.json\`。
-2. 若尚未安裝依賴，請執行 \`pnpm install\`。
-3. 遵循 AOFA 簡報工作流程：
-   - 階段一：規劃簡報大綱（規劃頁數與各頁核心訊息），更新 \`slide.activity.json\`。
-   - 階段二：撰寫 \`slides.md\`，合理配置 Slidev 內建版型（\`cover\`、\`two-cols\`、\`center\`、\`quote\` 等）與 \`<!-- notes -->\` 講者講稿。
-   - 階段三：運用前端視覺能力升級版面（內嵌原生向量 SVG 架構/流程圖、運用 Three.js 3D 組件如 \`<ThreeGlobe />\`、加入 \`v-click\` 動效）。
-   - 階段四：執行 \`pnpm run export\` 匯出無損向量 PDF 至 \`output/slides.pdf\`，並更新 \`slide.project.json\` 狀態為 \`exported\`。
-4. 全程使用繁體中文，追求 Apple/Stripe 等級的乾淨專業視覺。`
+全程使用繁體中文，每個階段結束時停下來讓我確認。`
 })
 
 const exportCommand = 'pnpm run export'
 const devCommand = 'pnpm run dev'
-const validateCommand = 'node scripts/validate.mjs'
+const validateCommand = 'pnpm run validate'
 </script>
 
 <template>

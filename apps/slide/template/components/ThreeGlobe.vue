@@ -18,7 +18,8 @@ onMounted(() => {
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
   camera.position.z = 2.5
 
-  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+  // preserveDrawingBuffer keeps the frame on the canvas when Slidev prints it to PDF.
+  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true })
   renderer.setSize(width, height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   container.value.appendChild(renderer.domElement)

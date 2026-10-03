@@ -16,8 +16,8 @@ for (const name of ['project', 'activity']) {
   ajv.addSchema(readJson(join(specsDir, `${name}.schema.json`)))
 }
 const validators = {
-  project: ajv.getSchema('https://aofa.tigernaxo.com/slide/schemas/project.schema.json'),
-  activity: ajv.getSchema('https://aofa.tigernaxo.com/slide/schemas/activity.schema.json'),
+  project: ajv.getSchema('project.schema.json'),
+  activity: ajv.getSchema('activity.schema.json'),
 }
 
 test('slide specs/examples valid and invalid schemas', () => {

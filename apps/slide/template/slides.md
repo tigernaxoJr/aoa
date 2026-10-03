@@ -89,4 +89,4 @@ class: text-center
 
 以 Coding Agent 釋放前所未有的簡報表現力
 
-[前往工作台](https://aofa.tigernaxo.com/slide/) · [Slidev 文件](https://sli.dev/)
+[前往工作台]({{SITE_URL}}/slide/) · [Slidev 文件](https://sli.dev/)

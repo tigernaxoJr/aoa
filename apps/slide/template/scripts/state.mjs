@@ -1,54 +1,67 @@
-// Updates slide.activity.json or slide.project.json atomically
-import { writeFileSync, readFileSync, existsSync } from 'node:fs'
+// Updates slide.activity.json or slide.project.json. Every write is validated against schemas/ first
+// and committed atomically; an invalid change or an unreadable project file writes nothing.
+//
+//   pnpm run state activity --step outline --message "正在規劃大綱" [--waiting] [--slide 3 --total 8]
+//   pnpm run state project --status drafted [--pages 8] [--title ...] [--id ...] [--description ...] [--theme ...]
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { ACTIVITY_FILE, PROJECT_FILE, loadSchemas, schemaErrors, writeJsonAtomic } from './lib/schema.mjs'
 
-const cwd = process.cwd()
+const root = process.cwd()
 const args = process.argv.slice(2)
-
-function flag(name) {
+const flag = (name) => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1] : undefined
 }
+const int = (name) => {
+  const v = flag(name)
+  if (v === undefined) return undefined
+  if (!/^\d+$/.test(v)) fail(`--${name} must be a whole number, got "${v}"`)
+  return Number(v)
+}
+function fail(message) {
+  console.error(`✗ ${message}`)
+  process.exit(1)
+}
 
-const target = args[0] // 'activity' or 'project'
+const target = args[0]
+const schemas = loadSchemas(root)
+let file, doc
 
 if (target === 'activity') {
-  const message = flag('message') || 'Agent 正在工作中...'
-  const step = flag('step') || 'draft'
-  const currentSlide = flag('slide') ? parseInt(flag('slide'), 10) : null
-  const totalSlides = flag('total') ? parseInt(flag('total'), 10) : null
-  const waiting = args.includes('--waiting')
-
-  const activity = {
+  const message = flag('message')
+  if (!message) fail('activity needs --message')
+  file = join(root, ACTIVITY_FILE)
+  doc = {
     message,
-    step,
-    currentSlide,
-    totalSlides,
-    waitingForUser: waiting,
+    step: flag('step') ?? 'idle',
+    currentSlide: int('slide') ?? null,
+    totalSlides: int('total') ?? null,
+    waitingForUser: args.includes('--waiting'),
     updatedAt: new Date().toISOString(),
   }
-
-  writeFileSync(join(cwd, 'slide.activity.json'), JSON.stringify(activity, null, 2) + '\n')
-  console.log(`✓ updated slide.activity.json: ${message}`)
+  const errors = schemaErrors(schemas.activity, doc)
+  if (errors.length) fail(`${ACTIVITY_FILE} would be invalid:\n  ${errors.join('\n  ')}`)
 } else if (target === 'project') {
-  const projectFile = join(cwd, 'slide.project.json')
-  let project = {}
-  if (existsSync(projectFile)) {
-    try {
-      project = JSON.parse(readFileSync(projectFile, 'utf8'))
-    } catch {}
+  file = join(root, PROJECT_FILE)
+  if (!existsSync(file)) fail(`${PROJECT_FILE} not found; unpack the template first`)
+  try {
+    doc = JSON.parse(readFileSync(file, 'utf8'))
+  } catch (err) {
+    fail(`${PROJECT_FILE} is not valid JSON (${err.message}); fix it before updating, nothing was written`)
   }
-
-  if (flag('status')) project.status = flag('status')
-  if (flag('title')) project.title = flag('title')
-  if (flag('pages')) project.pagesCount = parseInt(flag('pages'), 10)
-  project.updatedAt = new Date().toISOString()
-  project.updatedBy = 'agent'
-
-  writeFileSync(projectFile, JSON.stringify(project, null, 2) + '\n')
-  console.log(`✓ updated slide.project.json (status: ${project.status})`)
+  for (const key of ['id', 'title', 'description', 'theme', 'status']) if (flag(key) !== undefined) doc[key] = flag(key)
+  if (flag('pages') !== undefined) doc.pagesCount = int('pages')
+  doc.updatedAt = new Date().toISOString()
+  doc.updatedBy = 'agent'
+  const errors = schemaErrors(schemas.project, doc)
+  if (errors.length) fail(`${PROJECT_FILE} would be invalid, nothing was written:\n  ${errors.join('\n  ')}`)
 } else {
   console.log('Usage:')
-  console.log('  node scripts/state.mjs activity --message "正在寫大綱" --step outline')
-  console.log('  node scripts/state.mjs project --status drafted --pages 6')
+  console.log('  pnpm run state activity --step outline --message "正在寫大綱" [--waiting] [--slide 3 --total 8]')
+  console.log('  pnpm run state project --status drafted [--pages 6] [--title ...]')
+  process.exit(target ? 1 : 0)
 }
+
+writeJsonAtomic(file, doc)
+console.log(`✓ updated ${target === 'activity' ? ACTIVITY_FILE : PROJECT_FILE}${doc.status ? ` (status: ${doc.status})` : ''}`)

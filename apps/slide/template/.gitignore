@@ -1,0 +1,8 @@
+node_modules/
+.tmp/
+*.tmp
+output/
+dist/
+slide.activity.json
+.env
+.env.*
