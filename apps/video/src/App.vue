@@ -56,17 +56,17 @@ watch(state, (st) => {
 
 <template>
   <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-    <div class="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
+    <div class="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
       <a
         href="../"
         class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
         title="返回平台總覽"
       >
         <span>←</span>
-        <span class="hidden sm:inline">平台總覽</span>
+        <span>平台總覽</span>
       </a>
       <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">/</span>
-      <span class="flex shrink-0 items-center gap-2 font-semibold tracking-tight whitespace-nowrap">
+      <span class="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap">
         <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white" aria-hidden="true"><Icon name="play" :size="13" /></span>
         <span :class="state ? 'hidden sm:inline' : ''">Agent Video Producer</span>
       </span>

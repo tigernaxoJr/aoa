@@ -33,22 +33,25 @@ async function reload() {
 <template>
   <div class="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
     <!-- Navbar -->
-    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 dark:border-slate-800 dark:bg-slate-900/80">
-      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
+      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <div class="flex items-center gap-3">
           <a
             href="../"
-            class="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+            class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+            title="返回平台總覽"
           >
-            ← 平台總覽
+            <span>←</span>
+            <span>平台總覽</span>
           </a>
-          <span class="text-slate-300 dark:text-slate-700">/</span>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base font-semibold tracking-tight">Slide Studio</h1>
+          <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">/</span>
+          <span class="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap">
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 font-mono text-xs font-bold text-white" aria-hidden="true">S</span>
+            <span class="hidden sm:inline">Slide Studio</span>
             <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300">
               Slidev + AOFA
             </span>
-          </div>
+          </span>
         </div>
 
         <!-- Right Side: Directory status & Actions -->
@@ -86,7 +89,7 @@ async function reload() {
     </header>
 
     <!-- Main Content -->
-    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <main class="mx-auto max-w-7xl px-4 py-5 sm:py-6">
       <!-- If no directory selected yet -->
       <ProjectPicker v-if="!dirHandle" />
 
