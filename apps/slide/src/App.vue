@@ -1,7 +1,176 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import ActivityBanner from './components/ActivityBanner.vue'
+import PdfViewer from './components/PdfViewer.vue'
+import ProjectPicker from './components/ProjectPicker.vue'
+import PromptLauncher from './components/PromptLauncher.vue'
+import SlideDeckView from './components/SlideDeckView.vue'
+import {
+  dirHandle,
+  hasPdf,
+  isPolling,
+  lastSync,
+  pollFiles,
+  project,
+  resetDirectory,
+} from './lib/store'
+
+const activeTab = ref<'slides' | 'pdf' | 'prompt'>('slides')
+
+const folderName = computed(() => dirHandle.value?.name || '')
+const projectTitle = computed(() => project.value?.title || folderName.value || '未命名簡報')
+
+const syncTimeStr = computed(() => {
+  if (!lastSync.value) return ''
+  return lastSync.value.toLocaleTimeString('zh-TW', { hour12: false })
+})
+
+async function reload() {
+  await pollFiles()
+}
+</script>
+
 <template>
-  <main class="mx-auto max-w-3xl px-4 py-12">
-    <a href="../" class="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">← 總覽</a>
-    <h1 class="mt-4 text-2xl font-semibold tracking-tight">Slide</h1>
-    <p class="mt-2 text-sm text-slate-500">簡報功能建置中。</p>
-  </main>
+  <div class="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+    <!-- Navbar -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-20 dark:border-slate-800 dark:bg-slate-900/80">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <div class="flex items-center gap-3">
+          <a
+            href="../"
+            class="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          >
+            ← 平台總覽
+          </a>
+          <span class="text-slate-300 dark:text-slate-700">/</span>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-semibold tracking-tight">Slide Studio</h1>
+            <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300">
+              Slidev + AOFA
+            </span>
+          </div>
+        </div>
+
+        <!-- Right Side: Directory status & Actions -->
+        <div v-if="dirHandle" class="flex items-center gap-3">
+          <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span
+              class="h-2 w-2 rounded-full"
+              :class="isPolling ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"
+              title="本機檔案即時輪詢中"
+            ></span>
+            <span class="font-mono truncate max-w-[150px]">{{ folderName }}</span>
+            <span v-if="syncTimeStr" class="text-[11px] text-slate-400">({{ syncTimeStr }})</span>
+          </div>
+
+          <button
+            type="button"
+            title="手動重新整理本機檔案"
+            @click="reload"
+            class="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            @click="resetDirectory"
+            class="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+          >
+            更換資料夾
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <!-- If no directory selected yet -->
+      <ProjectPicker v-if="!dirHandle" />
+
+      <!-- Workspace when folder is selected -->
+      <div v-else class="space-y-6">
+        <!-- Project Title Header -->
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              {{ projectTitle }}
+            </h2>
+            <p v-if="project?.description" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {{ project.description }}
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span
+              v-if="hasPdf"
+              class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+            >
+              ✓ PDF 已匯出
+            </span>
+          </div>
+        </div>
+
+        <!-- Activity & Step Progress -->
+        <ActivityBanner />
+
+        <!-- Navigation Tabs -->
+        <div class="border-b border-slate-200 dark:border-slate-800">
+          <nav class="flex gap-6">
+            <button
+              type="button"
+              @click="activeTab = 'slides'"
+              class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
+              :class="[
+                activeTab === 'slides'
+                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              ]"
+            >
+              簡報內容預覽 (Slides)
+            </button>
+
+            <button
+              type="button"
+              @click="activeTab = 'pdf'"
+              class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
+              :class="[
+                activeTab === 'pdf'
+                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              ]"
+            >
+              PDF 成果 (PDF Output)
+              <span
+                v-if="hasPdf"
+                class="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500"
+              ></span>
+            </button>
+
+            <button
+              type="button"
+              @click="activeTab = 'prompt'"
+              class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
+              :class="[
+                activeTab === 'prompt'
+                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+              ]"
+            >
+              Agent 指令 (Prompt)
+            </button>
+          </nav>
+        </div>
+
+        <!-- Tab Panels -->
+        <div>
+          <SlideDeckView v-if="activeTab === 'slides'" />
+          <PdfViewer v-else-if="activeTab === 'pdf'" />
+          <PromptLauncher v-else-if="activeTab === 'prompt'" />
+        </div>
+      </div>
+    </main>
+  </div>
 </template>

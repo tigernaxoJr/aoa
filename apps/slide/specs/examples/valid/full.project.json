@@ -1,0 +1,17 @@
+{
+  "specVersion": "1.0.0",
+  "id": "intro-deck",
+  "title": "Agent Offload Front Architecture 介紹簡報",
+  "description": "向開發者介紹 AOFA 理念與實作",
+  "theme": "default",
+  "aspectRatio": "16/9",
+  "status": "exported",
+  "pagesCount": 10,
+  "export": {
+    "pdfPath": "output/slides.pdf",
+    "exportedAt": "2026-10-04T00:00:00Z",
+    "sizeBytes": 1048576
+  },
+  "updatedAt": "2026-10-04T00:00:00Z",
+  "updatedBy": "agent"
+}

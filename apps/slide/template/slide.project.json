@@ -1,0 +1,12 @@
+{
+  "specVersion": "1.0.0",
+  "id": "my-slidev-deck",
+  "title": "新簡報專案",
+  "description": "由 Slide Studio 建立的 Slidev 簡報專案",
+  "theme": "default",
+  "aspectRatio": "16/9",
+  "status": "initialized",
+  "pagesCount": 4,
+  "updatedAt": "2026-10-04T00:00:00.000Z",
+  "updatedBy": "agent"
+}

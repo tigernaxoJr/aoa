@@ -63,11 +63,12 @@ apps/<slug>/
 └── tsconfig.json      # 獨立 TypeScript 設定
 ```
 
-### 新增 Sub-App 的 4 步 SOP：
+### 新增 Sub-App 的 5 步 SOP：
 1. **建立目錄結構**：建立 `apps/<slug>/`，其 `vite.config.ts` 調用 `appConfig(import.meta.dirname, '<slug>')`。
 2. **新增入口卡片**：在 [`apps/portal/index.html`](file:///C:/workspace/index-url-director/apps/portal/index.html) 增加導向 `/<slug>/` 的功能卡片。
 3. **加入建置管線**：在根目錄 `package.json` 的 `build:web` 與 `typecheck` 登記該 App。
 4. **定義協議與資產**：在該功能目錄下建立自己的 `specs/`、`skills/`、`template/`、`tools/` 與 `tests/`。
+5. **導航回到總覽**：在該 App 頂部導航列（Header）左側，必須強制加上回到總覽的按鈕（`<a href="../">← 平台總覽</a>`）。
 
 ---
 
@@ -78,7 +79,9 @@ apps/<slug>/
    - **嚴禁手寫或手動修改 `protocol.ts`**。修改協議時，先改 `specs/`，再執行 `pnpm run gen:types`。
 2. **本機狀態檔案寫入安全**：
    - 範本專案中的狀態更新必須維持原子寫入（atomic write），不可留下損壞的 partial JSON。
-3. **測試與驗證義務**：
+3. **全站導航規範（強制提供回到 Portal 按鈕）**：
+   - 每個獨立產品/子應用（如 `apps/video`、`apps/slide`）的頂部導航列（Header）最左側，**必須強制提供返回 Portal 的按鈕**（例如 `<a href="../">← 平台總覽</a>`），嚴禁讓使用者陷入無法返回首頁的孤島體驗。
+4. **測試與驗證義務**：
    - 修改任何前端代碼後，必須執行 `pnpm run typecheck` 確保零型別報錯。
    - 修改任何工具或協議後，必須執行 `pnpm test` 確保既有單元測試、整合測試與規格驗證全部通過。
    - 部署與打包前確認 `pnpm run build` 成功。

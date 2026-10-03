@@ -47,15 +47,15 @@ jobs:
       - name: Build site
         run: pnpm run build
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://aofa.tigernaxo.com' }}
 
       - name: Custom domain
         id: domain
         run: |
-          host=$(node -e "const u = process.env.SITE_URL; if (u) { const h = new URL(u).hostname; if (!h.endsWith('.github.io')) console.log(h) }")
+          host=$(node -e "const u = process.env.SITE_URL || 'https://aofa.tigernaxo.com'; const h = new URL(u).hostname; if (!h.endsWith('.github.io')) console.log(h)")
           echo "cname=$host" >> "$GITHUB_OUTPUT"
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://aofa.tigernaxo.com' }}
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
