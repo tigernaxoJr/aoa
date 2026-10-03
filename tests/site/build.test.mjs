@@ -149,6 +149,10 @@ test('site URL follows the GitHub repository name', () => {
     process.env.GITHUB_REPOSITORY = 'someone/someone.github.io'
     assert.equal(resolveSiteUrl(), 'https://someone.github.io')
     assert.equal(resolveSiteUrl('https://video.example.com/'), 'https://video.example.com')
+    // A repository variable set to a bare domain must not fall back to github.io (wrong base path).
+    assert.equal(resolveSiteUrl('aoa.tigernaxo.com'), 'https://aoa.tigernaxo.com')
+    assert.equal(resolveSiteUrl(' aoa.tigernaxo.com/ '), 'https://aoa.tigernaxo.com')
+    assert.throws(() => resolveSiteUrl('not a url'), /is not a URL/)
   } finally {
     process.env = env
   }

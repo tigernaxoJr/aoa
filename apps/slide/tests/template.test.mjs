@@ -127,3 +127,9 @@ test('published manifest lists every file once', () => {
   const paths = manifest.files.map((f) => f.path)
   assert.deepEqual(paths.filter((p, i) => paths.indexOf(p) !== i), [])
 })
+
+test('site URL: a bare domain gets https://, junk fails instead of falling back to github.io', async () => {
+  const { resolveSiteUrl } = await import('../tools/build-api.mjs')
+  assert.equal(resolveSiteUrl('aoa.tigernaxo.com'), 'https://aoa.tigernaxo.com')
+  assert.throws(() => resolveSiteUrl('not a url'), /is not a URL/)
+})

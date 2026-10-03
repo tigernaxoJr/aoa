@@ -17,9 +17,12 @@ export function resolveSiteUrl(): string {
   let explicit = process.env.SITE_URL
   if (explicit) {
     explicit = explicit.trim().replace(/\/+$/, '')
-    if (explicit !== 'true' && explicit !== 'false' && /^https?:\/\//.test(explicit)) {
-      return explicit
-    }
+    // A bare domain (e.g. a repository variable set to "aoa.tigernaxo.com") means https://.
+    if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i.test(explicit)) explicit = `https://${explicit}`
+    if (/^https?:\/\/[^/]+/.test(explicit)) return explicit
+    // Anything else is a misconfiguration: falling back to github.io would silently publish the
+    // site under the wrong base path and drop the custom domain.
+    if (explicit && explicit !== 'true' && explicit !== 'false') throw new Error(`SITE_URL "${explicit}" is not a URL`)
   }
   let repo = process.env.GITHUB_REPOSITORY
   if (!repo) {
@@ -39,7 +42,9 @@ export function resolveSiteUrl(): string {
 export const siteUrl = (() => {
   try {
     return resolveSiteUrl()
-  } catch {
+  } catch (err) {
+    // Local development without a git remote; CI must never fall back to localhost.
+    if (process.env.CI) throw err
     return 'http://localhost:5173'
   }
 })()
