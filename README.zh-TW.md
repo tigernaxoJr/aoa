@@ -2,7 +2,7 @@
 
 [English](README.md) | **繁體中文** | [官方網站](https://aoa.tigernaxo.com/)
 
-**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種「後端不跑 AI」的 AI 產品架構模式：推理、檔案產生與執行都卸載給**使用者手上既有的 Coding Agent**（Claude Code、Codex、Cursor、Gemini CLI、Pi 等），服務本身只負責協議、介面與協同。在前端，網頁應用只是一份靜態的**協議皮囊（Protocol Shell）**，透過本機資料夾與使用者的 Agent 協作。
+**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種「後端不跑 AI」的 AI 產品架構模式：推理、檔案產生與執行都卸載給**使用者手上既有的 Coding Agent**（Claude Code、Codex、Cursor、Gemini CLI、Pi 等），服務本身只負責協議、介面與協同。在前端，網頁應用只是一份靜態的**協議工作台（Protocol Workbench）**，透過本機資料夾與使用者的 Agent 協作。
 
 ```
 [ 靜態 Web UI ]  ──File System Access API──▶  [ 本機資料夾 (SSOT) ]  ◀──▶  [ 使用者的 Coding Agent ]
@@ -28,7 +28,7 @@ AOA 也適用於有後端的系統：帳號、計費、團隊協同留在輕量�
 
 本倉庫內建完整的 AOA 參考實作工具，供線上體驗與二次開發：
 
-| 工具工作台 | 路由路徑 | 通訊模式 | 特色技術與說明 |
+| 工具工作台 | 路由路徑 | 協作模式 | 特色技術與說明 |
 |---|---|---|---|
 | **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **模式 A：純工作台** | 純 FSA API + Slidev + Three.js 3D 視覺 + 向量 SVG 圖表 + Playwright 無損向量 PDF 匯出（零常駐伴侶、極簡零依賴）。 |
 | **Video Studio** | [`/video/`](https://aoa.tigernaxo.com/video/) | **模式 B：伴侶增強** | FSA API + 本機 Companion WebSocket 配對，將產品網址自動轉為包含繁中配音（TTS）、動態截圖與 FFmpeg 合成的展示影片。 |
@@ -39,7 +39,7 @@ AOA 也適用於有後端的系統：帳號、計費、團隊協同留在輕量�
 
 | 文件 | 說明 |
 | :--- | :--- |
-| [架構說明 (繁中)](docs/architecture.zh-TW.md) · ([English](docs/architecture.md)) | 完整規格：原則、通訊模式（模式 A/B/C）、安全模型與限制 |
+| [架構說明 (繁中)](docs/architecture.zh-TW.md) · ([English](docs/architecture.md)) | 完整規格：原則、協作模式（模式 A–D，含純後端）、安全模型與限制 |
 | [Introducing AOA](posts/2026-10-introducing-aofa.md) | 深度介紹此架構的技術長文（英文） |
 | [論文提案草稿](paper/proposal.md) | 學術論文提案草稿（英文） |
 

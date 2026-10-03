@@ -20,14 +20,14 @@ We call this the **"AI Compute Tax"**. But look around your development machine:
 
 ---
 
-## Enter AOA: The Shell and the Engine
+## Enter AOA: The Brain and the Engine
 
 Today, we want to formalize a new architectural paradigm: **AOA (Agent-Offloaded Architecture)**.
 
-The core metaphor is simple:
-> **The Frontend is an Exoskeleton (Shell). The User's Agent is the Heart and Engine.**
+The core idea is simple. Every AI product needs two things:
+> **A brain — LLM inference. And an engine — the tokens that inference consumes.**
 
-In AOA, the web application doesn't provide compute, API keys, or databases. It provides:
+Cloud SaaS makes the vendor supply both and bill them back as subscriptions. In AOA, both belong to the agent the user already has. The application doesn't provide compute, API keys, or databases. It provides:
 1. **A Living Protocol**: Strict JSON Schemas and workflow definitions.
 2. **A Zero-Backend Workbench**: A purely static web UI (hosted for pennies or completely free on GitHub Pages).
 3. **A State Visualizer**: A visual lens that looks directly into the local directory via the browser's **File System Access API**.
@@ -37,6 +37,8 @@ The heavy lifting—reasoning, web analysis, prompt iteration, narration generat
 - **Inference** runs wherever the user's agent runs it: by default on their agent provider's cloud, billed to the plan they already have — or, if they choose, fully offline on self-hosted models (Pi-style agents pointed at Ollama / llama.cpp, Piper / Kokoro for TTS).
 
 Either way, the app developer pays nothing for inference, and the user's files never pass through the app developer's servers.
+
+The application doesn't even need a frontend. A service can expose only an API, publish its specification at a URL (OpenAPI, a guide, or a skill), and let the user's agent call it directly. Whatever the shape, the agent's first step is the same: fetch the specification from a URL.
 
 ---
 

@@ -10,12 +10,12 @@
 
 **AOA (Agent-Offloaded Architecture)** is a software architecture pattern for the AI agent era: the service runs no AI inference or heavy computation, and offloads both to the agent the user already has.
 
-On the frontend, AOA takes the form of a static web app that works with the user's agent through a local folder (this frontend form is sometimes called AOFA, Agent-Offloaded Frontend Architecture). Most of this document describes that form, the most direct way to apply AOA; Mode C (§5) shows AOA with a backend.
+On the frontend, AOA takes the form of a static web app that works with the user's agent through a local folder (this frontend form is sometimes called AOFA, Agent-Offloaded Frontend Architecture). Most of this document describes that form, the most direct way to apply AOA; Modes C and D (§5) show AOA with a backend and with no frontend at all.
 
 In the traditional generative AI product (SaaS) model, the vendor bears the heavy cost of cloud inference, media transcoding, and storage, while users bear the risk of privacy leaks and cloud lock-in of their data.
 
 AOA inverts and redraws these responsibility boundaries:
-- **The frontend (Presentation Layer)** does not depend on a backend for inference or computation. It is reduced to a purely static **"Protocol Shell & Workbench"** that can be hosted at zero cost on static platforms such as GitHub Pages.
+- **The frontend (Presentation Layer)** does not depend on a backend for inference or computation. It is reduced to a purely static **protocol workbench** that can be hosted at zero cost on static platforms such as GitHub Pages.
 - **Inference and execution (Execution & Inference Layer)** are offloaded to the **Coding Agent** the user already has (e.g., Claude Code, Cursor, Codex, Gemini CLI, Pi) and to local open-source toolchains (e.g., FFmpeg, Playwright).
   - **Inference**: By default it runs on the user's existing agent plan in that provider's cloud, so the cost is covered by the user's agent subscription / API quota rather than by the app vendor. When needed, the agent can instead be pointed at self-hosted local models, as Pi Agent does (e.g., LLMs on Ollama / llama.cpp, local TTS such as Piper / Kokoro), enabling fully offline operation.
   - **Execution**: File I/O, scraping, transcoding, compositing, and other heavy work run on the user's machine.
@@ -40,9 +40,15 @@ The user's local development environment has changed dramatically in recent year
 
 ---
 
-## 3. Core Metaphor: Shell & Heart
+## 3. Core Metaphor: Brain & Engine
 
-> *"The frontend is like a finely crafted exoskeleton or car body (Shell); without an engine it is just an empty husk. The user's agent is the heart and engine (Heart & Engine) that brings this shell to life."*
+> *An AI product needs a **brain** (LLM inference) and an **engine** (the tokens that inference consumes). In traditional SaaS the vendor provides both and recovers the cost through subscriptions. In AOA both belong to the user's agent; the service provides only the interface and the specification.*
+
+| Role | What it does | Who provides it |
+|---|---|---|
+| **Service** | Interface (web workbench or API), specifications published at URLs, validation of the agent's results | The vendor, at near-zero marginal cost |
+| **Brain** | LLM inference: understanding requests, planning, writing files, calling local tools | The user's agent and the model the user chose |
+| **Engine** | Tokens consumed by inference | The user's agent plan, or local hardware running a self-hosted model |
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -68,8 +74,9 @@ The user's local development environment has changed dramatically in recent year
 │    └──────────────────────▲───────────────────────┘    │
 │                           │                            │
 │    ┌──────────────────────┴───────────────────────┐    │
-│    │ Local Coding Agent (Orchestrator & Engine)   │    │
-│    │ - LLM Reasoning                              │    │
+│    │ Local Coding Agent                           │    │
+│    │ - Brain: LLM reasoning                       │    │
+│    │ - Engine: tokens from the user's plan        │    │
 │    │   cloud LLM (default) / local model (opt.)   │    │
 │    │ - Local tools (FFmpeg, Playwright, TTS)      │    │
 │    │ - Protocol Conformant                        │    │
@@ -104,12 +111,12 @@ The user's local development environment has changed dramatically in recent year
 
 ---
 
-## 5. Communication Paradigms
+## 5. Collaboration Modes
 
-An AOA frontend supports three progressive modes of communication with the local environment:
+AOA supports four progressive modes. Modes A and B are frontends working with a local folder; Mode C adds a thin backend; Mode D has no frontend at all.
 
 ### Mode A: Pure Workbench (File-Driven)
-*The purest form of AOA; no extra local server is required.*
+*The simplest frontend form; no extra local server is required.*
 1. The frontend obtains a directory handle via the File System Access API.
 2. Every N seconds, the frontend compares metadata of key files (a fingerprint computed from `lastModified` and file size).
 3. When the agent finishes a storyboard or generates audio, the fingerprint changes and the frontend updates automatically.
@@ -148,6 +155,17 @@ An AOA frontend supports three progressive modes of communication with the local
    - Enterprise users' proprietary source code, trade secrets, and large media assets stay on employees' machines, processed and rendered by the agent, never passing through the service's backend.
    - Inference goes to the enterprise's chosen LLM provider (possibly an enterprise plan with a signed data agreement) or an in-house model.
    - Only sanitized, schema-validated "final project metadata" or videos the user explicitly chooses to publish are uploaded to the cloud backend, greatly narrowing the enterprise's privacy-compliance scope.
+
+### Mode D: Backend-Only (Agent-Operated API)
+*For services with no user interface: the agent itself is the client.*
+
+1. The service exposes an HTTP API (or wraps it as an MCP server) and publishes its specification at a URL: an OpenAPI document, a guide or skill, and JSON Schemas.
+2. The agent reads the specification, plans, and calls the API directly. The service stores data and state and validates every request against the schema.
+3. The service still runs no inference: the brain (LLM reasoning) and the engine (tokens) stay with the user's agent.
+4. The API authenticates the agent with user-scoped credentials and treats every agent request as untrusted input.
+
+### The specification entry point
+Whatever the mode, the agent must first obtain the specification, and the entry point is usually a URL: a guide page, an index such as `/api/index.json`, an OpenAPI document, or a skill package. A good entry point lists every schema, template, and command with absolute URLs and checksums, so the agent can verify what it downloads. This site's `/api/index.json` is the entry point for Video Studio.
 
 ---
 

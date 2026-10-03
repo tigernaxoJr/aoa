@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AOA — 代理卸載式架構 (Agent-Offloaded Architecture)</title>
-    <meta name="description" content="AOA（代理卸載式架構）是後端不跑 AI 的 AI 產品架構：網頁只是一份靜態的協議皮囊，推理與執行交給使用者既有的 Coding Agent。" />
+    <meta name="description" content="AOA（代理卸載式架構）是後端不跑 AI 的 AI 產品架構：服務只提供介面與規格，LLM 推論與 token 由使用者既有的 Coding Agent 負擔。" />
     <script>
       // 保持向後相容：轉發舊版 Video workbench 伴侶配對 Token
       if (/[#&]pair=/.test(location.hash)) location.replace('./video/' + location.hash)
@@ -23,8 +23,9 @@
         </a>
         <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
           <a href="#workbenches" class="hover:text-stone-900 dark:hover:text-white">範例工具</a>
+          <a href="#architecture" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">架構</a>
           <a href="#principles" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">原則</a>
-          <a href="#modes" class="hidden hover:text-stone-900 md:inline dark:hover:text-white">通訊模式</a>
+          <a href="#modes" class="hidden hover:text-stone-900 md:inline dark:hover:text-white">協作模式</a>
           <a href="#docs" class="hover:text-stone-900 dark:hover:text-white">文獻</a>
           <a href="https://github.com/tigernaxojr/aofa" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
         </nav>
@@ -57,66 +58,12 @@
         </div>
       </section>
 
-      <!-- 01 皮囊與心臟 -->
-      <section class="border-b border-stone-200 dark:border-stone-800">
-        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
-            <div>
-              <p class="font-mono text-xs text-accent">01 / 架構</p>
-              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">皮囊與心臟</h2>
-              <p class="mt-3 text-sm leading-relaxed text-stone-500">AOA 在前端長什麼樣子。</p>
-            </div>
-            <div>
-              <p class="max-w-2xl leading-relaxed text-stone-600 dark:text-stone-300">
-                在 AOA 裡，前端從不執行模型。它把規格與 Schema 寫進使用者授權的本機資料夾；使用者的 Agent 讀取規格、完成工作，再把結果寫回。兩端之間沒有私有 API，只有檔案。
-              </p>
-
-              <div class="mt-10 grid border-y border-stone-300 md:grid-cols-[1fr_auto_1fr_auto_1fr] dark:border-stone-700">
-                <div class="py-6 md:pr-6">
-                  <p class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Shell · 皮囊</p>
-                  <h3 class="mt-2 font-serif text-lg font-bold">靜態 Web UI</h3>
-                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
-                    <li>工作台與編輯器</li>
-                    <li>Schema 驗證器</li>
-                    <li>託管於 GitHub Pages / CDN</li>
-                  </ul>
-                </div>
-                <div class="hidden items-center font-mono text-xs text-stone-400 md:flex" aria-hidden="true">
-                  <span class="px-2 text-center leading-tight">File System<br />Access API<br />⟷</span>
-                </div>
-                <div class="border-t border-stone-200 py-6 md:border-t-0 md:border-l md:px-6 dark:border-stone-800">
-                  <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Bus · SSOT</p>
-                  <h3 class="mt-2 font-serif text-lg font-bold">本機資料夾</h3>
-                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
-                    <li><code class="font-mono text-[13px]">*.project.json</code> 專案與狀態</li>
-                    <li><code class="font-mono text-[13px]">*.activity.json</code> Agent 進度</li>
-                    <li>素材與產出（PDF、MP4、SVG…）</li>
-                  </ul>
-                </div>
-                <div class="hidden items-center font-mono text-xs text-stone-400 md:flex" aria-hidden="true">
-                  <span class="px-2 text-center leading-tight">檔案<br />讀寫<br />⟷</span>
-                </div>
-                <div class="border-t border-stone-200 py-6 md:border-t-0 md:border-l md:pl-6 dark:border-stone-800">
-                  <p class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Heart · 引擎</p>
-                  <h3 class="mt-2 font-serif text-lg font-bold">使用者的 Coding Agent</h3>
-                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
-                    <li>Claude Code、Codex、Cursor、Pi…</li>
-                    <li>本機工具：FFmpeg、Playwright、TTS</li>
-                    <li>LLM：Agent 的雲端（預設）或本機模型</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 02 範例工具 -->
+      <!-- 01 範例工具 -->
       <section id="workbenches" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
         <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
             <div>
-              <p class="font-mono text-xs text-accent">02 / 範例</p>
+              <p class="font-mono text-xs text-accent">01 / 工具</p>
               <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">參考實作</h2>
               <p class="mt-3 text-sm leading-relaxed text-stone-500">兩個工具，各有獨立的工作台、協議 Schema、Agent Skill 與專案範本，彼此不共用程式碼。</p>
             </div>
@@ -145,6 +92,62 @@
                 <p class="mt-6 font-mono text-[11px] text-stone-500">Playwright · Edge TTS · FFmpeg · WebSocket Companion</p>
                 <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">開啟工作台 →</span>
               </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 頭腦與引擎 -->
+      <section id="architecture" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">02 / 架構</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">頭腦與引擎</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">推論由誰執行，token 由誰負擔。</p>
+            </div>
+            <div>
+              <p class="max-w-2xl leading-relaxed text-stone-600 dark:text-stone-300">
+                一個 AI 產品要動起來，需要<strong class="font-semibold text-stone-900 dark:text-white">頭腦</strong>（LLM 推論）和<strong class="font-semibold text-stone-900 dark:text-white">引擎</strong>（推論消耗的 token）。
+                傳統 SaaS 兩者都由服務商提供，再轉嫁成訂閱費。AOA 把兩者都交給使用者既有的 Agent；服務只提供介面與規格，不執行推論，也不負擔 token 成本。
+              </p>
+
+              <div class="mt-10 grid border-y border-stone-300 md:grid-cols-3 dark:border-stone-700">
+                <div class="py-6 md:pr-6">
+                  <p class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Service · 服務方</p>
+                  <h3 class="mt-2 font-serif text-lg font-bold">介面與規格</h3>
+                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
+                    <li>網頁工作台，或 API</li>
+                    <li>以 URL 提供的規格：Guide、Schema、Skill</li>
+                    <li>驗證 Agent 寫回的結果</li>
+                  </ul>
+                  <p class="mt-4 font-mono text-[11px] text-stone-500">不跑推論 · 不付 token</p>
+                </div>
+                <div class="border-t border-stone-200 py-6 md:border-t-0 md:border-l md:px-6 dark:border-stone-800">
+                  <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Brain · 頭腦</p>
+                  <h3 class="mt-2 font-serif text-lg font-bold">LLM 推論</h3>
+                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
+                    <li>理解需求、規劃步驟</li>
+                    <li>寫檔、呼叫本機工具（FFmpeg、Playwright、TTS）</li>
+                    <li>由使用者的 Agent 執行：Claude Code、Codex、Cursor、Pi…</li>
+                  </ul>
+                  <p class="mt-4 font-mono text-[11px] text-stone-500">使用者選的模型</p>
+                </div>
+                <div class="border-t border-stone-200 py-6 md:border-t-0 md:border-l md:pl-6 dark:border-stone-800">
+                  <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Engine · 引擎</p>
+                  <h3 class="mt-2 font-serif text-lg font-bold">Token</h3>
+                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
+                    <li>推論消耗的 token 由使用者供給</li>
+                    <li>Agent 方案的額度，或本機模型的硬體</li>
+                    <li>服務方的邊際成本趨近於零</li>
+                  </ul>
+                  <p class="mt-4 font-mono text-[11px] text-stone-500">使用者的方案 · 或本機</p>
+                </div>
+              </div>
+
+              <p class="mt-6 max-w-2xl text-sm leading-relaxed text-stone-500">
+                兩端之間沒有私有通道：Agent 從 URL 讀規格，再透過檔案或 API 交回結果。前端工具則以使用者授權的本機資料夾為唯一真實來源。
+              </p>
             </div>
           </div>
         </div>
@@ -236,32 +239,46 @@
         </div>
       </section>
 
-      <!-- 05 通訊模式 -->
+      <!-- 05 協作模式 -->
       <section id="modes" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
         <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
             <div>
               <p class="font-mono text-xs text-accent">05 / 模式</p>
-              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">三種通訊模式</h2>
-              <p class="mt-3 text-sm leading-relaxed text-stone-500">前端與 Agent 之間的三種協作方式，從零設定到完整團隊後端，可漸進採用。</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">四種協作模式</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">從零設定的前端，到沒有前端的純 API，可漸進採用。</p>
             </div>
-            <dl class="divide-y divide-stone-200 border-y border-stone-300 dark:divide-stone-800 dark:border-stone-700">
-              <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
-                <dt class="font-serif text-2xl font-bold text-accent">A</dt>
-                <dt><span class="font-serif text-lg font-bold">純工作台模式</span><span class="mt-1 block font-mono text-[11px] text-stone-500">例：Slide Studio</span></dt>
-                <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">檔案驅動。UI 輪詢檔案特徵碼，並提供指令讓使用者貼給 Agent 執行，不需要安裝任何東西。</dd>
+            <div>
+              <dl class="divide-y divide-stone-200 border-y border-stone-300 dark:divide-stone-800 dark:border-stone-700">
+                <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
+                  <dt class="font-serif text-2xl font-bold text-accent">A</dt>
+                  <dt><span class="font-serif text-lg font-bold">純工作台</span><span class="mt-1 block font-mono text-[11px] text-stone-500">例：Slide Studio</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">靜態網頁讀寫使用者授權的資料夾，輪詢檔案變化，並產生指令讓使用者貼給 Agent。不需要安裝任何東西。</dd>
+                </div>
+                <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
+                  <dt class="font-serif text-2xl font-bold text-accent">B</dt>
+                  <dt><span class="font-serif text-lg font-bold">伴侶增強</span><span class="mt-1 block font-mono text-[11px] text-stone-500">例：Video Studio</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">在 <code class="font-mono text-[13px]">127.0.0.1</code> 上的微型 WebSocket Companion，以 Origin 檢查與 Token 配對，推播事件並執行白名單指令。</dd>
+                </div>
+                <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
+                  <dt class="font-serif text-2xl font-bold text-accent">C</dt>
+                  <dt><span class="font-serif text-lg font-bold">前端＋輕量後端</span><span class="mt-1 block font-mono text-[11px] text-stone-500">團隊與商業化</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">雲端控制平面負責帳號、計費與團隊協同；推論、token 與資料仍留在使用者端（自備 Agent，BYOA）。</dd>
+                </div>
+                <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
+                  <dt class="font-serif text-2xl font-bold text-accent">D</dt>
+                  <dt><span class="font-serif text-lg font-bold">純後端</span><span class="mt-1 block font-mono text-[11px] text-stone-500">Agent 直接操作 API</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">沒有網頁介面。服務只提供 API，Agent 讀取規格後直接呼叫；服務端可以保存資料與狀態，但不跑推論。也可以包成 MCP server 讓 Agent 掛上。</dd>
+                </div>
+              </dl>
+              <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
+                <p class="font-mono text-[11px] uppercase tracking-wider text-accent">共同前提 · 規格的入口</p>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                  不論哪一種模式，Agent 都要先拿到規格，而入口通常就是一個 URL：網頁上的 Guide、<code class="font-mono text-[13px]">/api/index.json</code>、OpenAPI 文件或 Skill。
+                  本站的 <a href="./api/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">/api/index.json</a> 就是 Video Studio 給 Agent 的入口。
+                </p>
               </div>
-              <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
-                <dt class="font-serif text-2xl font-bold text-accent">B</dt>
-                <dt><span class="font-serif text-lg font-bold">伴侶增強模式</span><span class="mt-1 block font-mono text-[11px] text-stone-500">例：Video Studio</span></dt>
-                <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">在 <code class="font-mono text-[13px]">127.0.0.1</code> 上的微型 WebSocket Companion，以 Origin 檢查與 Token 配對，推播事件並執行白名單指令。</dd>
-              </div>
-              <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
-                <dt class="font-serif text-2xl font-bold text-accent">C</dt>
-                <dt><span class="font-serif text-lg font-bold">具後端混合架構</span><span class="mt-1 block font-mono text-[11px] text-stone-500">團隊與商業化</span></dt>
-                <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">輕量的雲端控制平面負責帳號、計費與團隊協同；算力與資料留在使用者端（自備 Agent，BYOA）。</dd>
-              </div>
-            </dl>
+            </div>
           </div>
         </div>
       </section>
@@ -271,13 +288,13 @@
         <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
             <div>
-              <p class="font-mono text-xs text-accent">06 / 取捨</p>
-              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">坦白說的取捨</h2>
-              <p class="mt-3 text-sm leading-relaxed text-stone-500">AOA 不是萬靈丹。以下多半來自瀏覽器端，採用前先確認這些限制在你的情境可以接受。</p>
+              <p class="font-mono text-xs text-accent">06 / 限制</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">限制與取捨</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">採用 AOA 前需要評估的限制。前兩項取決於使用者環境，後兩項需要在產品設計中處理。</p>
             </div>
             <ul class="grid gap-x-12 sm:grid-cols-2">
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
-                <h3 class="font-semibold">瀏覽器支援</h3>
+                <h3 class="font-semibold">瀏覽器支援（前端模式）</h3>
                 <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">目錄存取需要 File System Access API，目前為桌面版 Chrome 與 Edge；Brave 預設停用，Firefox 與 Safari 不支援。</p>
               </li>
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
@@ -286,11 +303,11 @@
               </li>
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
                 <h3 class="font-semibold">Agent 不具確定性</h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">產出需經 Schema 驗證，並提供重試與修復流程；不能假設 Agent 每次都寫對。</p>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Agent 產出必須經過 Schema 驗證，並提供重試與修復流程。</p>
               </li>
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
                 <h3 class="font-semibold">模式 A 需人工觸發</h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">沒有 Companion 時，使用者要自己在終端機啟動 Agent、貼上網頁產生的指令。</p>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">沒有 Companion 時，使用者需在終端機啟動 Agent，並貼上網頁產生的指令。</p>
               </li>
             </ul>
           </div>
@@ -312,7 +329,7 @@
                   <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">規格 · 繁中</span>
                   <span>
                     <span class="font-serif text-lg font-bold group-hover:text-accent-ink">架構規格</span>
-                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">原則、三種通訊模式、安全性與限制。另有 <span class="underline decoration-stone-300 underline-offset-4">English</span> 版本。</span>
+                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">原則、協作模式、安全性與限制。另有 <span class="underline decoration-stone-300 underline-offset-4">English</span> 版本。</span>
                   </span>
                   <span class="hidden text-stone-400 group-hover:text-accent sm:inline" aria-hidden="true">→</span>
                 </a>

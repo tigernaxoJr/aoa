@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](README.zh-TW.md) | [Website](https://aoa.tigernaxo.com/)
 
-**AOA (Agent-Offloaded Architecture)** is an architectural pattern for building AI products without running AI on your backend: reasoning, file generation, and execution are offloaded to the **coding agent the user already owns** (Claude Code, Codex, Cursor, Gemini CLI, Pi, etc.), while the service only provides protocol, interface, and coordination. On the frontend, the web application is just a static **protocol shell** that works with the user's agent through a local folder.
+**AOA (Agent-Offloaded Architecture)** is an architectural pattern for building AI products without running AI on your backend: reasoning, file generation, and execution are offloaded to the **coding agent the user already owns** (Claude Code, Codex, Cursor, Gemini CLI, Pi, etc.), while the service only provides protocol, interface, and coordination. On the frontend, the web application is just a static **protocol workbench** that works with the user's agent through a local folder.
 
 ```
 [ Static Web UI ]  ──File System Access API──▶  [ Local folder (SSOT) ]  ◀──▶  [ User's Coding Agent ]
@@ -26,7 +26,7 @@
 
 This repository includes two AOA workbenches:
 
-| Workbench | Path | Communication Mode | Highlights & Description |
+| Workbench | Path | Collaboration Mode | Highlights & Description |
 |---|---|---|---|
 | **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **Mode A: Pure Workbench** | Pure FSA API + Slidev + Three.js 3D visuals + Vector SVG diagrams + Lossless vector PDF export via Playwright. Zero local companion daemon needed. |
 | **Video Studio** | [`/video/`](https://aoa.tigernaxo.com/video/) | **Mode B: Companion-Enhanced** | FSA API + Local companion WebSocket pairing. Converts product URLs into animated walkthrough videos with voiceover (TTS), dynamic capture, and FFmpeg assembly. |
@@ -37,7 +37,7 @@ This repository includes two AOA workbenches:
 
 | Document | Description |
 | :--- | :--- |
-| [Architecture Specification](docs/architecture.md) ([繁體中文](docs/architecture.zh-TW.md)) | Comprehensive specification: principles, communication patterns (Modes A/B/C), security, and boundaries. |
+| [Architecture Specification](docs/architecture.md) ([繁體中文](docs/architecture.zh-TW.md)) | Comprehensive specification: principles, collaboration modes (A–D, including backend-only), security, and boundaries. |
 | [Introducing AOA](posts/2026-10-introducing-aofa.md) | Technical deep-dive article on why and how AOA was created. |
 | [Academic Proposal](paper/proposal.md) | Academic paper proposal draft for the Agent-Offloaded Architecture pattern. |
 

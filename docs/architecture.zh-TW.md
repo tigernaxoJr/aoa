@@ -12,12 +12,12 @@
 
 **AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種針對 AI Agent 時代提出的軟體架構模式：服務本身不跑 AI 推論、不做重度運算，兩者都卸載給使用者既有的 Agent。
 
-AOA 在前端的形式，是一個透過本機資料夾與使用者 Agent 協作的靜態網頁應用（這種前端形式有時也稱為 AOFA，Agent-Offloaded Frontend Architecture）。本文多數篇幅描述這種形式，因為它是套用 AOA 最直接的方式；模式 C（§5）則說明有後端時的 AOA。
+AOA 在前端的形式，是一個透過本機資料夾與使用者 Agent 協作的靜態網頁應用（這種前端形式有時也稱為 AOFA，Agent-Offloaded Frontend Architecture）。本文多數篇幅描述這種形式，因為它是套用 AOA 最直接的方式；模式 C、D（§5）則說明有後端，以及完全沒有前端時的 AOA。
 
 在傳統生成式 AI 產品（SaaS）模式中，服務商必須在雲端承擔高昂的推論算力、多媒體轉碼與儲存成本，同時使用者必須承擔隱私外洩與資料被雲端綁定的風險。
 
 AOA 提出責任邊界的反轉與重構：
-- **前端（Presentation Layer）** 不依賴後端執行推論與運算，簡化為一份純靜態的**「協議皮囊（Protocol Shell & Workbench）」**，可零成本託管於 GitHub Pages 等靜態平台。
+- **前端（Presentation Layer）** 不依賴後端執行推論與運算，簡化為一份純靜態的**協議工作台（Protocol Workbench）**，可零成本託管於 GitHub Pages 等靜態平台。
 - **推論與執行（Execution & Inference Layer）** 卸載（Offloaded）給使用者自備的 **Coding Agent**（如 Claude Code, Cursor, Codex, Gemini CLI, Pi）與本地開源工具鏈（如 FFmpeg, Playwright）。
   - **推論**：一般情況下由使用者既有的 Agent 方案在其供應商雲端執行，成本由使用者的 Agent 訂閱 / API 額度承擔，而非本服務；有需要時，也可如 Pi Agent 般改接本機自建模型（如 Ollama / llama.cpp 上的 LLM、Piper / Kokoro 等本機 TTS），達成完全離線。
   - **執行**：檔案讀寫、擷取、轉碼、合成等重度運算在使用者本機完成。
@@ -42,9 +42,15 @@ AOA 提出責任邊界的反轉與重構：
 
 ---
 
-## 3. 核心隱喻：皮囊與心臟 (Shell & Heart)
+## 3. 核心概念：頭腦與引擎 (Brain & Engine)
 
-> *「前端如同一副精緻的外骨骼或車殼（Shell），沒有引擎它只是一具空殼；而使用者的 Agent 則是注入這副皮囊的心臟與動力引擎（Heart & Engine）。」*
+> *AI 產品需要**頭腦**（LLM 推論）與**引擎**（推論所消耗的 token）。傳統 SaaS 兩者都由服務商提供，再以訂閱費回收成本。AOA 把兩者都交給使用者的 Agent；服務只提供介面與規格。*
+
+| 角色 | 職責 | 由誰提供 |
+|---|---|---|
+| **服務** | 介面（網頁工作台或 API）、以 URL 發布的規格、驗證 Agent 的結果 | 服務方，邊際成本趨近於零 |
+| **頭腦** | LLM 推論：理解需求、規劃步驟、寫檔、呼叫本機工具 | 使用者的 Agent，以及使用者選擇的模型 |
+| **引擎** | 推論所消耗的 token | 使用者的 Agent 方案，或執行自建模型的本機硬體 |
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -70,8 +76,9 @@ AOA 提出責任邊界的反轉與重構：
 │    └──────────────────────▲───────────────────────┘    │
 │                           │                            │
 │    ┌──────────────────────┴───────────────────────┐    │
-│    │ Local Coding Agent (調度心臟 & 執行引擎)     │    │
-│    │ - 推論規劃 (LLM Reasoning)                   │    │
+│    │ Local Coding Agent                           │    │
+│    │ - 頭腦：LLM 推論                             │    │
+│    │ - 引擎：使用者方案的 token                   │    │
 │    │   雲端 LLM (預設) / 本機模型 (可選)          │    │
 │    │ - 本機工具 (FFmpeg, Playwright, TTS)         │    │
 │    │ - 協議遵守者 (Protocol Conformant)           │    │
@@ -106,12 +113,12 @@ AOA 提出責任邊界的反轉與重構：
 
 ---
 
-## 5. 協同通訊模式 (Communication Paradigms)
+## 5. 協作模式 (Collaboration Modes)
 
-AOA 前端與本機環境的通訊，支援漸進式的三種模式：
+AOA 支援漸進式的四種模式：模式 A、B 是搭配本機資料夾的前端；模式 C 加上輕量後端；模式 D 則完全沒有前端。
 
 ### 模式 A：純工作台模式（Pure Workbench / File-Driven）
-*最純粹的 AOA 形式，無需本機安裝任何額外伺服器。*
+*最簡單的前端形式，無需本機安裝任何額外伺服器。*
 1. 前端透過 File System Access API 取得 Handle。
 2. 前端每 N 秒比對關鍵檔案中繼資料（`lastModified` 與檔案大小計算的 Fingerprint）。
 3. 當 Agent 完成分鏡或生成音訊時，特徵碼變更，前端無感自動更新。
@@ -150,6 +157,17 @@ AOA 前端與本機環境的通訊，支援漸進式的三種模式：
    - 企業用戶的專利原始碼、商業機密與龐大影音素材，留在員工本地由 Agent 運算與渲染，不經過本服務後端。
    - 推論則走企業自選的 LLM 供應商（可為已簽署資料協議的企業方案）或內部自建模型。
    - 只有經過脫敏、通過 Schema 驗證的「最終專案中繼資料」或使用者明確同意發布的成片，才會上傳同步至雲端後端，大幅簡化企業的隱私合規範圍。
+
+### 模式 D：純後端（Backend-Only / Agent-Operated API）
+*適用於沒有使用者介面的服務：Agent 本身就是客戶端。*
+
+1. 服務提供 HTTP API（或包成 MCP server），並在一個 URL 發布規格：OpenAPI 文件、Guide 或 Skill，以及 JSON Schema。
+2. Agent 讀取規格、規劃步驟，直接呼叫 API。服務端保存資料與狀態，並依 Schema 驗證每一個請求。
+3. 服務端仍然不跑推論：頭腦（LLM 推論）與引擎（token）都留在使用者的 Agent。
+4. API 以使用者範圍的憑證驗證 Agent，並把 Agent 的每個請求都視為不可信的輸入。
+
+### 規格的入口
+不論哪一種模式，Agent 都要先取得規格，而入口通常就是一個 URL：Guide 頁面、`/api/index.json` 這類索引、OpenAPI 文件或 Skill 套件。好的入口會以絕對網址與雜湊值列出所有 Schema、範本與指令，讓 Agent 能驗證下載的內容。本站的 `/api/index.json` 就是 Video Studio 的入口。
 
 ---
 
