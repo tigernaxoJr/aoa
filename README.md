@@ -1,41 +1,55 @@
-# Agent Video Producer
+# AOFA — Agent Offload Front Architecture
 
-讓 Coding Agent（如 Claude Code）在使用者自己的電腦上製作影片，有兩種：
+純靜態前端架構，將 AI 推理、運算與檔案產出完全 **offload 給使用者本機的 Coding Agent**（如 Claude Code）。
 
-- **產品介紹影片**：分析產品網址或原始碼，錄畫面、配旁白。
-- **故事動畫影片**：把使用者的故事（全文、大綱或只有點子）補完整，用 SVG 畫出角色與場景，旁白與每個角色各自配音。
+網站不需後端、不呼叫雲端模型 API、不保存任何使用者資料；它只負責提供「協議標準（Guide API）」、「視覺化工作台」以及「雙向檔案同步機制」。
 
-這不是「AI 幫你產生影片」的 SaaS：網站只提供協議（JSON Schema）、工作流程、Skill、專案範本與視覺化工作台；推理由本機 Agent 負責，原始碼、素材、語音、渲染與最終影片都留在本機。
+---
 
-- 網站與工作台：https://tigernaxojr.github.io/index-url-director/
-- Agent 入口：https://tigernaxojr.github.io/index-url-director/api/index.json（產品影片讀 `agent-guide.md`，故事影片讀 `story-guide.md`）
-- 完整設計規格：[doc/SPEC.md](doc/SPEC.md)
+## 核心原則
 
-## 怎麼使用
+1. **零後端（Zero-Backend）**：網站為純靜態部署（GitHub Pages），所有 API 皆為編譯時產生的靜態 JSON / Markdown / Zip。
+2. **資料不離開本機**：網頁端僅透過 File System Access API 讀寫使用者明確授權的本機專案資料夾。
+3. **契約即檔案**：網頁與 Agent 之間沒有直連通道，完全透過資料夾中的結構化檔案（如 `*.project.json`、`*.activity.json`、Schema）做為訊息與狀態匯流排。
+4. **功能高度隔離**：每個功能為獨立的靜態應用，具有自己的路由、範本、Schema 與生命週期，彼此不互相 import。
 
-1. 打開網站工作台，選擇「產品介紹影片」或「把故事做成動畫」，依步驟選擇一個空資料夾並填寫產品資訊（網址、原始碼或文字描述）或故事。
-2. 把網頁產生的一段話貼給 Agent。
-   - 產品影片：Agent 讀取 [product-video Skill](skills/product-video/SKILL.md)，下載並驗證專案範本，接著依序分析產品、規劃分鏡與旁白、逐段產生語音與畫面，最後用 FFmpeg 合成 `output/final.mp4` 與字幕檔。
-   - 故事影片：Agent 讀取 [story-video Skill](skills/story-video/SKILL.md)，用同一份範本，依序和使用者整理故事、設計角色與聲音（設定稿與試聽檔）、寫分鏡與對白、逐段畫 SVG 動畫，最後合成。
-3. 影片以 scene 為單位，可以在工作台預覽、修改旁白，再請 Agent 只重做受影響的段落。
+---
 
-產生的專案怎麼操作，見範本的 [README](templates/product-video/README.md)。
+## 包含的應用與模組
+
+| 應用 / 模組 | 路由 / 目錄 | 說明 |
+|---|---|---|
+| **Portal** | `/` (`apps/portal`) | 平台總覽首頁，提供各子功能入口 |
+| **Video Studio** | `/video/` (`apps/video`) | 產品介紹與故事動畫影片工作台（[詳細文件](apps/video/README.md) · [規格書](apps/video/SPEC.md)） |
+| **Slide Studio** | `/slide/` (`apps/slide`) | 簡報製作工作台（規劃建置中，[詳細文件](apps/slide/README.md)） |
+| **video-agent** | `packages/video-agent` | Video 專屬本機 MCP 伺服器與 Companion CLI（[詳細文件](packages/video-agent/README.md)） |
+
+---
 
 ## Repository 結構
 
-| 路徑 | 內容 |
-|---|---|
-| `specs/` | 協議的唯一來源：`project` / `scene` / `common` / `workflow` Schema、`workflow.json` 與驗證範例 |
-| `skills/product-video/` | 產品影片的 Skill（`SKILL.md`、`workflow.md`、`script-guide.md`、`rendering-guide.md`） |
-| `skills/story-video/` | 故事影片的 Skill（`SKILL.md`、`story-guide.md`、`design-guide.md`；渲染沿用 `rendering-guide.md`） |
-| `templates/product-video/` | 兩種影片共用的本機專案範本：TTS、擷取、渲染、合成腳本、角色動畫工具 `src/lib/rig.js` 與 `AGENTS.md` |
-| `apps/web/` | Vue 工作台（File System Access API 讀寫本機專案） |
-| `packages/video-agent/` | 本機 MCP server（`video-agent mcp`；`video-agent serve` 會啟動專案的 Companion） |
-| `tools/` | `build-api.mjs`（產生靜態 Guide API 與 zip）、`gen-types.mjs`（由 Schema 產生 TS 型別） |
-| `tests/` | `template/`、`site/`、`web/`、`agent/` 測試 |
-| `doc/` | 設計規格與原始草稿 |
+```text
+├── apps/
+│   ├── portal/            # 總覽首頁（站台根目錄 /，dist/）
+│   ├── video/             # 影片工作台（/<repo>/video/，dist/video/）
+│   │   ├── src/           # Vue 3 工作台原始碼
+│   │   ├── specs/         # 協議 JSON Schema 唯一來源
+│   │   ├── skills/        # Agent Skills（product-video、story-video）
+│   │   ├── template/      # 本機專案範本
+│   │   ├── tests/         # Video 專屬測試（template/、web/、specs.test.mjs）
+│   │   ├── tools/         # Video 專屬建置工具（build-api.mjs、gen-types.mjs）
+│   │   └── SPEC.md        # Video 系統設計規格書
+│   ├── slide/             # 簡報工作台（/<repo>/slide/，dist/slide/）
+│   └── vite.shared.ts     # 所有前端共用的 Vite 建置配方（base、輸出路徑）
+├── packages/
+│   └── video-agent/       # Video 專屬本機 MCP server 與 Companion
+└── tests/
+    └── site/              # 全站發佈與打包整合測試
+```
 
-## 開發
+---
+
+## 本機開發與指令
 
 需要 Node.js 20.12 以上與 pnpm。
 
@@ -43,29 +57,30 @@
 pnpm install
 ```
 
-| 指令 | 作用 |
+| 指令 | 說明 |
 |---|---|
-| `pnpm dev` | 啟動工作台開發伺服器 |
-| `pnpm test` | 全部單元測試 + Schema 範例驗證 + 型別產生檢查 |
-| `pnpm run test:template` | 只跑範本管線測試 |
-| `pnpm run test:web` | 工作台與網站建置測試 |
-| `pnpm run typecheck` | 工作台型別檢查 |
-| `pnpm run gen:types` | 修改 `specs/` 後重新產生 `apps/web/src/types` |
-| `pnpm run build` | 建置工作台並產生 `dist/api/*`（Schema、prompts、rules、Skill 與範本 zip、manifest） |
+| `pnpm dev` | 啟動 Video 工作台開發伺服器（localhost） |
+| `pnpm run dev:portal` | 啟動 Portal 總覽首頁開發伺服器 |
+| `pnpm run dev:slide` | 啟動 Slide 工作台開發伺服器 |
+| `pnpm run build` | 依序打包 portal（清空 dist/）、video、slide，並由 Video 工具打包 `dist/api/` |
+| `pnpm test` | 執行所有單元測試 + Spec 範例校驗 + 型別一致性檢查 |
+| `pnpm run typecheck` | 檢查所有 App 的 TypeScript 型別 |
+| `pnpm run gen:types` | 修改 `apps/video/specs/` 後重新生成前端型別 |
 
-Skill 與範本中的網址以 `{{SITE_URL}}` 撰寫，建置時替換。`SITE_URL` 依序取自 `--site-url`、環境變數 `SITE_URL`、`GITHUB_REPOSITORY`、git remote `origin`。`prompts/*` 與 `rules/*` 由 Skill 文件擷取產生，只需維護 Skill。
+---
 
-## MCP 與 Companion
+## 新增一個子功能（App）
 
-```bash
-claude mcp add video-agent -- node "$PWD/packages/video-agent/bin/video-agent.mjs" mcp
-```
+1. **建立目錄**：建立 `apps/<slug>/`，其 `vite.config.ts` 呼叫 `appConfig(dir, '<slug>')`。
+2. **加入入口卡片**：在 `apps/portal/index.html` 加入該功能的超連結卡片。
+3. **加入建置管線**：在根目錄 `package.json` 的 `build:web` 與 `typecheck` 加上該 App。
+4. **定義協議**：在該功能目錄下建立自己的 `specs/`、`template/` 與 `skills/`。
 
-- `video-agent mcp`：讓 Agent 透過 MCP 讀取 Guide 並操作專案（建立、更新 scene、渲染、合成）。
-- Companion：隨專案範本提供，在專案中執行 `pnpm run companion`（或 `video-agent serve`）會在 `127.0.0.1` 啟動它，工作台配對後可直接按鈕重做 scene 或合成，不必切到 Agent。
-
-細節見 [SPEC §10](doc/SPEC.md#10-mcp-與-companionphase-5)。
+---
 
 ## 部署
 
-push 到 `main` 時，[deploy-pages.yml](.github/workflows/deploy-pages.yml) 會檢查 Schema 與型別、建置網站，並發佈到 `gh-pages` 分支（GitHub Pages）。
+推送至 `main` 分支時，[deploy-pages.yml](.github/workflows/deploy-pages.yml) 會自動校驗規格、型別與單元測試，建置後將 `dist/` 發佈至 GitHub Pages。
+- 站台根目錄 `/` 呈現 Portal 總覽。
+- 子功能位於 `/<slug>/`。
+- 靜態 Guide API 位於 `/api/*`。

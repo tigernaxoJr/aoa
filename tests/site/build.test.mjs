@@ -1,4 +1,4 @@
-// tools/build-api.mjs: Guide API layout, checksums, SITE_URL substitution, generated prompts and
+// apps/video/tools/build-api.mjs: Guide API layout, checksums, SITE_URL substitution, generated prompts and
 // command files, and that the published template actually runs once unzipped.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
@@ -9,8 +9,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, before, test } from 'node:test'
 import { strFromU8, unzipSync } from 'fflate'
-import { build, resolveSiteUrl } from '../../tools/build-api.mjs'
-import { section } from '../../tools/lib/markdown.mjs'
+import { build, resolveSiteUrl } from '../../apps/video/tools/build-api.mjs'
+import { section } from '../../apps/video/tools/lib/markdown.mjs'
 
 const repo = fileURLToPath(new URL('../../', import.meta.url))
 const SITE = 'https://example.test/index-url-director'
@@ -110,7 +110,7 @@ test('prompts and rules are cut from the Skill with absolute links', () => {
 
 test('template ships schemas and a command file for every project-level workflow command', () => {
   const entries = unzip('api/templates/product-video.zip')
-  const workflow = JSON.parse(readFileSync(join(repo, 'specs/workflow.json'), 'utf8'))
+  const workflow = JSON.parse(readFileSync(join(repo, 'apps/video/specs/workflow.json'), 'utf8'))
   for (const step of [...workflow.steps, ...workflow.operations].filter((s) => s.command)) {
     const file = `.claude/commands/${step.command.slice(1)}.md`
     if (step.id === 'init') assert.equal(entries[file], undefined, 'init runs before the project exists')

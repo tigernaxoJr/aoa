@@ -50,7 +50,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
     contents: [{ uri: uri.href, mimeType: 'application/json', text: JSON.stringify(await status(rootOf()), null, 2) }],
   }))
 
-  // Prompts (generated from the Skill; see tools/build-api.mjs)
+  // Prompts (generated from the Skill; see apps/video/tools/build-api.mjs)
   const prompts = [
     ['analyze', 'prompts/analyze-product.md', 'Analyze the product and write brief/product-brief.md'],
     ['analyze-style', 'prompts/analyze-style.md', 'Analyze a reference video and write brief/style.json'],
