@@ -44,8 +44,8 @@ const EXTRACTS = {
 
 export function build({ siteUrl, out }) {
   siteUrl = siteUrl.replace(/\/+$/, '')
-  const api = join(out, 'api')
-  const skillUrl = `${siteUrl}/api/skills/product-video`
+  const api = `${siteUrl}/api/video`
+  const skillUrl = `${api}/skills/product-video`
   const sub = (text) => text.replaceAll('{{SITE_URL}}', siteUrl)
   const write = (rel, data) => {
     const file = join(out, rel)
@@ -53,13 +53,13 @@ export function build({ siteUrl, out }) {
     writeFileSync(file, data)
     return file
   }
-  // Only dist/api belongs to this script; the Web UI (vite build) owns the rest of dist/.
-  rmSync(api, { recursive: true, force: true })
+  // Only dist/api/video belongs to this script; other apps and portal own their respective directories.
+  rmSync(join(out, 'api', 'video'), { recursive: true, force: true })
 
   // Schemas and workflow
-  for (const f of SCHEMAS) write(`api/schemas/${f}`, readFileSync(join(specsDir, f)))
+  for (const f of SCHEMAS) write(`api/video/schemas/${f}`, readFileSync(join(specsDir, f)))
   const workflowText = readFileSync(join(specsDir, 'workflow.json'), 'utf8')
-  write('api/workflow.json', workflowText)
+  write('api/video/workflow.json', workflowText)
   const workflow = JSON.parse(workflowText)
 
   // Skill: individual documents and a zip rooted at product-video/
@@ -69,13 +69,13 @@ export function build({ siteUrl, out }) {
       .sort()
       .map((f) => [f, sub(readFileSync(join(skillDir, f), 'utf8'))]),
   )
-  for (const [f, text] of Object.entries(skillDocs)) write(`api/skills/product-video/${f}`, text)
+  for (const [f, text] of Object.entries(skillDocs)) write(`api/video/skills/product-video/${f}`, text)
   const skillZip = zip(Object.entries(skillDocs).map(([f, text]) => [`product-video/${f}`, text]))
-  write('api/skills/product-video.zip', skillZip)
+  write('api/video/skills/product-video.zip', skillZip)
 
   // Story Skill: its own documents plus the shared product-video ones. Links into product-video
   // point at the shared copy when there is one, otherwise at the published product-video Skill.
-  const storySkillUrl = `${siteUrl}/api/skills/story-video`
+  const storySkillUrl = `${api}/skills/story-video`
   const storyDocs = Object.fromEntries([
     ...readdirSync(storySkillDir)
       .filter((f) => f.endsWith('.md'))
@@ -83,9 +83,9 @@ export function build({ siteUrl, out }) {
       .map((f) => [f, linkSibling(sub(readFileSync(join(storySkillDir, f), 'utf8')), 'product-video', skillUrl, STORY_SHARED)]),
     ...STORY_SHARED.map((f) => [f, absolutizeLinks(skillDocs[f], skillUrl, f, STORY_SHARED)]),
   ])
-  for (const [f, text] of Object.entries(storyDocs)) write(`api/skills/story-video/${f}`, text)
+  for (const [f, text] of Object.entries(storyDocs)) write(`api/video/skills/story-video/${f}`, text)
   const storySkillZip = zip(Object.entries(storyDocs).sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, text]) => [`story-video/${f}`, text]))
-  write('api/skills/story-video.zip', storySkillZip)
+  write('api/video/skills/story-video.zip', storySkillZip)
 
   // Prompts and rules
   for (const [rel, { title, from }] of Object.entries(EXTRACTS)) {
@@ -94,14 +94,14 @@ export function build({ siteUrl, out }) {
       return absolutizeLinks(text, skillUrl, file)
     })
     const sources = [...new Set(from.map(([file, anchor]) => `${skillUrl}/${file}${anchor ? `#${anchor}` : ''}`))]
-    write(`api/${rel}`, `# ${title}\n\n> 由 Skill 文件產生，請勿直接修改。來源：${sources.join('、')}\n\n${parts.join('\n\n---\n\n')}\n`)
+    write(`api/video/${rel}`, `# ${title}\n\n> 由 Skill 文件產生，請勿直接修改。來源：${sources.join('、')}\n\n${parts.join('\n\n---\n\n')}\n`)
   }
 
   // Agent guide: the Skill entry point for agents that do not install Skills
   const skillBody = absolutizeLinks(stripFrontmatter(skillDocs['SKILL.md']).replace(/^# .*\n+/, ''), skillUrl, 'SKILL.md')
-  write('api/agent-guide.md', agentGuide(siteUrl, skillBody))
+  write('api/video/agent-guide.md', agentGuide(siteUrl, skillBody, { api }))
   const storyBody = absolutizeLinks(stripFrontmatter(storyDocs['SKILL.md']).replace(/^# .*\n+/, ''), storySkillUrl, 'SKILL.md')
-  write('api/story-guide.md', agentGuide(siteUrl, storyBody, { skill: 'story-video', title: '故事影片', checksum: 'storySkill' }))
+  write('api/video/story-guide.md', agentGuide(siteUrl, storyBody, { skill: 'story-video', title: '故事影片', checksum: 'storySkill', api }))
 
   // Template: repo template + synced schemas + generated command files
   const templateFiles = listFiles(templateDir)
@@ -109,45 +109,46 @@ export function build({ siteUrl, out }) {
     .filter((rel) => !TEMPLATE_EXCLUDE.some((re) => re.test(rel)))
     .map((rel) => [rel, /\.(md|mjs)$/.test(rel) ? sub(readFileSync(join(templateDir, rel), 'utf8')) : readFileSync(join(templateDir, rel))])
   templateFiles.push(...[...SCHEMAS, 'workflow.json'].map((f) => [`schemas/${f}`, readFileSync(join(specsDir, f))]))
-  templateFiles.push(...claudeCommands(workflow, siteUrl).map((c) => [c.path, c.content]))
+  templateFiles.push(...claudeCommands(workflow, api).map((c) => [c.path, c.content]))
   templateFiles.sort(([a], [b]) => (a < b ? -1 : 1))
   const templateZip = zip(templateFiles)
-  write('api/templates/product-video.zip', templateZip)
+  write('api/video/templates/product-video.zip', templateZip)
 
   const specVersion = JSON.parse(readFileSync(join(templateDir, 'video.project.json'), 'utf8')).specVersion
   const manifest = {
     name: 'product-video',
     specVersion,
-    zip: { url: `${siteUrl}/api/templates/product-video.zip`, sha256: sha256(templateZip), size: templateZip.length },
+    zip: { url: `${api}/templates/product-video.zip`, sha256: sha256(templateZip), size: templateZip.length },
     files: templateFiles.map(([path, data]) => ({ path, sha256: sha256(data), size: bytes(data).length })),
   }
-  write('api/templates/product-video/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`)
+  write('api/video/templates/product-video/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`)
 
   const index = {
     specVersion,
     siteUrl,
-    entry: `${siteUrl}/api/agent-guide.md`,
-    workflow: `${siteUrl}/api/workflow.json`,
-    schemas: Object.fromEntries(SCHEMAS.map((f) => [f.replace('.schema.json', ''), `${siteUrl}/api/schemas/${f}`])),
-    prompts: Object.fromEntries(Object.keys(EXTRACTS).filter((k) => k.startsWith('prompts/')).map((k) => [k.slice(8, -3), `${siteUrl}/api/${k}`])),
-    rules: Object.fromEntries(Object.keys(EXTRACTS).filter((k) => k.startsWith('rules/')).map((k) => [k.slice(6, -3), `${siteUrl}/api/${k}`])),
-    skill: `${siteUrl}/api/skills/product-video.zip`,
+    workbench: `${siteUrl}/video/`,
+    entry: `${api}/agent-guide.md`,
+    workflow: `${api}/workflow.json`,
+    schemas: Object.fromEntries(SCHEMAS.map((f) => [f.replace('.schema.json', ''), `${api}/schemas/${f}`])),
+    prompts: Object.fromEntries(Object.keys(EXTRACTS).filter((k) => k.startsWith('prompts/')).map((k) => [k.slice(8, -3), `${api}/${k}`])),
+    rules: Object.fromEntries(Object.keys(EXTRACTS).filter((k) => k.startsWith('rules/')).map((k) => [k.slice(6, -3), `${api}/${k}`])),
+    skill: `${api}/skills/product-video.zip`,
     skillDocs: `${skillUrl}/SKILL.md`,
-    template: `${siteUrl}/api/templates/product-video.zip`,
-    templateManifest: `${siteUrl}/api/templates/product-video/manifest.json`,
+    template: `${api}/templates/product-video.zip`,
+    templateManifest: `${api}/templates/product-video/manifest.json`,
     // One template and workflow serve both kinds of video (project.kind); each has its own entry and Skill.
-    entries: { product: `${siteUrl}/api/agent-guide.md`, story: `${siteUrl}/api/story-guide.md` },
+    entries: { product: `${api}/agent-guide.md`, story: `${api}/story-guide.md` },
     skills: {
-      product: { zip: `${siteUrl}/api/skills/product-video.zip`, docs: `${skillUrl}/SKILL.md` },
-      story: { zip: `${siteUrl}/api/skills/story-video.zip`, docs: `${storySkillUrl}/SKILL.md` },
+      product: { zip: `${api}/skills/product-video.zip`, docs: `${skillUrl}/SKILL.md` },
+      story: { zip: `${api}/skills/story-video.zip`, docs: `${storySkillUrl}/SKILL.md` },
     },
     checksums: { skill: sha256(skillZip), storySkill: sha256(storySkillZip), template: sha256(templateZip) },
   }
-  write('api/index.json', `${JSON.stringify(index, null, 2)}\n`)
+  write('api/video/index.json', `${JSON.stringify(index, null, 2)}\n`)
   return { index, manifest }
 }
 
-function agentGuide(siteUrl, skillBody, { skill = 'product-video', title = '', checksum = 'skill' } = {}) {
+function agentGuide(siteUrl, skillBody, { skill = 'product-video', title = '', checksum = 'skill', api = `${siteUrl}/api/video` } = {}) {
   return `# Agent Video Producer — ${title ? `${title} ` : ''}Agent 指引
 
 > 給任何能讀檔、執行指令的 Coding Agent。本文件與 ${skill} Skill 的 \`SKILL.md\` 內容相同；支援 Agent Skills 的 Agent 可改為安裝 Skill（見文末）。
@@ -157,16 +158,16 @@ ${skillBody.trim()}
 
 ## 安裝 Skill（可選）
 
-下載 ${siteUrl}/api/skills/${skill}.zip，解壓到 Agent 的 skills 目錄（Claude Code：使用者層級 \`~/.claude/skills/\`，或專案內 \`.claude/skills/\`）。zip 的 SHA-256 在 ${siteUrl}/api/index.json 的 \`checksums.${checksum}\`。
+下載 ${api}/skills/${skill}.zip，解壓到 Agent 的 skills 目錄（Claude Code：使用者層級 \`~/.claude/skills/\`，或專案內 \`.claude/skills/\`）。zip 的 SHA-256 在 ${api}/index.json 的 \`checksums.${checksum}\`。
 
 ## 資源
 
 | 資源 | 網址 |
 |---|---|
-| 資源索引 | ${siteUrl}/api/index.json |
-| 工作流程 | ${siteUrl}/api/workflow.json |
-| 專案範本 | ${siteUrl}/api/templates/product-video.zip（雜湊：${siteUrl}/api/templates/product-video/manifest.json） |
-| Skill 文件 | ${siteUrl}/api/skills/${skill}/SKILL.md |
+| 資源索引 | ${api}/index.json |
+| 工作流程 | ${api}/workflow.json |
+| 專案範本 | ${api}/templates/product-video.zip（雜湊：${api}/templates/product-video/manifest.json） |
+| Skill 文件 | ${api}/skills/${skill}/SKILL.md |
 `
 }
 
@@ -228,7 +229,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const siteUrl = resolveSiteUrl(flag('site-url'))
   const out = resolve(root, flag('out') ?? 'dist')
   const { index, manifest } = build({ siteUrl, out })
-  console.log(`built ${relative(root, out) || '.'} for ${siteUrl}`)
+  console.log(`built ${relative(root, join(out, 'api', 'video'))} for ${siteUrl}`)
   console.log(`  template: ${manifest.files.length} files, sha256 ${index.checksums.template.slice(0, 12)}…`)
   console.log(`  skill:    sha256 ${index.checksums.skill.slice(0, 12)}…`)
 }

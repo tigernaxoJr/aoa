@@ -22,7 +22,7 @@ async function connect(t, projectDir) {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [agentBin, 'mcp', '--project', projectDir],
-    env: { ...process.env, ...FAKE_TTS, VIDEO_AGENT_GUIDE_DIR: join(guide, 'api') },
+    env: { ...process.env, ...FAKE_TTS, VIDEO_AGENT_GUIDE_DIR: join(guide, 'api', 'video') },
     stderr: 'pipe',
   })
   await client.connect(transport)
@@ -132,7 +132,7 @@ test('create_project unpacks the checksum-verified template and rejects a tamper
   assert.equal(noStory.isError, true)
   assert.match(noStory.content[0].text, /needs story/)
 
-  const zip = join(guide, 'api/templates/product-video.zip')
+  const zip = join(guide, 'api/video/templates/product-video.zip')
   const original = readFileSync(zip)
   t.after(() => writeFileSync(zip, original))
   writeFileSync(zip, Buffer.concat([original, Buffer.from('tampered')]))

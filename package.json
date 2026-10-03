@@ -10,7 +10,7 @@
     "test:video": "node --test \"apps/video/tests/**/*.test.mjs\"",
     "test:slide": "node --test \"apps/slide/tests/**/*.test.mjs\"",
     "test:agent": "node --test \"packages/video-agent/tests/*.test.mjs\"",
-    "build": "pnpm run build:web && node apps/video/tools/build-api.mjs && node apps/slide/tools/build-api.mjs",
+    "build": "pnpm run build:web && node apps/video/tools/build-api.mjs && node apps/slide/tools/build-api.mjs && node tools/build-platform-api.mjs",
     "dev": "vite --config apps/video/vite.config.ts",
     "dev:slide": "vite --config apps/slide/vite.config.ts",
     "dev:portal": "vite --config apps/portal/vite.config.ts",

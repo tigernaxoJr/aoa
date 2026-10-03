@@ -165,7 +165,7 @@ AOA supports four progressive modes. Modes A and B are frontends working with a 
 4. The API authenticates the agent with user-scoped credentials and treats every agent request as untrusted input.
 
 ### The specification entry point
-Whatever the mode, the agent must first obtain the specification, and the entry point is usually a URL: a guide page, an index such as `/api/index.json`, an OpenAPI document, or a skill package. A good entry point lists every schema, template, and command with absolute URLs and checksums, so the agent can verify what it downloads. This site's `/api/index.json` is the entry point for Video Studio.
+Whatever the mode, the agent must first obtain the specification, and the entry point is usually a URL: a guide page, an OpenAPI document, or an index such as `/api/index.json`. A good entry point lists every schema, template, and command with absolute URLs and checksums, so the agent can verify what it downloads. This platform provides dedicated indexes at `/api/video/index.json` and `/api/slide/index.json`.
 
 ---
 

@@ -6,7 +6,7 @@
 const PROJECT_LEVEL = (step) => step.command && step.id !== 'init'
 
 /** Returns [{ path, content }] for Claude Code (`.claude/commands/*.md`). */
-export function claudeCommands(workflow, siteUrl) {
+export function claudeCommands(workflow, api) {
   const out = []
   for (const [kind, list] of [['steps', workflow.steps], ['operations', workflow.operations]]) {
     for (const step of list.filter(PROJECT_LEVEL)) {
@@ -29,7 +29,7 @@ export function claudeCommands(workflow, siteUrl) {
       if (step.kinds) lines.push('', `只適用於 \`project.kind\` 為 ${step.kinds.map((k) => `\`${k}\``).join('、')} 的專案。`)
       if (step.guide) {
         const [, skill, guide] = step.guide.match(/^skills\/([^/]+)\/(.+)$/)
-        lines.push('', `做法見 ${skill} Skill 的 \`${guide}\`；未安裝 Skill 時讀取 ${siteUrl}/api/skills/${skill}/${guide}`)
+        lines.push('', `做法見 ${skill} Skill 的 \`${guide}\`；未安裝 Skill 時讀取 ${api}/skills/${skill}/${guide}`)
       }
       out.push({ path: `.claude/commands/${name}.md`, content: `${lines.join('\n')}\n` })
     }

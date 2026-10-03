@@ -15,26 +15,26 @@ export function siteUrl() {
 }
 
 /**
- * Local directory laid out like the site's /api: $VIDEO_AGENT_GUIDE_DIR, the copy bundled into the
- * package at pack time (guide/), or this repository's dist/api after `pnpm run build`.
+ * Local directory laid out like the site's /api/video: $VIDEO_AGENT_GUIDE_DIR, the copy bundled into the
+ * package at pack time (guide/), or this repository's dist/api/video after `pnpm run build`.
  */
 function localGuideDir() {
   const candidates = [
     process.env.VIDEO_AGENT_GUIDE_DIR,
     fileURLToPath(new URL('../guide/', import.meta.url)),
-    fileURLToPath(new URL('../../../dist/api/', import.meta.url)),
+    fileURLToPath(new URL('../../../dist/api/video/', import.meta.url)),
   ].filter(Boolean)
   return candidates.find((dir) => existsSync(join(dir, 'index.json'))) ?? null
 }
 
-/** Reads `path` (relative to /api) as a Buffer. */
+/** Reads `path` (relative to /api/video) as a Buffer. */
 export async function guideFile(path) {
   const dir = localGuideDir()
   if (dir) {
     const file = join(dir, path)
     if (existsSync(file)) return readFileSync(file)
   }
-  const url = `${siteUrl()}/api/${path}`
+  const url = `${siteUrl()}/api/video/${path}`
   let res
   try {
     res = await fetch(url)

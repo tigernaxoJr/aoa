@@ -34,21 +34,21 @@ function* textFiles(dir) {
 }
 
 test('index.json points at absolute URLs under the site path, with matching checksums', () => {
-  const index = JSON.parse(read('api/index.json'))
+  const index = JSON.parse(read('api/video/index.json'))
   assert.equal(index.siteUrl, SITE, 'trailing slash is removed')
-  assert.equal(index.entry, `${SITE}/api/agent-guide.md`)
+  assert.equal(index.entry, `${SITE}/api/video/agent-guide.md`)
   for (const url of [index.workflow, ...Object.values(index.schemas), ...Object.values(index.prompts), ...Object.values(index.rules), index.skill, index.template]) {
-    assert.ok(url.startsWith(`${SITE}/api/`), url)
+    assert.ok(url.startsWith(`${SITE}/api/video/`), url)
     read(url.slice(SITE.length + 1)) // exists
   }
-  assert.equal(index.checksums.skill, sha256(read('api/skills/product-video.zip')))
-  assert.equal(index.checksums.template, sha256(read('api/templates/product-video.zip')))
+  assert.equal(index.checksums.skill, sha256(read('api/video/skills/product-video.zip')))
+  assert.equal(index.checksums.template, sha256(read('api/video/templates/product-video.zip')))
 })
 
 test('template manifest hashes the zip and every file in it', () => {
-  const manifest = JSON.parse(read('api/templates/product-video/manifest.json'))
-  assert.equal(manifest.zip.sha256, sha256(read('api/templates/product-video.zip')))
-  const entries = unzip('api/templates/product-video.zip')
+  const manifest = JSON.parse(read('api/video/templates/product-video/manifest.json'))
+  assert.equal(manifest.zip.sha256, sha256(read('api/video/templates/product-video.zip')))
+  const entries = unzip('api/video/templates/product-video.zip')
   assert.deepEqual(manifest.files.map((f) => f.path).sort(), Object.keys(entries).sort())
   for (const f of manifest.files) assert.equal(f.sha256, sha256(entries[f.path]), f.path)
 })
@@ -65,19 +65,19 @@ test('builds are reproducible', () => {
 
 test('no {{SITE_URL}} placeholder survives, in files or inside the zips', () => {
   for (const file of textFiles(out)) assert.doesNotMatch(readFileSync(file, 'utf8'), /\{\{SITE_URL\}\}/, file)
-  for (const zip of ['api/skills/product-video.zip', 'api/skills/story-video.zip', 'api/templates/product-video.zip']) {
+  for (const zip of ['api/video/skills/product-video.zip', 'api/video/skills/story-video.zip', 'api/video/templates/product-video.zip']) {
     for (const [path, data] of Object.entries(unzip(zip))) {
       if (path.endsWith('.md')) assert.doesNotMatch(strFromU8(data), /\{\{SITE_URL\}\}/, `${zip}:${path}`)
     }
   }
-  assert.match(strFromU8(unzip('api/skills/product-video.zip')['product-video/SKILL.md']), new RegExp(`${SITE}/api/templates/product-video.zip`))
+  assert.match(strFromU8(unzip('api/video/skills/product-video.zip')['product-video/SKILL.md']), new RegExp(`${SITE}/api/video/templates/product-video.zip`))
 })
 
 test('story-video Skill ships the shared rendering guide and links to product-video by URL', () => {
-  const index = JSON.parse(read('api/index.json'))
-  assert.equal(index.entries.story, `${SITE}/api/story-guide.md`)
-  assert.equal(index.checksums.storySkill, sha256(read('api/skills/story-video.zip')))
-  const entries = unzip('api/skills/story-video.zip')
+  const index = JSON.parse(read('api/video/index.json'))
+  assert.equal(index.entries.story, `${SITE}/api/video/story-guide.md`)
+  assert.equal(index.checksums.storySkill, sha256(read('api/video/skills/story-video.zip')))
+  const entries = unzip('api/video/skills/story-video.zip')
   assert.deepEqual(Object.keys(entries).sort(), ['story-video/SKILL.md', 'story-video/design-guide.md', 'story-video/rendering-guide.md', 'story-video/story-guide.md'])
   const local = new Set(Object.keys(entries).map((p) => p.slice('story-video/'.length)))
   for (const [path, data] of Object.entries(entries)) {
@@ -89,27 +89,27 @@ test('story-video Skill ships the shared rendering guide and links to product-vi
   const design = strFromU8(entries['story-video/design-guide.md'])
   assert.match(design, /\]\(rendering-guide\.md#motion\)/, 'shared guide is linked locally')
   const rendering = strFromU8(entries['story-video/rendering-guide.md'])
-  assert.match(rendering, new RegExp(`\\]\\(${SITE}/api/skills/product-video/script-guide\\.md#custom-motion\\)`), 'its product-only links go to the product Skill')
-  const guide = read('api/story-guide.md').toString()
+  assert.match(rendering, new RegExp(`\\]\\(${SITE}/api/video/skills/product-video/script-guide\\.md#custom-motion\\)`), 'its product-only links go to the product Skill')
+  const guide = read('api/video/story-guide.md').toString()
   assert.match(guide, /故事影片 Agent 指引/)
-  assert.match(guide, new RegExp(`${SITE}/api/skills/story-video\\.zip`))
+  assert.match(guide, new RegExp(`${SITE}/api/video/skills/story-video\\.zip`))
   for (const [, target] of guide.matchAll(/\]\(([^)\s]+)\)/g)) assert.match(target, /^https?:\/\//, target)
 })
 
 test('prompts and rules are cut from the Skill with absolute links', () => {
-  const analyze = read('api/prompts/analyze-product.md').toString()
+  const analyze = read('api/video/prompts/analyze-product.md').toString()
   assert.match(analyze, /<a id="style"><\/a>風格分析/, 'nested subsections are included')
   assert.doesNotMatch(analyze, /<a id="sync">/, 'stops at the next section')
   assert.match(analyze, /# <產品名稱> 產品簡報/, 'headings inside code fences do not end the section')
   for (const rel of ['prompts/analyze-product.md', 'prompts/analyze-style.md', 'prompts/storyboard.md', 'prompts/scene-script.md', 'rules/script.md', 'rules/visual.md']) {
-    const text = read(`api/${rel}`).toString()
+    const text = read(`api/video/${rel}`).toString()
     for (const [, target] of text.matchAll(/\]\(([^)\s]+)\)/g)) assert.match(target, /^https?:\/\//, `${rel}: ${target}`)
   }
   assert.throws(() => section('# a\n', 'missing'), /anchor #missing not found/)
 })
 
 test('template ships schemas and a command file for every project-level workflow command', () => {
-  const entries = unzip('api/templates/product-video.zip')
+  const entries = unzip('api/video/templates/product-video.zip')
   const workflow = JSON.parse(readFileSync(join(repo, 'apps/video/specs/workflow.json'), 'utf8'))
   for (const step of [...workflow.steps, ...workflow.operations].filter((s) => s.command)) {
     const file = `.claude/commands/${step.command.slice(1)}.md`
@@ -127,7 +127,7 @@ test('the unzipped template runs: validate flags the placeholder project', () =>
   mkdirSync(join(repo, '.tmp'), { recursive: true })
   const dir = mkdtempSync(join(repo, '.tmp', 'template-'))
   try {
-    for (const [path, data] of Object.entries(unzip('api/templates/product-video.zip'))) {
+    for (const [path, data] of Object.entries(unzip('api/video/templates/product-video.zip'))) {
       mkdirSync(dirname(join(dir, path)), { recursive: true })
       writeFileSync(join(dir, path), data)
     }
@@ -155,5 +155,19 @@ test('site URL follows the GitHub repository name', () => {
     assert.throws(() => resolveSiteUrl('not a url'), /is not a URL/)
   } finally {
     process.env = env
+  }
+})
+
+test('platform index.json catalogs all reference tools', async () => {
+  const { build: buildPlatformApi } = await import('../../tools/build-platform-api.mjs')
+  const dir = mkdtempSync(join(tmpdir(), 'platform-api-'))
+  try {
+    const catalog = buildPlatformApi({ siteUrl: SITE, out: dir })
+    assert.equal(catalog.platform, 'AOA')
+    assert.equal(catalog.tools.video.index, `${SITE}/api/video/index.json`)
+    assert.equal(catalog.tools.slide.index, `${SITE}/api/slide/index.json`)
+    assert.equal(JSON.parse(readFileSync(join(dir, 'api/index.json'), 'utf8')).tools.video.index, `${SITE}/api/video/index.json`)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
   }
 })

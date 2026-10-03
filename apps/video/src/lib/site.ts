@@ -1,7 +1,7 @@
 // Site-level facts for the UI: where the Guide API lives and how to start an agent (SPEC §8.3, §9.2).
 
 export const SITE_URL: string = __SITE_URL__
-export const api = (path: string) => `${SITE_URL}/api/${path}`
+export const api = (path: string) => `${SITE_URL}/api/video/${path}`
 
 /** Written by the page into a prepared project folder; the agent reads it at init (SPEC §9.2). */
 export const START_FILE = 'video.start.json'

@@ -342,41 +342,42 @@ draft → assets_ready → rendering → rendered → approved
 
 所有端點皆為靜態檔案，Agent 以 HTTP GET（如 `WebFetch` / `curl`）讀取。這些 API 本質是 **Agent 的說明書與作業規則**，刻意 **不提供** `POST /api/video/generate` 這類生成式端點。
 
-路徑皆相對於網站根網址 `SITE_URL`（部署於子路徑，見 §12.1），例如 `https://tigernaxojr.github.io/index-url-director/api/index.json`。
+路徑皆相對於網站根網址 `SITE_URL`（部署於子路徑，見 §12.1），例如 `https://aoa.tigernaxo.com/api/video/index.json`。
 
 ```text
-GET /api/index.json                          # 入口：列出所有資源（絕對網址）、版本與 zip 雜湊
-GET /api/agent-guide.md                      # Agent 必讀總綱（= Skill 的 SKILL.md + 安裝與資源說明）
-GET /api/workflow.json                       # 機器可讀工作流程（§6）
-GET /api/schemas/{common,project,scene,workflow}.schema.json
-GET /api/prompts/analyze-product.md
-GET /api/prompts/analyze-style.md
-GET /api/prompts/storyboard.md
-GET /api/prompts/scene-script.md
-GET /api/rules/script.md                     # 文案規則（字數/秒、語氣、禁用詞）
-GET /api/rules/visual.md                     # 視覺規則（安全邊距、字級、配色）
-GET /api/skills/product-video.zip            # 完整 Skill 套件（根目錄為 product-video/）
-GET /api/skills/product-video/*.md           # Skill 各文件（未安裝 Skill 的 Agent 線上讀取）
-GET /api/templates/product-video.zip         # 專案範本（含 schemas/ 與 .claude/commands/）
-GET /api/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 SHA-256
+GET /api/video/index.json                          # 入口：列出所有資源（絕對網址）、版本與 zip 雜湊
+GET /api/video/agent-guide.md                      # Agent 必讀總綱（= Skill 的 SKILL.md + 安裝與資源說明）
+GET /api/video/workflow.json                       # 機器可讀工作流程（§6）
+GET /api/video/schemas/{common,project,scene,workflow}.schema.json
+GET /api/video/prompts/analyze-product.md
+GET /api/video/prompts/analyze-style.md
+GET /api/video/prompts/storyboard.md
+GET /api/video/prompts/scene-script.md
+GET /api/video/rules/script.md                     # 文案規則（字數/秒、語氣、禁用詞）
+GET /api/video/rules/visual.md                     # 視覺規則（安全邊距、字級、配色）
+GET /api/video/skills/product-video.zip            # 完整 Skill 套件（根目錄為 product-video/）
+GET /api/video/skills/product-video/*.md           # Skill 各文件（未安裝 Skill 的 Agent 線上讀取）
+GET /api/video/templates/product-video.zip         # 專案範本（含 schemas/ 與 .claude/commands/）
+GET /api/video/templates/product-video/manifest.json  # 範本 zip 與每個檔案的 SHA-256
 ```
 
 既有專案每次被 Agent 打開時，先以 manifest 的逐檔 SHA-256 比對本機範本檔；有差異就下載、驗證範本 zip，覆蓋除 `video.project.json` 以外的範本檔（影片內容不在範本內），必要時 `pnpm install`，`specVersion` 不同時把專案資料遷移到新 Schema（SKILL §1「既有專案：同步範本」）。網頁開啟既有專案時做同樣的比對；有差異就顯示「更新專案工具」，按下後以同一份 zip 覆蓋不同的範本檔、移除新版 Schema 已不認得的欄位並更新 `specVersion`（只在移除後即通過驗證時才寫回），`package.json` 有變時提示讓 Agent 執行 `pnpm install`。
 
-`/api/index.json`（節錄）：
+`/api/video/index.json`（節錄）：
 
 ```json
 {
   "specVersion": "1.0.0",
-  "siteUrl": "https://tigernaxojr.github.io/index-url-director",
-  "entry": "https://tigernaxojr.github.io/index-url-director/api/agent-guide.md",
-  "workflow": "https://tigernaxojr.github.io/index-url-director/api/workflow.json",
-  "schemas": { "project": "…/api/schemas/project.schema.json", "scene": "…/api/schemas/scene.schema.json" },
-  "prompts": { "storyboard": "…/api/prompts/storyboard.md" },
-  "rules": { "script": "…/api/rules/script.md" },
-  "skill": "…/api/skills/product-video.zip",
-  "template": "…/api/templates/product-video.zip",
-  "templateManifest": "…/api/templates/product-video/manifest.json",
+  "siteUrl": "https://aoa.tigernaxo.com",
+  "workbench": "https://aoa.tigernaxo.com/video/",
+  "entry": "https://aoa.tigernaxo.com/api/video/agent-guide.md",
+  "workflow": "https://aoa.tigernaxo.com/api/video/workflow.json",
+  "schemas": { "project": "…/api/video/schemas/project.schema.json", "scene": "…/api/video/schemas/scene.schema.json" },
+  "prompts": { "storyboard": "…/api/video/prompts/storyboard.md" },
+  "rules": { "script": "…/api/video/rules/script.md" },
+  "skill": "…/api/video/skills/product-video.zip",
+  "template": "…/api/video/templates/product-video.zip",
+  "templateManifest": "…/api/video/templates/product-video/manifest.json",
   "checksums": { "skill": "<sha256>", "template": "<sha256>" }
 }
 ```
@@ -589,7 +590,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 ### 8.1 Agent 硬性規則（寫入 `AGENTS.md`）
 
-1. 開始前先讀取 `/api/agent-guide.md` 與 `/api/workflow.json`（或本機 Skill）。
+1. 開始前先讀取 `/api/video/agent-guide.md` 與 `/api/video/workflow.json`（或本機 Skill）。
 2. 依步驟執行，不跳步；到 checkpoint 必須停下等待使用者確認。
 3. 所有 JSON 必須符合 Schema；每次寫入後執行 `pnpm run validate`。
 4. 每個 scene 獨立產生、獨立渲染；修改只重做受影響的 scene。

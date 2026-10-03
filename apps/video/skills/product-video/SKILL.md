@@ -13,7 +13,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 
 依序檢查：
 
-1. **目前目錄有 `video.project.json`** → 已是影片專案。先依下面「既有專案：同步範本」把專案的工具更新到網站上的版本，再讀取專案根目錄的 `AGENTS.md`，**之後一律以它的規則為準**；`project.kind` 是 `story` 時這是故事影片，改照 story-video Skill（未安裝時讀取 {{SITE_URL}}/api/story-guide.md）；執行 `pnpm run status` 取得各 scene 狀態與建議的下一步，再依使用者要求執行對應步驟（§3）。
+1. **目前目錄有 `video.project.json`** → 已是影片專案。先依下面「既有專案：同步範本」把專案的工具更新到網站上的版本，再讀取專案根目錄的 `AGENTS.md`，**之後一律以它的規則為準**；`project.kind` 是 `story` 時這是故事影片，改照 story-video Skill（未安裝時讀取 {{SITE_URL}}/api/video/story-guide.md）；執行 `pnpm run status` 取得各 scene 狀態與建議的下一步，再依使用者要求執行對應步驟（§3）。
 2. **使用者說網頁已準備好資料夾「X」並給了識別碼** → 專案要建在那個資料夾。目前目錄的 `video.start.json` 的 `id` 與識別碼相同時就是這裡，執行 §2 初始化。否則它在別處（使用者開對話時不必選它）：先在目前目錄底下（往下約 4 層）、再到使用者的「文件」「桌面」「下載」與家目錄尋找名為 `video.start.json`、`id` 相同的檔案（跳過 `node_modules`、`.git` 等大型目錄）。找到就切換到它所在的資料夾（那裡已經有 `video.project.json` 時，它是做到一半的專案，改照第 1 點）：Agent 能切換工作目錄時就切換，否則之後所有指令都先 `cd` 到那裡、檔案用完整路徑讀寫；用白話告訴使用者「我找到了『文件 > X』，接下來都在那裡工作」，然後執行 §2。找不到就請使用者把資料夾從檔案總管／Finder 拖進對話框，或開一個新對話並選擇 X。
 3. **目前目錄有 `video.start.json`、沒有 `video.project.json`**（使用者沒給識別碼）→ 網頁準備好的就是這個資料夾，執行 §2 初始化，專案就建在目前目錄。
 4. **目前目錄沒有 `video.project.json`，但使用者提到某個影片專案目錄** → 請使用者確認後切換到該目錄，回到第 1 點。
@@ -26,9 +26,8 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 1. 取得線上 manifest，列出和本機不同的範本檔（`video.project.json` 是影片內容，不算範本檔）：
    ```bash
    mkdir -p .tmp
-   curl -fsSL -o .tmp/template-manifest.json {{SITE_URL}}/api/templates/product-video/manifest.json
-   node -e "const fs=require('fs'),c=require('crypto');const m=JSON.parse(fs.readFileSync('.tmp/template-manifest.json'));const d=m.files.filter(f=>f.path!=='video.project.json'&&(!fs.existsSync(f.path)||c.createHash('sha256').update(fs.readFileSync(f.path)).digest('hex')!==f.sha256)).map(f=>f.path);console.log(d.length?d.join('
-'):'UP_TO_DATE');console.log('specVersion',m.specVersion)"
+   curl -fsSL -o .tmp/template-manifest.json {{SITE_URL}}/api/video/templates/product-video/manifest.json
+   node -e "const fs=require('fs'),c=require('crypto');const m=JSON.parse(fs.readFileSync('.tmp/template-manifest.json'));const d=m.files.filter(f=>f.path!=='video.project.json'&&(!fs.existsSync(f.path)||c.createHash('sha256').update(fs.readFileSync(f.path)).digest('hex')!==f.sha256)).map(f=>f.path);console.log(d.length?d.join('\n'):'UP_TO_DATE');console.log('specVersion',m.specVersion)"
    ```
    印出 `UP_TO_DATE` 就跳過這一節。
 2. 有差異時：先確認沒有其他程式正在處理專案（專案根目錄沒有 `.video-agent.lock`；有的話等它消失，或問使用者網頁上的本機助手是否還在執行），然後寫 `video.activity.json` 並用白話告訴使用者：「網站上的製作工具有新版本，我先更新，不會動到你的影片內容。」
@@ -47,8 +46,8 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 1. **確認位置**：專案資料夾有 `video.start.json`（§1 第 2、3 點）時，專案就建在目前目錄，不另建子資料夾（網頁已確認它除了這個檔案以外是空的；網頁會一直顯示這個資料夾的進度，所以不能換位置）。否則預設在目前的工作資料夾裡建立新資料夾 `<產品名稱英文小寫>-video`（例如 `acme-video`），用白話向使用者確認：「我會在『文件』資料夾裡建立 acme-video 來放影片專案，可以嗎？」。不要要求使用者提供路徑。目錄必須是空的或不存在；不要建立在產品原始碼資料夾裡面。之後的指令都在這個專案資料夾中執行。
 2. **取得範本**：在專案目錄下載範本，以 manifest 的 `zip.sha256` 驗證後解壓，再刪除 zip。雜湊不符就停止並告知使用者，不使用該檔案。
    ```bash
-   curl -fsSL -o product-video.zip {{SITE_URL}}/api/templates/product-video.zip
-   curl -fsSL {{SITE_URL}}/api/templates/product-video/manifest.json
+   curl -fsSL -o product-video.zip {{SITE_URL}}/api/video/templates/product-video.zip
+   curl -fsSL {{SITE_URL}}/api/video/templates/product-video/manifest.json
    node -e "console.log(require('crypto').createHash('sha256').update(require('fs').readFileSync('product-video.zip')).digest('hex'))"
    ```
    解壓：macOS / Linux 用 `unzip -q product-video.zip`；Windows 用 PowerShell `Expand-Archive product-video.zip -DestinationPath .`（Git Bash 內的 `tar` 無法解 zip）。
@@ -115,7 +114,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 - **需要使用者動手時**（安裝軟體、允許權限、在網頁上按按鈕）：寫成編號步驟，說明會看到什麼、按哪裡、完成後回覆什麼。
 
 - **checkpoint 一定停下**：分析完成後（確認對象、風格與長度）、分鏡與旁白完成後、每個 scene 渲染後，列出結果並等使用者確認或提出修改。使用者沒有明確說「可以」「繼續」之前，不產生語音、不渲染。
-- **讓網頁知道你在做什麼**：專案資料夾裡的 `video.activity.json`（格式見 {{SITE_URL}}/api/schemas/activity.schema.json）會顯示在網頁工作台上。每開始一個步驟或一個 scene、每次停下來等使用者回覆（checkpoint、gate、任何提問）之前，都直接覆寫這個檔案：`{ "message": "正在錄第 3 段的畫面", "waitingForUser": false, "step": "build_scene", "scene": "scene-003", "updatedAt": "<現在時間，含時區>" }`。`message` 是給使用者看的一句白話；等使用者時 `waitingForUser` 為 `true`，`message` 說明要他回答什麼（例如「分鏡寫好了，請在對話中確認或告訴我要改哪裡」）。專案建立前（§1、§2）也要寫，網頁從使用者準備資料夾時就在看。工作全部完成時寫一句結果，`waitingForUser` 為 `false`。這個檔案不需要鎖、不經過 `pnpm run state`。
+- **讓網頁知道你在做什麼**：專案資料夾裡的 `video.activity.json`（格式見 {{SITE_URL}}/api/video/schemas/activity.schema.json）會顯示在網頁工作台上。每開始一個步驟或一個 scene、每次停下來等使用者回覆（checkpoint、gate、任何提問）之前，都直接覆寫這個檔案：`{ "message": "正在錄第 3 段的畫面", "waitingForUser": false, "step": "build_scene", "scene": "scene-003", "updatedAt": "<現在時間，含時區>" }`。`message` 是給使用者看的一句白話；等使用者時 `waitingForUser` 為 `true`，`message` 說明要他回答什麼（例如「分鏡寫好了，請在對話中確認或告訴我要改哪裡」）。專案建立前（§1、§2）也要寫，網頁從使用者準備資料夾時就在看。工作全部完成時寫一句結果，`waitingForUser` 為 `false`。這個檔案不需要鎖、不經過 `pnpm run state`。
 - **修改只重做受影響的部分**：使用者說「第三段文案改成…」，只改該 scene 的 `script.md`，只重做該 scene，再重新合成。
 - **告訴使用者怎麼看成果**：用「文件 > acme-video > scenes > 003-solution > output > scene.mp4」這種資料夾順序描述位置，並建議打開網頁工作台 {{SITE_URL}}/video/ 預覽每一段、直接修改旁白。專案是網頁準備的（有 `video.start.json`）時，網頁已經開著這個資料夾，會自動顯示；否則請他在網頁步驟 1 選擇這個專案資料夾。
 - **Web UI**：使用者可能同時開著 Agent Video Producer 網頁工作台，它會直接修改專案檔。使用者說「我在網頁上改好了」時，執行 `/video-sync`；完成後視情況提議開啟本機助手（§6）。

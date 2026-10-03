@@ -47,7 +47,7 @@
         { "path": "schemas/" }
       ],
       "actions": [
-        { "id": "scaffold", "do": "下載並解壓 /api/templates/product-video.zip，以 manifest.json 的 SHA-256 驗證完整性。" },
+        { "id": "scaffold", "do": "下載並解壓 /api/video/templates/product-video.zip，以 manifest.json 的 SHA-256 驗證完整性。" },
         { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、kind（產品介紹為 product，故事影片為 story）、sources、language、format。product 至少需要一種產品來源；story 需要 sources.story 或 sources.description。向使用者確認 targetAudience 與 style；targetDurationSec 未指定時先用預設，analyze 後再確認。" },
         { "id": "install", "do": "pnpm install" },
         { "id": "check_tools", "do": "檢查 ffmpeg / ffprobe、Playwright 瀏覽器、所選 TTS 是否可用；缺少時告知安裝方式，不自行以系統權限安裝。" },

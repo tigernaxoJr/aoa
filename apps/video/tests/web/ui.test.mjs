@@ -207,7 +207,7 @@ test('home page: prepare a folder first, then a plain-language message tells the
   const message = await page.getByTestId('launch-message').textContent()
   assert.equal(
     message,
-    `請讀取 ${origin}${BASE}/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n你的工作資料夾是我在網頁上準備好的「acme-video」：裡面的 video.start.json 記有產品資訊與識別碼 ${start.id}。我開對話時沒有特別選它，請你自己找到這個資料夾、把工作目錄切換過去，所有檔案都放在那裡，不要在其他地方建立專案。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
+    `請讀取 ${origin}${BASE}/api/video/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片。\n你的工作資料夾是我在網頁上準備好的「acme-video」：裡面的 video.start.json 記有產品資訊與識別碼 ${start.id}。我開對話時沒有特別選它，請你自己找到這個資料夾、把工作目錄切換過去，所有檔案都放在那裡，不要在其他地方建立專案。\n・產品網址：https://acme.test\n我不熟悉電腦操作：需要執行的指令請直接替我執行；需要我自己動手的地方（例如安裝軟體、按允許），請一步一步用白話告訴我要點哪裡。`,
   )
   assert.match(await page.getByTestId('step-run').textContent(), /不用再選一次「acme-video」/)
   const visible = await page.locator('main').innerText()
@@ -524,7 +524,7 @@ test('home page, story: pick "把故事做成動畫", write the story, and the m
   assert.deepEqual({ ...start, updatedAt: undefined }, { id: start.id, kind: 'story', story: '一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。', audience: '4–7 歲的小朋友', updatedAt: undefined })
 
   const message = await page.getByTestId('launch-message').textContent()
-  assert.match(message, new RegExp(`^請讀取 ${origin}${BASE}/api/story-guide\\.md，依照裡面的步驟幫我把故事做成動畫影片。\n`))
+  assert.match(message, new RegExp(`^請讀取 ${origin}${BASE}/api/video/story-guide\\.md，依照裡面的步驟幫我把故事做成動畫影片。\n`))
   assert.match(message, /記有故事內容與識別碼/)
   assert.match(message, /・故事：一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。\n・觀看對象：4–7 歲的小朋友\n/)
   assert.match(await page.getByTestId('launch-command').textContent(), /故事：一隻小狐狸以為月亮掉進了池塘。 牠想把月亮撈起來。/, 'the shell line has no line breaks')

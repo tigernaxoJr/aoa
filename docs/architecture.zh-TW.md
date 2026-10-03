@@ -167,7 +167,7 @@ AOA 支援漸進式的四種模式：模式 A、B 是搭配本機資料夾的前
 4. API 以使用者範圍的憑證驗證 Agent，並把 Agent 的每個請求都視為不可信的輸入。
 
 ### 規格的入口
-不論哪一種模式，Agent 都要先取得規格，而入口通常就是一個 URL：Guide 頁面、`/api/index.json` 這類索引、OpenAPI 文件或 Skill 套件。好的入口會以絕對網址與雜湊值列出所有 Schema、範本與指令，讓 Agent 能驗證下載的內容。本站的 `/api/index.json` 就是 Video Studio 的入口。
+不論哪一種模式，Agent 都要先取得規格，而入口通常就是一個 URL：Guide 頁面、OpenAPI 文件或規格索引。好的入口會以絕對網址與雜湊值列出所有 Schema、範本與指令，讓 Agent 能驗證下載的內容。本平台於 `/api/index.json` 提供總索引，並分別在 `/api/video/index.json` 與 `/api/slide/index.json` 提供各工具的專屬規格入口。
 
 ---
 
