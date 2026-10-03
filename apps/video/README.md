@@ -1,6 +1,6 @@
 # Video Studio (Agent Video Producer)
 
-讓 Coding Agent（如 Claude Code）在使用者本機製作影片的 AOFA 子應用。部署路徑為 `/<repo>/video/`。
+讓 Coding Agent（如 Claude Code）在使用者本機製作影片的 AOA 子應用。部署路徑為 `/<repo>/video/`。
 
 支援兩種影片製作模式：
 

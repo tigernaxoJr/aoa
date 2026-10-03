@@ -1,6 +1,6 @@
 # Slidev Deck Project — Agent 規則
 
-本目錄是一個 Slidev 簡報專案，遵循 Slide Studio 的 AOFA 協議。完整做法見 slidev-deck Skill（{{SITE_URL}}/api/slide/skills/slidev-deck/SKILL.md）；本檔是專案內的精簡規則。
+本目錄是一個 Slidev 簡報專案，遵循 Slide Studio 的 AOA 協議。完整做法見 slidev-deck Skill（{{SITE_URL}}/api/slide/skills/slidev-deck/SKILL.md）；本檔是專案內的精簡規則。
 
 ---
 

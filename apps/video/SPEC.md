@@ -3,7 +3,7 @@
 > 狀態：Final Draft · 日期：2026-09-30
 > 來源：整合 `drafts/` 下四份草稿（Qwen / DeepSeek / Gemini / GPT），衝突處的取捨見 [§14 設計決策紀錄](#14-設計決策紀錄)。
 >
-> 範圍：本文件是 **video 功能**的規格（`/video/`）。跨功能的通用架構（AOFA：純靜態前端 + 本機 Agent offload）與功能隔離規則見 [專案 README](../../README.md)。
+> 範圍：本文件是 **video 功能**的規格（`/video/`）。跨功能的通用架構（AOA：純靜態前端 + 本機 Agent offload）與功能隔離規則見 [專案 README](../../README.md)。
 
 ---
 
@@ -790,7 +790,7 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 ## 12. 產品 Repository 結構
 
 ```text
-├── README.md                           # AOFA 平台總覽
+├── README.md                           # AOA 平台總覽
 ├── apps/
 │   ├── portal/                         # 總覽首頁
 │   ├── slide/                          # 簡報子功能

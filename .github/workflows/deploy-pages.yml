@@ -1,9 +1,8 @@
 # Builds the site (Portal at the root, each app under /<slug>/, Guide API under /api) and publishes it to
 # the gh-pages branch.
-# The site URL follows the repository name: https://<owner>.github.io/<repo> (index-url-director),
-# derived from GITHUB_REPOSITORY by apps/video/tools/build-api.mjs and apps/vite.shared.ts. Set the repository
-# variable SITE_URL to override it, e.g. https://agent-offload.example.com for a custom domain; its host is
-# then written to gh-pages as CNAME on every deploy (force_orphan would otherwise drop the domain).
+# The site URL is the repository variable SITE_URL, defaulting to the custom domain below; without either it
+# would follow the repository name (https://<owner>.github.io/<repo>, see apps/vite.shared.ts). For a custom
+# domain the Portal build writes dist/CNAME, so force_orphan never drops the domain.
 # One-time setup: Settings → Pages → Build and deployment → Source: Deploy from a branch → gh-pages / (root).
 name: Deploy site
 
@@ -42,20 +41,15 @@ jobs:
         run: |
           pnpm run test:specs
           node apps/video/tools/gen-types.mjs --check
+          node apps/slide/tools/gen-types.mjs --check
           pnpm run typecheck
 
       - name: Build site
-        run: pnpm run build
-        env:
-          SITE_URL: ${{ vars.SITE_URL || 'https://aofa.tigernaxo.com' }}
-
-      - name: Custom domain
-        id: domain
         run: |
-          host=$(node -e "const u = process.env.SITE_URL || 'https://aofa.tigernaxo.com'; const h = new URL(u).hostname; if (!h.endsWith('.github.io')) console.log(h)")
-          echo "cname=$host" >> "$GITHUB_OUTPUT"
+          export SITE_URL="${SITE_URL:-https://aoa.tigernaxo.com}"
+          pnpm run build
         env:
-          SITE_URL: ${{ vars.SITE_URL || 'https://aofa.tigernaxo.com' }}
+          SITE_URL: ${{ vars.SITE_URL }}
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
@@ -64,5 +58,4 @@ jobs:
           publish_branch: gh-pages
           publish_dir: ./dist
           force_orphan: true
-          cname: ${{ steps.domain.outputs.cname }}
           commit_message: 'deploy: ${{ github.sha }}'

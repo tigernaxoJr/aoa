@@ -1,8 +1,8 @@
 {
   "specVersion": "1.0.0",
   "id": "intro-deck",
-  "title": "Agent Offload Front Architecture 介紹簡報",
-  "description": "向開發者介紹 AOFA 理念與實作",
+  "title": "Agent-Offloaded Architecture 介紹簡報",
+  "description": "向開發者介紹 AOA 理念與實作",
   "theme": "default",
   "aspectRatio": "16/9",
   "status": "exported",

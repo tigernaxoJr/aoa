@@ -1,4 +1,4 @@
-# Beyond SaaS: Introducing AOFA (Agent-Offloaded Frontend Architecture)
+# Beyond SaaS: Introducing AOA (Agent-Offloaded Architecture)
 *How to build zero-backend, privacy-first AI production platforms with static frontends and the coding agents your users already have.*
 
 ---
@@ -20,14 +20,14 @@ We call this the **"AI Compute Tax"**. But look around your development machine:
 
 ---
 
-## Enter AOFA: The Shell and the Engine
+## Enter AOA: The Shell and the Engine
 
-Today, we want to formalize a new architectural paradigm: **AOFA (Agent-Offloaded Frontend Architecture)**.
+Today, we want to formalize a new architectural paradigm: **AOA (Agent-Offloaded Architecture)**.
 
 The core metaphor is simple:
 > **The Frontend is an Exoskeleton (Shell). The User's Agent is the Heart and Engine.**
 
-In AOFA, the web application doesn't provide compute, API keys, or databases. It provides:
+In AOA, the web application doesn't provide compute, API keys, or databases. It provides:
 1. **A Living Protocol**: Strict JSON Schemas and workflow definitions.
 2. **A Zero-Backend Workbench**: A purely static web UI (hosted for pennies or completely free on GitHub Pages).
 3. **A State Visualizer**: A visual lens that looks directly into the local directory via the browser's **File System Access API**.
@@ -42,7 +42,7 @@ Either way, the app developer pays nothing for inference, and the user's files n
 
 ## How It Works in Practice
 
-Here is the life of an AOFA application:
+Here is the life of an AOA application:
 
 ```
 [ Static Web UI (GitHub Pages) ]
@@ -77,14 +77,14 @@ There is no ambiguity between the UI and the Agent. A strict `protocol.schema.js
 
 ---
 
-## Does AOFA Require a Pure Static Frontend? Not At All!
+## Does AOA Require a Pure Static Frontend? Not At All!
 
-While our reference implementation is a zero-backend static SPA, **AOFA applies just as powerfully to applications with real backends**:
+While our reference implementation is a zero-backend static SPA, **AOA applies just as powerfully to applications with real backends**:
 
 ### The "Decoupled Control Plane" Paradigm
 In traditional enterprise SaaS, the backend handles both **Control** (Auth, Billing, Team Sync) and **Compute** (Inference, Rendering, Heavy ETL). This is why scaling AI apps is financially exhausting.
 
-Under **Backend-Enabled AOFA**:
+Under **Backend-Enabled AOA**:
 - **The Cloud Backend** serves as a thin Control Plane: authentication, team permissions, organization templates, and billing.
 - **The User's Agent** handles the Compute Plane: private source code, internal databases, and heavy media processing stay on the employee's machine, and inference goes to the enterprise's chosen LLM provider (e.g., under an enterprise data agreement) or an in-house model.
 - Only lightweight metadata, template definitions, and final sanitized exports flow to the cloud backend.
@@ -93,7 +93,7 @@ This gives SaaS builders **near-zero marginal compute costs** and gives enterpri
 
 ---
 
-## Why AOFA Matters
+## Why AOA Matters
 
 1. **For Indie Hackers & Creators**:
    - Zero infrastructure overhead. You can launch complex generative AI tools that scale to 100,000 users without paying a single dollar in cloud GPU bills — each user brings their own agent plan.
@@ -117,4 +117,4 @@ Check out the full documentation at:
 - Architecture Whitepaper: [docs/architecture.md](../docs/architecture.md)
 - Reference Implementation: [Agent Video Producer](https://github.com/tigernaxojr/index-url-director)
 
-We invite the community to explore, implement, and challenge the AOFA pattern. The future of AI software is not in centralizing compute—it is in unleashing the agent your users already have.
+We invite the community to explore, implement, and challenge the AOA pattern. The future of AI software is not in centralizing compute—it is in unleashing the agent your users already have.

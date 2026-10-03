@@ -25,9 +25,9 @@ const exportCommand = 'pnpm run export'
   <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4 dark:border-slate-800">
       <div>
-        <h3 class="font-semibold text-slate-900 dark:text-white">無損向量 PDF 產物</h3>
+        <h3 class="font-semibold text-slate-900 dark:text-white">PDF 產物</h3>
         <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          透過 Slidev 原生 Playwright 引擎直接在本地端匯出的高解析度向量簡報
+          Slidev 以本機 Playwright 匯出；文字與 SVG 為向量，3D（WebGL）畫面為高解析點陣圖
         </p>
       </div>
 

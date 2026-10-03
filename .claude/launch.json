@@ -1,0 +1,38 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "preview",
+        "--config",
+        "apps/portal/vite.config.ts",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "port": 4173,
+      "env": {
+        "SITE_URL": "https://aoa.tigernaxo.com"
+      }
+    },
+    {
+      "name": "portal-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--config",
+        "apps/portal/vite.config.ts",
+        "--port",
+        "5180",
+        "--strictPort"
+      ],
+      "port": 5180,
+      "env": {
+        "SITE_URL": "https://aoa.tigernaxo.com"
+      }
+    }
+  ]
+}

@@ -46,3 +46,31 @@ test('slide workflow.json structure', () => {
     seen.add(step.id)
   }
 })
+
+test('slide skill links and workflow guide links resolve', () => {
+  const skillDir = fileURLToPath(new URL('../skills/slidev-deck/', import.meta.url))
+  const docs = new Map(readdirSync(skillDir).filter((f) => f.endsWith('.md')).map((f) => [f, readFileSync(join(skillDir, f), 'utf8')]))
+  const anchors = (text) => new Set([...text.matchAll(/<a id="([^"]+)"><\/a>/g)].map((m) => m[1]))
+  const check = (from, target) => {
+    const [file, anchor] = target.split('#')
+    assert.ok(docs.has(file), `${from} → ${target}: file not found`)
+    if (anchor) assert.ok(anchors(docs.get(file)).has(anchor), `${from} → ${target}: anchor not found`)
+  }
+  for (const [doc, text] of docs) {
+    for (const [, target] of text.matchAll(/\]\(([^)\s]+)\)/g)) {
+      if (/^([a-z]+:|\{\{SITE_URL\}\})/i.test(target)) continue
+      check(doc, target.startsWith('#') ? `${doc}${target}` : target)
+    }
+  }
+  for (const step of readJson(join(specsDir, 'workflow.json')).steps) {
+    assert.ok(step.guide, `${step.id} needs a guide`)
+    check(`workflow.json:${step.id}`, step.guide)
+  }
+})
+
+test('template/schemas/ is an exact copy of specs/', () => {
+  const copy = fileURLToPath(new URL('../template/schemas/', import.meta.url))
+  for (const f of ['project.schema.json', 'activity.schema.json', 'workflow.json']) {
+    assert.equal(readFileSync(join(copy, f), 'utf8'), readFileSync(join(specsDir, f), 'utf8'), `template/schemas/${f} differs from specs/${f}; copy it over`)
+  }
+})

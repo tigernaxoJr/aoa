@@ -1,8 +1,8 @@
-# AOFA: Agent-Offloaded Frontend Architecture
+# AOA: Agent-Offloaded Architecture
 
-**English** | [繁體中文](README.zh-TW.md) | [Website](https://aofa.tigernaxo.com/)
+**English** | [繁體中文](README.zh-TW.md) | [Website](https://aoa.tigernaxo.com/)
 
-**AOFA** is an architectural pattern for building AI products without running AI on your backend. The web application is a static **protocol shell**; the **coding agent the user already owns** (Claude Code, Codex, Cursor, Gemini CLI, Pi, etc.) serves as the engine that handles reasoning, file generation, and execution.
+**AOA (Agent-Offloaded Architecture)** is an architectural pattern for building AI products without running AI on your backend: reasoning, file generation, and execution are offloaded to the **coding agent the user already owns** (Claude Code, Codex, Cursor, Gemini CLI, Pi, etc.), while the service only provides protocol, interface, and coordination. On the frontend, the web application is just a static **protocol shell** that works with the user's agent through a local folder.
 
 ```
 [ Static Web UI ]  ──File System Access API──▶  [ Local folder (SSOT) ]  ◀──▶  [ User's Coding Agent ]
@@ -24,12 +24,12 @@
 
 ## Reference Implementations (Live Workbenches)
 
-This repository includes full, production-ready AOFA workbenches:
+This repository includes two AOA workbenches:
 
 | Workbench | Path | Communication Mode | Highlights & Description |
 |---|---|---|---|
-| **Slide Studio** | [`/slide/`](https://aofa.tigernaxo.com/slide/) | **Mode A: Pure Workbench** | Pure FSA API + Slidev + Three.js 3D visuals + Vector SVG diagrams + Lossless vector PDF export via Playwright. Zero local companion daemon needed. |
-| **Video Studio** | [`/video/`](https://aofa.tigernaxo.com/video/) | **Mode B: Companion-Enhanced** | FSA API + Local companion WebSocket pairing. Converts product URLs into animated walkthrough videos with voiceover (TTS), dynamic capture, and FFmpeg assembly. |
+| **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **Mode A: Pure Workbench** | Pure FSA API + Slidev + Three.js 3D visuals + Vector SVG diagrams + Lossless vector PDF export via Playwright. Zero local companion daemon needed. |
+| **Video Studio** | [`/video/`](https://aoa.tigernaxo.com/video/) | **Mode B: Companion-Enhanced** | FSA API + Local companion WebSocket pairing. Converts product URLs into animated walkthrough videos with voiceover (TTS), dynamic capture, and FFmpeg assembly. |
 
 ---
 
@@ -38,14 +38,14 @@ This repository includes full, production-ready AOFA workbenches:
 | Document | Description |
 | :--- | :--- |
 | [Architecture Specification](docs/architecture.md) ([繁體中文](docs/architecture.zh-TW.md)) | Comprehensive specification: principles, communication patterns (Modes A/B/C), security, and boundaries. |
-| [Introducing AOFA](posts/2026-10-introducing-aofa.md) | Technical deep-dive article on why and how AOFA was created. |
-| [Academic Proposal](paper/proposal.md) | Academic paper proposal draft for the Agent-Offloaded Frontend Architecture pattern. |
+| [Introducing AOA](posts/2026-10-introducing-aofa.md) | Technical deep-dive article on why and how AOA was created. |
+| [Academic Proposal](paper/proposal.md) | Academic paper proposal draft for the Agent-Offloaded Architecture pattern. |
 
 ---
 
-## Cloud GenAI SaaS vs. AOFA
+## Cloud GenAI SaaS vs. AOA
 
-| Dimension | Cloud GenAI SaaS | AOFA Pattern |
+| Dimension | Cloud GenAI SaaS | AOA |
 |---|---|---|
 | **Hosting** | GPU instances, databases, high bandwidth costs | Pure static files on a CDN (GitHub Pages) |
 | **Inference Cost** | Paid upfront by vendor, recouped via subscriptions | User brings their own Agent (Claude Code / Cursor) or local LLM |
@@ -84,4 +84,4 @@ pnpm run build
 
 ## License
 
-© 2026 tigernaxo. Licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE).
+© 2026 tigernaxo. Source code is licensed under the [MIT License](LICENSE). Articles and specifications in `docs/`, `paper/` and `posts/` are licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE-docs).

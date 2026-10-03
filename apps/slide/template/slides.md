@@ -1,6 +1,6 @@
 ---
 theme: default
-title: Agent Offload Front Architecture
+title: Agent-Offloaded Architecture
 class: text-center
 transition: slide-left
 aspectRatio: '16/9'
@@ -8,7 +8,7 @@ aspectRatio: '16/9'
 
 # Agent Studio Slidev
 
-基於 **AOFA** 架構的新一代簡報生成平台
+基於 **AOA** 架構的新一代簡報生成平台
 
 <div class="pt-8">
   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">
@@ -56,7 +56,7 @@ layout: two-cols
 
 # 系統架構
 
-前後端純靜態檔案通訊模式 (AOFA)
+前後端純靜態檔案通訊模式 (AOA)
 
 <div class="mt-8">
   <SvgDiagram title="零後端通訊管線" />

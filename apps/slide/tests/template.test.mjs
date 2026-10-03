@@ -1,13 +1,33 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { execFileSync } from 'node:child_process'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { unzipSync } from 'fflate'
 import { parseSlides } from '../src/lib/slide-parser.ts'
+import { build } from '../tools/build-api.mjs'
 
 const slideDir = fileURLToPath(new URL('../', import.meta.url))
+const repo = fileURLToPath(new URL('../../../', import.meta.url))
 const templateDir = join(slideDir, 'template')
+const SITE = 'https://example.test/aofa'
+
+// Build the published zip and unpack it inside the repo (.tmp/), so the scripts resolve ajv from the
+// repo's node_modules the way an installed project resolves its own.
+const tmp = join(repo, '.tmp')
+mkdirSync(tmp, { recursive: true })
+const work = mkdtempSync(join(tmp, 'slide-template-'))
+const out = join(work, 'dist')
+const project = join(work, 'project')
+const { index, manifest } = build({ siteUrl: SITE, out })
+for (const [path, data] of Object.entries(unzipSync(readFileSync(join(out, 'api/slide/templates/slidev-deck.zip'))))) {
+  mkdirSync(dirname(join(project, path)), { recursive: true })
+  writeFileSync(join(project, path), data)
+}
+test.after(() => rmSync(work, { recursive: true, force: true }))
+
+const run = (script, ...args) => spawnSync(process.execPath, [`scripts/${script}.mjs`, ...args], { cwd: project, encoding: 'utf8' })
 
 test('template: has all required files and components', () => {
   const required = [
@@ -44,10 +64,66 @@ test('template: slides.md parses cleanly and includes 3D and SVG', () => {
   assert.ok(hasThree, 'Template slides.md should include Three.js globe')
 })
 
-test('template: scripts/validate.mjs passes against template dir', () => {
-  const out = execFileSync('node', ['scripts/validate.mjs'], {
-    cwd: templateDir,
-    encoding: 'utf8',
-  })
-  assert.match(out, /✓ Slide project is valid/)
+test('published API: absolute URLs, no {{SITE_URL}} left, schemas and commands in the template', () => {
+  assert.equal(index.siteUrl, SITE)
+  for (const url of [index.entry, index.workflow, index.template, index.templateManifest, ...Object.values(index.schemas)]) {
+    assert.ok(url.startsWith(`${SITE}/api/slide/`), url)
+  }
+  assert.equal(manifest.zip.url, `${SITE}/api/slide/templates/slidev-deck.zip`)
+  const paths = manifest.files.map((f) => f.path)
+  for (const p of ['schemas/project.schema.json', 'schemas/activity.schema.json', 'schemas/workflow.json', '.claude/commands/slide-outline.md', '.claude/commands/slide-export.md']) {
+    assert.ok(paths.includes(p), `template zip must include ${p}`)
+  }
+  assert.ok(!paths.includes('.claude/commands/slide-init.md'), 'init runs before the project exists')
+  for (const file of ['README.md', 'AGENTS.md', 'slides.md']) {
+    assert.ok(!readFileSync(join(project, file), 'utf8').includes('{{SITE_URL}}'), `${file} still has {{SITE_URL}}`)
+  }
+  const skill = readFileSync(join(out, 'api/slide/skills/slidev-deck/SKILL.md'), 'utf8')
+  assert.ok(skill.includes(`${SITE}/api/slide/templates/slidev-deck.zip`), 'the Skill tells the Agent where the template is')
+})
+
+test('template: validate passes on the unpacked template and checks the schema', () => {
+  const ok = run('validate')
+  assert.equal(ok.status, 0, ok.stderr)
+  assert.match(ok.stdout, /✓ Slide project is valid/)
+
+  const file = join(project, 'slide.project.json')
+  const original = readFileSync(file, 'utf8')
+  writeFileSync(file, JSON.stringify({ ...JSON.parse(original), status: 'bogus' }))
+  const bad = run('validate')
+  assert.equal(bad.status, 1)
+  assert.match(bad.stderr, /status/)
+  writeFileSync(file, original)
+})
+
+test('template: state validates before writing and never clobbers a broken project file', () => {
+  const file = join(project, 'slide.project.json')
+  const original = readFileSync(file, 'utf8')
+
+  assert.equal(run('state', 'project', '--status', 'bogus').status, 1)
+  assert.equal(readFileSync(file, 'utf8'), original, 'an invalid status writes nothing')
+
+  const ok = run('state', 'project', '--status', 'outlined', '--pages', '6')
+  assert.equal(ok.status, 0, ok.stderr)
+  const updated = JSON.parse(readFileSync(file, 'utf8'))
+  assert.equal(updated.status, 'outlined')
+  assert.equal(updated.pagesCount, 6)
+  assert.equal(updated.id, JSON.parse(original).id, 'other fields are kept')
+
+  writeFileSync(file, '{"broken')
+  assert.equal(run('state', 'project', '--status', 'drafted').status, 1)
+  assert.equal(readFileSync(file, 'utf8'), '{"broken', 'a broken file is left for the user to fix')
+  writeFileSync(file, original)
+
+  assert.equal(run('state', 'activity', '--step', 'nope', '--message', 'x').status, 1)
+  const act = run('state', 'activity', '--step', 'outline', '--message', '大綱完成', '--waiting')
+  assert.equal(act.status, 0, act.stderr)
+  const activity = JSON.parse(readFileSync(join(project, 'slide.activity.json'), 'utf8'))
+  assert.equal(activity.waitingForUser, true)
+  assert.equal(activity.step, 'outline')
+})
+
+test('published manifest lists every file once', () => {
+  const paths = manifest.files.map((f) => f.path)
+  assert.deepEqual(paths.filter((p, i) => paths.indexOf(p) !== i), [])
 })

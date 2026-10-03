@@ -20,7 +20,8 @@ const skillDir = join(slideDir, 'skills', 'slidev-deck')
 const templateDir = join(slideDir, 'template')
 
 const SCHEMAS = ['project.schema.json', 'activity.schema.json']
-const TEMPLATE_EXCLUDE = [/(^|\/)node_modules\//, /^\.tmp\//, /^output\//, /^dist\//]
+// template/schemas/ is a convenience copy for running the scripts in the repo; the zip takes specs/ instead.
+const TEMPLATE_EXCLUDE = [/(^|\/)node_modules\//, /^\.tmp\//, /^output\//, /^dist\//, /^schemas\//]
 const TEXT = /\.(md|mjs|vue|json)$/
 const ZIP_MTIME = new Date(1980, 0, 1)
 
@@ -112,8 +113,13 @@ function claudeCommands(workflow, api) {
 }
 
 export function resolveSiteUrl(flag) {
-  const explicit = flag ?? process.env.SITE_URL
-  if (explicit) return explicit.replace(/\/+$/, '')
+  let explicit = flag ?? process.env.SITE_URL
+  if (explicit) {
+    explicit = explicit.trim().replace(/\/+$/, '')
+    if (explicit !== 'true' && explicit !== 'false' && /^https?:\/\//.test(explicit)) {
+      return explicit
+    }
+  }
   let repo = process.env.GITHUB_REPOSITORY
   if (!repo) {
     try {

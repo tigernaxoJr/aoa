@@ -66,3 +66,17 @@ test('parseSlides: handles empty markdown', () => {
   assert.equal(deck.slides.length, 0)
   assert.deepEqual(deck.frontmatter, {})
 })
+
+test('parseSlides: speaker notes are the last comment of a slide, as in Slidev', () => {
+  const deck = parseSlides(`# One
+
+<!-- layout hint, not a note -->
+
+Body
+
+<!--
+Pause here and ask the audience.
+-->
+`)
+  assert.equal(deck.slides[0].notes, 'Pause here and ask the audience.')
+})

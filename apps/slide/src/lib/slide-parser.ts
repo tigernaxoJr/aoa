@@ -93,12 +93,11 @@ export function parseSlides(markdown: string): ParsedDeck {
       title = `第 ${slides.length + 1} 頁`
     }
 
-    // Extract notes (<!-- notes ... -->)
+    // Speaker notes: like Slidev, the last HTML comment of the slide (earlier comments are not notes)
     let notes: string | undefined
-    const notesMatch = /<!--\s*(?:notes)?\s*([\s\S]*?)-->/i.exec(bodyText)
-    if (notesMatch && notesMatch[1].trim()) {
-      notes = notesMatch[1].trim()
-    }
+    const comments = [...bodyText.matchAll(/<!--([\s\S]*?)-->/g)]
+    const lastComment = comments.at(-1)?.[1].trim()
+    if (lastComment) notes = lastComment
 
     // Detect visuals
     const visualTypes: string[] = []

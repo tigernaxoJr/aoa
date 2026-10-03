@@ -8,7 +8,7 @@
 // (https://<owner>.github.io/<repo>). The base path therefore always follows the repo name.
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { zipSync } from 'fflate'
@@ -144,12 +144,6 @@ export function build({ siteUrl, out }) {
     checksums: { skill: sha256(skillZip), storySkill: sha256(storySkillZip), template: sha256(templateZip) },
   }
   write('api/index.json', `${JSON.stringify(index, null, 2)}\n`)
-
-  const host = new URL(siteUrl).hostname
-  if (!host.endsWith('.github.io') && host !== 'localhost' && host !== '127.0.0.1') {
-    write('CNAME', `${host}\n`)
-  }
-  write('.nojekyll', '')
   return { index, manifest }
 }
 
@@ -200,8 +194,13 @@ function zip(entries) {
 }
 
 export function resolveSiteUrl(flag) {
-  const explicit = flag ?? process.env.SITE_URL
-  if (explicit) return explicit.replace(/\/+$/, '')
+  let explicit = flag ?? process.env.SITE_URL
+  if (explicit) {
+    explicit = explicit.trim().replace(/\/+$/, '')
+    if (explicit !== 'true' && explicit !== 'false' && /^https?:\/\//.test(explicit)) {
+      return explicit
+    }
+  }
   let repo = process.env.GITHUB_REPOSITORY
   if (!repo) {
     try {

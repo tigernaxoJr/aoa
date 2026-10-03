@@ -11,9 +11,9 @@
 
 ---
 
-## 1. 核心架構：AOFA (Agent Offload Front Architecture)
+## 1. 核心架構：AOA（Agent-Offloaded Architecture）
 
-本平台遵循 AOFA 架構模式：
+本平台推廣 **AOA（代理卸載式架構）**：應用層不跑推論，算力與資料留在使用者端。各子應用都是 AOA 的前端應用：
 
 1. **前端零後端（Zero Backend）**：
    - 網站為純靜態前端（GitHub Pages 託管），不架設後端伺服器、不保存使用者隱私或專案資料、不呼叫任何付費雲端大模型 API。
@@ -34,7 +34,7 @@
    - **嚴禁將其他無關子應用（如 `apps/slide`、`apps/portal`）的原始碼載入 Context**，避免無謂消耗 Token 並防止上下文污染。
 2. **嚴禁跨 App 相互引入（No Cross-App Imports）**：
    - `apps/video`、`apps/slide`、`apps/portal` 彼此完全獨立，嚴禁相互 `import` 任何代碼或元件。
-   - 跨前端共用邏輯僅限於平台層的 [`apps/vite.shared.ts`](file:///C:/workspace/index-url-director/apps/vite.shared.ts)（Vite 打包配方）。
+   - 跨前端共用邏輯僅限於平台層的 [`apps/vite.shared.ts`](apps/vite.shared.ts)（Vite 打包配方）。
 3. **公開 API 契約相容性（Public API Compatibility）**：
    - 網站打包產出的 `/api/*`（如 `/api/skills/*.zip`、`/api/templates/*.zip`、`/api/index.json`）是已發布給外部 Agent 的端點，其 URL 結構與 manifest 規則必須維持向後相容，不可任意破壞。
 
@@ -42,7 +42,7 @@
 
 ## 3. 建立新 Sub-App 的標準結構（參考 `apps/video`）
 
-當使用者要求新增子專案（例如簡報、文件或其他 AOFA 子應用）時，必須產出對齊 `apps/video` 的完整結構：
+當使用者要求新增子專案（例如簡報、文件或其他 AOA 子應用）時，必須產出對齊 `apps/video` 的完整結構：
 
 ```text
 apps/<slug>/
@@ -72,7 +72,7 @@ apps/<slug>/
 
 ### 新增 Sub-App 的 5 步 SOP：
 1. **建立目錄結構**：建立 `apps/<slug>/`，其 `vite.config.ts` 調用 `appConfig(import.meta.dirname, '<slug>')`。
-2. **新增入口卡片**：在 [`apps/portal/index.html`](file:///C:/workspace/index-url-director/apps/portal/index.html) 增加導向 `/<slug>/` 的功能卡片。
+2. **新增入口卡片**：在 [`apps/portal/index.html`](apps/portal/index.html) 增加導向 `/<slug>/` 的功能卡片。
 3. **加入建置管線**：在根目錄 `package.json` 的 `build:web` 與 `typecheck` 登記該 App。
 4. **定義協議與資產**：在該功能目錄下建立自己的 `specs/`、`skills/`、`template/`、`tools/` 與 `tests/`。
 5. **導航回到總覽**：在該 App 頂部導航列（Header）左側，必須強制加上回到總覽的按鈕（`<a href="../">← 平台總覽</a>`）。

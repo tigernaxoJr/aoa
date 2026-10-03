@@ -75,7 +75,7 @@ async function handleCreate() {
     >
       <h3 class="font-semibold text-lg">瀏覽器不支援 File System Access API</h3>
       <p class="mt-2 text-sm leading-relaxed">
-        Slide Studio 遵循 AOFA 架構，完全零後端且不儲存資料，必須直接透過標準 File System Access API 存取您的本機簡報專案資料夾。
+        Slide Studio 遵循 AOA 架構，完全零後端且不儲存資料，必須直接透過標準 File System Access API 存取您的本機簡報專案資料夾。
       </p>
       <p class="mt-2 text-sm">請使用最新版 <strong>Google Chrome</strong> 或 <strong>Microsoft Edge</strong> 瀏覽器。</p>
     </div>
@@ -127,8 +127,8 @@ async function handleCreate() {
           <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Coding Agent 動態生成高質感向量架構圖與 WebGL 立體視覺。</p>
         </div>
         <div class="text-left">
-          <h4 class="font-medium text-sm text-slate-900 dark:text-slate-100">向量 PDF 輸出</h4>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">本機 Playwright 高解析截幀，一鍵產出無損向量 PDF。</p>
+          <h4 class="font-medium text-sm text-slate-900 dark:text-slate-100">PDF 輸出</h4>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">本機 Playwright 一鍵匯出；文字與 SVG 保持向量，3D 畫面為高解析點陣圖。</p>
         </div>
       </div>
     </div>

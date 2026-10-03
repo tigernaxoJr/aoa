@@ -1,18 +1,20 @@
-# AOFA: Agent-Offloaded Frontend Architecture
+# AOA: Agent-Offloaded Architecture
 
 **English** \| [繁體中文](architecture.zh-TW.md)
 
-> **A symbiotic design of a static protocol shell and the user's own agent as the execution engine**
+> **An AI product architecture whose service runs no inference: reasoning and execution are offloaded to the agent the user already has**
 
 ---
 
 ## 1. Executive Summary
 
-**AOFA (Agent-Offloaded Frontend Architecture)** is a software architecture pattern for the AI agent era.
+**AOA (Agent-Offloaded Architecture)** is a software architecture pattern for the AI agent era: the service runs no AI inference or heavy computation, and offloads both to the agent the user already has.
+
+On the frontend, AOA takes the form of a static web app that works with the user's agent through a local folder (this frontend form is sometimes called AOFA, Agent-Offloaded Frontend Architecture). Most of this document describes that form, the most direct way to apply AOA; Mode C (§5) shows AOA with a backend.
 
 In the traditional generative AI product (SaaS) model, the vendor bears the heavy cost of cloud inference, media transcoding, and storage, while users bear the risk of privacy leaks and cloud lock-in of their data.
 
-AOFA inverts and redraws these responsibility boundaries:
+AOA inverts and redraws these responsibility boundaries:
 - **The frontend (Presentation Layer)** does not depend on a backend for inference or computation. It is reduced to a purely static **"Protocol Shell & Workbench"** that can be hosted at zero cost on static platforms such as GitHub Pages.
 - **Inference and execution (Execution & Inference Layer)** are offloaded to the **Coding Agent** the user already has (e.g., Claude Code, Cursor, Codex, Gemini CLI, Pi) and to local open-source toolchains (e.g., FFmpeg, Playwright).
   - **Inference**: By default it runs on the user's existing agent plan in that provider's cloud, so the cost is covered by the user's agent subscription / API quota rather than by the app vendor. When needed, the agent can instead be pointed at self-hosted local models, as Pi Agent does (e.g., LLMs on Ollama / llama.cpp, local TTS such as Piper / Kokoro), enabling fully offline operation.
@@ -46,7 +48,7 @@ The user's local development environment has changed dramatically in recent year
 ┌────────────────────────────────────────────────────────┐
 │                   Web Browser                          │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │     AOFA Frontend (Static Workbench / Protocol)  │  │
+│  │     AOA Frontend (Static Workbench / Protocol)   │  │
 │  │     - Zero-Inference                             │  │
 │  │     - Schema Validator                           │  │
 │  │     - Visualizer & Editor                        │  │
@@ -104,10 +106,10 @@ The user's local development environment has changed dramatically in recent year
 
 ## 5. Communication Paradigms
 
-AOFA supports three progressive modes of communication between the frontend and the local environment:
+An AOA frontend supports three progressive modes of communication with the local environment:
 
 ### Mode A: Pure Workbench (File-Driven)
-*The purest form of AOFA; no extra local server is required.*
+*The purest form of AOA; no extra local server is required.*
 1. The frontend obtains a directory handle via the File System Access API.
 2. Every N seconds, the frontend compares metadata of key files (a fingerprint computed from `lastModified` and file size).
 3. When the agent finishes a storyboard or generates audio, the fingerprint changes and the frontend updates automatically.
@@ -122,10 +124,10 @@ AOFA supports three progressive modes of communication between the frontend and 
 
 > Note: When a public HTTPS site (e.g., GitHub Pages) connects to `127.0.0.1`, recent Chromium versions' Local Network Access mechanism requires user permission. The frontend must handle a denied permission by falling back to Mode A.
 
-### Mode C: Backend-Enabled (Hybrid AOFA)
+### Mode C: Backend-Enabled (Hybrid AOA)
 *For multi-tenant systems that need team collaboration, account permissions, or enterprise management.*
 
-**Key idea**: AOFA does not reject backend servers! In systems with a backend, AOFA achieves **a full decoupling of the Control Plane from the Compute Plane**:
+**Key idea**: AOA does not reject backend servers! In systems with a backend, AOA achieves **a full decoupling of the Control Plane from the Compute Plane**:
 
 ```
 [ Cloud Backend (Control Plane) ]
@@ -149,11 +151,15 @@ AOFA supports three progressive modes of communication between the frontend and 
 
 ---
 
-## 6. Reference Implementation: Index URL Director (Agent Video Producer)
+## 6. Reference Implementations
 
-Index URL Director is a complete reference implementation of AOFA:
+The AOA site ships two workbenches, each with its own static UI, protocol schemas, agent skill, and project template:
+- **Slide Studio (Mode A)**: the agent builds a Slidev deck with HTML, SVG diagrams, and Three.js components and exports a PDF locally; the page only reads and writes the folder.
+- **Video Studio (Mode B)**: the agent turns a product URL or a story into a narrated video, described below.
+
+Video Studio in detail:
 - **Frontend workbench**: A Vue 3 + Tailwind static site hosted on GitHub Pages, providing product spec input, a storyboard, narration editing, and video preview.
-- **Protocol library**: `specs/*.schema.json` defines the `project`, `scene`, `workflow`, and `activity` formats.
+- **Protocol library**: `apps/video/specs/*.schema.json` defines the `project`, `scene`, `workflow`, and `activity` formats.
 - **Local agent**: Claude Code reads an online guide and local skills, then uses local Playwright to capture web pages, Edge-TTS (Microsoft's online speech service, replaceable with local TTS such as Piper / Kokoro) to generate speech, and FFmpeg to compose 60fps video.
 - **Benefits**:
   - Developers: $0 server rent, $0 GPU bills, no database to maintain.
@@ -179,6 +185,6 @@ Index URL Director is a complete reference implementation of AOFA:
 
 ## 8. Conclusion
 
-AOFA breaks the assumption that "an AI product must be a cloud SaaS." It restores the frontend to a pure interaction interface and protocol standard, and hands inference cost, execution, and data sovereignty back to the user's own agent — including the choice of whether inference runs in the cloud or on a local model.
+AOA breaks the assumption that "an AI product must be a cloud SaaS." It restores the frontend to a pure interaction interface and protocol standard, and hands inference cost, execution, and data sovereignty back to the user's own agent — including the choice of whether inference runs in the cloud or on a local model.
 
 It is a new architectural path that combines **zero maintenance cost for the vendor**, **user-controlled data privacy**, and **flexible extensibility**.

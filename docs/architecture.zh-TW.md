@@ -1,8 +1,8 @@
-# AOFA: Agent-Offloaded Frontend Architecture
+# AOA: Agent-Offloaded Architecture
 
 [English](architecture.md) \| **繁體中文**
 
-> **代理卸載式前端架構：純前端協議皮囊與本機 Agent 執行引擎的共生設計**
+> **代理卸載式架構：服務本身不跑推論，推理與執行交給使用者既有的 Agent**
 
 *本文為英文版 [architecture.md](architecture.md) 的翻譯，內容如有出入以英文版為準。*
 
@@ -10,11 +10,13 @@
 
 ## 1. 摘要 (Executive Summary)
 
-**AOFA (Agent-Offloaded Frontend Architecture，代理卸載式前端架構)** 是一種針對 AI Agent 時代提出的現代軟體架構模式。
+**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種針對 AI Agent 時代提出的軟體架構模式：服務本身不跑 AI 推論、不做重度運算，兩者都卸載給使用者既有的 Agent。
+
+AOA 在前端的形式，是一個透過本機資料夾與使用者 Agent 協作的靜態網頁應用（這種前端形式有時也稱為 AOFA，Agent-Offloaded Frontend Architecture）。本文多數篇幅描述這種形式，因為它是套用 AOA 最直接的方式；模式 C（§5）則說明有後端時的 AOA。
 
 在傳統生成式 AI 產品（SaaS）模式中，服務商必須在雲端承擔高昂的推論算力、多媒體轉碼與儲存成本，同時使用者必須承擔隱私外洩與資料被雲端綁定的風險。
 
-AOFA 提出責任邊界的反轉與重構：
+AOA 提出責任邊界的反轉與重構：
 - **前端（Presentation Layer）** 不依賴後端執行推論與運算，簡化為一份純靜態的**「協議皮囊（Protocol Shell & Workbench）」**，可零成本託管於 GitHub Pages 等靜態平台。
 - **推論與執行（Execution & Inference Layer）** 卸載（Offloaded）給使用者自備的 **Coding Agent**（如 Claude Code, Cursor, Codex, Gemini CLI, Pi）與本地開源工具鏈（如 FFmpeg, Playwright）。
   - **推論**：一般情況下由使用者既有的 Agent 方案在其供應商雲端執行，成本由使用者的 Agent 訂閱 / API 額度承擔，而非本服務；有需要時，也可如 Pi Agent 般改接本機自建模型（如 Ollama / llama.cpp 上的 LLM、Piper / Kokoro 等本機 TTS），達成完全離線。
@@ -48,7 +50,7 @@ AOFA 提出責任邊界的反轉與重構：
 ┌────────────────────────────────────────────────────────┐
 │                   Web Browser                          │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │     AOFA Frontend (靜態工作台 / 協議載體)          │  │
+│  │     AOA Frontend (靜態工作台 / 協議載體)           │  │
 │  │     - 零推論 (Zero-Inference)                    │  │
 │  │     - 協議驗證器 (Schema Validator)              │  │
 │  │     - 狀態視覺化與編輯器 (Visualizer & Editor)    │  │
@@ -79,7 +81,7 @@ AOFA 提出責任邊界的反轉與重構：
 
 ---
 
-## 4. AOFA 四大核心架構原則 (Core Principles)
+## 4. AOA 四大核心架構原則 (Core Principles)
 
 ### 原則一：Compute-Asymmetric Decoupling（算力非對稱解耦 / 零推論控制層）
 - **算力邊界徹底分離**：應用層（不論是純靜態前端，或是包含帳號、計費的雲端後端控制層）**完全不承擔 AI 模型推理、音視訊轉碼與巨型運算**。
@@ -106,10 +108,10 @@ AOFA 提出責任邊界的反轉與重構：
 
 ## 5. 協同通訊模式 (Communication Paradigms)
 
-AOFA 在前端與本機環境的通訊上，支援漸進式的三種模式：
+AOA 前端與本機環境的通訊，支援漸進式的三種模式：
 
 ### 模式 A：純工作台模式（Pure Workbench / File-Driven）
-*最純粹的 AOFA 形式，無需本機安裝任何額外伺服器。*
+*最純粹的 AOA 形式，無需本機安裝任何額外伺服器。*
 1. 前端透過 File System Access API 取得 Handle。
 2. 前端每 N 秒比對關鍵檔案中繼資料（`lastModified` 與檔案大小計算的 Fingerprint）。
 3. 當 Agent 完成分鏡或生成音訊時，特徵碼變更，前端無感自動更新。
@@ -124,10 +126,10 @@ AOFA 在前端與本機環境的通訊上，支援漸進式的三種模式：
 
 > 注意：從公開 HTTPS 網站（如 GitHub Pages）連線至 `127.0.0.1`，新版 Chromium 的 Local Network Access 機制會要求使用者授權，前端需處理授權被拒時退回模式 A 的流程。
 
-### 模式 C：具後端混合架構（Backend-Enabled / Hybrid AOFA）
+### 模式 C：具後端混合架構（Backend-Enabled / Hybrid AOA）
 *適用於需要團隊協作、帳號權限或企業級管理的多租戶系統。*
 
-**重要觀念**：AOFA 並不排斥後端伺服器！在具後端的系統中，AOFA 實現了**「控制平面（Control Plane）與算力平面（Compute Plane）的徹底解耦」**：
+**重要觀念**：AOA 並不排斥後端伺服器！在具後端的系統中，AOA 實現了**「控制平面（Control Plane）與算力平面（Compute Plane）的徹底解耦」**：
 
 ```
 [ Cloud Backend (控制平面) ]
@@ -151,11 +153,15 @@ AOFA 在前端與本機環境的通訊上，支援漸進式的三種模式：
 
 ---
 
-## 6. AOFA 實踐案例：Index URL Director (Agent Video Producer)
+## 6. 參考實作 (Reference Implementations)
 
-Index URL Director 即為 AOFA 的完整參考實作：
+AOA 網站提供兩個工作台，各自有獨立的靜態介面、協議 Schema、Agent Skill 與專案範本：
+- **Slide Studio（模式 A）**：Agent 以 Slidev 搭配 HTML、SVG 架構圖與 Three.js 組件製作簡報，在本機匯出 PDF；網頁只讀寫資料夾。
+- **Video Studio（模式 B）**：Agent 把產品網址或一段故事做成有旁白的影片，細節如下。
+
+Video Studio 的組成：
 - **前端工作台**：Vue 3 + Tailwind 靜態網站，託管於 GitHub Pages。提供產品規格填寫、分鏡看板、旁白編輯與成片預覽。
-- **協議庫**：`specs/*.schema.json` 定義了 `project`、`scene`、`workflow` 與 `activity` 格式。
+- **協議庫**：`apps/video/specs/*.schema.json` 定義了 `project`、`scene`、`workflow` 與 `activity` 格式。
 - **本機 Agent**：由 Claude Code 讀取線上 Guide 與本機 Skill，調用本機 Playwright 擷取網頁、Edge-TTS（微軟線上語音服務，可替換為 Piper / Kokoro 等本機 TTS）生成語音、FFmpeg 合成 60fps 影片。
 - **效益**：
   - 開發者：0 伺服器月租、0 GPU 帳單、免維護資料庫。
@@ -181,6 +187,6 @@ Index URL Director 即為 AOFA 的完整參考實作：
 
 ## 8. 結論 (Conclusion)
 
-AOFA（代理卸載式前端架構）打破了「AI 產品必須等於雲端 SaaS」的固有思維。它將前端還原為純粹的互動介面與協議標準，把推論成本、執行權與資料主權交還給使用者自備的 Agent——推論要走雲端還是本機模型，也由使用者決定。
+AOA（代理卸載式架構）打破了「AI 產品必須等於雲端 SaaS」的固有思維。它將前端還原為純粹的互動介面與協議標準，把推論成本、執行權與資料主權交還給使用者自備的 Agent——推論要走雲端還是本機模型，也由使用者決定。
 
 這是一條兼顧**服務商零維護成本**、**使用者可控的資料隱私**與**靈活擴展能力**的全新架構路徑。

@@ -1,8 +1,8 @@
-# AOFA：代理卸載式前端架構 (Agent-Offloaded Frontend Architecture)
+# AOA：代理卸載式架構 (Agent-Offloaded Architecture)
 
-[English](README.md) | **繁體中文** | [官方網站](https://aofa.tigernaxo.com/)
+[English](README.md) | **繁體中文** | [官方網站](https://aoa.tigernaxo.com/)
 
-**AOFA** 是一種「後端不跑 AI」的現代 AI 產品架構模式。網頁應用只是一份靜態的**協議皮囊（Protocol Shell）**；**使用者手上既有的 Coding Agent**（Claude Code、Codex、Cursor、Gemini CLI、Pi 等）才是負責推理與執行的心臟引擎。
+**AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種「後端不跑 AI」的 AI 產品架構模式：推理、檔案產生與執行都卸載給**使用者手上既有的 Coding Agent**（Claude Code、Codex、Cursor、Gemini CLI、Pi 等），服務本身只負責協議、介面與協同。在前端，網頁應用只是一份靜態的**協議皮囊（Protocol Shell）**，透過本機資料夾與使用者的 Agent 協作。
 
 ```
 [ 靜態 Web UI ]  ──File System Access API──▶  [ 本機資料夾 (SSOT) ]  ◀──▶  [ 使用者的 Coding Agent ]
@@ -20,18 +20,18 @@
 - **檔案系統即匯流排**：本機資料夾是唯一真實來源（SSOT），UI 以輕量檔案中繼資料特徵碼偵測變更。
 - **資料邊界由使用者決定**：使用者資料不經過應用方伺服器；唯一會看到上下文的第三方是使用者自選的 LLM 供應商（改用本機模型則完全離線）。
 
-AOFA 也適用於有後端的系統：帳號、計費、團隊協同留在輕量的雲端控制平面，算力與資料留在使用者端。
+AOA 也適用於有後端的系統：帳號、計費、團隊協同留在輕量的雲端控制平面，算力與資料留在使用者端。
 
 ---
 
 ## 官方參考實作 (Live Workbenches)
 
-本倉庫內建完整的 AOFA 參考實作工具，供線上體驗與二次開發：
+本倉庫內建完整的 AOA 參考實作工具，供線上體驗與二次開發：
 
 | 工具工作台 | 路由路徑 | 通訊模式 | 特色技術與說明 |
 |---|---|---|---|
-| **Slide Studio** | [`/slide/`](https://aofa.tigernaxo.com/slide/) | **模式 A：純工作台** | 純 FSA API + Slidev + Three.js 3D 視覺 + 向量 SVG 圖表 + Playwright 無損向量 PDF 匯出（零常駐伴侶、極簡零依賴）。 |
-| **Video Studio** | [`/video/`](https://aofa.tigernaxo.com/video/) | **模式 B：伴侶增強** | FSA API + 本機 Companion WebSocket 配對，將產品網址自動轉為包含繁中配音（TTS）、動態截圖與 FFmpeg 合成的展示影片。 |
+| **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **模式 A：純工作台** | 純 FSA API + Slidev + Three.js 3D 視覺 + 向量 SVG 圖表 + Playwright 無損向量 PDF 匯出（零常駐伴侶、極簡零依賴）。 |
+| **Video Studio** | [`/video/`](https://aoa.tigernaxo.com/video/) | **模式 B：伴侶增強** | FSA API + 本機 Companion WebSocket 配對，將產品網址自動轉為包含繁中配音（TTS）、動態截圖與 FFmpeg 合成的展示影片。 |
 
 ---
 
@@ -40,14 +40,14 @@ AOFA 也適用於有後端的系統：帳號、計費、團隊協同留在輕量
 | 文件 | 說明 |
 | :--- | :--- |
 | [架構說明 (繁中)](docs/architecture.zh-TW.md) · ([English](docs/architecture.md)) | 完整規格：原則、通訊模式（模式 A/B/C）、安全模型與限制 |
-| [Introducing AOFA](posts/2026-10-introducing-aofa.md) | 深度介紹此架構的技術長文（英文） |
-| [論文提案草稿](paper/proposal.md) | 學術論文提案草稿（英文，Agent-Offloaded Frontend Architecture） |
+| [Introducing AOA](posts/2026-10-introducing-aofa.md) | 深度介紹此架構的技術長文（英文） |
+| [論文提案草稿](paper/proposal.md) | 學術論文提案草稿（英文） |
 
 ---
 
-## 雲端 GenAI SaaS vs. AOFA
+## 雲端 GenAI SaaS vs. AOA
 
-| 比較項目 | 雲端 GenAI SaaS | AOFA 代理卸載式架構 |
+| 比較項目 | 雲端 GenAI SaaS | AOA 代理卸載式架構 |
 |---|---|---|
 | **主機託管** | GPU 主機、資料庫、巨額流量費 | CDN 上的純靜態檔案（GitHub Pages） |
 | **推論成本** | 服務商先行墊付，轉嫁為訂閱制 | 使用者自備 Agent（Claude Code/Cursor）或本機模型 |
@@ -86,4 +86,4 @@ pnpm run build
 
 ## 授權聲明
 
-© 2026 tigernaxo。本作品採用 [創用 CC 姓名標示 4.0 國際授權條款（CC BY 4.0）](LICENSE)。只要適當標示出處，即可自由分享與改作。
+© 2026 tigernaxo。程式碼採用 [MIT 授權](LICENSE)；`docs/`、`paper/`、`posts/` 中的文章與規格採用 [創用 CC 姓名標示 4.0 國際授權條款（CC BY 4.0）](LICENSE-docs)，只要適當標示出處，即可自由分享與改作。

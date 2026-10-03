@@ -6,8 +6,8 @@
 
 ## 一、產品願景與定位
 
-**Slide Studio** 是一個遵循 **AOFA (Agent Offload Front Architecture)** 模式的現代簡報生成與編輯工作台：
-1. **純靜態前端工作台**：部署於 `/<repo>/slide/`（如 `https://aofa.tigernaxo.com/slide/`），不建置後端伺服器、不呼叫雲端付費 API。
+**Slide Studio** 是一個遵循 **AOA (Agent-Offloaded Architecture)** 模式的現代簡報生成與編輯工作台：
+1. **純靜態前端工作台**：部署於 `/<repo>/slide/`（如 `https://aoa.tigernaxo.com/slide/`），不建置後端伺服器、不呼叫雲端付費 API。
 2. **通訊機制極簡化**：完全依賴瀏覽器標準 **File System Access API (`showDirectoryPicker()`)** 與本機檔案輪詢，**不需要架設任何本機 Daemon 或 Companion（無須 packages/video-agent 形式的複雜常駐程序）**。
 3. **Slidev + Agent 前端能力**：
    - 以 **Slidev** 為核心引擎（Markdown 驅動、Vue 3 組件生態、Tailwind CSS）。
@@ -16,7 +16,7 @@
 
 ---
 
-## 二、前後端溝通與工作模式 (AOFA Pattern)
+## 二、前後端溝通與工作模式 (AOA Pattern)
 
 ```mermaid
 sequenceDiagram
@@ -194,4 +194,4 @@ apps/slide/
 ### Phase 4：測試、驗證與全站整合 (Integration & Polish)
 1. 整合至根目錄 `package.json` 的 `pnpm test` 與 `pnpm run build`。
 2. 確保 `pnpm run typecheck` 零錯誤。
-3. 驗證全站部署與在 `https://aofa.tigernaxo.com/slide/` 運作正常。
+3. 驗證全站部署與在 `https://aoa.tigernaxo.com/slide/` 運作正常。

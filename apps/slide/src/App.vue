@@ -59,7 +59,7 @@ async function reload() {
             <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 font-mono text-xs font-bold text-white" aria-hidden="true">S</span>
             <span class="hidden sm:inline">Slide Studio</span>
             <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300">
-              Slidev + AOFA
+              Slidev + AOA
             </span>
           </span>
         </div>
