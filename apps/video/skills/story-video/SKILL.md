@@ -22,7 +22,7 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
 
 1. **確認位置**：有 `video.start.json` 時專案就建在目前目錄。否則在目前的工作資料夾裡建立 `<故事名英文小寫>-video`（例如 `moon-fox-video`），用白話確認：「我會在『文件』資料夾裡建立 moon-fox-video 來放這部影片，可以嗎？」不要要求使用者提供路徑。
 2. **取得範本**：和產品影片用同一份範本，做法見 [product-video SKILL.md §2 第 2 點](../product-video/SKILL.md#init)（下載 `product-video.zip`、以 manifest 的 SHA-256 驗證、解壓、刪除 zip）。
-3. **收集故事**：有 `video.start.json` 時先讀它（`kind` 為 `story`；`story` 是使用者在網頁填的故事或點子，`audience` 是觀看對象，可能是 `null`），已填的不要再問。沒有時問一句：「想做成影片的故事是什麼？可以貼整篇故事，也可以只說一個點子，例如『一隻怕黑的小貓學會看星星』。」
+3. **收集故事與語音設定**：有 `video.start.json` 時先讀它（`kind` 為 `story`；`story` 是使用者在網頁填的故事或點子，`audience` 是觀看對象，`ttsProvider` 是偏好的語音引擎，預設為 `cosyvoice3`）。已填的不要再問。沒有時問一句：「想做成影片的故事是什麼？可以貼整篇故事，也可以只說一個點子，例如『一隻怕黑的小貓學會看星星』。」
    - 故事不論長短，原文寫入 `sources.story`；這一步**不改寫**，整理是下一步的事。
    - 使用者給的是檔案（Word、PDF、文字檔）時，讀出文字放進 `sources.story`，告訴他「我讀到了，共約 N 字」。
 4. **確認對象、畫風與格式**：一次問一件事並附建議：
@@ -36,11 +36,15 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
    - `project.sources`：`{ "story": "<原文>" }`（不需要 `productUrl` 等產品欄位）
    - `project.customMotion`：`"allow"`（故事的每一段都是你畫的動畫，不逐段詢問）
    - `project.language`、`project.targetAudience`、`project.style`、`project.format`、`project.captions`
-   - `project.tts`：旁白的聲音（§4）；角色的聲音在美術步驟才決定，寫在 `project.cast`
+   - `project.tts`：旁白的聲音；使用 CosyVoice 3 時設為 `{ "provider": "cosyvoice3", "voice": "中文女 <用溫暖柔和的繪本旁白語氣>" }`，角色的聲音在美術步驟由你自動依角色性格配置，寫在 `project.cast`（§4）
    - `updatedAt`：目前時間
    新專案沒有其他寫入者，這一次可以直接編輯 `video.project.json`；之後一律依 `AGENTS.md` 透過 `pnpm run state` 修改。
 6. **安裝與檢查**：照 [product-video SKILL.md §2 第 6 點](../product-video/SKILL.md#init)（Node.js、pnpm、`pnpm install`、瀏覽器）。故事影片不錄網頁，但渲染動畫仍需要瀏覽器。
-7. **Gate `onlineTtsConsent`**：例如「旁白和角色的聲音會用微軟的線上語音服務產生，故事文字會傳給微軟。可以嗎？不行的話可以改用電腦內建的語音或自己錄音。」以 `pnpm run state` 寫入結果。故事影片沒有 `productLogin`、`domEditConsent`。
+7. **Gate `onlineTtsConsent` 與語音引擎**：
+   - 故事影片推薦使用 **CosyVoice 3 智慧角色配音**（若使用者指定 edge-tts 則使用微軟語音）。向使用者確認：
+     「影片中的旁白與角色對白，預計會使用 **CosyVoice 3 智慧語音** 產生自然生動的聲音，在後續角色設計階段，我會**自動配合每位角色的年齡、個性與情境配上專屬語氣指令**（例如小阿明用純真熱情的男孩語氣、老茶農用略帶沙啞的慈祥老農語氣），亦支援自行錄音克隆。若環境連線至遠端語音服務，台詞會傳送至該端點轉換：
+     • 請問可以使用嗎？（若想使用微軟 Edge-TTS 或電腦內建離線語音，也可以告訴我改用）」
+   - 使用者同意（回覆「可以」或「好」）時，以 `pnpm run state` 記錄 `project.tts.consent.onlineTts: true`。故事影片沒有 `productLogin`、`domEditConsent`。
 8. **驗證**：`pnpm run validate`，通過後告訴使用者專案建好了、資料夾在哪裡，並直接問他要不要開始整理故事。
 
 ## 3. 各步驟的做法
@@ -59,22 +63,23 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
 
 只在執行到該步驟時才讀取對應檔案。
 
-## 4. <a id="voices"></a>聲音
+## 4. <a id="voices"></a>聲音與 AI 自動角色配音
 
-旁白用 `project.tts`，每個角色在 `project.cast` 裡有自己的 `voice`（必要時也可以有自己的 `provider`）。同一部片裡，旁白和每個角色的聲音要聽得出差別。
+旁白用 `project.tts`，每個角色在 `project.cast` 裡有自己的 `voice`（與可選的 `provider`）。同一部片裡，旁白和每個角色的聲音要聽得出差別。
 
-| language | edge-tts 聲音 |
-|---|---|
-| `zh-TW` | `zh-TW-HsiaoChenNeural`（女，溫和，適合旁白）、`zh-TW-HsiaoYuNeural`（女，較年輕）、`zh-TW-YunJheNeural`（男） |
-| `zh-CN` | `zh-CN-XiaoxiaoNeural`（女）、`zh-CN-XiaoyiNeural`（女，活潑）、`zh-CN-YunxiNeural`（男，年輕）、`zh-CN-YunxiaNeural`（男孩）、`zh-CN-YunjianNeural`（男，渾厚）、`zh-CN-YunyangNeural`（男，播報） |
-| `en-US` / `en` | `en-US-AriaNeural`、`en-US-JennyNeural`、`en-US-AnaNeural`（女孩）、`en-US-GuyNeural`、`en-US-DavisNeural`、`en-US-ChristopherNeural` |
-| `ja` | `ja-JP-NanamiNeural`（女）、`ja-JP-KeitaNeural`（男） |
-
-- 台灣華語的聲音只有三個；角色多時可以借用 `zh-CN` 的聲音（例如小男孩用 `zh-CN-YunxiaNeural`），但要先告訴使用者「這個聲音是中國大陸口音」，讓他決定。
-- **CosyVoice 3 語音克隆與自然語言指令**：
-  - 若環境已配置 CosyVoice 3，角色的 `provider` 可設為 `cosyvoice3`。
+- **CosyVoice 3 智慧角色配音（強烈推薦）**：
+  - **AI 自動匹配角色音色**：Agent 在 `/video-design` 階段規劃角色設定時，**必須主動根據故事中角色的身分、年齡、性格特質與情感狀態，自動為每個角色設定最適配的 CosyVoice 3 自然語言指令（Instruct）**，無需使用者手動編寫！
+  - **指令語法**：`基礎發音人 <自然語言語氣指令>`（基礎發音人可為 `中文男`、`中文女`、`粵語女`、`日語男`、`韓語女`、`英語男` 等）。
+  - **經典範例（如《茶香與畫筆：古阿明的故事》）**：
+    - 主角阿明：`provider: "cosyvoice3", voice: "中文男 <用純真熱情、體弱但熱愛畫畫的小男孩語氣>"`
+    - 父親（老茶農）：`provider: "cosyvoice3", voice: "中文男 <用歷經滄桑、疲憊但充滿慈愛的老茶農語氣>"`
+    - 郭老師：`provider: "cosyvoice3", voice: "中文男 <用充滿熱忱與理想的年輕美術老師語氣>"`
+    - 旁白：`provider: "cosyvoice3", voice: "中文女 <用溫暖柔和、娓娓道來且微帶感傷的繪本旁白語氣>"`
   - **聲音克隆**：引導使用者在網頁工作台「角色工坊」錄音 3-5 秒（存成 `@/assets/cast/<id>/voice-sample.wav`），`voice` 欄位填入該音檔路徑。
-  - **自然語言指令**：`voice` 可使用 `基礎發音人 <自然語言語氣指令>`，例如 `中文男 <用熱情開朗的大學生語氣>` 或 `<用台語說>`。
+- **微軟 Edge-TTS 標準發音人庫**：
+  - 台灣華語 `zh-TW`：`zh-TW-HsiaoChenNeural`（女，溫和，適合旁白）、`zh-TW-HsiaoYuNeural`（女，較年輕）、`zh-TW-YunJheNeural`（男）。
+  - `zh-CN`：`zh-CN-XiaoxiaoNeural`（女）、`zh-CN-XiaoyiNeural`（女，活潑）、`zh-CN-YunxiNeural`（男，年輕）、`zh-CN-YunxiaNeural`（男孩）、`zh-CN-YunjianNeural`（男，渾厚）。
+  - `en-US`：`en-US-AriaNeural`、`en-US-JennyNeural`、`en-US-AnaNeural`（女孩）、`en-US-GuyNeural`。
 - 其他語言執行 `pnpm run tts --list-voices` 查詢。
 - 選好後用 `pnpm run tts --sample <角色id>`（旁白用 `narrator`）產生試聽檔給使用者聽，或在網頁端「角色工坊」一鍵試聽，見 [design-guide.md#cast-studio](design-guide.md#cast-studio)。
 

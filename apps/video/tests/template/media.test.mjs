@@ -61,7 +61,7 @@ test('cosyvoice with local endpoint does not require online consent and hints se
   p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-hook' }] })
   const r = p.run('tts.mjs', ['scene-001'], { COSYVOICE_URL: 'http://127.0.0.1:50000/api/tts' })
   assert.equal(r.code, 1)
-  assert.match(r.stderr, /CosyVoice 3.*service unavailable/)
+  assert.match(r.stderr, /CosyVoice 3.*(service unavailable|model weights not ready)/)
   assert.match(r.stderr, /pnpm run cosyvoice:setup/)
 })
 

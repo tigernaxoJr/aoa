@@ -22,6 +22,8 @@ export interface SourceInput {
   story: string
   /** kind story: who will watch it (optional). */
   audience: string
+  /** Preferred voice engine for story mode: cosyvoice3 (default) or edge-tts. */
+  ttsProvider?: 'cosyvoice3' | 'edge-tts'
   productUrl: string
   /** The product page needs signing in; the agent then has the user sign in in a window of its own. */
   requiresLogin: boolean
@@ -41,6 +43,11 @@ function sources(src: SourceInput) {
   if (src.kind === 'story') {
     if (src.story.trim()) parts.push(`故事：${src.story.trim()}`)
     if (src.audience.trim()) parts.push(`觀看對象：${src.audience.trim()}`)
+    if (src.ttsProvider === 'cosyvoice3') {
+      parts.push('語音引擎：CosyVoice 3（請在設計角色時，自動根據角色身分與性格配置適當的自然語言語氣指令）')
+    } else if (src.ttsProvider === 'edge-tts') {
+      parts.push('語音引擎：微軟 Edge-TTS（使用標準神經網路語音庫）')
+    }
     return parts
   }
   if (src.productUrl.trim()) parts.push(`產品網址：${src.productUrl.trim()}`)
@@ -57,8 +64,9 @@ export const newFolderId = () => crypto.randomUUID().slice(0, 8)
 /** The start file's contents: the folder's id, the same sources, and the hints for finding the source folder. */
 export function startJson(src: SourceInput, id: string) {
   const value = (s: string) => s.trim() || null
+  const extra = src.ttsProvider ? { ttsProvider: src.ttsProvider } : {}
   if (src.kind === 'story') {
-    return `${JSON.stringify({ id, kind: 'story', story: value(src.story), audience: value(src.audience), updatedAt: new Date().toISOString() }, null, 2)}\n`
+    return `${JSON.stringify({ id, kind: 'story', story: value(src.story), audience: value(src.audience), ...extra, updatedAt: new Date().toISOString() }, null, 2)}\n`
   }
   const folder = value(src.sourceFolder)
   return `${JSON.stringify(
