@@ -57,10 +57,10 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。內嵌 SVG 架構圖與流程圖、在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。完成後 `pnpm run state project --status visualized`。
 4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。
    - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
-   - **匯出單檔 HTML**：`pnpm run build --single-file` 產出單檔網頁簡報（放於 `output/index.html` 或 `dist/`，開箱即播）。
+   - **匯出網頁簡報**：`pnpm run build` 產出 SPA 靜態簡報（`dist/`，開箱即播）。
    成功後 `pnpm run state project --status exported`；失敗時 `--status failed` 並把錯誤用白話告訴使用者。
 
-完成後告訴使用者可在網頁工作台 {{SITE_URL}}/slide/ 開啟這個資料夾預覽每一頁、PDF 與 HTML。
+完成後告訴使用者可在網頁工作台 {{SITE_URL}}/slide/ 開啟這個資料夾預覽每一頁、PDF 與網頁。
 
 ---
 

@@ -109,9 +109,10 @@ export async function pollFiles() {
       // Ignore PDF read error
     }
 
-    // 5. Check output/dist/index.html or output/index.html
+    // 5. Check dist/index.html or output/dist/index.html
     try {
-      let hFile = await tryFile(root, 'output/dist/index.html')
+      let hFile = await tryFile(root, 'dist/index.html')
+      if (!hFile) hFile = await tryFile(root, 'output/dist/index.html')
       if (!hFile) hFile = await tryFile(root, 'output/index.html')
       if (hFile && (!htmlFile.value || hFile.lastModified !== htmlFile.value.lastModified)) {
         if (htmlUrl.value) URL.revokeObjectURL(htmlUrl.value)

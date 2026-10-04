@@ -15,7 +15,7 @@
 | `components/*.vue` | 自訂 Vue / Three.js / SVG 組件，Slidev 自動註冊，不必 import |
 | `schemas/` | 協議 Schema 與 `workflow.json`，`validate` 與 `state` 依此驗證 |
 | `output/slides.pdf` | 匯出的 PDF 檔案 |
-| `output/dist/index.html` | 匯出的單檔 HTML 互動簡報（方便直接放映） |
+| `dist/index.html` | 匯出的網頁簡報 SPA（方便直接放映） |
 
 ---
 
@@ -24,7 +24,7 @@
 1. **規劃大綱（`/slide-outline`）**：規劃分頁結構、頁數與每頁核心訊息。**停下確認**，確認後狀態改為 `outlined`。
 2. **撰寫內文（`/slide-draft`）**：編寫 `slides.md`，善用 Slidev 版型（`cover`、`two-cols`、`center`、`quote`）。講者備忘錄寫在每頁**最後一個** HTML 註解裡，例如 `<!-- 這裡停頓，先問聽眾 -->`。**停下確認**，確認後狀態改為 `drafted`。
 3. **注入視覺（`/slide-visual`）**：SVG 架構圖與流程圖、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、`v-click` 動畫。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。完成後狀態改為 `visualized`。
-4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run export:html` 產出單檔 HTML 簡報。成功後狀態改為 `exported`，失敗改為 `failed` 並告知使用者原因。
+4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run build` 打包為靜態簡報（`dist/`）。成功後狀態改為 `exported`，失敗改為 `failed` 並告知使用者原因。
 
 ---
 

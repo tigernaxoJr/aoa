@@ -20,18 +20,13 @@ pnpm run export
 pnpm exec slidev export --with-clicks --output output/slides-clicks.pdf
 ```
 
-## 3. 匯出單檔 HTML 互動簡報（方便放映展示）
+## 3. 匯出 HTML 網頁簡報（方便放映展示）
 
 ```bash
-pnpm run export:html
+pnpm run build
 ```
 
-或直接以 Slidev CLI 匯出單一獨立 HTML 檔案（所有 JavaScript、CSS 與圖片皆內嵌）：
-```bash
-pnpm exec slidev build --single-file --out output/dist
-```
-
-產出包含完整簡報動畫、演講者備忘錄與鍵盤控制的互動網頁，離線瀏覽器雙擊即可全螢幕播放，非常適合演講現場投影！
+直接以 Slidev 原生 `slidev build` 打包為靜態網頁 SPA（產物在 `dist/` 目錄），包含完整簡報動畫、演講者備忘錄與鍵盤控制。直接開啟 `dist/index.html` 或佈署至靜態網站即可全螢幕放映！
 
 ---
 

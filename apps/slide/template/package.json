@@ -7,7 +7,6 @@
     "dev": "slidev --port 3030",
     "build": "slidev build",
     "export": "slidev export --output output/slides.pdf",
-    "export:html": "slidev build --single-file --out output/dist",
     "export:png": "slidev export --format png --output output/slides-png",
     "validate": "node scripts/validate.mjs",
     "state": "node scripts/state.mjs"
