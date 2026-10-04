@@ -4,6 +4,8 @@ export interface ParsedSlide {
   index: number
   title: string
   layout: string
+  background?: string
+  class?: string
   content: string
   renderedHtml?: string
   notes?: string
@@ -133,6 +135,8 @@ export function parseSlides(markdown: string): ParsedDeck {
       index: slides.length + 1,
       title,
       layout: slideFm.layout || (slides.length === 0 ? 'cover' : 'default'),
+      background: slideFm.background || (slides.length === 0 ? globalFrontmatter.background : undefined),
+      class: slideFm.class || (slides.length === 0 ? globalFrontmatter.class : undefined),
       content: cleanLines || bodyText,
       renderedHtml,
       notes,

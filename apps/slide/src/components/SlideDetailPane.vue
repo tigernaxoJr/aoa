@@ -25,6 +25,29 @@ function downloadMarkdown(content: string, filename: string) {
 
 const canPrev = computed(() => !!props.slide && props.slide.index > 1)
 const canNext = computed(() => !!props.slide && props.slide.index < props.totalSlides)
+
+const slideBackgroundStyle = computed(() => {
+  if (!props.slide?.background) return {}
+  const bg = props.slide.background
+  if (bg.startsWith('http://') || bg.startsWith('https://') || bg.startsWith('data:') || bg.startsWith('/')) {
+    return {
+      backgroundImage: `url('${bg}')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }
+  }
+  return {
+    background: bg,
+  }
+})
+
+const slideThemeGradient = computed(() => {
+  if (props.slide?.background) return ''
+  if (props.slide?.layout === 'cover') {
+    return 'bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950'
+  }
+  return 'bg-gradient-to-br from-slate-900 to-slate-800'
+})
 </script>
 
 <template>
@@ -110,6 +133,14 @@ const canNext = computed(() => !!props.slide && props.slide.index < props.totalS
         >
           {{ vt }}
         </span>
+
+        <span
+          v-if="slide.background"
+          class="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
+          :title="slide.background"
+        >
+          🖼️ 背景已設定
+        </span>
       </div>
 
       <!-- Slide Preview Mockup -->
@@ -117,8 +148,18 @@ const canNext = computed(() => !!props.slide && props.slide.index < props.totalS
         <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
           投影片版面即時檢視：
         </div>
-        <div class="aspect-16/9 w-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-inner flex flex-col justify-between">
-          <div class="overflow-y-auto pr-2 max-h-[320px]">
+        <div
+          class="aspect-16/9 w-full overflow-hidden rounded-xl border border-slate-200 p-8 text-white shadow-inner flex flex-col justify-between transition-colors relative"
+          :class="slideThemeGradient"
+          :style="slideBackgroundStyle"
+        >
+          <!-- Background image overlay if background image exists -->
+          <div
+            v-if="slide.background"
+            class="absolute inset-0 bg-slate-950/65 backdrop-blur-[1px] -z-0 pointer-events-none"
+          ></div>
+
+          <div class="overflow-y-auto pr-2 max-h-[320px] relative z-10">
             <div class="flex items-center justify-between text-xs text-slate-400 mb-3 border-b border-slate-800 pb-2">
               <span class="font-mono uppercase tracking-wider text-[11px]">{{ slide.layout }}</span>
               <span class="font-mono text-slate-400">#{{ slide.index }}</span>
@@ -139,7 +180,7 @@ const canNext = computed(() => !!props.slide && props.slide.index < props.totalS
             </div>
           </div>
 
-          <div v-if="slide.visualTypes.length" class="mt-3 flex items-center gap-2 pt-2 border-t border-slate-700/60 shrink-0">
+          <div v-if="slide.visualTypes.length" class="mt-3 flex items-center gap-2 pt-2 border-t border-slate-700/60 shrink-0 relative z-10">
             <span class="text-[10px] text-slate-400">視覺組件:</span>
             <span v-for="vt in slide.visualTypes" :key="vt" class="rounded bg-sky-500/20 px-2 py-0.5 text-[10px] text-sky-300">
               {{ vt }}
