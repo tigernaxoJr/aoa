@@ -76,6 +76,12 @@ watch(state, (st) => {
       <template v-if="state">
         <span class="hidden text-slate-300 sm:inline dark:text-slate-700" aria-hidden="true">/</span>
         <span class="min-w-0 truncate text-sm font-medium" data-testid="project-name">{{ state.project.project.name }}</span>
+        <span
+          class="hidden sm:inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold"
+          :class="state.project.project.kind === 'story' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'"
+        >
+          {{ state.project.project.kind === 'story' ? '🎭 故事動畫' : '🎬 產品介紹' }}
+        </span>
       </template>
       <span class="ml-auto" />
       <CompanionStatus />
@@ -107,8 +113,8 @@ watch(state, (st) => {
       <ActivityBanner />
       <WorkflowBar />
 
-      <!-- Story Mode Tab Switcher (Scenes vs Cast) -->
-      <div v-if="state.project.project.kind === 'story'" class="flex items-center gap-2 border-b border-slate-200 pb-1 dark:border-slate-800">
+      <!-- Workbench Tab Switcher (Scenes vs Cast) -->
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-1 dark:border-slate-800">
         <button
           type="button"
           class="inline-flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-semibold transition"
@@ -130,7 +136,7 @@ watch(state, (st) => {
       </div>
 
       <!-- Cast Panel View -->
-      <div v-if="state.project.project.kind === 'story' && activeTab === 'cast'">
+      <div v-if="activeTab === 'cast'">
         <CastPanel />
       </div>
 
