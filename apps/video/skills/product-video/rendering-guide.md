@@ -115,6 +115,52 @@ GSAP 與 Three.js 不在範本裡，要用時先在專案安裝（`pnpm add gsap
 
 寫完先渲染這一段確認畫面（短的 scene 可以先把 `durationSec` 設短測試，確認後改回）。`motion.js` 與 scene `assets/` 內的檔案都納入 `inputHash`，修改後該 scene 會自動變成需要重做；模組匯入的共用檔案（`@/assets/` 下）不在內，改了要自己把用到它的 scene 標為 `stale`。
 
+### <a id="css-styling"></a>善用現代 CSS 讓畫面質感大幅升級（重要技巧）
+
+渲染器底層是完整的現代 Chromium 瀏覽器（Playwright 逐幀截圖），**強烈鼓勵善用現代 CSS 樣式打造媲美 Apple / Linear 官方宣傳片的精緻畫面**！
+請注意：因截圖是受控時間（由 `seek(t)` 驅動），**不要使用自發的 `animation` / `transition`**，但在靜態排版、材質光影、以及由 `t` 即時計算的 inline style / CSS 變數上，請大力使用以下強大特性：
+
+1. **多層柔和陰影（Layered Soft Shadows & Depth）**：
+   - 避免生硬的單層黑色陰影，使用多層帶透明度的彌散陰影營造真實懸浮感：
+     ```css
+     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+     ```
+   - 對於透明 PNG 或 SVG 圖示，使用 `filter: drop-shadow(0 12px 24px rgba(0,0,0,0.3))` 順著不規則邊緣投下立體陰影。
+2. **現代材質與毛玻璃（Glassmorphism & High-tech Cards）**：
+   - 浮動卡片、終端機視窗、標籤面板使用毛玻璃磨砂質感：
+     ```css
+     background: rgba(15, 23, 42, 0.75);
+     backdrop-filter: blur(16px) saturate(180%);
+     border: 1px solid rgba(255, 255, 255, 0.12);
+     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15); /* 頂部內發光邊緣 */
+     ```
+3. **氛圍光暈與聚光燈（Radial Glows & Ambient Lighting）**：
+   - 避免純黑或單調純色背景。在背景或重要元素背後疊加徑向光暈，科技感與空間深度立現：
+     ```css
+     background: radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.18), transparent 60%), #0f172a;
+     ```
+   - 畫面四周加上微暗角（Vignette）聚焦中央視覺：
+     ```css
+     box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.6);
+     ```
+4. **漸層文字與精緻字級（Gradient Typography）**：
+   - 重要大標題可使用金屬感或流光漸層文字：
+     ```css
+     background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+     -webkit-background-clip: text;
+     -webkit-text-fill-color: transparent;
+     letter-spacing: -0.02em; /* 負字距讓標題更緊湊幹練 */
+     ```
+5. **3D 透視與空間傾角展示（3D Perspective & Tilts）**：
+   - 展示網頁操作錄影、架構圖或程式碼卡片時，不要永遠死板平鋪！加上輕微的 3D 透視傾角，質感倍增：
+     ```css
+     perspective: 1000px;
+     transform: rotateX(6deg) rotateY(-8deg) scale(0.95);
+     transform-style: preserve-3d;
+     ```
+6. **光影混合模式（Mix-Blend-Mode）**：
+   - 光束、粒子、網格背景使用 `mix-blend-mode: screen` 或 `mix-blend-mode: overlay`，與底層自然融合不生硬。
+
 ### <a id="svg"></a>SVG 插圖（可存檔重複使用）
 
 需要圖示、示意圖、插圖而產品裡沒有現成圖檔時，可以自己寫 SVG：

@@ -57,7 +57,7 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
 | `/video-story` 整理故事 | `analyzed` | [story-guide.md#develop](story-guide.md#develop) |
 | `/video-design` 美術與角色 | `designed` | [design-guide.md](design-guide.md) |
 | `/video-storyboard` 分鏡、旁白與對白 | `script_generated` | [story-guide.md#storyboard](story-guide.md#storyboard)；**自行評估並嚴格控制單段長度（4–8秒最佳，勿超過12秒），避免視覺元素過多難以繪製與動畫**；已有 scene 時見 [story-guide.md#revise](story-guide.md#revise) |
-| `/video-scene` 產生 scene | `producing` → `ready_to_assemble` | [design-guide.md#animate](design-guide.md#animate)，渲染流程見 [rendering-guide.md](../product-video/rendering-guide.md) |
+| `/video-scene` 產生 scene | `producing` → `ready_to_assemble` | [design-guide.md#animate](design-guide.md#animate)，渲染流程見 [rendering-guide.md](../product-video/rendering-guide.md)；善用 CSS drop-shadow 落地陰影、環境光暈與混合模式提升繪本電影感 |
 | `/video-assemble` 合成 | `completed` | [rendering-guide.md#assemble](../product-video/rendering-guide.md#assemble) |
 | `/video-sync` 同步變更 | — | [workflow.md#sync](../product-video/workflow.md#sync) |
 | `/video-translate` 翻譯 | — | [workflow.md#translate](../product-video/workflow.md#translate)；`project.cast` 的 `name` 要一起翻譯，`script.md` 的【角色名】也要跟著改 |

@@ -200,6 +200,17 @@ export default async function setup({ root, width, height, cues }) {
 - **鏡頭**：要推近或平移時，把整個場景放在一個容器裡，對容器做 `transform`（例如 2 秒內 `scale` 1 → 1.15），角色跟背景一起動。一段最多一個鏡頭動作。
 - **控制份量**：一段只做 3–5 個重點動作；太多動作搶戲，也會拖慢渲染。
 
+### 善用現代 CSS 營造繪本光影氛圍
+
+動畫模組由 Chromium 瀏覽器渲染，善用 CSS 能讓原本平面的向量插畫立刻獲得繪本般的溫度與電影級氛圍：
+- **柔和落地陰影（Drop Shadows）**：
+  - 角色 SVG 加上 `filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.25))`，營造踏在地平線上的自然接觸陰影與層次感。
+- **環境光暈與天氣氛圍（Ambient Lighting）**：
+  - 在夜空場景疊加月光柔光：`background: radial-gradient(circle at 75% 20%, rgba(253, 230, 138, 0.3), transparent 60%)`。
+  - 清晨或黃昏疊加暖橘或淡紫色的漸層覆蓋層（`opacity: 0.15`）。
+- **發光物件與特效融合（Mix-Blend-Mode）**：
+  - 螢火蟲、月光倒影、水波反射、星光粒子使用 `mix-blend-mode: screen` 或 `overlay`，在深色背景上發出自然柔和的輝光。
+
 ### 共用美術與 `motion.uses`
 
 動畫模組讀進的每個共用檔都要列在 `scene.json` 的 `visual.motion.uses`（角色資料夾以 `/` 結尾），例如 `["@/assets/cast/fox/", "@/assets/sets/pond.svg"]`。列了，角色或場景改了這段就會自動標示需要重做；沒列的檔案改了，系統不知道。`src/lib/rig.js` 是範本的一部分，不用列。

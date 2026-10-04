@@ -92,7 +92,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 |---|---|
 | `/video-analyze` 分析產品 | [workflow.md#analyze](workflow.md#analyze) |
 | `/video-storyboard` 分鏡與旁白 | [script-guide.md](script-guide.md)；已有 scene 時重新規劃見 [script-guide.md#revise](script-guide.md#revise) |
-| `/video-scene` 產生 scene | [rendering-guide.md](rendering-guide.md) |
+| `/video-scene` 產生 scene | [rendering-guide.md](rendering-guide.md)；善用現代 CSS（多層彌散陰影、毛玻璃 backdrop-filter、氛圍光暈、漸層文字與 3D 空間傾角），打造頂級宣傳片質感 |
 | `/video-assemble` 合成 | [rendering-guide.md#assemble](rendering-guide.md#assemble) |
 | `/video-sync` 同步變更 | [workflow.md#sync](workflow.md#sync) |
 | `/video-translate` 翻譯 | [workflow.md#translate](workflow.md#translate) |
