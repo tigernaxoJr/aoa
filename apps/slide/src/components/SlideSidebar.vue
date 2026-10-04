@@ -41,47 +41,49 @@ const visualSlidesCount = computed(() => {
         v-for="slide in slides"
         :key="slide.index"
         @click="emit('select', slide.index)"
-        class="group relative flex cursor-pointer flex-col rounded-xl border p-3 transition-all text-left"
+        class="group relative flex cursor-pointer flex-col justify-between rounded-xl border p-3 transition-all text-left min-h-[115px]"
         :class="[
           selectedSlideIndex === slide.index
             ? 'border-sky-500 bg-sky-50/60 shadow-xs dark:border-sky-400 dark:bg-sky-950/40'
             : 'border-slate-200 bg-slate-50/70 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-slate-700 dark:hover:bg-slate-800'
         ]"
       >
-        <div class="flex items-center justify-between gap-1">
-          <span
-            class="font-mono text-xs font-bold"
-            :class="selectedSlideIndex === slide.index ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400'"
-          >
-            #{{ slide.index }}
-          </span>
-
-          <div class="flex flex-wrap items-center gap-1">
-            <span class="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-              {{ slide.layout }}
-            </span>
+        <div>
+          <div class="flex items-center justify-between gap-1">
             <span
-              v-for="vt in slide.visualTypes"
-              :key="vt"
-              class="rounded border border-sky-200 bg-sky-50 px-1 py-0.5 text-[9px] font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300"
+              class="font-mono text-xs font-bold"
+              :class="selectedSlideIndex === slide.index ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400'"
             >
-              {{ vt }}
+              #{{ slide.index }}
             </span>
+
+            <div class="flex flex-wrap items-center gap-1">
+              <span class="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                {{ slide.layout }}
+              </span>
+              <span
+                v-for="vt in slide.visualTypes"
+                :key="vt"
+                class="rounded border border-sky-200 bg-sky-50 px-1 py-0.5 text-[9px] font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300"
+              >
+                {{ vt }}
+              </span>
+            </div>
           </div>
+
+          <h4
+            class="mt-1.5 text-xs font-semibold line-clamp-1"
+            :class="selectedSlideIndex === slide.index ? 'text-sky-900 dark:text-sky-100' : 'text-slate-900 dark:text-white'"
+          >
+            {{ slide.title }}
+          </h4>
+
+          <p class="mt-1 text-[11px] leading-relaxed text-slate-500 line-clamp-2 dark:text-slate-400 font-mono">
+            {{ slide.content }}
+          </p>
         </div>
 
-        <h4
-          class="mt-2 text-xs font-semibold line-clamp-1"
-          :class="selectedSlideIndex === slide.index ? 'text-sky-900 dark:text-sky-100' : 'text-slate-900 dark:text-white'"
-        >
-          {{ slide.title }}
-        </h4>
-
-        <p class="mt-1 text-[11px] leading-relaxed text-slate-500 line-clamp-2 dark:text-slate-400 font-mono">
-          {{ slide.content }}
-        </p>
-
-        <div v-if="slide.notes" class="mt-2 text-[10px] text-amber-700 dark:text-amber-400 line-clamp-1">
+        <div v-if="slide.notes" class="mt-2 text-[10px] text-amber-700 dark:text-amber-400 line-clamp-1 border-t border-slate-200/50 pt-1 dark:border-slate-700/50">
           備忘錄：{{ slide.notes }}
         </div>
       </div>

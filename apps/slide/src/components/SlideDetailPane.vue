@@ -148,8 +148,9 @@ const slideThemeGradient = computed(() => {
         <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
           投影片版面即時檢視：
         </div>
+        <!-- 16:9 Presentation Stage Mockup -->
         <div
-          class="aspect-16/9 w-full overflow-hidden rounded-xl border border-slate-200 p-8 text-white shadow-inner flex flex-col justify-between transition-colors relative"
+          class="aspect-16/9 w-full min-h-[340px] max-h-[520px] overflow-hidden rounded-xl border border-slate-200/80 p-6 sm:p-8 text-white shadow-md flex flex-col justify-between transition-colors relative"
           :class="slideThemeGradient"
           :style="slideBackgroundStyle"
         >
@@ -159,8 +160,9 @@ const slideThemeGradient = computed(() => {
             class="absolute inset-0 bg-slate-950/65 backdrop-blur-[1px] -z-0 pointer-events-none"
           ></div>
 
-          <div class="overflow-y-auto pr-2 max-h-[320px] relative z-10">
-            <div class="flex items-center justify-between text-xs text-slate-400 mb-3 border-b border-slate-800 pb-2">
+          <!-- Slide content scrollable body with flex-1 -->
+          <div class="flex-1 overflow-y-auto pr-2 relative z-10 min-h-0 flex flex-col">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-3 border-b border-slate-800 pb-2 shrink-0">
               <span class="font-mono uppercase tracking-wider text-[11px]">{{ slide.layout }}</span>
               <span class="font-mono text-slate-400">#{{ slide.index }}</span>
             </div>
