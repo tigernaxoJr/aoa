@@ -118,20 +118,28 @@ const canNext = computed(() => !!props.slide && props.slide.index < props.totalS
           投影片版面即時檢視：
         </div>
         <div class="aspect-16/9 w-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-inner flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between text-xs text-slate-400">
+          <div class="overflow-y-auto pr-2 max-h-[320px]">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-3 border-b border-slate-800 pb-2">
               <span class="font-mono uppercase tracking-wider text-[11px]">{{ slide.layout }}</span>
               <span class="font-mono text-slate-400">#{{ slide.index }}</span>
             </div>
-            <h2 class="mt-4 text-2xl font-bold tracking-tight text-white">
-              {{ slide.title }}
-            </h2>
-            <div class="mt-4 max-h-[180px] overflow-y-auto font-mono text-xs leading-relaxed text-slate-300 whitespace-pre-wrap">
-              {{ slide.content }}
+            
+            <div
+              v-if="slide.renderedHtml"
+              class="slide-preview-html text-slate-200 text-sm leading-relaxed"
+              v-html="slide.renderedHtml"
+            ></div>
+            <div v-else>
+              <h2 class="text-2xl font-bold tracking-tight text-white mb-2">
+                {{ slide.title }}
+              </h2>
+              <div class="text-xs leading-relaxed text-slate-300">
+                {{ slide.content }}
+              </div>
             </div>
           </div>
 
-          <div v-if="slide.visualTypes.length" class="mt-4 flex items-center gap-2 pt-2 border-t border-slate-700/60">
+          <div v-if="slide.visualTypes.length" class="mt-3 flex items-center gap-2 pt-2 border-t border-slate-700/60 shrink-0">
             <span class="text-[10px] text-slate-400">視覺組件:</span>
             <span v-for="vt in slide.visualTypes" :key="vt" class="rounded bg-sky-500/20 px-2 py-0.5 text-[10px] text-sky-300">
               {{ vt }}
@@ -156,3 +164,60 @@ const canNext = computed(() => !!props.slide && props.slide.index < props.totalS
     </div>
   </div>
 </template>
+
+<style scoped>
+.slide-preview-html :deep(h1) {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+.slide-preview-html :deep(h2) {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.slide-preview-html :deep(h3) {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #38bdf8;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.slide-preview-html :deep(p) {
+  margin-bottom: 0.5rem;
+  color: #cbd5e1;
+}
+.slide-preview-html :deep(ul) {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #cbd5e1;
+}
+.slide-preview-html :deep(ol) {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #cbd5e1;
+}
+.slide-preview-html :deep(li) {
+  margin-bottom: 0.25rem;
+}
+.slide-preview-html :deep(code) {
+  background-color: rgba(30, 41, 59, 0.8);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.8em;
+  color: #38bdf8;
+  font-family: monospace;
+}
+.slide-preview-html :deep(blockquote) {
+  border-left: 3px solid #38bdf8;
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: #94a3b8;
+  font-style: italic;
+}
+</style>

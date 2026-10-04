@@ -1,8 +1,11 @@
+import { marked } from 'marked'
+
 export interface ParsedSlide {
   index: number
   title: string
   layout: string
   content: string
+  renderedHtml?: string
   notes?: string
   hasVisuals: boolean
   visualTypes: string[]
@@ -107,11 +110,31 @@ export function parseSlides(markdown: string): ParsedDeck {
     if (/```mermaid/i.test(bodyText)) visualTypes.push('Mermaid')
     if (/v-click/i.test(bodyText)) visualTypes.push('Motion / Clicks')
 
+    // Clean text without html tags and comments for text previews
+    const textWithoutComments = bodyText.replace(/<!--[\s\S]*?-->/g, '')
+    const cleanLines = textWithoutComments
+      .split('\n')
+      .filter((l) => !/^#{1,3}\s+/.test(l.trim())) // omit title heading from body preview
+      .join('\n')
+      .replace(/<[^>]+>/g, '') // strip raw html tags like <div>, <ThreeGlobe />
+      .replace(/::right::/g, '')
+      .replace(/::left::/g, '')
+      .trim()
+
+    // Render markdown to sanitized HTML using marked
+    let renderedHtml = ''
+    try {
+      renderedHtml = marked.parse(textWithoutComments, { async: false }) as string
+    } catch {
+      renderedHtml = bodyText
+    }
+
     slides.push({
       index: slides.length + 1,
       title,
       layout: slideFm.layout || (slides.length === 0 ? 'cover' : 'default'),
-      content: bodyText,
+      content: cleanLines || bodyText,
+      renderedHtml,
       notes,
       hasVisuals: visualTypes.length > 0,
       visualTypes,
