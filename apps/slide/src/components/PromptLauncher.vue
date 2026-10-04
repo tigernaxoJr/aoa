@@ -12,8 +12,8 @@ const agentPrompt = computed(() => {
   const title = project.value?.title || start.value?.title || '新簡報'
   const skill = api('skills/slidev-deck/SKILL.md')
   const lead = project.value
-    ? `請繼續製作「${folderName.value}」資料夾裡的 Slidev 簡報「${title}」。`
-    : `請在「${folderName.value}」資料夾為我製作一份 Slidev 簡報「${title}」。這個資料夾是網頁準備的，需求寫在 slide.start.json。`
+    ? `你的工作資料夾是我在網頁上開啟的「${folderName.value}」。請確認工作目錄已在此資料夾，繼續製作 Slidev 簡報「${title}」。`
+    : `你的工作資料夾是我在網頁上準備好的「${folderName.value}」。請確認你的工作目錄已切換至「${folderName.value}」，為我製作一份 Slidev 簡報「${title}」。這個資料夾是網頁準備的，需求寫在 slide.start.json，不要在其他地方建立專案。`
   return `${lead}
 
 請先閱讀並遵循這份 Skill：${skill}
@@ -35,8 +35,16 @@ const agentPrompt = computed(() => {
       <CopyButton :text="agentPrompt" label="複製完整提示詞" />
     </div>
 
+    <!-- Instructions banner -->
+    <div class="mt-4 rounded-xl border border-sky-200 bg-sky-50/70 p-3.5 text-xs text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200">
+      <div class="flex items-start gap-2">
+        <span class="font-semibold shrink-0">💡 提示：</span>
+        <span>請在 Agent 中開啟與網頁相同的<strong>「{{ folderName }}」</strong>資料夾（若 Agent 詢問路徑，請選取或貼上該資料夾），再貼上下方的提示詞開始執行。</span>
+      </div>
+    </div>
+
     <!-- Prompt Box -->
-    <div class="mt-4">
+    <div class="mt-3">
       <div class="relative">
         <textarea
           readonly
