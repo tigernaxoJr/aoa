@@ -47,7 +47,7 @@ layout: two-cols
   <div v-click class="p-3 my-2 bg-slate-800/80 rounded border-l-4 border-sky-500 text-sm">
     2. Coding Agent 在本機自動撰寫 slides.md
   </div>
-  <div v-click class="p-3 my-2 bg-slate-800/80 rounded border-l-4 border-purple-500 text-sm">
+  <div v-click class="p-3 my-2 bg-slate-800/80 rounded border-l-4 border-amber-500 text-sm">
     3. 本機執行匯出腳本產出 output/slides.pdf
   </div>
 </div>

@@ -80,6 +80,8 @@ export async function openHandle(handle: FileSystemDirectoryHandle, remember = t
     }
     root.value = handle
     ui.remembered = null
+    state.value = null
+    activity.value = null
     await reload()
     if (ui.error) {
       root.value = null

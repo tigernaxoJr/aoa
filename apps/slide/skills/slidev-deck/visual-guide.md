@@ -8,7 +8,7 @@
 
 - **內嵌 SVG 代碼**：直接在 `slides.md` 內嵌 `<svg viewBox="0 0 800 400">...</svg>`，利用 Tailwind 樣式自適應容器。
 - **統一色彩基調**：
-  - 邊框：`#38bdf8`（Sky 400）、`#34d399`（Emerald 400）、`#a855f7`（Purple 500）。
+  - 邊框：`#38bdf8`（Sky 400）、`#34d399`（Emerald 400）、`#f59e0b`（Amber 500）。
   - 文字：`#f8fafc`（Slate 50）、`#94a3b8`（Slate 400）。
   - 背景：`#1e293b`（Slate 800 半透明）。
 - **箭頭與連接線**：使用 `<defs><marker id="arrow">...</marker></defs>` 保持架構圖與流程圖整潔美觀。

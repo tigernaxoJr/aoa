@@ -79,7 +79,7 @@ const visualSlidesCount = computed(() => {
       <div
         v-for="slide in slides"
         :key="slide.index"
-        class="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 transition-all hover:border-indigo-400 hover:shadow-xs dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-indigo-500"
+        class="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 transition-all hover:border-slate-400 hover:shadow-xs dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-slate-600"
       >
         <div>
           <!-- Card Header: Page Number, Layout, Visual Badges -->
@@ -94,7 +94,7 @@ const visualSlidesCount = computed(() => {
               <span
                 v-for="vt in slide.visualTypes"
                 :key="vt"
-                class="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300"
+                class="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
               >
                 {{ vt }}
               </span>

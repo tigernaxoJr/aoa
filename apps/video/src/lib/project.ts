@@ -195,11 +195,26 @@ export async function readyForNewProject(root: FileSystemDirectoryHandle) {
   return true
 }
 
+export const NIL_UUID = '00000000-0000-0000-0000-000000000000'
+
 /** Null when the folder has no project yet (the agent has not run init). */
 export async function loadProject(root: FileSystemDirectoryHandle): Promise<ProjectState | null> {
   const file = await tryFile(root, PROJECT_FILE)
   if (!file) return null
   const project = JSON.parse(await file.text()) as VideoProjectJson
+  // The unzipped template ships with a placeholder id; treat it as still being initialized by the agent.
+  if (project.project?.id === NIL_UUID) return null
+
+  const startFile = await tryFile(root, START_FILE)
+  if (startFile) {
+    try {
+      const startData = JSON.parse(await startFile.text())
+      if (startData.kind && !project.project.kind) {
+        project.project.kind = startData.kind
+      }
+    } catch {}
+  }
+
   const errors = schemaErrors('project', project).map((e) => `${PROJECT_FILE}: ${e}`)
   const scenes = errors.length ? [] : await Promise.all(project.scenes.map((ref) => loadScene(root, project, ref)))
   for (const s of scenes) errors.push(...s.errors)

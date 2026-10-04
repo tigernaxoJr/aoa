@@ -40,7 +40,7 @@ function stepStatus(stepId: string) {
             stepStatus(s.id) === 'completed'
               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
               : stepStatus(s.id) === 'active'
-                ? 'bg-indigo-600 text-white animate-pulse'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs ring-2 ring-slate-400/30'
                 : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
           ]"
         >
@@ -50,7 +50,7 @@ function stepStatus(stepId: string) {
         <span
           :class="[
             stepStatus(s.id) === 'active'
-              ? 'font-semibold text-indigo-600 dark:text-indigo-400'
+              ? 'font-semibold text-slate-900 dark:text-white'
               : stepStatus(s.id) === 'completed'
                 ? 'text-slate-700 dark:text-slate-300'
                 : 'text-slate-400 dark:text-slate-500'
@@ -79,7 +79,7 @@ function stepStatus(stepId: string) {
             liveActivity.waitingForUser
               ? 'bg-amber-500 animate-ping'
               : liveActivity.current
-                ? 'bg-indigo-500 animate-pulse'
+                ? 'bg-emerald-500 animate-pulse'
                 : 'bg-slate-400'
           ]"
         ></span>

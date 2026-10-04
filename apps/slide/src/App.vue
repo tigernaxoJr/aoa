@@ -56,9 +56,9 @@ async function reload() {
           </a>
           <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">/</span>
           <span class="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap">
-            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 font-mono text-xs font-bold text-white" aria-hidden="true">S</span>
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 font-mono text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs" aria-hidden="true">S</span>
             <span class="hidden sm:inline">Slide Studio</span>
-            <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300">
+            <span class="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
               Slidev + AOA
             </span>
           </span>
@@ -138,7 +138,7 @@ async function reload() {
               class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
               :class="[
                 activeTab === 'slides'
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
                   : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               ]"
             >
@@ -151,7 +151,7 @@ async function reload() {
               class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
               :class="[
                 activeTab === 'pdf'
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
                   : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               ]"
             >
@@ -168,7 +168,7 @@ async function reload() {
               class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
               :class="[
                 activeTab === 'prompt'
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
                   : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               ]"
             >
