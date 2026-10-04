@@ -174,9 +174,16 @@ index-url-director/
 │       └── package.json
 │
 ├── apps/
-│   ├── video/
-│   │   ├── src/                  # 專注於 Video 特有視圖與協議
-│   │   └── template/             # 獨立範本（建置時由 agent-core 注入）
+│   ├── product-video/            # [演進] 專注於產品介紹影片（網頁分析、錄影截圖、DOM 擷取）
+│   │   ├── src/                  # 產品介紹工作台視圖
+│   │   ├── specs/                # 產品專屬 Schema 與線性 workflow（無 cast/rig 包袱）
+│   │   └── template/             # 獨立範本（含 capture.mjs、render-scene.mjs）
+│   │
+│   ├── story-video/              # [演進] 專注於故事繪本與角色動畫（角色工坊、聲音克隆、SVG 骨骼）
+│   │   ├── src/                  # 專屬「角色工坊」、繪本故事板、向量骨骼預覽
+│   │   ├── specs/                # 故事專屬 Schema（cast, cues, motion）與線性 workflow
+│   │   └── template/             # 獨立範本（含 rig.js、聲音克隆與試聽）
+│   │
 │   └── slide/
 │       ├── src/                  # 專注於 Slide 特有視圖與協議
 │       └── template/             # 獨立範本（建置時由 agent-core 注入）
@@ -190,19 +197,54 @@ index-url-director/
 
 ## 6. 漸進式遷移步驟 (Step-by-Step Migration)
 
-為避免大規模重構造成既有分支衝突或測試失敗，建議採漸進 3 階段執行：
+為避免大規模重構造成既有分支衝突或測試失敗，建議採漸進 4 階段執行：
 
 ### 階段一：抽取前端共用工具 (`packages/web-shared`)
 1. 建立 `packages/web-shared` 並配置 `package.json`。
-2. 將 `apps/video` 與 `apps/slide` 中完全一致的 `fsa.ts` 與 `CopyButton.vue` 移至 `packages/web-shared`。
-3. 更新 `apps/video/src` 與 `apps/slide/src` 的 import 路徑。
-4. 執行 `pnpm run typecheck` 與 `pnpm run test:web` 驗證。
+2. 將 `apps/video` 與 `apps/slide` 中完全一致的 `fsa.ts`、音訊重取樣工具（`audio.ts`）與 `CopyButton.vue` 移至 `packages/web-shared`。
+3. 更新各應用的 import 路徑。
+4. 執行 `pnpm run typecheck` 與前端測試驗證。
 
 ### 階段二：整合本機腳本共用源頭 (`packages/agent-core`)
 1. 梳理 `apps/video/template/scripts/lib/cli.mjs` 與各範本的通用底層。
-2. 將標準工具統整至 `packages/agent-core`。
+2. 將標準工具統整至 `packages/agent-core`（含 CosyVoice 3 / Edge-TTS 共用適配器）。
 3. 撰寫同步工具腳本 `pnpm run sync:scripts`（或整合於 `build-api.mjs`）。
 4. 在 `tests` 中加入一致性斷言（Assert），防止範本檔案遭私自手動變更導致脫鉤。
 
 ### 階段三：更新規範文件
 1. 更新 `AGENTS.md`：明確註記跨 App 共用需透過 `packages/*`，子 App 之間依然保持嚴格 Context 隔離。
+
+### 階段四：解耦故事動畫與產品介紹子應用 (`product-video` & `story-video`)
+1. 在共用底層穩固後，將現有以 `project.kind` 區隔的 `apps/video` 正式拆分為專屬的 `apps/product-video` 與 `apps/story-video`。
+2. 兩者分別對應專屬入口、簡化各自的狀態機與 Schema。
+3. 確保公開 API（如 `/api/video/*`）維持重定向或向後相容。
+
+---
+
+## 7. 核心架構紅利：故事動畫 (Story) 與產品介紹 (Product) 的完整解耦
+
+在共用底層（`packages/web-shared` 與 `packages/agent-core`）建立前，故事與產品介紹不得不擠在 `apps/video` 內以 `project.kind` 分支，造成多處架構妥協。本計畫實作後，兩者將具備獨立為專屬子應用的完整條件，帶來以下顯著優勢：
+
+### 7.1 徹底落實 Coding Agent 的上下文隔離 (Context Isolation)
+- **現況痛點**：Agent 處理童話故事時，工作目錄仍存在 `capture.mjs`、`requiresLogin`、網頁 DOM 擷取等產品邏輯；處理產品介紹時又會看到角色名冊與骨骼動畫，浪費 Token 且容易造成 Agent 推理幻覺。
+- **解耦後**：
+  - `apps/product-video`：Agent 上下文只有網頁分析、錄影擷取、產品賣點提煉。
+  - `apps/story-video`：Agent 上下文專注於故事大綱、角色工坊（Cast Studio）、聲音克隆與 SVG 向量骨骼繪製。
+
+### 7.2 消除 UI/UX 與狀態機的條件妥協
+- **專屬的前端工作台**：
+  - 故事工作台不必在導航列隱含切換，首頁就是「🎭 角色工坊 + 🎬 繪本故事板」的沉浸式介面。
+  - 產品工作台回歸純粹的「產品網址 ➔ 錄影擷取 ➔ 分鏡旁白」極簡介面。
+- **線性無分支的狀態機 (Workflow)**：
+  - 徹底移除 `workflow.json` 中的 `kinds` 條件判斷（不再需要「非 story 專案跳過 analyze」等特殊判斷）。
+  - 產品管線：`init ➔ analyze ➔ storyboard ➔ build_scene ➔ assemble`。
+  - 故事管線：`init ➔ story ➔ design (角色/美術) ➔ storyboard ➔ build_scene ➔ assemble`。
+
+### 7.3 平台首頁 (Portal) 產品定位鮮明
+在 `apps/portal` 首頁呈現清晰的三大產品卡片，終端使用者意圖直接對接：
+1. 🎬 **產品介紹影片生成器**：貼上網址或原始碼，自動分析錄影並產出專業展示片。
+2. 🎭 **故事繪本動畫工作台**：貼上故事或點子，提供線上錄音克隆、AI 骨骼角色繪製與童話動畫。
+3. 📑 **互動動態簡報**：以 Markdown 與向量元件快速生成網頁投影片。
+
+### 7.4 零代碼重複與維護成本
+由於 FSA 讀寫、Activity 輪詢、原子狀態鎖、TTS（CosyVoice 3 / Edge-TTS）等重型設施已完全下沉至 `packages/*`，拆分後兩個應用皆直接復用共用核心，**既享獨立子應用的純淨架構，又無代碼重複拷貝的技術債**。
