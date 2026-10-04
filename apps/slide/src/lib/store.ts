@@ -11,6 +11,8 @@ export const slidesMarkdown = ref<string | null>(null)
 export const start = ref<SlideStartConfig | null>(null)
 export const pdfFile = shallowRef<File | null>(null)
 export const pdfUrl = ref<string | null>(null)
+export const htmlFile = shallowRef<File | null>(null)
+export const htmlUrl = ref<string | null>(null)
 export const isPolling = ref(false)
 export const lastSync = ref<Date | null>(null)
 export const syncError = ref<string | null>(null)
@@ -23,6 +25,7 @@ export const parsedDeck = computed<ParsedDeck>(() => {
 })
 
 export const hasPdf = computed(() => !!pdfFile.value)
+export const hasHtml = computed(() => !!htmlFile.value)
 
 /** The folder is open but holds neither a project nor a start request: show the setup form. */
 export const needsSetup = computed(() => !!dirHandle.value && loaded.value && !project.value && !start.value)
@@ -40,6 +43,10 @@ export function resetDirectory() {
     URL.revokeObjectURL(pdfUrl.value)
     pdfUrl.value = null
   }
+  if (htmlUrl.value) {
+    URL.revokeObjectURL(htmlUrl.value)
+    htmlUrl.value = null
+  }
   dirHandle.value = null
   loaded.value = false
   project.value = null
@@ -47,6 +54,7 @@ export function resetDirectory() {
   activity.value = null
   slidesMarkdown.value = null
   pdfFile.value = null
+  htmlFile.value = null
   lastSync.value = null
   syncError.value = null
 }
@@ -99,6 +107,23 @@ export async function pollFiles() {
       }
     } catch {
       // Ignore PDF read error
+    }
+
+    // 5. Check output/dist/index.html or output/index.html
+    try {
+      let hFile = await tryFile(root, 'output/dist/index.html')
+      if (!hFile) hFile = await tryFile(root, 'output/index.html')
+      if (hFile && (!htmlFile.value || hFile.lastModified !== htmlFile.value.lastModified)) {
+        if (htmlUrl.value) URL.revokeObjectURL(htmlUrl.value)
+        htmlFile.value = hFile
+        htmlUrl.value = URL.createObjectURL(hFile)
+      } else if (!hFile && htmlFile.value) {
+        if (htmlUrl.value) URL.revokeObjectURL(htmlUrl.value)
+        htmlFile.value = null
+        htmlUrl.value = null
+      }
+    } catch {
+      // Ignore HTML read error
     }
 
     lastSync.value = new Date()

@@ -55,14 +55,19 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
    - **講者備忘錄**：寫在該頁**最後一個** HTML 註解裡（Slidev 的規則），例如 `<!-- 這裡先停頓，問聽眾是否用過 Agent -->`。不要寫成 `<!-- notes -->` 這種標籤；頁中其他註解不會被當成備忘錄。
    完成後展示給使用者確認，`pnpm run state project --status drafted`。
 3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。內嵌 SVG 架構圖與流程圖、在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。完成後 `pnpm run state project --status visualized`。
-4. **匯出 PDF（`/slide-export`）**：見 [export-guide.md](export-guide.md)。`pnpm run export` 產出 `output/slides.pdf`，成功後 `pnpm run state project --status exported`；失敗時 `--status failed` 並把錯誤用白話告訴使用者。
+4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。
+   - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
+   - **匯出單檔 HTML**：`pnpm run build --single-file` 產出單檔網頁簡報（放於 `output/index.html` 或 `dist/`，開箱即播）。
+   成功後 `pnpm run state project --status exported`；失敗時 `--status failed` 並把錯誤用白話告訴使用者。
 
-完成後告訴使用者可在網頁工作台 {{SITE_URL}}/slide/ 開啟這個資料夾預覽每一頁與 PDF。
+完成後告訴使用者可在網頁工作台 {{SITE_URL}}/slide/ 開啟這個資料夾預覽每一頁、PDF 與 HTML。
 
 ---
 
 ## 3. 嚴格規則
 
-1. **資料不離開本機**：不把使用者資料上傳到任何外部端點。
-2. **單一真理來源**：簡報內容只在 `slides.md`；狀態只透過 `pnpm run state` 修改，不手寫 `slide.project.json` / `slide.activity.json`。
-3. **向量優先**：圖表與圖示優先使用 SVG 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。
+1. **語言與溝通**：全程使用繁體中文（正體中文），每個階段結束時必須停下來讓使用者確認。
+2. **專案目錄規範**：新專案依 §1 下載範本、以 manifest SHA-256 驗證後解壓至目前目錄，依 slide.start.json 填寫 slide.project.json；嚴禁另建子資料夾。
+3. **資料不離開本機**：不把使用者資料上傳到任何外部端點。
+4. **單一真理來源**：簡報內容只在 `slides.md`；狀態只透過 `pnpm run state` 修改，不手寫 `slide.project.json` / `slide.activity.json`。
+5. **向量優先**：圖表與圖示優先使用 SVG 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。

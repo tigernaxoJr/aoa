@@ -20,7 +20,22 @@ pnpm run export
 pnpm exec slidev export --with-clicks --output output/slides-clicks.pdf
 ```
 
-## 3. 匯出 PNG 圖片
+## 3. 匯出單檔 HTML 互動簡報（方便放映展示）
+
+```bash
+pnpm run export:html
+```
+
+或直接以 Slidev CLI 匯出單一獨立 HTML 檔案（所有 JavaScript、CSS 與圖片皆內嵌）：
+```bash
+pnpm exec slidev build --single-file --out output/dist
+```
+
+產出包含完整簡報動畫、演講者備忘錄與鍵盤控制的互動網頁，離線瀏覽器雙擊即可全螢幕播放，非常適合演講現場投影！
+
+---
+
+## 4. 匯出 PNG 圖片
 
 適合分享到社群或製作縮圖：
 
@@ -30,7 +45,7 @@ pnpm run export:png
 
 ---
 
-## 4. 排錯與注意事項
+## 5. 排錯與注意事項
 
 - **Playwright 瀏覽器未安裝**：出現 `Executable doesn't exist at...` 時執行 `pnpm exec playwright install chromium`。
 - **Three.js 畫面在 PDF 中空白**：`WebGLRenderer` 必須設定 `preserveDrawingBuffer: true`（範本的 `ThreeGlobe.vue` 已設定），否則列印時畫布已被清空。

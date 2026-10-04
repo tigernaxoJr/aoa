@@ -16,10 +16,7 @@ const agentPrompt = computed(() => {
     : `你的工作資料夾是我在網頁上準備好的「${folderName.value}」。請確認你的工作目錄已切換至「${folderName.value}」，為我製作一份 Slidev 簡報「${title}」。這個資料夾是網頁準備的，需求寫在 slide.start.json，不要在其他地方建立專案。`
   return `${lead}
 
-請先閱讀並遵循這份 Skill：${skill}
-（新專案依 Skill §1 下載範本、以 manifest 的 SHA-256 驗證後解壓，再依 slide.start.json 填寫 slide.project.json；不要另建子資料夾。）
-
-全程使用繁體中文，每個階段結束時停下來讓我確認。`
+請先閱讀並遵循這份 Skill：${skill}`
 })
 </script>
 

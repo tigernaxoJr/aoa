@@ -7,6 +7,7 @@ import PromptLauncher from './components/PromptLauncher.vue'
 import SlideDeckView from './components/SlideDeckView.vue'
 import {
   dirHandle,
+  hasHtml,
   hasPdf,
   isPolling,
   lastSync,
@@ -118,6 +119,12 @@ async function reload() {
 
           <div class="flex items-center gap-2">
             <span
+              v-if="hasHtml"
+              class="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-950/60 dark:text-sky-400"
+            >
+              ✓ HTML 已匯出
+            </span>
+            <span
               v-if="hasPdf"
               class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
             >
@@ -155,9 +162,9 @@ async function reload() {
                   : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               ]"
             >
-              PDF 成果 (PDF Output)
+              成果放映 (PDF &amp; HTML)
               <span
-                v-if="hasPdf"
+                v-if="hasPdf || hasHtml"
                 class="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500"
               ></span>
             </button>
