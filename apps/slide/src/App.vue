@@ -15,18 +15,11 @@ import {
   pollFiles,
   project,
   resetDirectory,
+  slidesMarkdown,
   start,
 } from './lib/store'
 
-const activeTab = ref<'slides' | 'pdf' | 'prompt'>('slides')
-// A prepared folder has nothing to preview until the Agent runs: open on the prompt to copy.
-watch(
-  () => !!start.value && !project.value,
-  (waiting) => {
-    if (waiting) activeTab.value = 'prompt'
-  },
-  { immediate: true },
-)
+const activeTab = ref<'slides' | 'pdf'>('slides')
 
 const folderName = computed(() => dirHandle.value?.name || '')
 const projectTitle = computed(() => project.value?.title || start.value?.title || folderName.value || '未命名簡報')
@@ -136,59 +129,53 @@ async function reload() {
         <!-- Activity & Step Progress -->
         <ActivityBanner />
 
-        <!-- Navigation Tabs -->
-        <div class="border-b border-slate-200 dark:border-slate-800">
-          <nav class="flex gap-6">
-            <button
-              type="button"
-              @click="activeTab = 'slides'"
-              class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
-              :class="[
-                activeTab === 'slides'
-                  ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-              ]"
-            >
-              簡報內容預覽 (Slides)
-            </button>
-
-            <button
-              type="button"
-              @click="activeTab = 'pdf'"
-              class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
-              :class="[
-                activeTab === 'pdf'
-                  ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-              ]"
-            >
-              成果放映 (PDF &amp; HTML)
-              <span
-                v-if="hasPdf || hasHtml"
-                class="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500"
-              ></span>
-            </button>
-
-            <button
-              type="button"
-              @click="activeTab = 'prompt'"
-              class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
-              :class="[
-                activeTab === 'prompt'
-                  ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-              ]"
-            >
-              Agent 指令 (Prompt)
-            </button>
-          </nav>
+        <!-- Awaiting Agent setup: show PromptLauncher prominently -->
+        <div v-if="!project && !slidesMarkdown" class="space-y-4">
+          <PromptLauncher />
         </div>
 
-        <!-- Tab Panels -->
-        <div>
-          <SlideDeckView v-if="activeTab === 'slides'" />
-          <PdfViewer v-else-if="activeTab === 'pdf'" />
-          <PromptLauncher v-else-if="activeTab === 'prompt'" />
+        <!-- Agent has initialized project or generated slides: show workbench tabs -->
+        <div v-else class="space-y-4">
+          <!-- Navigation Tabs -->
+          <div class="border-b border-slate-200 dark:border-slate-800">
+            <nav class="flex gap-6">
+              <button
+                type="button"
+                @click="activeTab = 'slides'"
+                class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
+                :class="[
+                  activeTab === 'slides'
+                    ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                ]"
+              >
+                簡報內容預覽 (Slides)
+              </button>
+
+              <button
+                type="button"
+                @click="activeTab = 'pdf'"
+                class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
+                :class="[
+                  activeTab === 'pdf'
+                    ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                ]"
+              >
+                成果放映 (PDF &amp; HTML)
+                <span
+                  v-if="hasPdf || hasHtml"
+                  class="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500"
+                ></span>
+              </button>
+            </nav>
+          </div>
+
+          <!-- Tab Panels -->
+          <div>
+            <SlideDeckView v-if="activeTab === 'slides'" />
+            <PdfViewer v-else-if="activeTab === 'pdf'" />
+          </div>
         </div>
       </div>
     </main>
