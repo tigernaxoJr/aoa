@@ -77,6 +77,9 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    - 不使用系統管理員權限、不修改系統設定；安裝需要使用者點擊確認時，告訴他會看到什麼視窗、要按哪個按鈕。
 7. **Gates**：依 `schemas/workflow.json` 的 `gates`，用白話說明並取得確認：
    - `onlineTtsConsent`：例如「旁白語音會用微軟的線上語音服務產生，旁白文字會傳給微軟。可以嗎？不行的話可以改用電腦內建的語音或自己錄音。」。使用者不同意時，改選離線 provider 或 `manual`。
+   - `asrConsent`：若欲啟用 AI 自動檢查發音功能（防止多音字/破音字讀錯），向使用者確認：
+     「系統具備語音合成後自動以本地 ASR 回聽檢查發音的功能。這需要使用本機開源模型，我會依您的硬體規格自動挑選：具備獨立顯卡（VRAM ≥ 4GB）預設推薦 **Qwen/Qwen3-ASR-1.7B**（辨識精確度更高）；無獨立顯卡或 CPU 輕量環境預設推薦 **Qwen/Qwen3-ASR-0.6B**（佔用小於 1.5GB、推論極快）。全程在本機執行、完全無雲端隱私疑慮。請問是否同意啟用並安裝？」
+     使用者同意時，以 `pnpm run state` 記錄 `project.asr = { provider: "qwen-asr", model: "<依硬體推薦的模型>", consent: { installAsr: true, grantedAt: "<時間>" } }`；不同意時記錄 `project.asr.provider = "none"`。
    以 `pnpm run state` 寫入結果。
    - `productLogin`（`sources.requiresLogin` 為 true 時）：在這裡就請使用者登入，不要等到分析時才發現，做法見 [workflow.md#login](workflow.md#login)。登入結果不寫入 JSON。
 8. **驗證**：執行 `pnpm run validate`，通過後告知使用者專案已建立、資料夾在哪裡（用「文件 > acme-video」這種說法），並直接問他是否要開始分析產品（即 analyze 步驟），不必要求他輸入指令。

@@ -25,6 +25,14 @@
       "ask": "先提醒：錄影會拍到登入後畫面上的一切（客戶名稱、email、金額），建議用展示用帳號，或經同意後把敏感處改成示意資料（domEditConsent）。再說明：會打開一個獨立的瀏覽器視窗（為了安全，不用平常的瀏覽器，所以要再登入一次；視窗上方可能寫著受自動測試軟體控制，這是正常的），請使用者像平常一樣登入，帳號密碼只在那個視窗輸入，Agent 看不到；登入完成後關閉視窗即可。然後執行 pnpm run login。",
       "record": "不寫入 JSON；pnpm run login 輸出 signed in 即成立。輸出 no sign-in page was seen 時問使用者是否已登入",
       "onDecline": "不擷取需要登入的頁面：改用使用者提供的截圖或錄影（user-asset），或只擷取不需登入的公開頁面。"
+    },
+    "asrConsent": {
+      "appliesWhen": "欲啟用 ASR 自動檢查發音與校正時",
+      "check": "project.asr.consent.installAsr == true",
+      "blocks": ["tts"],
+      "ask": "告知使用者：系統具備「AI 自動檢查與校正 TTS 發音」功能，需要使用本機語音辨識模型。我們會自動偵測您的電腦硬體配備：具備獨立顯卡且 VRAM 充裕時預設推薦 Qwen/Qwen3-ASR-1.7B（辨識能力最高）；無獨立顯卡或 CPU 輕量環境則預設推薦 Qwen/Qwen3-ASR-0.6B（佔用小於 1.5GB、推論極快）。模型完全在本地執行、零雲端隱私疑慮、無需任何 API key。請問是否同意安裝並啟用？",
+      "record": "project.asr = { provider: 'qwen-asr', model: '<依硬體推薦的模型>', consent: { installAsr: true, grantedAt } }",
+      "onDecline": "設定 project.asr = { provider: 'none' }，不進行 ASR 自動檢驗，僅依賴腳本內的發音標記 [字幕](tts: 發音) 與發音字典。"
     }
   },
   "steps": [

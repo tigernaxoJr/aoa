@@ -63,3 +63,16 @@ test('parseScript gives 【name】 lines to that character and the rest to the n
 test('parseScript keeps ordinary brackets that do not start a line', () => {
   assert.deepEqual(parseScript('他說【小心】就跑了。\n'), [{ type: 'text', lines: ['他說【小心】就跑了。'] }])
 })
+
+test('parseScript separates display captions from spoken TTS text using inline tags', () => {
+  const blocks = parseScript('歡迎來到[重慶](tts: 蟲慶)！\n')
+  assert.deepEqual(blocks[0].lines, ['歡迎來到重慶！'])
+  assert.deepEqual(blocks[0].spokenLines, ['歡迎來到蟲慶！'])
+})
+
+test('parseScript applies pronunciation dictionary without altering caption text', () => {
+  const blocks = parseScript('閱讀這一行行程式碼。\n', { pronunciation: { 一行行: '一航航' } })
+  assert.deepEqual(blocks[0].lines, ['閱讀這一行行程式碼。'])
+  assert.deepEqual(blocks[0].spokenLines, ['閱讀這一航航程式碼。'])
+})
+

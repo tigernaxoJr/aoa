@@ -139,10 +139,37 @@ export interface VideoProjectJson {
         "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual" | "cosyvoice3" | "cosyvoice";
       voice?: string;
       /**
+       * 全域專有名詞發音校正對照表：{ "原字/詞": "發音替換字或注音" }，用以分離字幕與發音文本。
+       */
+      pronunciation?: {
+        [k: string]: string | undefined;
+      };
+      /**
        * 連網 TTS 的使用者同意紀錄。
        */
       consent?: {
         onlineTts: boolean;
+        /**
+         * ISO 8601 / RFC 3339 日期時間，須含時區。
+         */
+        grantedAt?: string;
+      };
+    };
+    /**
+     * ASR 語音辨識與發音校正設定。
+     */
+    asr?: {
+      provider?: "none" | "qwen-asr" | "whisper-cli" | "faster-whisper" | "openai" | "fake";
+      /**
+       * ASR 模型：依硬體預設推薦 Qwen/Qwen3-ASR-1.7B（具備 GPU）或 Qwen/Qwen3-ASR-0.6B（CPU/輕量環境）。
+       */
+      model?: "Qwen/Qwen3-ASR-1.7B" | "Qwen/Qwen3-ASR-0.6B" | "custom";
+      autoPatch?: boolean;
+      /**
+       * 本地 ASR 模型安裝或連網 ASR 的使用者同意紀錄。
+       */
+      consent?: {
+        installAsr: boolean;
         /**
          * ISO 8601 / RFC 3339 日期時間，須含時區。
          */
@@ -233,6 +260,12 @@ export interface SceneJson {
      * 專案內的相對路徑，使用正斜線。不得為絕對路徑、不得含 `..` 片段、不得含反斜線。scene.json 中的路徑相對於該 scene 目錄；以 `@/` 開頭表示相對於專案根目錄（例如 `@/assets/logo.png`）。
      */
     audioFile?: string;
+    /**
+     * Scene 專屬發音補丁對照表：{ "原字/詞": "發音替換字或注音" }。
+     */
+    pronunciation?: {
+      [k: string]: string | undefined;
+    };
   };
   /**
    * 以 `x-` 開頭的欄位保留給使用者或第三方工具自訂，Agent 必須原樣保留。

@@ -74,7 +74,12 @@
         },
         "voice": { "description": "省略時沿用 project.tts.voice。", "type": "string", "minLength": 1 },
         "speed": { "type": "number", "minimum": 0.5, "maximum": 2, "default": 1 },
-        "audioFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "assets/narration.mp3" }
+        "audioFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "assets/narration.mp3" },
+        "pronunciation": {
+          "description": "Scene 專屬發音補丁對照表：{ \"原字/詞\": \"發音替換字或注音\" }。",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
       }
     },
     "visual": {

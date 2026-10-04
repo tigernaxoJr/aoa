@@ -2,18 +2,61 @@
 import { SPEAKER } from './core.mjs'
 
 /**
- * Splits a script into blocks: { type: 'text', lines: string[], speaker? } separated by
+ * Extracts display text (for subtitles and captions) by resolving inline tts tags:
+ * `[重慶](tts: 蟲慶)` -> `重慶`
+ * `{重慶|tts: 蟲慶}` -> `重慶`
+ */
+export function toDisplayText(text) {
+  return text
+    .replace(/\[([^\]]+)\]\(tts:\s*([^)]+)\)/g, '$1')
+    .replace(/\{([^|]+)\|tts:\s*([^}]+)\}/g, '$1')
+}
+
+/**
+ * Extracts spoken text (for TTS audio synthesis) by resolving inline tts tags and pronunciation dictionary:
+ * `[重慶](tts: 蟲慶)` -> `蟲慶`
+ * `{重慶|tts: 蟲慶}` -> `蟲慶`
+ * And replacing words matching `dict` entries.
+ */
+export function toSpokenText(text, dict = null) {
+  let spoken = text
+    .replace(/\[([^\]]+)\]\(tts:\s*([^)]+)\)/g, '$2')
+    .replace(/\{([^|]+)\|tts:\s*([^}]+)\}/g, '$2')
+  if (dict && typeof dict === 'object') {
+    const keys = Object.keys(dict).filter(Boolean).sort((a, b) => b.length - a.length)
+    for (const key of keys) {
+      if (spoken.includes(key)) {
+        spoken = spoken.replaceAll(key, dict[key])
+      }
+    }
+  }
+  return spoken
+}
+
+/**
+ * Splits a script into blocks: { type: 'text', lines: string[], displayLines: string[], spokenLines: string[], speaker? } separated by
  * { type: 'pause', sec } for `<!-- pause 0.5 -->` markers. Other comments and blank lines are dropped.
  * A line starting with 【name】 is spoken by that character (the marker is not part of the text);
  * consecutive lines of the same speaker share a block, and unmarked lines are the narrator's.
+ * Options may include `pronunciation` mapping dict: { "word": "replacement" }.
  */
-export function parseScript(script) {
+export function parseScript(script, options = {}) {
+  const pronunciation = options.pronunciation ?? null
   const blocks = []
-  let lines = []
+  let rawLines = []
   let speaker = null
   const flush = () => {
-    if (lines.length) blocks.push({ type: 'text', lines, ...(speaker && { speaker }) })
-    lines = []
+    if (rawLines.length) {
+      const displayLines = rawLines.map(toDisplayText)
+      const spokenLines = rawLines.map((l) => toSpokenText(l, pronunciation))
+      const block = { type: 'text', lines: displayLines }
+      if (speaker) block.speaker = speaker
+      if (spokenLines.some((l, idx) => l !== displayLines[idx])) {
+        block.spokenLines = spokenLines
+      }
+      blocks.push(block)
+    }
+    rawLines = []
   }
   const tokens = script.split(/(<!--[\s\S]*?-->)/)
   for (const token of tokens) {
@@ -34,7 +77,7 @@ export function parseScript(script) {
         flush()
         speaker = who
       }
-      if (text) lines.push(text)
+      if (text) rawLines.push(text)
     }
   }
   flush()

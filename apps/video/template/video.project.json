@@ -38,6 +38,14 @@
       "consent": {
         "onlineTts": false
       }
+    },
+    "asr": {
+      "provider": "none",
+      "model": "Qwen/Qwen3-ASR-0.6B",
+      "autoPatch": true,
+      "consent": {
+        "installAsr": false
+      }
     }
   },
   "scenes": [],

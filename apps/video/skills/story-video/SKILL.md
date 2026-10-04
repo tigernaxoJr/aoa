@@ -40,11 +40,12 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
    - `updatedAt`：目前時間
    新專案沒有其他寫入者，這一次可以直接編輯 `video.project.json`；之後一律依 `AGENTS.md` 透過 `pnpm run state` 修改。
 6. **安裝與檢查**：照 [product-video SKILL.md §2 第 6 點](../product-video/SKILL.md#init)（Node.js、pnpm、`pnpm install`、瀏覽器）。故事影片不錄網頁，但渲染動畫仍需要瀏覽器。
-7. **Gate `onlineTtsConsent` 與語音引擎**：
+7. **Gate `onlineTtsConsent`、`asrConsent` 與語音引擎**：
    - 故事影片推薦使用 **CosyVoice 3 智慧角色配音**（若使用者指定 edge-tts 則使用微軟語音）。向使用者確認：
      「影片中的旁白與角色對白，預計會使用 **CosyVoice 3 智慧語音** 產生自然生動的聲音，在後續角色設計階段，我會**自動配合每位角色的年齡、個性與情境配上專屬語氣指令**（例如小阿明用純真熱情的男孩語氣、老茶農用略帶沙啞的慈祥老農語氣），亦支援自行錄音克隆。若環境連線至遠端語音服務，台詞會傳送至該端點轉換：
      • 請問可以使用嗎？（若想使用微軟 Edge-TTS 或電腦內建離線語音，也可以告訴我改用）」
    - 使用者同意（回覆「可以」或「好」）時，以 `pnpm run state` 記錄 `project.tts.consent.onlineTts: true`。故事影片沒有 `productLogin`、`domEditConsent`。
+   - **`asrConsent`（自動檢查發音）**：若欲啟用發音自我校正，向使用者說明：「系統具備語音合成後自動以本地 ASR 回聽檢查發音的功能。這需要使用本機開源模型，我會依您的硬體規格自動挑選：具備獨立顯卡（VRAM ≥ 4GB）預設推薦 **Qwen/Qwen3-ASR-1.7B**；無獨立顯卡或 CPU 輕量環境預設推薦 **Qwen/Qwen3-ASR-0.6B**（佔用小於 1.5GB、推論極快）。全程在本機執行、完全無雲端隱私疑慮。請問是否同意啟用並安裝？」同意時以 `pnpm run state` 記錄 `project.asr`，不同意則設為 `none`。
 8. **驗證**：`pnpm run validate`，通過後告訴使用者專案建好了、資料夾在哪裡，並直接問他要不要開始整理故事。
 
 ## 3. 各步驟的做法
@@ -55,7 +56,7 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
 |---|---|---|
 | `/video-story` 整理故事 | `analyzed` | [story-guide.md#develop](story-guide.md#develop) |
 | `/video-design` 美術與角色 | `designed` | [design-guide.md](design-guide.md) |
-| `/video-storyboard` 分鏡、旁白與對白 | `script_generated` | [story-guide.md#storyboard](story-guide.md#storyboard)；已有 scene 時見 [story-guide.md#revise](story-guide.md#revise) |
+| `/video-storyboard` 分鏡、旁白與對白 | `script_generated` | [story-guide.md#storyboard](story-guide.md#storyboard)；**自行評估並嚴格控制單段長度（4–8秒最佳，勿超過12秒），避免視覺元素過多難以繪製與動畫**；已有 scene 時見 [story-guide.md#revise](story-guide.md#revise) |
 | `/video-scene` 產生 scene | `producing` → `ready_to_assemble` | [design-guide.md#animate](design-guide.md#animate)，渲染流程見 [rendering-guide.md](../product-video/rendering-guide.md) |
 | `/video-assemble` 合成 | `completed` | [rendering-guide.md#assemble](../product-video/rendering-guide.md#assemble) |
 | `/video-sync` 同步變更 | — | [workflow.md#sync](../product-video/workflow.md#sync) |

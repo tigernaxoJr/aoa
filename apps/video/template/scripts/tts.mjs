@@ -11,6 +11,8 @@ import { ffmpeg, probeDuration } from './lib/media.mjs'
 import { blockCues, parseScript } from './lib/narration.mjs'
 import { DEFAULTS, UsageError, findRoot, findSceneRef, loadProject, readJson, resolveProjectPath, sceneFile } from './lib/project.mjs'
 import { ONLINE_PROVIDERS, getProvider } from './lib/tts-providers.mjs'
+import { checkAsrConsent, getAsrProvider } from './lib/asr-providers.mjs'
+import { diffPronunciation, suggestPatches } from './lib/pronunciation.mjs'
 
 /** Offline stand-in for tests and dry runs (VIDEO_AGENT_FAKE_TTS=1): a quiet tone, 0.25 s per character. */
 const fakeProvider = {
@@ -23,7 +25,7 @@ const fakeProvider = {
 }
 
 run(async (argv) => {
-  const { positional, flags } = parseArgs(argv, { sample: 1, text: 1 })
+  const { positional, flags } = parseArgs(argv, { sample: 1, text: 1, verify: 0, 'no-auto-patch': 0 })
   const root = findRoot()
   const project = loadProject(root)
   const settings = project.project.tts
@@ -38,7 +40,7 @@ run(async (argv) => {
   if (flags.sample) return sample(root, project, flags.sample, flags.text)
 
   const [id] = positional
-  if (!id) throw new UsageError('usage: tts <scene-id> | --list-voices | --sample <cast-id|narrator>')
+  if (!id) throw new UsageError('usage: tts <scene-id> [--verify] | --list-voices | --sample <cast-id|narrator>')
   const ref = findSceneRef(project, id)
   const scene = readJson(sceneFile(root, ref))
   const sceneDir = join(root, ref.dir)
@@ -49,7 +51,8 @@ run(async (argv) => {
   const audioFile = resolveProjectPath(root, sceneDir, narration.audioFile ?? DEFAULTS.audioFile)
   const captionsFile = join(sceneDir, DEFAULTS.captionsFile)
   const script = readFileSync(resolveProjectPath(root, sceneDir, narration.scriptFile), 'utf8')
-  const blocks = parseScript(script)
+  let pronunciation = { ...(settings.pronunciation ?? {}), ...(narration.pronunciation ?? {}) }
+  let blocks = parseScript(script, { pronunciation })
   mkdirSync(join(sceneDir, 'assets'), { recursive: true })
 
   if (!blocks.some((b) => b.type === 'text')) {
@@ -62,7 +65,7 @@ run(async (argv) => {
   if (providerName === 'manual') {
     if (!existsSync(audioFile)) throw new UsageError(`manual narration: record ${ref.dir}/${narration.audioFile ?? DEFAULTS.audioFile} first`)
     const duration = probeDuration(audioFile)
-    const lines = blocks.filter((b) => b.type === 'text').flatMap((b) => b.lines)
+    const lines = blocks.filter((b) => b.type === 'text').flatMap((b) => b.displayLines ?? b.lines)
     writeCaptions(captionsFile, blockCues(lines, duration))
     console.log(`${id}: manual narration ${duration.toFixed(2)}s, captions estimated from text length`)
     return 0
@@ -71,40 +74,94 @@ run(async (argv) => {
   const voices = new Map(blocks.filter((b) => b.type === 'text').map((b) => [b.speaker ?? null, voiceFor(project, narrator, b.speaker)]))
   for (const [speaker, v] of voices) checkVoice(settings, v, speaker ? `【${speaker}】 in ${id}` : `${id} (narration.voice or project.tts.voice)`)
 
-  const work = mkdtempSync(join(tmpdir(), 'avp-tts-'))
-  try {
-    // Synthesize each text block, render pauses as silence, normalize everything to the same WAV format.
-    const parts = []
-    const cues = []
-    let offset = 0
-    for (const [i, block] of blocks.entries()) {
-      const part = join(work, `part-${String(i).padStart(3, '0')}.wav`)
-      if (block.type === 'pause') {
-        ffmpeg(['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=mono', '-t', String(block.sec), part])
-      } else {
-        const blockDir = join(work, `block-${i}`)
-        mkdirSync(blockDir)
-        const v = voices.get(block.speaker ?? null)
-        const { file, words } = await synth(v.provider).synthesize({ text: block.lines.join('\n'), voice: v.voice, speed, workDir: blockDir })
-        ffmpeg(['-i', file, '-ar', '48000', '-ac', '1', part])
-        const duration = probeDuration(part)
-        for (const cue of blockCues(block.lines, duration, words)) {
-          cues.push({ start: round(cue.start + offset), end: round(cue.end + offset), text: cue.text, ...(block.speaker && { speaker: block.speaker }) })
+  // Synthesizes the scene audio and writes captions
+  async function doSynthesis(currentBlocks) {
+    const work = mkdtempSync(join(tmpdir(), 'avp-tts-'))
+    try {
+      const parts = []
+      const cues = []
+      let offset = 0
+      for (const [i, block] of currentBlocks.entries()) {
+        const part = join(work, `part-${String(i).padStart(3, '0')}.wav`)
+        if (block.type === 'pause') {
+          ffmpeg(['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=mono', '-t', String(block.sec), part])
+        } else {
+          const blockDir = join(work, `block-${i}`)
+          mkdirSync(blockDir)
+          const v = voices.get(block.speaker ?? null)
+          const spokenText = (block.spokenLines ?? block.lines).join('\n')
+          const { file, words } = await synth(v.provider).synthesize({ text: spokenText, voice: v.voice, speed, workDir: blockDir })
+          ffmpeg(['-i', file, '-ar', '48000', '-ac', '1', part])
+          const duration = probeDuration(part)
+          const displayLines = block.displayLines ?? block.lines
+          for (const cue of blockCues(displayLines, duration, words)) {
+            cues.push({ start: round(cue.start + offset), end: round(cue.end + offset), text: cue.text, ...(block.speaker && { speaker: block.speaker }) })
+          }
         }
+        offset += probeDuration(part)
+        parts.push(part)
       }
-      offset += probeDuration(part)
-      parts.push(part)
+      const list = join(work, 'parts.txt')
+      writeFileSync(list, parts.map((p) => `file '${p.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'))
+      ffmpeg(['-f', 'concat', '-safe', '0', '-i', list, '-c:a', 'libmp3lame', '-b:a', '128k', audioFile])
+      writeCaptions(captionsFile, cues)
+      return cues
+    } finally {
+      rmSync(work, { recursive: true, force: true })
     }
-    const list = join(work, 'parts.txt')
-    writeFileSync(list, parts.map((p) => `file '${p.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'))
-    ffmpeg(['-f', 'concat', '-safe', '0', '-i', list, '-c:a', 'libmp3lame', '-b:a', '128k', audioFile])
-    writeCaptions(captionsFile, cues)
-    const used = [...new Set([...voices.values()].map((v) => v.provider))].join(' + ')
-    console.log(`${id}: ${used} narration ${probeDuration(audioFile).toFixed(2)}s, ${cues.length} caption(s)`)
-    return 0
-  } finally {
-    rmSync(work, { recursive: true, force: true })
   }
+
+  let cues = await doSynthesis(blocks)
+
+  // ASR verification and pronunciation auto-correction
+  const asrConfig = project.project.asr ?? {}
+  const asrProviderName = process.env.VIDEO_AGENT_FAKE_ASR
+    ? 'fake'
+    : flags.verify
+      ? (asrConfig.provider && asrConfig.provider !== 'none' ? asrConfig.provider : 'qwen-asr')
+      : (asrConfig.provider && asrConfig.provider !== 'none' ? asrConfig.provider : null)
+
+  if (asrProviderName) {
+    if (!process.env.VIDEO_AGENT_FAKE_ASR && asrProviderName !== 'fake') {
+      checkAsrConsent(asrConfig)
+    }
+    const asr = getAsrProvider(asrProviderName)
+    const expectedText = cues.map((c) => c.text).join('')
+    let res = await asr.transcribe({
+      audioFile,
+      expectedText,
+      language: project.project.language ?? 'zh',
+      model: asrConfig.model,
+    })
+    let diff = diffPronunciation(expectedText, res.text)
+    const autoPatchEnabled = !flags['no-auto-patch'] && asrConfig.autoPatch !== false
+
+    if (!diff.passed && autoPatchEnabled && diff.issues.length > 0) {
+      const patches = suggestPatches(diff)
+      if (Object.keys(patches).length > 0) {
+        console.log(`${id}: ASR pronunciation mismatch detected; auto-applying patch:`, patches)
+        pronunciation = { ...pronunciation, ...patches }
+        blocks = parseScript(script, { pronunciation })
+        cues = await doSynthesis(blocks)
+        res = await asr.transcribe({ audioFile, expectedText, language: project.project.language ?? 'zh' })
+        diff = diffPronunciation(expectedText, res.text)
+        diff.autoPatched = true
+        diff.appliedPatches = patches
+      }
+    }
+
+    const reportFile = join(sceneDir, 'assets', 'pronunciation-report.json')
+    writeFileSync(reportFile, JSON.stringify(diff, null, 2) + '\n')
+    if (diff.passed) {
+      console.log(`${id}: ASR pronunciation check passed (${Math.round(diff.score * 100)}%)`)
+    } else {
+      console.warn(`${id}: ASR pronunciation warning (${diff.issues.length} issue(s)). Report written to ${ref.dir}/assets/pronunciation-report.json`)
+    }
+  }
+
+  const used = [...new Set([...voices.values()].map((v) => v.provider))].join(' + ')
+  console.log(`${id}: ${used} narration ${probeDuration(audioFile).toFixed(2)}s, ${cues.length} caption(s)`)
+  return 0
 })
 
 /** The narrator's voice, or a cast member's (their provider and voice, falling back to the project's). */
