@@ -86,25 +86,40 @@
 
 告訴使用者「設定稿在『文件 > moon-fox-video > brief > design-sheet.svg』，用瀏覽器打開就能看」，請他逐個角色確認長相；要改的地方改好再給一次。
 
-## 5. <a id="voices"></a>挑聲音與試聽
+## 5. <a id="cast-studio"></a>前端工作台「角色工坊 (Cast Studio)」與 AI 協同引導
 
-1. 依角色的年紀、個性，從 [SKILL.md §4](SKILL.md#voices) 挑聲音，寫進 `project.cast[].voice`。旁白的聲音和任何一個角色都要不同。
+在 `/video-design` 階段，使用者可以開啟網頁工作台，切換至 **「🎭 角色工坊 (Cast)」** 分頁，與 Agent 進行高效率協同：
+
+1. **AI 角色塑形訪談**：
+   - Agent 主動提議角色清單、名稱、個性特徵與外觀描述，並寫入 `video.project.json` 的 `project.cast`。
+   - 網頁端即時同步顯示各角色卡片。
+2. **聲音設定三選一 (Voice Strategy)**：
+   - **A. 線上錄音克隆 (CosyVoice 3 零樣本)**：引導使用者在網頁端點選「🎤 線上錄音克隆」，念 3-5 秒台詞，網頁自動轉為 16kHz PCM WAV 並存至 `assets/cast/<id>/voice-sample.wav`。Agent 自動配置 `provider: "cosyvoice3"`, `voice: "@/assets/cast/<id>/voice-sample.wav"`。
+   - **B. CosyVoice 3 自然語言指令**：使用基礎發音人搭配口氣、情緒或方言指令（例如：`中文男 <用熱情開朗的大學生語氣>`、`<用台語說>`）。
+   - **C. Edge-TTS 標準發音人**：選擇微軟神經網路語音（例如：`zh-TW-HsiaoChenNeural`、`zh-TW-YunJheNeural`）。
+3. **概念參考圖與 AI 生成向量骨骼 (Art Studio)**：
+   - 使用者可將喜歡的風格參考圖拖曳上傳至網頁（自動存為 `assets/cast/<id>/reference.png`）。
+   - 點擊「請 Agent 繪製 SVG 骨骼」複製格式化提示詞給 Agent。
+   - Agent 在 `assets/cast/<id>/<id>.svg` 繪製符合骨骼規範的分層向量部件（`<g id="head" data-pivot="...">` 等），網頁端即時渲染預覽並檢測骨骼完整度。
+
+## 6. <a id="voices"></a>挑聲音與試聽
+
+1. 依角色的年紀、個性挑聲音，寫進 `project.cast[].voice`。旁白的聲音和任何一個角色都要不同。
 2. 產生試聽檔，每個角色一句符合他個性的台詞：
 
    ```bash
    pnpm run tts --sample narrator
-   pnpm run tts --sample fox --text "哇！月亮掉進水裡了！"
-   pnpm run tts --sample owl --text "孩子，抬頭看看。"
+   pnpm run tts --sample zhiming --text "哇！太棒了，我們一起出發吧！"
    ```
 
    檔案在 `brief/voices/<id>.mp3`。連網的聲音服務要先過 `onlineTtsConsent`（初始化時已問過）。
-3. 告訴使用者試聽檔在哪裡，請他逐個確認；不喜歡的換一個再產生。
+3. 告訴使用者試聽檔在哪裡，或引導使用者直接在網頁端「角色工坊」點選播放器試聽驗收；不喜歡的換一個再產生。
 
 ### checkpoint
 
 角色長相與聲音**都**確認後，才 `pnpm run state project --status designed`，接著問使用者要不要開始寫分鏡。
 
-## 6. <a id="animate"></a>寫每一段的動畫模組（`/video-scene`）
+## 7. <a id="animate"></a>寫每一段的動畫模組（`/video-scene`）
 
 每段的 `assets/motion.js` 是一個動畫模組，基本規則（預設匯出 `setup(ctx)`、回傳 `seek(t)`、畫面只能由 `t` 決定、不用 `requestAnimationFrame` 與 CSS 動畫、亂數要固定種子）見 [rendering-guide.md#motion](../product-video/rendering-guide.md#motion)。故事專案的 `ctx` 另外有：
 

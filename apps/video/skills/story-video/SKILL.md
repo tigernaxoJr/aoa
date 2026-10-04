@@ -71,16 +71,21 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
 | `ja` | `ja-JP-NanamiNeural`（女）、`ja-JP-KeitaNeural`（男） |
 
 - 台灣華語的聲音只有三個；角色多時可以借用 `zh-CN` 的聲音（例如小男孩用 `zh-CN-YunxiaNeural`），但要先告訴使用者「這個聲音是中國大陸口音」，讓他決定。
+- **CosyVoice 3 語音克隆與自然語言指令**：
+  - 若環境已配置 CosyVoice 3，角色的 `provider` 可設為 `cosyvoice3`。
+  - **聲音克隆**：引導使用者在網頁工作台「角色工坊」錄音 3-5 秒（存成 `@/assets/cast/<id>/voice-sample.wav`），`voice` 欄位填入該音檔路徑。
+  - **自然語言指令**：`voice` 可使用 `基礎發音人 <自然語言語氣指令>`，例如 `中文男 <用熱情開朗的大學生語氣>` 或 `<用台語說>`。
 - 其他語言執行 `pnpm run tts --list-voices` 查詢。
-- 選好後用 `pnpm run tts --sample <角色id>`（旁白用 `narrator`）產生試聽檔給使用者聽，見 [design-guide.md#voices](design-guide.md#voices)。
+- 選好後用 `pnpm run tts --sample <角色id>`（旁白用 `narrator`）產生試聽檔給使用者聽，或在網頁端「角色工坊」一鍵試聽，見 [design-guide.md#cast-studio](design-guide.md#cast-studio)。
 
 ## 5. 與使用者互動的原則
 
 共通原則（說白話、一次問一件事、checkpoint 一定停下、更新 `video.activity.json`、告訴使用者怎麼看成果、網頁工作台）見 [product-video SKILL.md §5](../product-video/SKILL.md#interaction)。故事影片另外注意：
 
+- **善用前端「角色工坊 (Cast Studio)」**：在 `/video-design` 階段主動提醒使用者可打開工作台切換至「🎭 角色工坊」進行錄音、挑選情緒指令或拖入參考圖片，AI 與使用者保持同步。
 - **故事是使用者的**。可以提議情節、補細節，但主角是誰、結局怎麼走、想傳達什麼，由使用者決定；他的原句盡量保留在旁白或對白裡。
 - **三個 checkpoint**：故事定稿（`/video-story`）、角色長相與聲音（`/video-design`）、分鏡與完整稿（`/video-storyboard`）。之後每段渲染完都請使用者預覽。使用者沒有明確說「可以」之前，不往下一步。
-- **給看得到、聽得到的東西**：講故事時用白話從頭講一次；講角色時給設定稿（`brief/design-sheet.svg`）與試聽檔，用「文件 > moon-fox-video > brief > design-sheet.svg」這種方式告訴他在哪裡。
+- **給看得到、聽得到的東西**：講故事時用白話從頭講一次；講角色時給設定稿（`brief/design-sheet.svg`）與試聽檔，或提示至網頁端角色工坊預覽 SVG 骨骼與播放試聽。
 - **改角色很貴**：角色長相或聲音一改，用到的每一段都要重做。美術步驟要讓使用者看清楚再確認；之後他想改角色時，先說明會重做哪幾段、大約多久。
 - 給小朋友看的故事：避免恐怖、血腥的畫面與用詞；衝突用誇張可愛的方式表現。
 

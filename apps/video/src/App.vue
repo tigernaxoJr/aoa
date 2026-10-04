@@ -8,6 +8,7 @@ import SceneEditor from './components/SceneEditor.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import CompanionStatus from './components/CompanionStatus.vue'
+import CastPanel from './components/CastPanel.vue'
 import { companion, connect, takePairingFromUrl } from './lib/companion'
 import { close, outdated, reload, restore, state, syncTemplate, ui } from './lib/store'
 
@@ -15,6 +16,8 @@ const current = ref<string | null>(null)
 /** The open editor has edits not saved yet. */
 const dirty = ref(false)
 const detail = ref<HTMLElement | null>(null)
+const activeTab = ref<'scenes' | 'cast'>('scenes')
+const castCount = computed(() => state.value?.project.project.cast?.length ?? 0)
 
 /** The scene in the detail pane (null: the full video). Leaving unsaved edits asks first. */
 const selected = computed<string | null>({
@@ -103,7 +106,36 @@ watch(state, (st) => {
       </div>
       <ActivityBanner />
       <WorkflowBar />
-      <div class="grid items-start gap-4 lg:grid-cols-[minmax(320px,2fr)_3fr]">
+
+      <!-- Story Mode Tab Switcher (Scenes vs Cast) -->
+      <div v-if="state.project.project.kind === 'story'" class="flex items-center gap-2 border-b border-slate-200 pb-1 dark:border-slate-800">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-semibold transition"
+          :class="activeTab === 'scenes' ? 'border-sky-600 text-sky-600 dark:border-sky-400 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'"
+          @click="activeTab = 'scenes'"
+        >
+          <Icon name="film" :size="16" />
+          <span>🎬 分鏡故事板 ({{ state.scenes.length }} 幕)</span>
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-semibold transition"
+          :class="activeTab === 'cast' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'"
+          @click="activeTab = 'cast'"
+        >
+          <Icon name="user" :size="16" />
+          <span>🎭 角色工坊 ({{ castCount }} 人)</span>
+        </button>
+      </div>
+
+      <!-- Cast Panel View -->
+      <div v-if="state.project.project.kind === 'story' && activeTab === 'cast'">
+        <CastPanel />
+      </div>
+
+      <!-- Default Scenes Board View -->
+      <div v-else class="grid items-start gap-4 lg:grid-cols-[minmax(320px,2fr)_3fr]">
         <div class="lg:sticky lg:top-18 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:rounded-2xl">
           <SceneBoard v-model:selected="selected" />
         </div>

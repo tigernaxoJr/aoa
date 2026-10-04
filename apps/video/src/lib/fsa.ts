@@ -42,14 +42,19 @@ export async function readText(root: FileSystemDirectoryHandle, path: string) {
   return (await fileAt(root, path)).text()
 }
 
-/** Replaces a file's contents. createWritable() writes to a temporary file and swaps it in on close. */
-export async function writeText(root: FileSystemDirectoryHandle, path: string, text: string | Uint8Array<ArrayBuffer>) {
+/** Replaces a file's contents with text, binary buffer, or Blob. */
+export async function writeFile(root: FileSystemDirectoryHandle, path: string, data: Blob | BufferSource | string) {
   const { dirs, name } = split(path)
   const dir = await dirAt(root, dirs, true)
   const handle = await dir.getFileHandle(name, { create: true })
   const writable = await handle.createWritable()
-  await writable.write(text)
+  await writable.write(data)
   await writable.close()
+}
+
+/** Replaces a file's contents with text or Uint8Array. */
+export async function writeText(root: FileSystemDirectoryHandle, path: string, text: string | Uint8Array<ArrayBuffer>) {
+  return writeFile(root, path, text)
 }
 
 /** Project-relative paths of every file under `path` (empty when the directory is missing). */

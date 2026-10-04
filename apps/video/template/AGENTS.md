@@ -47,6 +47,16 @@
 
 故事專案的 `script.md` 中，以 `【角色名】` 開頭的行由 `project.cast` 裡同名的角色、用他的聲音說；其餘是旁白。動畫模組匯入的共用美術（`@/assets/cast/…`、`@/assets/sets/…`）要列在 `visual.motion.uses`，改了美術才會自動標示需要重做。
 
+**故事模式角色與聲音引導 SOP（`/video-design`）**：
+1. **角色塑形**：分析大綱主動列出登場角色，引導使用者確認個性外貌，寫入 `project.cast`。
+2. **聲音配置引導**：
+   - 告知使用者可在網頁工作台「角色工坊」進行 3-5 秒麥克風線上錄音做聲音克隆（儲存為 `assets/cast/<id>/voice-sample.wav`，由 CosyVoice 3 驅動）。
+   - 或選用 CosyVoice 3 自然語言指令（例如 `中文男 <用熱情開朗的大學生語氣>`、`<用台語說>`）或 Edge-TTS 發音人。
+   - 執行 `pnpm run tts --sample <id>` 生成試聽檔 `brief/voices/<id>.mp3`，引導使用者在網頁試聽確認。
+3. **向量美術繪製**：
+   - 提示使用者可拖曳參考圖至網頁（`assets/cast/<id>/reference.png`）。
+   - Agent 依角色特徵在 `assets/cast/<id>/<id>.svg` 繪製分層骨骼組件（`head`, `body`, `arm`, `leg`, 表情），供網頁端即時檢測與渲染。
+
 影片做到一半或已合成後，仍可再執行 `/video-storyboard` 重新規劃分鏡：只修改被點名的段落，保留的段落沿用現有影片，確認後以 `/video-sync` 只重做有變更的段落並重新合成。
 
 隨時可用：`/video-status`（狀態摘要）、`/video-sync`（只重做有變更的 scene 並重新合成）、`/video-approve <id>`（核准）、`/video-translate <locale>`（複製專案並翻譯）。

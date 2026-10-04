@@ -145,4 +145,22 @@ export async function reorder(root: Root, state: ProjectState, ids: string[]) {
   await guardedWrite(root, PROJECT_FILE, state.projectMtime, json(project))
 }
 
+/**
+ * Updates project.cast in video.project.json.
+ */
+export async function saveCast(root: Root, state: ProjectState, cast: VideoProjectJson['project']['cast']) {
+  await assertUnlocked(root)
+  const project: VideoProjectJson = {
+    ...state.project,
+    project: {
+      ...state.project.project,
+      cast,
+    },
+    updatedAt: now(),
+    updatedBy: 'user',
+  }
+  assertValid('project', project)
+  await guardedWrite(root, PROJECT_FILE, state.projectMtime, json(project))
+}
+
 export { FINAL_FILE }

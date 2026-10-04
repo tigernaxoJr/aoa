@@ -590,4 +590,33 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   })
   for (let i = 0; i < 100 && (await status()) !== '內容已變更'; i++) await new Promise((resolve) => setTimeout(resolve, 100))
   assert.equal(await status(), '內容已變更')
+
+  // Switch to Cast Studio Tab
+  await page.getByRole('button', { name: /角色工坊/ }).click()
+  await page.getByText('登場角色名冊').waitFor()
+  assert.match(await page.locator('main').innerText(), /小狐狸/)
+  assert.match(await page.locator('main').innerText(), /貓頭鷹/)
+
+  // Add a new character "志明"
+  await page.getByRole('button', { name: /新增角色/ }).first().click()
+  await page.getByPlaceholder('例如：志明').fill('志明')
+  await page.getByPlaceholder('例如：zhiming').fill('zhiming')
+  await page.getByPlaceholder(/例如：20歲熱血青年/).fill('熱血青年，個性樂觀')
+
+  // Click save
+  await page.getByRole('button', { name: '儲存角色' }).click()
+  await page.getByText('角色【志明】已儲存').waitFor({ timeout: 5000 })
+
+  // Verify project JSON in OPFS
+  const rawProject = await readOpfs(page, 'proj/video.project.json')
+  const savedProject = JSON.parse(rawProject)
+  const zhiming = savedProject.project.cast.find((c) => c.id === 'zhiming')
+  assert.ok(zhiming, 'zhiming is saved into video.project.json')
+  assert.equal(zhiming.name, '志明')
+  assert.equal(zhiming.description, '熱血青年，個性樂觀')
+  assert.equal(zhiming.provider, 'cosyvoice3')
+
+  // Switch back to Scenes Tab
+  await page.getByRole('button', { name: /分鏡故事板/ }).click()
+  assert.equal(await page.getByTestId('scene-scene-001').isVisible(), true)
 })

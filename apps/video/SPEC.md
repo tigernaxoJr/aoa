@@ -284,6 +284,17 @@ my-video-project/
 - 故事專案的角色美術放在 `assets/cast/<id>/`（一個 SVG 內以 `<g id>` 分出部件、`data-pivot` 標示支點），場景在 `assets/sets/`；動畫模組以範本的 `src/lib/rig.js` 擺姿勢，並把用到的共用檔列在 `visual.motion.uses`（資料夾以 `/` 結尾）。
 - `inputHash` 另外涵蓋 `motion.uses` 的檔案，以及該 scene 中有說話的角色的 `cast` 設定（D22）。
 - 動畫模組的 `setup(ctx)` 多收到 `cues`（含 `speaker` 的字幕時間軸）與 `cast`，讓說話的角色動嘴、做動作。
+- **角色工坊 (Cast Studio)**：當 `project.kind === 'story'` 時，前端工作台提供專屬角色管理視圖：
+  1. **角色名冊**：視覺化管理 `project.cast[]`（ID、名稱、外觀與性格描述），支援原子更新專案設定。
+  2. **聲音工坊 (Voice Studio)**：支援三大配音方式：
+     - *線上錄音克隆*：使用瀏覽器原生 `MediaRecorder` 錄音 3-5 秒，轉為標準 16kHz PCM WAV 直接寫入 `@/assets/cast/<id>/voice-sample.wav`，供 CosyVoice 3 零樣本克隆。
+     - *CosyVoice 3 語氣指令*：基礎發音人結合自然語言情緒／風格／方言指令（如 `中文男 <用熱情開朗的大學生語氣>`、`<用台語說>`）。
+     - *Edge-TTS 標準語音*：免 GPU 的微軟神經網路發音人選單。
+     - *試聽機制*：透過 `brief/voices/<id>.mp3` 即時在網頁端試聽驗收。
+  3. **視覺與美術工坊 (Art Studio)**：
+     - *參考概念圖*：支援拖曳上傳圖片至 `assets/cast/<id>/reference.png` 作為視覺設定基準。
+     - *向量骨骼預覽*：即時渲染 `assets/cast/<id>/<id>.svg`，並自動檢測 `<g id>` 與 `data-pivot` 骨骼部件（head, body, arm, leg, 表情）。
+     - *AI 繪圖提示詞*：一鍵複製格式化 Prompt 傳遞給 Coding Agent 繪製符合骨骼規格的向量組件。
 
 ### 4.4 多語系
 
