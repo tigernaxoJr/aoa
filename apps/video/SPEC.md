@@ -534,6 +534,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | `azure` / `openai` / `elevenlabs` | 使用者自帶 API key | 是 | key 只放 `.env`，Agent 不讀取、不寫入 JSON。**目前範本尚未實作**，執行時提示改用其他 provider |
 | `piper` | 完全離線 | 否 | 無 zh-TW 聲音，適合英文或隱私優先 |
 | `system` | Windows SAPI / macOS `say` / Linux `espeak-ng` | 否 | 跨平台聲音不一致；`voice` 可省略（使用系統預設聲音） |
+| `cosyvoice3`（或 `cosyvoice`） | 本地 CosyVoice 3 服務 / 語音克隆 | 預設否（本地） | 呼叫本地 `COSYVOICE_URL`（預設 `http://127.0.0.1:50000/api/tts`）；若指向遠端端點則需 `onlineTts` 同意；支援預設發音人或參考音檔 |
 | `manual` | 使用者自行錄音 | 否 | 放入 `assets/narration.mp3` 即跳過合成，只以 ffprobe 取音長 |
 
 規則：

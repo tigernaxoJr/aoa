@@ -34,7 +34,7 @@
     },
     "ttsProvider": {
       "description": "見 SPEC §7.4。",
-      "enum": ["edge-tts", "azure", "openai", "elevenlabs", "piper", "system", "manual"]
+      "enum": ["edge-tts", "azure", "openai", "elevenlabs", "piper", "system", "manual", "cosyvoice3", "cosyvoice"]
     },
     "extensions": {
       "description": "以 `x-` 開頭的欄位保留給使用者或第三方工具自訂，Agent 必須原樣保留。",

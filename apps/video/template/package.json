@@ -15,7 +15,9 @@
     "login": "node scripts/login.mjs",
     "render:scene": "node scripts/render-scene.mjs",
     "assemble": "node scripts/assemble.mjs",
-    "companion": "node scripts/companion.mjs"
+    "companion": "node scripts/companion.mjs",
+    "cosyvoice:setup": "python scripts/cosyvoice/setup.py",
+    "cosyvoice:serve": "python scripts/cosyvoice/server.py"
   },
   "dependencies": {
     "ajv": "^8.17.1",

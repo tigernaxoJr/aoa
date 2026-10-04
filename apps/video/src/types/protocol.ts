@@ -58,7 +58,8 @@ export interface VideoProjectJson {
       /**
        * 省略時沿用 project.tts.provider。
        */
-      provider?: "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual";
+      provider?:
+        "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual" | "cosyvoice3" | "cosyvoice";
       /**
        * 省略時沿用 project.tts.voice。
        */
@@ -134,7 +135,8 @@ export interface VideoProjectJson {
       /**
        * 見 SPEC §7.4。
        */
-      provider: "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual";
+      provider:
+        "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual" | "cosyvoice3" | "cosyvoice";
       voice?: string;
       /**
        * 連網 TTS 的使用者同意紀錄。
@@ -220,7 +222,8 @@ export interface SceneJson {
     /**
      * 省略時沿用 project.tts.provider。
      */
-    provider?: "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual";
+    provider?:
+      "edge-tts" | "azure" | "openai" | "elevenlabs" | "piper" | "system" | "manual" | "cosyvoice3" | "cosyvoice";
     /**
      * 省略時沿用 project.tts.voice。
      */

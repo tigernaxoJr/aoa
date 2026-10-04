@@ -34,6 +34,7 @@
 | **命令列解析基底 (CLI)** | `apps/video/template/scripts/lib/cli.mjs` | **95%** | 原生 Node.js 參數解析器（`parseArgs`）與腳本執行封裝（`run`、`UsageError`）。抽至 `packages/agent-core/cli.mjs`。 |
 | **原子檔案寫入與鎖** | 各範本中的 `writeJsonAtomic` 與 `.video-agent.lock` 邏輯 | **90%** | 透過臨時檔案（`.tmp`）與 `renameSync` 確保 Agent/UI 併發時不會產生半截 JSON。抽至 `packages/agent-core/fs-atomic.mjs`。 |
 | **Ajv Schema 載入器** | 各範本中的 `lib/schema.mjs` | **85%** | 自動載入 `schemas/*.schema.json`、編譯 Ajv 實例並輸出友善錯誤字串（`schemaErrors`）。抽至 `packages/agent-core/schema.mjs`。 |
+| **TTS 語音引擎與適配器 (CosyVoice 3)** | `apps/video/template/scripts/cosyvoice/` 與 `lib/tts-providers.mjs` | **100% (跨應用通用)** | 語音生成為平台通用能力（Video 旁白、Slide 演講者導覽、未來的語音播客）。**本機服務具單一實例性**：全機共用同一 `127.0.0.1:50000` 服務與一份 1.5GB 模型權重，避免重複佔用顯存。客戶端調度協議抽至 `packages/agent-core/tts/`。 |
 
 ---
 
@@ -166,7 +167,10 @@ index-url-director/
 │       ├── src/
 │       │   ├── cli.mjs           # 命令列解析與錯誤處理
 │       │   ├── fs-atomic.mjs     # 原子檔案鎖與寫入
-│       │   └── schema.mjs        # 通用 Ajv 載入與校驗錯誤格式化
+│       │   ├── schema.mjs        # 通用 Ajv 載入與校驗錯誤格式化
+│       │   └── tts/              # [共用 TTS] CosyVoice 3 / Edge-TTS 調度適配器
+│       ├── scripts/
+│       │   └── cosyvoice/        # 本機 CosyVoice 3 服務 (整機共用 50000 埠與模型權重)
 │       └── package.json
 │
 ├── apps/

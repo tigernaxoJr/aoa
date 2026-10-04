@@ -108,7 +108,7 @@ pnpm run state scene-003 --patch-file .tmp/patch.json
 
 | Gate | 何時需要 | 未通過時不得執行 |
 |---|---|---|
-| `onlineTtsConsent` | TTS provider 為 `edge-tts`、`azure`、`openai`、`elevenlabs` | `tts` |
+| `onlineTtsConsent` | TTS provider 為 `edge-tts`、`azure`、`openai`、`elevenlabs`，或 `cosyvoice3` / `cosyvoice` 配置為遠端伺服器時 | `tts` |
 | `productLogin` | `sources.requiresLogin` 為 true，或 `capture` 輸出 `gate productLogin`（被導到登入頁、登入過期） | `capture`；以 `pnpm run login` 讓使用者自己登入，不寫入 JSON |
 | `domEditConsent` | scene 的 `capture.actions` 有 `script`（錄製時改寫頁面，例如報表資料太少時填入示意資料） | 該 scene 的 `capture` |
 
@@ -139,3 +139,5 @@ draft → assets_ready → rendering → rendered → approved
 | `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`）；單一 scene 也以多個瀏覽器分攤影格（`--pages N`） |
 | `pnpm run assemble` | 依順序合成 `output/final.mp4` |
 | `pnpm run companion` | 啟動本機助手（讓網頁工作台直接重做 scene、合成）；會一直執行，要在背景啟動。只在使用者同意後執行，見 Skill `SKILL.md` §6 |
+| `pnpm run cosyvoice:setup` | 安裝本機 CosyVoice 3 服務環境與依賴（使用前需取得使用者同意） |
+| `pnpm run cosyvoice:serve` | 在本機背景啟動 CosyVoice 3 HTTP 伺服器（監聽 127.0.0.1:50000） |

@@ -22,7 +22,8 @@
 CosyVoice 3 支援以下兩種運行情境：
 
 ### 模式 A：本地 HTTP 服務（預設，推薦）
-* **運作機制**：使用者於本機顯卡環境啟動 CosyVoice 3 服務（例如官方/社群 FastAPI 容器或獨立 Python 進程，預設埠為 `http://127.0.0.1:50000`）。
+* **運作機制**：使用者於本機顯卡環境啟動 CosyVoice 3 服務（預設埠為 `http://127.0.0.1:50000`）。
+* **模型選擇**：採用阿里官方開源的 **CosyVoice 3 代 Basic 基礎模型**（`FunAudioLLM/Fun-CosyVoice3-0.5B-2512`），**嚴格排除 RL (Fun-CosyVoice3-0.5B-2512_RL) 版本**以確保環境穩定與推論成功率。
 * **資料隱私**：旁白文本與合成音訊全程不出本機。
 * **連網授權**：視為本地離線服務（類似 `piper` / `system`），無需強制要求 `onlineTts` 使用者同意。
 * **環境變數**：`COSYVOICE_URL`（預設：`http://127.0.0.1:50000/api/tts`）。
@@ -126,10 +127,10 @@ cosyvoice3: {
 {
   "cast": [
     {
-      "id": "alice",
-      "name": "愛麗絲",
+      "id": "zhiming",
+      "name": "志明",
       "provider": "cosyvoice3",
-      "voice": "@/assets/voices/alice-prompt.wav"
+      "voice": "@/assets/voices/zhiming-prompt.wav"
     }
   ]
 }

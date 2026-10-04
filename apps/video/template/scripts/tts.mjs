@@ -120,15 +120,24 @@ function voiceFor(project, narrator, speaker) {
   return { provider: fake ? 'fake' : provider, voice }
 }
 
+function isOnline(provider) {
+  if (ONLINE_PROVIDERS.has(provider)) return true
+  if (provider === 'cosyvoice3' || provider === 'cosyvoice') {
+    const url = process.env.COSYVOICE_URL ?? ''
+    return url !== '' && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url)
+  }
+  return false
+}
+
 function checkVoice(settings, { provider, voice }, what) {
   if (provider === 'manual') throw new UsageError(`manual narration cannot be mixed with character voices (${what}); record the whole scene or pick a provider for the cast`)
-  if (ONLINE_PROVIDERS.has(provider) && !settings.consent?.onlineTts) {
+  if (isOnline(provider) && !settings.consent?.onlineTts) {
     throw new UsageError(
       `gate onlineTtsConsent: ${provider} sends the narration text to an online service. ` +
         'Ask the user, then record consent in project.tts.consent, or switch to piper, system or manual.',
     )
   }
-  if (!voice && !['fake', 'system'].includes(provider)) throw new UsageError(`no voice set for ${what}`)
+  if (!voice && !['fake', 'system', 'cosyvoice3', 'cosyvoice'].includes(provider)) throw new UsageError(`no voice set for ${what}`)
 }
 
 function synth(name) {

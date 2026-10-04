@@ -44,6 +44,38 @@ test('online provider without consent is blocked by the gate', () => {
   assert.equal(existsSync(p.path('scenes/001-hook/assets/narration.mp3')), false)
 })
 
+test('cosyvoice with remote endpoint requires online consent', () => {
+  const project = baseProject()
+  project.project.tts.provider = 'cosyvoice3'
+  project.project.tts.consent = { onlineTts: false }
+  p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-hook' }] })
+  const r = p.run('tts.mjs', ['scene-001'], { COSYVOICE_URL: 'https://api.example.com/cosyvoice' })
+  assert.equal(r.code, 1)
+  assert.match(r.stderr, /gate onlineTtsConsent/)
+})
+
+test('cosyvoice with local endpoint does not require online consent and hints setup', () => {
+  const project = baseProject()
+  project.project.tts.provider = 'cosyvoice3'
+  project.project.tts.consent = { onlineTts: false }
+  p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-hook' }] })
+  const r = p.run('tts.mjs', ['scene-001'], { COSYVOICE_URL: 'http://127.0.0.1:50000/api/tts' })
+  assert.equal(r.code, 1)
+  assert.match(r.stderr, /CosyVoice 3.*service unavailable/)
+  assert.match(r.stderr, /pnpm run cosyvoice:setup/)
+})
+
+test('cosyvoice listVoices lists available speakers and custom voice prompt option', () => {
+  const project = baseProject()
+  project.project.tts.provider = 'cosyvoice3'
+  p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-hook' }] })
+  const r = p.run('tts.mjs', ['--list-voices'])
+  assert.equal(r.code, 0, r.stderr)
+  assert.match(r.stdout, /中文女/)
+  assert.match(r.stdout, /聲音克隆/)
+  assert.match(r.stdout, /Instruct Control/)
+})
+
 test('manual narration requires the recording and estimates captions', () => {
   const scene = baseScene('scene-001', { narration: { scriptFile: 'script.md', provider: 'manual' } })
   p = makeProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '第一句。\n第二句比較長一點。\n' }] })
