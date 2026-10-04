@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { tryFile, writeText } from '../lib/fsa'
-import { START_FILE, api, launchCommand, launchMessage, newFolderId, startJson, type SourceHints, type VideoKind } from '../lib/site'
+import { START_FILE, api, launchMessage, newFolderId, startJson, type SourceHints, type VideoKind } from '../lib/site'
 import { baseName, pathHelp, platform, readSourceFolder } from '../lib/source'
 import { activity, pickFolder, reconnect, root, ui } from '../lib/store'
 import ActivityBanner from './ActivityBanner.vue'
@@ -92,7 +92,6 @@ const INTRO: Record<VideoKind, { title: string; text: string }> = {
 /** The step the user should do now: 1 folder, 2 product or story, 3 paste the message. */
 const current = computed(() => (needsFolder.value ? 1 : !hasSource.value ? 2 : 3))
 const message = computed(() => launchMessage(form, prepared.value))
-const command = computed(() => launchCommand(form, prepared.value))
 const canPick = typeof window.showDirectoryPicker === 'function'
 const pathMismatch = computed(() => {
   const typed = baseName(form.sourceCodePath.trim())
@@ -354,7 +353,7 @@ const links = [
               </li>
               <li class="flex gap-2.5">
                 <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">b</span>
-                <span v-if="folder">開一個新的對話。不用再選一次「{{ folder }}」：要你選資料夾時，用它預設的或隨便選一個（例如「文件」）都可以，下面這段話會告訴 Agent 去「{{ folder }}」工作。</span>
+                <span v-if="folder">開一個新的對話。請在 Agent 中開啟步驟 1 準備的「{{ folder }}」資料夾（若它詢問路徑，請選取或貼上該資料夾）。</span>
                 <span v-else>開一個新的對話。它會請你選一個資料夾：選你想存放影片的地方，例如「文件」。</span>
               </li>
               <li class="flex gap-2.5">
@@ -375,7 +374,7 @@ const links = [
               <p class="font-medium">接下來 Agent 會：</p>
               <ul class="mt-2 grid gap-1.5 text-slate-700 sm:grid-cols-2 dark:text-slate-300">
                 <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" /><span v-if="folder">在「{{ folder }}」裡建立影片專案</span><span v-else>在你選的資料夾裡建立影片專案，並告訴你它在哪裡</span></li>
-                <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />電腦缺少需要的工具時，告訴你怎麼安裝，或在你同意後替你處理</li>
+                <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />電腦缺少需要的工具時，自動替你安裝或執行所有指令</li>
                 <template v-if="isStory">
                   <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />問你幾個問題：給誰看、喜歡的畫風、能否使用線上語音服務</li>
                   <li class="flex gap-2"><Icon name="check" :size="14" class="mt-0.5 text-emerald-600" />和你一起把故事補完整，畫出角色、挑好聲音，每一步都請你確認</li>
@@ -387,16 +386,6 @@ const links = [
               </ul>
               <p class="mt-3 text-slate-600 dark:text-slate-400">在對話中直接回答它就好。看不懂它的問題時，可以回它「請用更簡單的方式說明」。</p>
             </div>
-
-            <details class="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              <summary class="cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200">習慣使用終端機？</summary>
-              <p v-if="folder" class="mt-2">在「{{ folder }}」資料夾開啟終端機，執行：</p>
-              <p v-else class="mt-2">在想存放影片專案的資料夾開啟終端機，執行：</p>
-              <div class="mt-1 flex items-start gap-2">
-                <pre class="min-w-0 flex-1 overflow-x-auto rounded-lg bg-slate-100 p-3 font-mono text-xs break-all whitespace-pre-wrap dark:bg-slate-800" data-testid="launch-command">{{ command }}</pre>
-                <CopyButton :text="command" />
-              </div>
-            </details>
           </template>
         </div>
       </li>

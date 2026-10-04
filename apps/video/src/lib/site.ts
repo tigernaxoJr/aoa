@@ -99,7 +99,7 @@ export function launchMessage(src: SourceInput, projectFolder: { name: string; i
       : `請讀取 ${api('agent-guide.md')}，依照裡面的步驟幫我製作產品介紹影片。`,
     ...(projectFolder
       ? [
-          `你的工作資料夾是我在網頁上準備好的「${projectFolder.name}」：裡面的 ${START_FILE} 記有${story ? '故事內容' : '產品資訊'}與識別碼 ${projectFolder.id}。我開對話時沒有特別選它，請你自己找到這個資料夾、把工作目錄切換過去，所有檔案都放在那裡，不要在其他地方建立專案。`,
+          `你的工作資料夾是我在網頁上準備好的「${projectFolder.name}」：裡面的 ${START_FILE} 記有${story ? '故事內容' : '產品資訊'}與識別碼 ${projectFolder.id}。請確認你的工作目錄已切換至「${projectFolder.name}」，所有檔案都放在那裡，不要在其他地方建立專案。`,
         ]
       : []),
     ...parts.map((p) => `・${p}`),
