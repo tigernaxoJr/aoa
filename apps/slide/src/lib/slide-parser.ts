@@ -6,6 +6,7 @@ export interface ParsedSlide {
   notes?: string
   hasVisuals: boolean
   visualTypes: string[]
+  rawMarkdown: string
 }
 
 export interface ParsedDeck {
@@ -114,6 +115,7 @@ export function parseSlides(markdown: string): ParsedDeck {
       notes,
       hasVisuals: visualTypes.length > 0,
       visualTypes,
+      rawMarkdown: chunkLines.join('\n').trim(),
     })
   }
 
