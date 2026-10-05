@@ -1,5 +1,5 @@
 // Builds the Slide Guide API: dist/api/slide/* (schemas, workflow, Skill and template zips, manifest).
-// Runs after apps/video/tools/build-api.mjs, which owns dist/api/ itself; this tool only touches api/slide/.
+// Runs after the video apps' build-api.mjs; this tool only touches api/slide/.
 //
 //   node apps/slide/tools/build-api.mjs [--site-url <url>] [--out <dir>]
 //

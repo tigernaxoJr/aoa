@@ -2,8 +2,8 @@
 
 > **目標範疇**：全平台架構（`apps/*`、`packages/*`、`tools/*`）  
 > **架構原則**：AOA (Agent-Offloaded Architecture) + DRY (Don't Repeat Yourself) + Context 隔離 + YAGNI  
-> **狀態**：規劃中 (Draft, rev.2)  
-> **範圍外**：`apps/video` 拆分為 product-video / story-video 屬獨立重大決策，另立規劃書（見 §8）。
+> **狀態**：rev.3：階段一（`packages/web-shared`）與影片拆分（§8）已實作  
+> **影片拆分**：`apps/video` 已拆成 `apps/story`、`apps/product`，共用部分下沉為 `packages/video-core`（見 §8）。
 
 ---
 
@@ -242,14 +242,16 @@ aoa/
 
 ---
 
-## 8. 範圍外：`apps/video` 拆分為 product-video / story-video
+## 8. 已實作：`apps/video` 拆分為 `apps/story` 與 `apps/product`
 
-rev.1 將此列為共用架構的「附帶紅利」。它其實是獨立的產品與架構決策，**另立規劃書**，至少需回答：
+rev.2 曾把拆分列為範圍外。使用者決定完整拆分後，依下列方式實作；兩種影片約 80% 的程式碼相同（store、scene 編輯、整個範本管線），因此觸發 §4 Layer B 的條件，共用部分下沉為 `packages/video-core`，不複製兩份。
 
-1. **使用者資料遷移**：既有專案的 `video.project.json` 以 `project.kind` 區分，拆分後舊專案如何開啟或轉換？
-2. **`packages/video-agent`（MCP server）**：要拆成兩個，還是一個 server 支援兩種 kind？
-3. **重複成本**：拆分後 schema、範本、`build-api.mjs`、`gen-types.mjs` 都變成兩份；哪些能依本規劃書的 Layer A/B 共用，哪些會成為新的重複？
-4. **公開 API 相容**：`/api/video/*` 的重定向或版本策略。
-5. **Portal 呈現**：首頁產品卡片的調整。
+| rev.2 待回答的問題 | 決定 |
+|---|---|
+| 使用者資料遷移 | 兩邊沿用 `video.project.json` 與 `project.kind`，舊專案不需轉換；沒有 kind 視為 product。在錯的工作台開啟時，提示並連到正確的工作台（配對存在 localStorage，同源共用，不需重新配對）。 |
+| `packages/video-agent` | 維持單一 MCP server 支援兩種 kind：guide 依 kind 讀 `/api/product`、`/api/story`，`create_project` 依 kind 解壓對應範本。打包 guide 的腳本移到 `tools/bundle-video-agent-guide.mjs`，修正原本 packages→apps 的反向依賴。 |
+| 重複成本 | Schema、範本、共用工作台（`web/`）、`build-video-api.mjs`、`gen-types.mjs` 都只有一份，在 `packages/video-core`。各 app 只有自己的 `workflow.json`（線性、無 `kinds`）、Skill、首頁步驟 2 表單、故事專屬的角色工坊元件與薄殼 `tools/build-api.mjs`。 |
+| 公開 API 相容 | 新增 `/api/story/*`、`/api/product/*`。`/api/video/*` 由 `tools/build-platform-api.mjs` 組回拆分前的檔案配置：workflow 與拆分前逐字相同（兩種 kind 合併、帶 `kinds`），`index.json` 加上 `deprecated`。`tests/site/build.test.mjs` 斷言舊路徑全部存在。舊的 `/video/` 網址是選擇頁，保留 `#pair=` 轉交給選定的工作台；companion 的配對連結依專案 kind 指向 `/story/` 或 `/product/`。 |
+| Portal 呈現 | 首頁改為 Slide、故事動畫、產品介紹影片三張卡片，各自連到 `/slide/`、`/story/`、`/product/`。 |
 
-本規劃書的階段一完成後，可作為拆分的前置基礎，但拆分本身不在本文件範圍內。
+**尚未做（下一輪）**：範本依 kind 瘦身——故事範本仍帶有 `capture.mjs`、`login.mjs`，產品範本仍帶有 `rig.js`、`motion.js`。這些腳本彼此 import 交錯（`render-html`、`scene-plan`、`browser`），拆開風險較高，另行處理。目前兩個範本 zip 只差在 `schemas/workflow.json` 與產生的 `.claude/commands/`。

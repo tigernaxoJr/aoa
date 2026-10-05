@@ -17,7 +17,7 @@
     "node": ">=20.12"
   },
   "scripts": {
-    "prepack": "node scripts/bundle-guide.mjs"
+    "prepack": "node ../../tools/bundle-video-agent-guide.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.31.0",

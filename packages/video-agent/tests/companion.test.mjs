@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import WebSocket from 'ws'
-import { startCompanion } from '../../../apps/video/template/scripts/lib/companion.mjs'
+import { startCompanion } from '../../video-core/template/scripts/lib/companion.mjs'
 import { FAKE_TTS, fullProject, motionScene } from './helpers.mjs'
 
 const SITE = 'https://example.test/index-url-director'
@@ -62,7 +62,18 @@ test('a wrong token closes the connection before any action runs', async (t) => 
   const c = await companionFor(t, p)
   const { ws } = await open(c.port, 'https://example.test', 'not-the-token')
   assert.equal(await closed(ws), 4001)
-  assert.match(c.pairUrl, new RegExp(`^${SITE}/video/#pair=${c.port}:[A-Za-z0-9_-]+$`))
+  assert.match(c.pairUrl, new RegExp(`^${SITE}/product/#pair=${c.port}:[A-Za-z0-9_-]+$`))
+})
+
+test('the pairing link opens the workbench for the project kind', async (t) => {
+  const p = fullProject()
+  t.after(p.cleanup)
+  const file = join(p.root, 'video.project.json')
+  const doc = JSON.parse(readFileSync(file, 'utf8'))
+  doc.project.kind = 'story'
+  writeFileSync(file, JSON.stringify(doc))
+  const c = await companionFor(t, p)
+  assert.match(c.pairUrl, new RegExp(`^${SITE}/story/#pair=${c.port}:`))
 })
 
 test('only whitelisted actions run; rebuild produces the scene and change events follow', async (t) => {

@@ -63,9 +63,9 @@
             <div>
               <p class="font-mono text-xs text-accent">01 / 工具</p>
               <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">參考實作</h2>
-              <p class="mt-3 text-sm leading-relaxed text-stone-500">兩個工具，各有獨立的工作台、協議 Schema、Agent Skill 與專案範本，彼此不共用程式碼。</p>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">三個工具，各有獨立的工作台、Agent Skill 與專案範本；兩個影片工作台共用同一套協議與渲染管線。</p>
             </div>
-            <div class="grid gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 md:grid-cols-2 dark:border-stone-700 dark:bg-stone-700">
+            <div class="grid gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 md:grid-cols-2 xl:grid-cols-3 dark:border-stone-700 dark:bg-stone-700">
               <a href="../slide/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900">
                 <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
                   <span>模式 A · 純工作台</span>
@@ -78,14 +78,26 @@
                 <p class="mt-6 font-mono text-[11px] text-stone-500">Slidev · SVG · Three.js · Playwright PDF</p>
                 <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">開啟工作台 →</span>
               </a>
-              <a href="../video/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900">
+              <a href="../story/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900" data-testid="tool-story">
                 <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
                   <span>模式 B · 伴侶增強</span>
-                  <span>/video/</span>
+                  <span>/story/</span>
                 </div>
-                <h3 class="mt-6 font-serif text-2xl font-bold">Video Studio</h3>
+                <h3 class="mt-6 font-serif text-2xl font-bold">故事動畫工作台</h3>
                 <p class="mt-3 flex-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                  把產品網址或一段故事做成有旁白的影片：Playwright 錄畫面、TTS 配音、FFmpeg 合成。可選的 localhost 伴侶讓網頁直接觸發重做並即時回報。
+                  把一段故事、甚至只是一個點子做成動畫影片：Agent 陪你把故事補完整、用 SVG 骨骼畫出角色、為每個角色配上聲音並渲染動畫。可選的 localhost 伴侶讓網頁直接觸發重做並即時回報。
+                </p>
+                <p class="mt-6 font-mono text-[11px] text-stone-500">SVG 骨骼 · CosyVoice / Edge TTS · FFmpeg · WebSocket Companion</p>
+                <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">開啟工作台 →</span>
+              </a>
+              <a href="../product/" class="group flex flex-col bg-paper p-7 hover:bg-white md:col-span-2 xl:col-span-1 dark:hover:bg-stone-900" data-testid="tool-product">
+                <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
+                  <span>模式 B · 伴侶增強</span>
+                  <span>/product/</span>
+                </div>
+                <h3 class="mt-6 font-serif text-2xl font-bold">產品介紹影片工作台</h3>
+                <p class="mt-3 flex-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                  把產品網址或原始碼做成有旁白的產品介紹影片：Playwright 錄畫面、TTS 配音、FFmpeg 合成。可選的 localhost 伴侶讓網頁直接觸發重做並即時回報。
                 </p>
                 <p class="mt-6 font-mono text-[11px] text-stone-500">Playwright · Edge TTS · FFmpeg · WebSocket Companion</p>
                 <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">開啟工作台 →</span>
@@ -255,7 +267,7 @@
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
                   <dt class="font-serif text-2xl font-bold text-accent">B</dt>
-                  <dt><span class="font-serif text-lg font-bold">伴侶增強</span><span class="mt-1 block font-mono text-[11px] text-stone-500">例：Video Studio</span></dt>
+                  <dt><span class="font-serif text-lg font-bold">伴侶增強</span><span class="mt-1 block font-mono text-[11px] text-stone-500">例：故事動畫、產品介紹影片工作台</span></dt>
                   <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">在 <code class="font-mono text-[13px]">127.0.0.1</code> 上的微型 WebSocket Companion，以 Origin 檢查與 Token 配對，推播事件並執行白名單指令。</dd>
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
@@ -273,7 +285,7 @@
                 <p class="font-mono text-[11px] uppercase tracking-wider text-accent">共同前提 · 規格的入口</p>
                 <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
                   不論哪一種模式，Agent 都要先拿到規格，而入口通常就是一個 URL：網頁上的 Guide、OpenAPI 文件或規格索引。
-                  本平台的總索引位於 <a href="../api/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">/api/index.json</a>，並分別為 <a href="../api/video/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Video Studio</a> 與 <a href="../api/slide/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Slide Studio</a> 提供專屬的 API 入口。
+                  本平台的總索引位於 <a href="../api/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">/api/index.json</a>，並分別為 <a href="../api/story/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">故事動畫</a>、<a href="../api/product/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">產品介紹影片</a> 與 <a href="../api/slide/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Slide Studio</a> 提供專屬的 API 入口。
                 </p>
               </div>
             </div>
@@ -379,7 +391,8 @@
         </div>
         <nav class="flex gap-5">
           <a href="../slide/" class="hover:text-stone-900 dark:hover:text-white">Slide Studio</a>
-          <a href="../video/" class="hover:text-stone-900 dark:hover:text-white">Video Studio</a>
+          <a href="../story/" class="hover:text-stone-900 dark:hover:text-white">故事動畫工作台</a>
+          <a href="../product/" class="hover:text-stone-900 dark:hover:text-white">產品介紹影片工作台</a>
           <a href="../" hreflang="en" lang="en" data-set-lang="en" class="hover:text-stone-900 dark:hover:text-white">English</a>
           <a href="https://github.com/tigernaxojr/aoa" class="hover:text-stone-900 dark:hover:text-white">GitHub</a>
         </nav>

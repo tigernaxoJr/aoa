@@ -3,7 +3,7 @@
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { baseProject, baseScene, writeJson } from '../../../apps/video/tests/template/helpers.mjs'
+import { WORKFLOW, baseProject, baseScene, writeJson } from '../../video-core/tests/template/helpers.mjs'
 
 export const repo = fileURLToPath(new URL('../../../', import.meta.url))
 export const agentBin = join(repo, 'packages/video-agent/bin/video-agent.mjs')
@@ -11,11 +11,12 @@ export const agentBin = join(repo, 'packages/video-agent/bin/video-agent.mjs')
 export function fullProject({ scenes = [] } = {}) {
   mkdirSync(join(repo, '.tmp'), { recursive: true })
   const root = mkdtempSync(join(repo, '.tmp', 'agent-'))
-  for (const dir of ['scripts', 'src']) cpSync(join(repo, 'apps/video/template', dir), join(root, dir), { recursive: true })
+  for (const dir of ['scripts', 'src']) cpSync(join(repo, 'packages/video-core/template', dir), join(root, dir), { recursive: true })
   mkdirSync(join(root, 'schemas'))
-  for (const f of ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'workflow.schema.json', 'workflow.json']) {
-    cpSync(join(repo, 'apps', 'video', 'specs', f), join(root, 'schemas', f))
+  for (const f of ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'workflow.schema.json']) {
+    cpSync(join(repo, 'packages', 'video-core', 'specs', f), join(root, 'schemas', f))
   }
+  cpSync(WORKFLOW, join(root, 'schemas', 'workflow.json'))
   const project = baseProject()
   project.project.format = { aspectRatio: '16:9', width: 640, height: 360, fps: 24, targetDurationSec: 10 }
   project.scenes = scenes.map(({ id, dir }) => ({ id, dir }))

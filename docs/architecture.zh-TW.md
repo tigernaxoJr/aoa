@@ -179,7 +179,7 @@ AOA 網站提供兩個工作台，各自有獨立的靜態介面、協議 Schema
 
 Video Studio 的組成：
 - **前端工作台**：Vue 3 + Tailwind 靜態網站，託管於 GitHub Pages。提供產品規格填寫、分鏡看板、旁白編輯與成片預覽。
-- **協議庫**：`apps/video/specs/*.schema.json` 定義了 `project`、`scene`、`workflow` 與 `activity` 格式。
+- **協議庫**：`packages/video-core/specs/*.schema.json`（故事與產品影片兩個 app 共用）定義了 `project`、`scene`、`workflow` 與 `activity` 格式。
 - **本機 Agent**：由 Claude Code 讀取線上 Guide 與本機 Skill，調用本機 Playwright 擷取網頁、Edge-TTS（微軟線上語音服務，可替換為 Piper / Kokoro 等本機 TTS）生成語音、FFmpeg 合成 60fps 影片。
 - **效益**：
   - 開發者：0 伺服器月租、0 GPU 帳單、免維護資料庫。

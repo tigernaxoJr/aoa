@@ -177,7 +177,7 @@ The AOA site ships two workbenches, each with its own static UI, protocol schema
 
 Video Studio in detail:
 - **Frontend workbench**: A Vue 3 + Tailwind static site hosted on GitHub Pages, providing product spec input, a storyboard, narration editing, and video preview.
-- **Protocol library**: `apps/video/specs/*.schema.json` defines the `project`, `scene`, `workflow`, and `activity` formats.
+- **Protocol library**: `packages/video-core/specs/*.schema.json` (shared by the story and product video apps) defines the `project`, `scene`, `workflow`, and `activity` formats.
 - **Local agent**: Claude Code reads an online guide and local skills, then uses local Playwright to capture web pages, Edge-TTS (Microsoft's online speech service, replaceable with local TTS such as Piper / Kokoro) to generate speech, and FFmpeg to compose 60fps video.
 - **Benefits**:
   - Developers: $0 server rent, $0 GPU bills, no database to maintain.

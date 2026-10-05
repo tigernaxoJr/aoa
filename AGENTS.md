@@ -30,21 +30,23 @@
 在修改或開發某個子專案時，**必須保持嚴格的上下文隔離**：
 
 1. **單一子應用 Context 邊界**：
-   - 修改特定子專案（如 `apps/video`）時，**只讀取該子專案目錄內的檔案**。
+   - 修改特定子專案（如 `apps/story`）時，**只讀取該子專案目錄內的檔案**，以及它引用的 `packages/*`（影片 app 為 `packages/video-core`）。
    - **嚴禁將其他無關子應用（如 `apps/slide`、`apps/portal`）的原始碼載入 Context**，避免無謂消耗 Token 並防止上下文污染。
 2. **嚴禁跨 App 相互引入（No Cross-App Imports）**：
-   - `apps/video`、`apps/slide`、`apps/portal` 彼此完全獨立，嚴禁相互 `import` 任何代碼或元件。
-   - 跨前端共用邏輯僅限於平台層的 [`apps/vite.shared.ts`](apps/vite.shared.ts)（Vite 打包配方）與 [`packages/web-shared`](packages/web-shared)（以 `@aoa/web-shared/*` 引入，例如 `@aoa/web-shared/fsa`）。
+   - `apps/story`、`apps/product`、`apps/slide`、`apps/portal` 彼此完全獨立，嚴禁相互 `import` 任何代碼或元件。
+   - 跨前端共用邏輯僅限於平台層的 [`apps/vite.shared.ts`](apps/vite.shared.ts)（Vite 打包配方）、[`packages/web-shared`](packages/web-shared)（以 `@aoa/web-shared/*` 引入，例如 `@aoa/web-shared/fsa`），以及兩個影片 app 共用的 [`packages/video-core`](packages/video-core)（協議、範本、共用工作台，以 `@video-core/*` 引入）。
+   - 同時需要多個 app 的平台工具（例如 `/api/video` 相容層、MCP guide 打包）放在根目錄 `tools/` 與 `tests/`，不放進任何 app 或 package。
    - **依賴方向**：`apps/*` 可 import `packages/*`；`packages/*` 嚴禁 import `apps/*`。共用庫的業務資料（如 activity ref）一律由呼叫端以參數傳入。
    - **共用門檻**：只有兩個以上 app 實際使用的程式碼才放進 `packages/web-shared`；修改它時須對所有 app 執行 `pnpm run typecheck` 與 `pnpm run build:web`。規劃見 [`docs/shared-architecture-plan.md`](docs/shared-architecture-plan.md)。
 3. **公開 API 契約相容性（Public API Compatibility）**：
    - 網站打包產出的 `/api/*`（如 `/api/skills/*.zip`、`/api/templates/*.zip`、`/api/index.json`）是已發布給外部 Agent 的端點，其 URL 結構與 manifest 規則必須維持向後相容，不可任意破壞。
+   - 拆分前的 `/api/video/*` 由 [`tools/build-platform-api.mjs`](tools/build-platform-api.mjs) 從 story 與 product 的輸出組回原本的檔案配置，`tests/site/build.test.mjs` 斷言舊路徑全部存在。
 
 ---
 
-## 3. 建立新 Sub-App 的標準結構（參考 `apps/video`）
+## 3. 建立新 Sub-App 的標準結構（參考 `apps/slide`）
 
-當使用者要求新增子專案（例如簡報、文件或其他 AOA 子應用）時，必須產出對齊 `apps/video` 的完整結構：
+當使用者要求新增子專案（例如簡報、文件或其他 AOA 子應用）時，必須產出對齊 `apps/slide` 的完整結構（影片類 app 則把 specs、template、共用工作台放在 `packages/video-core`，app 只留自己的 workflow、Skill、首頁表單與元件，參考 `apps/story`）：
 
 ```text
 apps/<slug>/
@@ -84,12 +86,12 @@ apps/<slug>/
 ## 4. 程式碼規範與不可觸碰的禁忌
 
 1. **型別永遠由 Schema 產生**：
-   - 各 App 的 `src/types/protocol.ts` 必須由專屬的 `apps/<app>/tools/gen-types.mjs` 從 `specs/*.schema.json` 編譯產出。
+   - 各 App 的 `src/types/protocol.ts` 必須由專屬的 `apps/<app>/tools/gen-types.mjs` 從 `specs/*.schema.json` 編譯產出（影片 app 的型別在 `packages/video-core/web/types/protocol.ts`，由 `packages/video-core/tools/gen-types.mjs` 產生）。
    - **嚴禁手寫或手動修改 `protocol.ts`**。修改協議時，先改 `specs/`，再執行 `pnpm run gen:types`。
 2. **本機狀態檔案寫入安全**：
    - 範本專案中的狀態更新必須維持原子寫入（atomic write），不可留下損壞的 partial JSON。
 3. **全站導航規範（強制提供回到 Portal 按鈕）**：
-   - 每個獨立產品/子應用（如 `apps/video`、`apps/slide`）的頂部導航列（Header）最左側，**必須強制提供返回 Portal 的按鈕**（例如 `<a href="../">← 平台總覽</a>`），嚴禁讓使用者陷入無法返回首頁的孤島體驗。
+   - 每個獨立產品/子應用（如 `apps/story`、`apps/slide`）的頂部導航列（Header）最左側，**必須強制提供返回 Portal 的按鈕**（例如 `<a href="../">← 平台總覽</a>`），嚴禁讓使用者陷入無法返回首頁的孤島體驗。
 4. **測試與驗證義務**：
    - 修改任何前端代碼後，必須執行 `pnpm run typecheck` 確保零型別報錯。
    - 修改任何工具或協議後，必須執行 `pnpm test` 確保既有單元測試、整合測試與規格驗證全部通過。
@@ -101,13 +103,14 @@ apps/<slug>/
 
 | 指令 | 說明 |
 |---|---|
-| `pnpm dev` | 啟動 Video 工作台本機開發預覽 |
+| `pnpm dev` | 啟動故事動畫工作台本機開發預覽 |
+| `pnpm run dev:product` | 啟動產品介紹影片工作台開發預覽 |
 | `pnpm run dev:portal` | 啟動 Portal 平台總覽開發預覽 |
 | `pnpm run dev:slide` | 啟動 Slide 簡報工作台開發預覽 |
-| `pnpm run build` | 完整打包全站（Portal ➔ Video ➔ Slide ➔ Guide API） |
+| `pnpm run build` | 完整打包全站（Portal ➔ Story ➔ Product ➔ Slide ➔ Guide API ➔ 平台索引與 `/api/video` 相容層） |
 | `pnpm test` | 執行所有 App 的單元測試、規格測試與整合測試 |
-| `pnpm run test:video` | 僅執行 Video 相關測試 |
+| `pnpm run test:video` | 僅執行影片相關測試（video-core、story、product） |
 | `pnpm run test:agent` | 僅執行 Video Agent (MCP/Companion) 測試 |
-| `pnpm run test:specs` | 僅執行 Video 協議與 Schema 測試 |
+| `pnpm run test:specs` | 僅執行影片與 Slide 的協議與 Schema 測試 |
 | `pnpm run typecheck` | 檢查所有 App 的 TypeScript 型別 |
-| `pnpm run gen:types` | 依據 `apps/video/specs/` 重新生成前端協議型別 |
+| `pnpm run gen:types` | 依據 `packages/video-core/specs/` 與 `apps/slide/specs/` 重新生成前端協議型別 |

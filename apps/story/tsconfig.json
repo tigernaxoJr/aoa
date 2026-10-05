@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "paths": {
+      "@core": ["../../packages/video-core/template/scripts/lib/core.mjs"],
+      "@specs/*": ["../../packages/video-core/specs/*"],
+      "@workflow": ["./specs/workflow.json"],
+      "@video-core/*": ["../../packages/video-core/*"],
+      "@aoa/web-shared/*": ["../../packages/web-shared/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue", "../../packages/video-core/web/**/*.ts", "../../packages/video-core/web/**/*.vue"],
+  "exclude": ["../../packages/video-core/web/vite.ts"]
+}

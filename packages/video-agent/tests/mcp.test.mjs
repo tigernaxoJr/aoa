@@ -7,13 +7,14 @@ import { join } from 'node:path'
 import { after, before, test } from 'node:test'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
-import { build } from '../../../apps/video/tools/build-api.mjs'
+import { build as buildProduct } from '../../../apps/product/tools/build-api.mjs'
+import { build as buildStory } from '../../../apps/story/tools/build-api.mjs'
 import { FAKE_TTS, agentBin, fullProject, motionScene, repo } from './helpers.mjs'
 
 let guide
 before(() => {
   guide = mkdtempSync(join(tmpdir(), 'avp-guide-'))
-  build({ siteUrl: 'https://example.test/index-url-director', out: guide })
+  for (const build of [buildProduct, buildStory]) build({ siteUrl: 'https://example.test/index-url-director', out: guide })
 })
 after(() => rmSync(guide, { recursive: true, force: true }))
 
@@ -22,7 +23,7 @@ async function connect(t, projectDir) {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [agentBin, 'mcp', '--project', projectDir],
-    env: { ...process.env, ...FAKE_TTS, VIDEO_AGENT_GUIDE_DIR: join(guide, 'api', 'video') },
+    env: { ...process.env, ...FAKE_TTS, VIDEO_AGENT_GUIDE_DIR: join(guide, 'api') },
     stderr: 'pipe',
   })
   await client.connect(transport)
@@ -40,7 +41,9 @@ test('guide resources and prompts come from the Guide API', async (t) => {
     assert.ok(uris.includes(uri), uri)
   }
   const workflow = await client.readResource({ uri: 'video://workflow' })
-  assert.deepEqual(JSON.parse(workflow.contents[0].text), JSON.parse(readFileSync(join(repo, 'apps/video/specs/workflow.json'), 'utf8')))
+  assert.deepEqual(JSON.parse(workflow.contents[0].text), JSON.parse(readFileSync(join(repo, 'apps/product/specs/workflow.json'), 'utf8')))
+  const storyWorkflow = await client.readResource({ uri: 'video://workflow/story' })
+  assert.deepEqual(JSON.parse(storyWorkflow.contents[0].text), JSON.parse(readFileSync(join(repo, 'apps/story/specs/workflow.json'), 'utf8')))
   const current = JSON.parse((await client.readResource({ uri: 'video://project/current' })).contents[0].text)
   assert.equal(current.ok, true, JSON.stringify(current.errors))
   assert.equal(current.report.scenes[0].id, 'scene-001')
@@ -132,7 +135,7 @@ test('create_project unpacks the checksum-verified template and rejects a tamper
   assert.equal(noStory.isError, true)
   assert.match(noStory.content[0].text, /needs story/)
 
-  const zip = join(guide, 'api/video/templates/product-video.zip')
+  const zip = join(guide, 'api/product/templates/product-video.zip')
   const original = readFileSync(zip)
   t.after(() => writeFileSync(zip, original))
   writeFileSync(zip, Buffer.concat([original, Buffer.from('tampered')]))

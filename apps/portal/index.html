@@ -7,7 +7,8 @@
     <meta name="description" content="AOA is an architecture pattern in which a product offloads its agent work — LLM reasoning, tool use, and the tokens they consume — to the coding agent the user already has." />
     <!--hreflang-->
     <script>
-      // Backward compatibility: forward pairing links printed by older Video Studio Companions.
+      // Backward compatibility: forward pairing links printed by older Video Studio Companions
+      // (the /video/ page then sends them on to the story or product workbench).
       if (/[#&]pair=/.test(location.hash)) location.replace('./video/' + location.hash)
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -77,9 +78,9 @@
             <div>
               <p class="font-mono text-xs text-accent">01 / Tools</p>
               <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Reference tools</h2>
-              <p class="mt-3 text-sm leading-relaxed text-stone-500">Each has its own workbench, protocol schemas, agent skill, and project template. They share no code.</p>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">Each has its own workbench, agent skill, and project template. The two video studios share one protocol and render pipeline.</p>
             </div>
-            <div class="grid gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 md:grid-cols-2 dark:border-stone-700 dark:bg-stone-700">
+            <div class="grid gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 md:grid-cols-2 xl:grid-cols-3 dark:border-stone-700 dark:bg-stone-700">
               <a href="./slide/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900">
                 <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
                   <span>Mode A · Pure workbench</span>
@@ -92,14 +93,26 @@
                 <p class="mt-6 font-mono text-[11px] text-stone-500">Slidev · SVG · Three.js · Playwright PDF</p>
                 <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">Open the workbench →</span>
               </a>
-              <a href="./video/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900">
+              <a href="./story/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900" data-testid="tool-story">
                 <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
                   <span>Mode B · Companion</span>
-                  <span>/video/</span>
+                  <span>/story/</span>
                 </div>
-                <h3 class="mt-6 font-serif text-2xl font-bold">Video Studio</h3>
+                <h3 class="mt-6 font-serif text-2xl font-bold">Story Video Studio</h3>
                 <p class="mt-3 flex-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                  Turns a product URL or a story into a narrated video: Playwright captures the screen, TTS voices it, FFmpeg assembles it. An optional localhost companion lets the page trigger re-renders and report progress live.
+                  Turns a story — or just an idea — into an animated video: your agent helps finish the story, draws the cast as SVG rigs, gives every character a voice, and renders the animation. An optional localhost companion lets the page trigger re-renders and report progress live.
+                </p>
+                <p class="mt-6 font-mono text-[11px] text-stone-500">SVG rigs · CosyVoice / Edge TTS · FFmpeg · WebSocket Companion</p>
+                <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">Open the workbench →</span>
+              </a>
+              <a href="./product/" class="group flex flex-col bg-paper p-7 hover:bg-white md:col-span-2 xl:col-span-1 dark:hover:bg-stone-900" data-testid="tool-product">
+                <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
+                  <span>Mode B · Companion</span>
+                  <span>/product/</span>
+                </div>
+                <h3 class="mt-6 font-serif text-2xl font-bold">Product Video Studio</h3>
+                <p class="mt-3 flex-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                  Turns a product URL or its source code into a narrated product video: Playwright captures the screen, TTS voices it, FFmpeg assembles it. An optional localhost companion lets the page trigger re-renders and report progress live.
                 </p>
                 <p class="mt-6 font-mono text-[11px] text-stone-500">Playwright · Edge TTS · FFmpeg · WebSocket Companion</p>
                 <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">Open the workbench →</span>
@@ -269,7 +282,7 @@
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
                   <dt class="font-serif text-2xl font-bold text-accent">B</dt>
-                  <dt><span class="font-serif text-lg font-bold">Companion</span><span class="mt-1 block font-mono text-[11px] text-stone-500">e.g. Video Studio</span></dt>
+                  <dt><span class="font-serif text-lg font-bold">Companion</span><span class="mt-1 block font-mono text-[11px] text-stone-500">e.g. Story / Product Video Studio</span></dt>
                   <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">A tiny WebSocket companion on <code class="font-mono text-[13px]">127.0.0.1</code>, paired by origin check and token, pushes events and runs whitelisted commands.</dd>
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
@@ -287,7 +300,7 @@
                 <p class="font-mono text-[11px] uppercase tracking-wider text-accent">In every mode · a specification entry point</p>
                 <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
                   The agent first needs the specification, and the entry point is usually a URL: a guide page, an OpenAPI document, or an index.
-                  This platform publishes a central index at <a href="./api/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">/api/index.json</a>, with dedicated endpoints for <a href="./api/video/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Video Studio</a> and <a href="./api/slide/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Slide Studio</a>.
+                  This platform publishes a central index at <a href="./api/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">/api/index.json</a>, with dedicated endpoints for <a href="./api/story/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Story Video Studio</a>, <a href="./api/product/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Product Video Studio</a> and <a href="./api/slide/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Slide Studio</a>.
                 </p>
               </div>
             </div>
@@ -393,7 +406,8 @@
         </div>
         <nav class="flex gap-5">
           <a href="./slide/" class="hover:text-stone-900 dark:hover:text-white">Slide Studio</a>
-          <a href="./video/" class="hover:text-stone-900 dark:hover:text-white">Video Studio</a>
+          <a href="./story/" class="hover:text-stone-900 dark:hover:text-white">Story Video Studio</a>
+          <a href="./product/" class="hover:text-stone-900 dark:hover:text-white">Product Video Studio</a>
           <a href="./zh-TW/" hreflang="zh-Hant" lang="zh-Hant" data-set-lang="zh-Hant" class="hover:text-stone-900 dark:hover:text-white">繁體中文</a>
           <a href="https://github.com/tigernaxojr/aoa" class="hover:text-stone-900 dark:hover:text-white">GitHub</a>
         </nav>

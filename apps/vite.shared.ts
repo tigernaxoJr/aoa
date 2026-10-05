@@ -1,6 +1,7 @@
 // Shared Vite recipe for every front-end under apps/. Each app is an isolated build served at
 // <site>/<slug>/ (dist/<slug>); the portal (slug '') is the site root and must build first because
-// it empties dist/. The Guide API (dist/api) stays site-wide: apps/video/tools/build-api.mjs runs last.
+// it empties dist/. Each app's tools/build-api.mjs then writes its own dist/api/<slug>, and
+// tools/build-platform-api.mjs writes the catalog and the legacy /api/video last.
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'

@@ -1,9 +1,12 @@
-// Generates the top-level dist/api/index.json catalog for the entire AOA platform.
-// Runs as the final step of the build pipeline.
+// Generates the top-level dist/api/index.json catalog for the entire AOA platform, and the
+// backward-compatible /api/video/* of the former Video Studio. Runs as the final step of the build.
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { config as product } from '../apps/product/tools/build-api.mjs'
+import { config as story } from '../apps/story/tools/build-api.mjs'
+import { buildVideoApi, mergeWorkflows } from '../packages/video-core/tools/build-video-api.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 
@@ -38,11 +41,17 @@ export function build({ siteUrl, out = resolve(root, 'dist') } = {}) {
     siteUrl,
     description: 'A catalog of AOA reference tools and their agent specification endpoints.',
     tools: {
-      video: {
-        name: 'Video Studio',
+      story: {
+        name: 'Story Video Studio',
         mode: 'Mode B (Companion)',
-        workbench: `${siteUrl}/video/`,
-        index: `${siteUrl}/api/video/index.json`,
+        workbench: `${siteUrl}/story/`,
+        index: `${siteUrl}/api/story/index.json`,
+      },
+      product: {
+        name: 'Product Video Studio',
+        mode: 'Mode B (Companion)',
+        workbench: `${siteUrl}/product/`,
+        index: `${siteUrl}/api/product/index.json`,
       },
       slide: {
         name: 'Slide Studio',
@@ -56,7 +65,41 @@ export function build({ siteUrl, out = resolve(root, 'dist') } = {}) {
   const target = join(out, 'api', 'index.json')
   mkdirSync(dirname(target), { recursive: true })
   writeFileSync(target, `${JSON.stringify(catalog, null, 2)}\n`)
+  buildLegacyVideoApi({ siteUrl, out })
   return catalog
+}
+
+/**
+ * /api/video/* as published before Video Studio split into apps/product and apps/story. Agents and
+ * installed Skills still use these URLs, so the old layout stays: the product API at /api/video with
+ * a workflow for both kinds, plus the story Skill and story-guide.md.
+ */
+function buildLegacyVideoApi({ siteUrl, out }) {
+  const read = (app) => JSON.parse(readFileSync(join(app.appDir, 'specs', 'workflow.json'), 'utf8'))
+  const workflow = mergeWorkflows({ product: read(product), story: read(story) })
+  const legacy = { slug: 'video', template: 'product-video', workflowText: `${JSON.stringify(workflow, null, 2)}\n`.replaceAll('/api/product/', '/api/video/') }
+  buildVideoApi({ ...product, ...legacy, siteUrl, out })
+  // The story Skill, built for /api/video into a scratch directory, then moved next to the product one.
+  const scratch = join(out, '.legacy-video')
+  const s = buildVideoApi({ ...story, ...legacy, siblings: { 'product-video': 'video' }, siteUrl, out: scratch })
+  const api = join(out, 'api', 'video')
+  for (const rel of ['skills/story-video', 'skills/story-video.zip']) cpSync(join(scratch, 'api', 'video', rel), join(api, rel), { recursive: true })
+  cpSync(join(scratch, 'api', 'video', 'agent-guide.md'), join(api, 'story-guide.md'))
+  rmSync(scratch, { recursive: true, force: true })
+
+  const indexFile = join(api, 'index.json')
+  const index = JSON.parse(readFileSync(indexFile, 'utf8'))
+  const base = `${siteUrl}/api/video`
+  Object.assign(index, {
+    deprecated: `Video Studio split into ${siteUrl}/product/ and ${siteUrl}/story/; use ${siteUrl}/api/product/index.json and ${siteUrl}/api/story/index.json.`,
+    entries: { product: `${base}/agent-guide.md`, story: `${base}/story-guide.md` },
+    skills: {
+      product: { zip: `${base}/skills/product-video.zip`, docs: `${base}/skills/product-video/SKILL.md` },
+      story: { zip: `${base}/skills/story-video.zip`, docs: `${base}/skills/story-video/SKILL.md` },
+    },
+  })
+  index.checksums.storySkill = s.index.checksums.skill
+  writeFileSync(indexFile, `${JSON.stringify(index, null, 2)}\n`)
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

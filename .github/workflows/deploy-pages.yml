@@ -40,7 +40,8 @@ jobs:
       - name: Check specs, skill links and generated types
         run: |
           pnpm run test:specs
-          node apps/video/tools/gen-types.mjs --check
+          node packages/video-core/tools/gen-types.mjs --check
+          node --test tests/video-apps.test.mjs
           node apps/slide/tools/gen-types.mjs --check
           pnpm run typecheck
 

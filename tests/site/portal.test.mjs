@@ -44,7 +44,7 @@ test('relative links and #anchors in the portal and articles resolve', () => {
         if (hash?.length > 1 && !page.endsWith('index.html') && !html.includes(`id="${hash.slice(1)}"`)) broken.push(`${page} → ${hash}`)
         continue
       }
-      if (/^(\.\.?\/)((video|slide)\/$|api\/)/.test(url)) continue // other apps and the Guide API, built separately
+      if (/^(\.\.?\/)((story|product|slide)\/$|api\/)/.test(url)) continue // other apps and the Guide API, built separately
       let target = url.startsWith('/') ? join(out, url) : join(out, dirname(page), url)
       if (url.endsWith('/')) target = join(target, 'index.html')
       if (!existsSync(target)) broken.push(`${page} → ${url}`)

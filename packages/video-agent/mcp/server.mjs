@@ -33,24 +33,26 @@ export function createServer({ projectDir = process.cwd() } = {}) {
   // Guide resources (static site content)
   const resources = [
     ['guide', 'video://guide', 'agent-guide.md', 'text/markdown', 'Agent guide: how to run the whole workflow (product videos)'],
-    ['story-guide', 'video://guide/story', 'story-guide.md', 'text/markdown', 'Agent guide for story videos (project.kind "story"): story, cast and SVG animation'],
-    ['story-design', 'video://guide/story/design', 'skills/story-video/design-guide.md', 'text/markdown', 'Story videos: art style, character rigs, voices and motion modules'],
-    ['workflow', 'video://workflow', 'workflow.json', 'application/json', 'Workflow steps, gates, transitions (SPEC §6)'],
+    ['story-guide', 'video://guide/story', 'agent-guide.md', 'text/markdown', 'Agent guide for story videos (project.kind "story"): story, cast and SVG animation', 'story'],
+    ['story-design', 'video://guide/story/design', 'skills/story-video/design-guide.md', 'text/markdown', 'Story videos: art style, character rigs, voices and motion modules', 'story'],
+    ['workflow', 'video://workflow', 'workflow.json', 'application/json', 'Workflow steps, gates, transitions for product videos (SPEC §6)'],
+    ['story-workflow', 'video://workflow/story', 'workflow.json', 'application/json', 'Workflow steps, gates, transitions for story videos (SPEC §6)', 'story'],
     ['schema-common', 'video://schemas/common', 'schemas/common.schema.json', 'application/json', 'Shared JSON Schema definitions'],
     ['schema-project', 'video://schemas/project', 'schemas/project.schema.json', 'application/json', 'video.project.json schema'],
     ['schema-scene', 'video://schemas/scene', 'schemas/scene.schema.json', 'application/json', 'scene.json schema'],
     ['rules-script', 'video://rules/script', 'rules/script.md', 'text/markdown', 'Narration writing rules'],
     ['rules-visual', 'video://rules/visual', 'rules/visual.md', 'text/markdown', 'Visual rules for scenes and overlay elements'],
-    ['template', 'video://templates/product-introduction', 'templates/product-video/manifest.json', 'application/json', 'Project template manifest (files and SHA-256)'],
+    ['template', 'video://templates/product-introduction', 'templates/product-video/manifest.json', 'application/json', 'Product video template manifest (files and SHA-256)'],
+    ['story-template', 'video://templates/story', 'templates/story-video/manifest.json', 'application/json', 'Story video template manifest (files and SHA-256)', 'story'],
   ]
-  for (const [name, uri, path, mimeType, description] of resources) {
-    server.registerResource(name, uri, { description, mimeType }, async () => ({ contents: [{ uri, mimeType, text: await guideText(path) }] }))
+  for (const [name, uri, path, mimeType, description, kind] of resources) {
+    server.registerResource(name, uri, { description, mimeType }, async () => ({ contents: [{ uri, mimeType, text: await guideText(path, kind) }] }))
   }
   server.registerResource('project', 'video://project/current', { description: 'Current project status report (pnpm run status --json)', mimeType: 'application/json' }, async (uri) => ({
     contents: [{ uri: uri.href, mimeType: 'application/json', text: JSON.stringify(await status(rootOf()), null, 2) }],
   }))
 
-  // Prompts (generated from the Skill; see apps/video/tools/build-api.mjs)
+  // Prompts (generated from the product Skill; see apps/product/tools/build-api.mjs)
   const prompts = [
     ['analyze', 'prompts/analyze-product.md', 'Analyze the product and write brief/product-brief.md'],
     ['analyze-style', 'prompts/analyze-style.md', 'Analyze a reference video and write brief/style.json'],
@@ -101,7 +103,7 @@ export function createServer({ projectDir = process.cwd() } = {}) {
       if (kind === 'story' && !story && !description) throw new AgentError('a story project needs story (or description)')
       if (kind === 'product' && !productUrl && !sourceCodePath && !description) throw new AgentError('give at least one of productUrl, sourceCodePath, description')
       const dir = resolve(projectDir, directory)
-      const manifest = await unpackTemplate(dir)
+      const manifest = await unpackTemplate(dir, kind)
       const file = join(dir, PROJECT_FILE)
       const doc = JSON.parse(readFileSync(file, 'utf8'))
       doc.project.id = randomUUID()
