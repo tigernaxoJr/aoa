@@ -27,3 +27,32 @@ export interface SlideActivity {
   waitingForUser?: boolean;
   updatedAt: string;
 }
+
+/**
+ * output/check.json, written by `pnpm run check`: per-slide render findings and screenshots.
+ */
+export interface SlideCheck {
+  checkedAt: string;
+  total: number;
+  ok: boolean;
+  slides: {
+    no: number;
+    title?: string;
+    /**
+     * Line in slides.md where the slide starts
+     */
+    line?: number;
+    /**
+     * Screenshot path relative to the project root
+     */
+    image: string;
+    issues: {
+      type: "overflow" | "clipped" | "unresolved" | "image" | "canvas" | "compile" | "runtime" | "render";
+      message: string;
+    }[];
+  }[];
+  /**
+   * Problems not tied to one slide, or that stopped the check
+   */
+  errors: string[];
+}

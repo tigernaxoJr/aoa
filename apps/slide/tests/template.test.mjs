@@ -40,6 +40,8 @@ test('template: has all required files and components', () => {
     'components/ThreeGlobe.vue',
     'scripts/validate.mjs',
     'scripts/state.mjs',
+    'scripts/check.mjs',
+    'vite.config.ts',
   ]
 
   for (const rel of required) {
@@ -50,6 +52,7 @@ test('template: has all required files and components', () => {
   assert.ok(pkg.dependencies['@slidev/cli'], 'package.json must depend on @slidev/cli')
   assert.ok(pkg.dependencies['three'], 'package.json must depend on three')
   assert.ok(pkg.scripts['export'], 'package.json must have export script')
+  assert.ok(pkg.scripts['check'], 'package.json must have check script')
 })
 
 test('template: slides.md parses cleanly and includes 3D and SVG', () => {
@@ -71,7 +74,7 @@ test('published API: absolute URLs, no {{SITE_URL}} left, schemas and commands i
   }
   assert.equal(manifest.zip.url, `${SITE}/api/slide/templates/slidev-deck.zip`)
   const paths = manifest.files.map((f) => f.path)
-  for (const p of ['schemas/project.schema.json', 'schemas/activity.schema.json', 'schemas/workflow.json', '.claude/commands/slide-outline.md', '.claude/commands/slide-export.md']) {
+  for (const p of ['schemas/project.schema.json', 'schemas/activity.schema.json', 'schemas/check.schema.json', 'schemas/workflow.json', 'scripts/check.mjs', '.claude/commands/slide-outline.md', '.claude/commands/slide-export.md']) {
     assert.ok(paths.includes(p), `template zip must include ${p}`)
   }
   assert.ok(!paths.includes('.claude/commands/slide-init.md'), 'init runs before the project exists')

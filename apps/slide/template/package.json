@@ -8,6 +8,7 @@
     "build": "slidev build",
     "export": "slidev export --output output/slides.pdf",
     "export:png": "slidev export --format png --output output/slides-png",
+    "check": "node scripts/check.mjs",
     "validate": "node scripts/validate.mjs",
     "state": "node scripts/state.mjs"
   },
@@ -20,6 +21,7 @@
   "devDependencies": {
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "playwright-chromium": "^1.63.0"
+    "playwright-chromium": "^1.63.0",
+    "vite-plugin-singlefile": "^2.3.3"
   }
 }

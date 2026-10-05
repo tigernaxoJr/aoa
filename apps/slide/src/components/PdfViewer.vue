@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { hasHtml, hasPdf, htmlFile, htmlUrl, pdfFile, pdfUrl } from '../lib/store'
+import { hasHtml, hasPdf, htmlFile, htmlStandalone, htmlUrl, pdfFile, pdfUrl } from '../lib/store'
 
 const hasAnyOutput = computed(() => hasPdf.value || hasHtml.value)
+/** Only a single-file build plays from the folder; a split build opens blank. */
+const playableHtml = computed(() => hasHtml.value && htmlStandalone.value)
 
 const formattedPdfSize = computed(() => {
   if (!pdfFile.value) return ''
@@ -38,7 +40,7 @@ const formattedHtmlSize = computed(() => {
 
       <div v-if="hasAnyOutput" class="flex flex-wrap items-center gap-2">
         <a
-          v-if="hasHtml"
+          v-if="playableHtml"
           :href="htmlUrl!"
           target="_blank"
           class="inline-flex items-center gap-1.5 rounded-xl border border-sky-300 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-700 shadow-xs hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300 dark:hover:bg-sky-900/60 transition-colors cursor-pointer"
@@ -50,7 +52,7 @@ const formattedHtmlSize = computed(() => {
         </a>
 
         <a
-          v-if="hasHtml"
+          v-if="playableHtml"
           :href="htmlUrl!"
           download="slides.html"
           class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
@@ -77,7 +79,18 @@ const formattedHtmlSize = computed(() => {
 
     <!-- HTML / PDF Viewer Frame -->
     <div v-if="hasHtml || hasPdf" class="mt-6 space-y-4">
-      <div v-if="hasHtml" class="rounded-xl border border-slate-200 p-4 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 flex items-center justify-between">
+      <div
+        v-if="hasHtml && !htmlStandalone"
+        class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-200"
+      >
+        <div class="font-semibold">dist/index.html 是拆檔的網頁版，無法從這裡開啟</div>
+        <p class="mt-1 leading-relaxed">
+          它需要旁邊的 assets/ 檔案，只能透過網頁伺服器播放（在專案資料夾執行 <code>npx serve dist</code>）。
+          請 Agent 依 slidev-deck Skill 的匯出指南改用單檔輸出（新版範本的 <code>vite.config.ts</code> 與 <code>slides.md</code> 的 <code>routerMode: hash</code>），再執行 <code>pnpm run build</code>，就能雙擊或從這裡直接放映。
+        </p>
+      </div>
+
+      <div v-if="playableHtml" class="rounded-xl border border-slate-200 p-4 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

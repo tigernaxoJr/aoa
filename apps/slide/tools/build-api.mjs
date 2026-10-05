@@ -19,7 +19,7 @@ const specsDir = join(slideDir, 'specs')
 const skillDir = join(slideDir, 'skills', 'slidev-deck')
 const templateDir = join(slideDir, 'template')
 
-const SCHEMAS = ['project.schema.json', 'activity.schema.json']
+const SCHEMAS = ['project.schema.json', 'activity.schema.json', 'check.schema.json']
 // template/schemas/ is a convenience copy for running the scripts in the repo; the zip takes specs/ instead.
 const TEMPLATE_EXCLUDE = [/(^|\/)node_modules\//, /^\.tmp\//, /^output\//, /^dist\//, /^schemas\//]
 const TEXT = /\.(md|mjs|vue|json)$/

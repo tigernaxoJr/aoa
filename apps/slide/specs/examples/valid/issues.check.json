@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-05T08:00:00.000Z",
+  "total": 2,
+  "ok": false,
+  "slides": [
+    { "no": 1, "title": "封面", "image": "output/slides-png/1.png", "issues": [] },
+    {
+      "no": 2,
+      "image": "output/slides-png/2.png",
+      "issues": [{ "type": "overflow", "message": "內容超出版面（下方 48px）：<ul>「重點一」" }]
+    }
+  ],
+  "errors": []
+}

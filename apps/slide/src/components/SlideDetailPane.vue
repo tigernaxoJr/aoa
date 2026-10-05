@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ParsedSlide } from '../lib/slide-parser'
+import { issuesOf, rendersStale, slideImages } from '../lib/store'
 import CopyButton from './CopyButton.vue'
+import IssueList from './IssueList.vue'
 
 const props = defineProps<{
   slide: ParsedSlide | null
@@ -22,6 +24,9 @@ function downloadMarkdown(content: string, filename: string) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+const image = computed(() => (props.slide ? slideImages.value.get(props.slide.index) : undefined))
+const issues = computed(() => (props.slide ? issuesOf(props.slide.index) : []))
 
 const canPrev = computed(() => !!props.slide && props.slide.index > 1)
 const canNext = computed(() => !!props.slide && props.slide.index < props.totalSlides)
@@ -143,10 +148,30 @@ const slideThemeGradient = computed(() => {
         </span>
       </div>
 
-      <!-- Slide Preview Mockup -->
-      <div>
+      <IssueList :issues="issues" />
+
+      <!-- Real render from `pnpm run check` / `pnpm run export:png` -->
+      <div v-if="image">
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span class="font-semibold text-slate-500 dark:text-slate-400">實際渲染畫面</span>
+          <span
+            v-if="rendersStale"
+            class="rounded bg-amber-50 px-2 py-0.5 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+          >
+            slides.md 在截圖後有修改，畫面可能不是最新；請 Agent 執行 pnpm run check
+          </span>
+        </div>
+        <img
+          :src="image.url"
+          :alt="`第 ${slide.index} 頁渲染畫面`"
+          class="w-full rounded-xl border border-slate-200 shadow-md dark:border-slate-800"
+        />
+      </div>
+
+      <!-- Markdown approximation until there is a real render -->
+      <div v-else>
         <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-          投影片版面即時檢視：
+          Markdown 近似預覽（不含版型、組件與主題；請 Agent 執行 <code>pnpm run check</code> 產生實際畫面）：
         </div>
         <!-- 16:9 Presentation Stage Mockup -->
         <div

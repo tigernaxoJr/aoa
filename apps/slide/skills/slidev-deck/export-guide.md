@@ -26,7 +26,11 @@ pnpm exec slidev export --with-clicks --output output/slides-clicks.pdf
 pnpm run build
 ```
 
-直接以 Slidev 原生 `slidev build` 打包為靜態網頁 SPA（產物在 `dist/` 目錄），包含完整簡報動畫、演講者備忘錄與鍵盤控制。直接開啟 `dist/index.html` 或佈署至靜態網站即可全螢幕放映！
+以 Slidev 原生 `slidev build` 打包，範本的 `vite.config.ts` 會把腳本、樣式與圖片全部內嵌成**單一檔案** `dist/index.html`，包含完整動畫、`v-click` 與鍵盤控制。雙擊即可離線放映，網頁工作台也能直接在新視窗開啟。
+
+- 不要刪除 `vite.config.ts`，也不要移除 `slides.md` 開頭的 `routerMode: hash`：瀏覽器不允許 `file://` 或工作台的 blob 頁面載入外部模組腳本，拆檔的 build 或 history 路由開起來會是白畫面。
+- 圖片放在 `public/` 或以相對路徑引用時會被內嵌；檔案很大時 `index.html` 也會跟著變大。
+- 字型（Google Fonts）需要網路，離線時會改用系統字型。
 
 ---
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ParsedSlide } from '../lib/slide-parser'
+import { issuesOf, slideImages } from '../lib/store'
 
 const props = defineProps<{
   slides: ParsedSlide[]
@@ -58,6 +59,13 @@ const visualSlidesCount = computed(() => {
             </span>
 
             <div class="flex flex-wrap items-center gap-1">
+              <span
+                v-if="issuesOf(slide.index).length"
+                class="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-900/60 dark:text-rose-300"
+                :title="issuesOf(slide.index).map((i) => i.message).join('\n')"
+              >
+                {{ issuesOf(slide.index).length }} 個問題
+              </span>
               <span class="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                 {{ slide.layout }}
               </span>
@@ -78,7 +86,14 @@ const visualSlidesCount = computed(() => {
             {{ slide.title }}
           </h4>
 
-          <p class="mt-1 text-[11px] leading-relaxed text-slate-500 line-clamp-2 dark:text-slate-400 font-mono">
+          <img
+            v-if="slideImages.get(slide.index)"
+            :src="slideImages.get(slide.index)!.url"
+            :alt="`第 ${slide.index} 頁縮圖`"
+            loading="lazy"
+            class="mt-2 w-full rounded-md border border-slate-200 dark:border-slate-700"
+          />
+          <p v-else class="mt-1 text-[11px] leading-relaxed text-slate-500 line-clamp-2 dark:text-slate-400 font-mono">
             {{ slide.content }}
           </p>
         </div>

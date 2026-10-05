@@ -1,18 +1,29 @@
 import { computed, ref, shallowRef } from 'vue'
-import type { SlideActivity, SlideProject } from '../types/protocol'
-import { readText, tryFile, writeText } from '@aoa/web-shared/fsa'
+import type { SlideActivity, SlideCheck, SlideProject } from '../types/protocol'
+import { listFiles, readText, tryFile, writeText } from '@aoa/web-shared/fsa'
 import { parseSlides, type ParsedDeck } from './slide-parser'
 
 export const dirHandle = shallowRef<FileSystemDirectoryHandle | null>(null)
 export const project = ref<SlideProject | null>(null)
 export const activity = ref<SlideActivity | null>(null)
 export const slidesMarkdown = ref<string | null>(null)
+/** When slides.md last changed, to tell whether the screenshots below still match it. */
+export const slidesModified = ref<number | null>(null)
+/** output/check.json, written by `pnpm run check`. */
+export const check = ref<SlideCheck | null>(null)
+/** Real renders by slide number: output/slides-png/<no>.png from `pnpm run check` or `pnpm run export:png`. */
+export const slideImages = shallowRef<Map<number, SlideImage>>(new Map())
 /** slide.start.json: what the user asked for, written by the web page before the Agent builds the project. */
 export const start = ref<SlideStartConfig | null>(null)
 export const pdfFile = shallowRef<File | null>(null)
 export const pdfUrl = ref<string | null>(null)
 export const htmlFile = shallowRef<File | null>(null)
 export const htmlUrl = ref<string | null>(null)
+/**
+ * The HTML build loads nothing from next to it, so it plays from a blob: URL. Older templates built a
+ * split SPA (index.html + assets/), which opens blank anywhere but a web server.
+ */
+export const htmlStandalone = ref(true)
 export const isPolling = ref(false)
 export const lastSync = ref<Date | null>(null)
 export const syncError = ref<string | null>(null)
@@ -22,6 +33,25 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 
 export const parsedDeck = computed<ParsedDeck>(() => {
   return parseSlides(slidesMarkdown.value || '')
+})
+
+export interface SlideImage {
+  url: string
+  modified: number
+}
+
+export type SlideIssue = SlideCheck['slides'][number]['issues'][number]
+
+export function issuesOf(no: number): SlideIssue[] {
+  return check.value?.slides.find((s) => s.no === no)?.issues ?? []
+}
+
+/** slides.md changed after the newest screenshot or check: the renders show an older version. */
+export const rendersStale = computed(() => {
+  if (!slidesModified.value) return false
+  const times = [...slideImages.value.values()].map((i) => i.modified)
+  if (check.value) times.push(Date.parse(check.value.checkedAt))
+  return times.length > 0 && slidesModified.value > Math.max(...times)
 })
 
 export const hasPdf = computed(() => !!pdfFile.value)
@@ -47,6 +77,10 @@ export function resetDirectory() {
     URL.revokeObjectURL(htmlUrl.value)
     htmlUrl.value = null
   }
+  for (const image of slideImages.value.values()) URL.revokeObjectURL(image.url)
+  slideImages.value = new Map()
+  check.value = null
+  slidesModified.value = null
   dirHandle.value = null
   loaded.value = false
   project.value = null
@@ -55,6 +89,7 @@ export function resetDirectory() {
   slidesMarkdown.value = null
   pdfFile.value = null
   htmlFile.value = null
+  htmlStandalone.value = true
   lastSync.value = null
   syncError.value = null
 }
@@ -88,9 +123,24 @@ export async function pollFiles() {
 
     // 3. Read slides.md
     try {
-      slidesMarkdown.value = await readText(root, 'slides.md')
+      const file = await tryFile(root, 'slides.md')
+      slidesMarkdown.value = file ? await file.text() : null
+      slidesModified.value = file?.lastModified ?? null
     } catch {
       slidesMarkdown.value = null
+    }
+
+    // 3b. Render check and per-slide screenshots
+    try {
+      const file = await tryFile(root, 'output/check.json')
+      check.value = file ? (JSON.parse(await file.text()) as SlideCheck) : null
+    } catch {
+      // being rewritten; keep the last good report
+    }
+    try {
+      await pollImages(root)
+    } catch {
+      // keep the previous screenshots
     }
 
     // 4. Check output/slides.pdf
@@ -118,6 +168,7 @@ export async function pollFiles() {
         if (htmlUrl.value) URL.revokeObjectURL(htmlUrl.value)
         htmlFile.value = hFile
         htmlUrl.value = URL.createObjectURL(hFile)
+        htmlStandalone.value = !/<(script|link)\b[^>]*\b(src|href)="(?!data:|https?:|#)[^"]*\.(js|css)"/i.test(await hFile.text())
       } else if (!hFile && htmlFile.value) {
         if (htmlUrl.value) URL.revokeObjectURL(htmlUrl.value)
         htmlFile.value = null
@@ -133,6 +184,32 @@ export async function pollFiles() {
   } catch (err: any) {
     syncError.value = err.message || '讀取本機檔案失敗'
   }
+}
+
+/** Refreshes slideImages, creating object URLs only for screenshots that are new or changed. */
+async function pollImages(root: FileSystemDirectoryHandle) {
+  const next = new Map<number, SlideImage>()
+  let changed = false
+  for (const path of await listFiles(root, 'output/slides-png')) {
+    const no = Number(/\/(\d+)\.png$/.exec(path)?.[1])
+    if (!no) continue
+    const file = await tryFile(root, path)
+    if (!file) continue
+    const old = slideImages.value.get(no)
+    if (old && old.modified === file.lastModified) {
+      next.set(no, old)
+      continue
+    }
+    next.set(no, { url: URL.createObjectURL(file), modified: file.lastModified })
+    changed = true
+  }
+  for (const [no, image] of slideImages.value) {
+    if (next.get(no) !== image) {
+      URL.revokeObjectURL(image.url)
+      changed = true
+    }
+  }
+  if (changed) slideImages.value = next
 }
 
 export function startPolling(intervalMs = 2500) {

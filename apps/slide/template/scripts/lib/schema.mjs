@@ -6,16 +6,21 @@ import addFormats from 'ajv-formats'
 
 export const PROJECT_FILE = 'slide.project.json'
 export const ACTIVITY_FILE = 'slide.activity.json'
+export const CHECK_FILE = 'output/check.json'
 
 export function loadSchemas(root) {
   const ajv = new Ajv2020({ allErrors: true, strict: true, strictTypes: false, strictRequired: false })
   addFormats(ajv)
-  for (const name of ['project', 'activity']) {
+  for (const name of ['project', 'activity', 'check']) {
     const file = join(root, 'schemas', `${name}.schema.json`)
     if (!existsSync(file)) throw new Error(`missing ${file}; re-download schemas/ from the template`)
     ajv.addSchema(JSON.parse(readFileSync(file, 'utf8')))
   }
-  return { project: ajv.getSchema('project.schema.json'), activity: ajv.getSchema('activity.schema.json') }
+  return {
+    project: ajv.getSchema('project.schema.json'),
+    activity: ajv.getSchema('activity.schema.json'),
+    check: ajv.getSchema('check.schema.json'),
+  }
 }
 
 /** Error messages for `doc`, empty when valid. */

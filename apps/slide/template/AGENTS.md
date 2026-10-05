@@ -14,17 +14,18 @@
 | `slide.start.json` | 網頁表單寫入的需求（只在網頁準備的資料夾中出現；唯讀） |
 | `components/*.vue` | 自訂 Vue / Three.js / SVG 組件，Slidev 自動註冊，不必 import |
 | `schemas/` | 協議 Schema 與 `workflow.json`，`validate` 與 `state` 依此驗證 |
+| `output/check.json`、`output/slides-png/` | `pnpm run check` 的檢查結果與每頁截圖，網頁工作台會顯示 |
 | `output/slides.pdf` | 匯出的 PDF 檔案 |
-| `dist/index.html` | 匯出的網頁簡報 SPA（方便直接放映） |
+| `dist/index.html` | 匯出的單檔網頁簡報，雙擊即可離線放映（由 `vite.config.ts` 內嵌所有資源；需保留 `slides.md` 的 `routerMode: hash`） |
 
 ---
 
 ## 2. 工作流程
 
 1. **規劃大綱（`/slide-outline`）**：規劃分頁結構、頁數與每頁核心訊息。**停下確認**，確認後狀態改為 `outlined`。
-2. **撰寫內文（`/slide-draft`）**：編寫 `slides.md`，善用 Slidev 版型（`cover`、`two-cols`、`center`、`quote`）。講者備忘錄寫在每頁**最後一個** HTML 註解裡，例如 `<!-- 這裡停頓，先問聽眾 -->`。**停下確認**，確認後狀態改為 `drafted`。
-3. **注入視覺（`/slide-visual`）**：SVG 架構圖與流程圖、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、`v-click` 動畫。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。完成後狀態改為 `visualized`。
-4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run build` 打包為靜態簡報（`dist/`）。成功後狀態改為 `exported`，失敗改為 `failed` 並告知使用者原因。
+2. **撰寫內文（`/slide-draft`）**：編寫 `slides.md`，善用 Slidev 版型（`cover`、`two-cols`、`center`、`quote`）。講者備忘錄寫在每頁**最後一個** HTML 註解裡，例如 `<!-- 這裡停頓，先問聽眾 -->`。`pnpm run check` 通過後**停下確認**，確認後狀態改為 `drafted`。
+3. **注入視覺（`/slide-visual`）**：SVG 架構圖與流程圖、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、`v-click` 動畫。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。`pnpm run check` 通過後狀態改為 `visualized`。
+4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run build` 打包為單檔網頁簡報（`dist/index.html`）。成功後狀態改為 `exported`，失敗改為 `failed` 並告知使用者原因。
 
 ---
 
@@ -44,3 +45,15 @@ pnpm run state project --status drafted --pages 8
 ```
 
 每次修改後執行 `pnpm run validate`。
+
+---
+
+## 4. 渲染檢查
+
+`slides.md` 或 `components/` 改過之後、請使用者確認或匯出之前，一定要執行：
+
+```bash
+pnpm run check
+```
+
+它以 `slidev export` 相同的方式逐頁渲染，回報內容超出版面、文字被截斷、找不到的組件或圖示、無法編譯的頁面、載入失敗的圖片、空白畫布與執行錯誤（附頁碼與 `slides.md` 行號），並把每頁截圖存到 `output/slides-png/`。修到通過為止，並打開截圖親眼確認版面。

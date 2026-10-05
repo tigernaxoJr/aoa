@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { parsedDeck, project, slidesMarkdown } from '../lib/store'
+import { check, parsedDeck, project, rendersStale, slidesMarkdown } from '../lib/store'
 import CopyButton from './CopyButton.vue'
 import SlideDetailPane from './SlideDetailPane.vue'
 import SlideSidebar from './SlideSidebar.vue'
@@ -25,6 +25,18 @@ watch(
   },
   { immediate: true },
 )
+
+const checkSummary = computed(() => {
+  const report = check.value
+  if (!report) return null
+  const bad = report.slides.filter((s) => s.issues.length).length
+  return {
+    ok: report.ok,
+    text: report.ok ? `${report.total} 頁全部通過` : `${bad} / ${report.total} 頁有問題`,
+    time: new Date(report.checkedAt).toLocaleString('zh-TW', { hour12: false }),
+    errors: report.errors,
+  }
+})
 
 const currentSlide = computed(() => {
   return slides.value.find((s) => s.index === selectedSlideIndex.value) || slides.value[0] || null
@@ -90,6 +102,16 @@ function downloadDeck() {
             完整 Markdown 原始碼
           </button>
         </div>
+        <span
+          v-if="checkSummary"
+          class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+          :class="checkSummary.ok
+            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+            : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'"
+          :title="`pnpm run check · ${checkSummary.time}${rendersStale ? '（slides.md 之後有修改）' : ''}`"
+        >
+          渲染檢查：{{ checkSummary.ok ? '✓' : '✗' }} {{ checkSummary.text }}{{ rendersStale ? '（已過時）' : '' }}
+        </span>
       </div>
 
       <div class="flex items-center gap-2">
@@ -113,6 +135,14 @@ function downloadDeck() {
         />
       </div>
     </div>
+
+    <ul
+      v-if="checkSummary?.errors.length"
+      class="space-y-1 rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-xs text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200"
+    >
+      <li class="font-semibold">整份簡報的錯誤（不屬於單一頁）：</li>
+      <li v-for="e in checkSummary.errors" :key="e" class="break-all">{{ e }}</li>
+    </ul>
 
     <!-- Empty State -->
     <div

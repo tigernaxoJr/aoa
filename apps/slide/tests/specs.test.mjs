@@ -12,20 +12,21 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
 const ajv = new Ajv2020({ allErrors: true, strict: true, strictTypes: false, strictRequired: false })
 addFormats(ajv)
-for (const name of ['project', 'activity']) {
+for (const name of ['project', 'activity', 'check']) {
   ajv.addSchema(readJson(join(specsDir, `${name}.schema.json`)))
 }
 const validators = {
   project: ajv.getSchema('project.schema.json'),
   activity: ajv.getSchema('activity.schema.json'),
+  check: ajv.getSchema('check.schema.json'),
 }
 
 test('slide specs/examples valid and invalid schemas', () => {
   for (const expectValid of [true, false]) {
     const dir = join(specsDir, 'examples', expectValid ? 'valid' : 'invalid')
     for (const file of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
-      const kind = file.match(/\.(project|activity)\.json$/)?.[1]
-      assert.ok(kind, `${file}: name must end with .project.json or .activity.json`)
+      const kind = file.match(/\.(project|activity|check)\.json$/)?.[1]
+      assert.ok(kind, `${file}: name must end with .project.json, .activity.json or .check.json`)
       const validate = validators[kind]
       const ok = validate(readJson(join(dir, file)))
       const msg = validate.errors ? validate.errors.map((e) => `${e.instancePath || '/'} ${e.message}`).join(', ') : ''
@@ -70,7 +71,7 @@ test('slide skill links and workflow guide links resolve', () => {
 
 test('template/schemas/ is an exact copy of specs/', () => {
   const copy = fileURLToPath(new URL('../template/schemas/', import.meta.url))
-  for (const f of ['project.schema.json', 'activity.schema.json', 'workflow.json']) {
+  for (const f of ['project.schema.json', 'activity.schema.json', 'check.schema.json', 'workflow.json']) {
     assert.equal(readFileSync(join(copy, f), 'utf8'), readFileSync(join(specsDir, f), 'utf8'), `template/schemas/${f} differs from specs/${f}; copy it over`)
   }
 })

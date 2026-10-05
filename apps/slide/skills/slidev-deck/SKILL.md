@@ -49,15 +49,21 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 
 `--step` 只能是 `init`、`outline`、`draft`、`visual`、`export`、`idle`；`--status` 只能是 schema 列出的值。腳本會先依 `schemas/` 驗證、驗證失敗不寫檔，並以原子寫入（暫存檔改名）避免留下損壞的 JSON。
 
+<a id="check"></a>**渲染檢查（`pnpm run check`）**：以 `slidev export` 相同的方式逐頁渲染，檢查內容超出版面、區塊文字被截斷、找不到的組件或 Iconify 圖示、無法編譯的頁面、載入失敗的圖片、空白畫布（WebGL 匯出會是空的）與執行錯誤。每頁截圖存到 `output/slides-png/<頁碼>.png`，結果寫入 `output/check.json`（網頁工作台會顯示每頁的截圖與問題）。有問題時結束碼為 1，並列出頁碼、`slides.md` 行號與原因。
+
+- 每次修改 `slides.md` 或 `components/` 後、停下來請使用者確認前，都執行 `pnpm run check`，修到通過為止。
+- 打開有問題頁面的截圖親眼確認版面；檢查通過也要抽看幾頁，留意文字過小、對比不足、版面擁擠等腳本抓不到的問題。
+- 「這頁沒有渲染出來」通常是別頁的錯誤中斷了渲染，先修正其他頁的錯誤再重新檢查。
+
 1. <a id="outline"></a>**規劃大綱（`/slide-outline`）**：依主題、對象與資料擬定分頁大綱，決定每頁的核心訊息與呈現方式（文字、SVG 圖、3D、引言）。向使用者展示大綱並等待確認，確認後 `pnpm run state project --status outlined --pages <頁數>`。
 2. <a id="draft"></a>**撰寫簡報（`/slide-draft`）**：編輯 `slides.md`，以單獨一行的 `---` 分頁；每頁可在開頭用 frontmatter 指定版型：
    - `cover`：首頁與大標題；`two-cols`：左右雙欄（右欄以 `::right::` 開始）；`center`：聚焦單一重點；`quote`：引言。
    - **講者備忘錄**：寫在該頁**最後一個** HTML 註解裡（Slidev 的規則），例如 `<!-- 這裡先停頓，問聽眾是否用過 Agent -->`。不要寫成 `<!-- notes -->` 這種標籤；頁中其他註解不會被當成備忘錄。
-   完成後展示給使用者確認，`pnpm run state project --status drafted`。
-3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。內嵌 SVG 架構圖與流程圖、在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。完成後 `pnpm run state project --status visualized`。
-4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。
+   `pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status drafted`。
+3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。內嵌 SVG 架構圖與流程圖、在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後 `pnpm run state project --status visualized`。
+4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。匯出前先確認 `pnpm run check` 通過。
    - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
-   - **匯出網頁簡報**：`pnpm run build` 產出 SPA 靜態簡報（`dist/`，開箱即播）。
+   - **匯出網頁簡報**：`pnpm run build` 產出單檔網頁簡報 `dist/index.html`（雙擊即可離線放映；不要刪 `vite.config.ts` 或 `slides.md` 的 `routerMode: hash`）。
    成功後 `pnpm run state project --status exported`；失敗時 `--status failed` 並把錯誤用白話告訴使用者。
 
 完成後告訴使用者可在網頁工作台 {{SITE_URL}}/slide/ 開啟這個資料夾預覽每一頁、PDF 與網頁。
@@ -70,4 +76,5 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 2. **專案目錄規範**：新專案依 §1 下載範本、以 manifest SHA-256 驗證後解壓至目前目錄，依 slide.start.json 填寫 slide.project.json；嚴禁另建子資料夾。
 3. **資料不離開本機**：不把使用者資料上傳到任何外部端點。
 4. **單一真理來源**：簡報內容只在 `slides.md`；狀態只透過 `pnpm run state` 修改，不手寫 `slide.project.json` / `slide.activity.json`。
-5. **向量優先**：圖表與圖示優先使用 SVG 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。
+5. **先檢查再交付**：`pnpm run check` 沒通過，不請使用者確認、不匯出。
+6. **向量優先**：圖表與圖示優先使用 SVG 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。

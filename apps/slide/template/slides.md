@@ -4,6 +4,8 @@ title: Agent-Offloaded Architecture
 class: text-center
 transition: slide-left
 aspectRatio: '16/9'
+# keep: the single-file build in dist/ plays from file:// and the web workbench only with hash routes
+routerMode: hash
 ---
 
 # Agent Studio Slidev

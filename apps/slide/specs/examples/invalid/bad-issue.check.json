@@ -1,0 +1,7 @@
+{
+  "checkedAt": "2026-10-05T08:00:00.000Z",
+  "total": 1,
+  "ok": false,
+  "slides": [{ "no": 1, "image": "output/slides-png/1.png", "issues": [{ "type": "typo", "message": "x" }] }],
+  "errors": []
+}
