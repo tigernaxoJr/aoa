@@ -33,6 +33,22 @@
       "env": {
         "SITE_URL": "https://aoa.tigernaxo.com"
       }
+    },
+    {
+      "name": "slide-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--config",
+        "apps/slide/vite.config.ts",
+        "--port",
+        "5183",
+        "--strictPort"
+      ],
+      "port": 5183,
+      "env": {
+        "SITE_URL": "https://aoa.tigernaxo.com"
+      }
     }
   ]
 }
