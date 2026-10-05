@@ -59,8 +59,9 @@ async function handleSave() {
     notify('warn', '請填寫角色識別碼 (id)')
     return
   }
-  if (!/^[a-z0-9_-]+$/.test(id)) {
-    notify('warn', '角色識別碼只能包含英文小寫、數字、底線與連字號')
+  // Same rule as project.schema.json cast[].id (it is also the art folder name).
+  if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(id)) {
+    notify('warn', '角色識別碼須以英文小寫開頭，只能包含英文小寫、數字與連字號（例如 old-farmer）')
     return
   }
 

@@ -46,12 +46,12 @@ const activeMember = computed<CastMember | null>(() => {
 function startCreate() {
   const nextIdx = castList.value.length + 1
   draftNewMember.value = {
-    id: `character_${nextIdx}`,
+    id: `character-${nextIdx}`,
     name: `新角色 ${nextIdx}`,
     description: '',
     provider: 'cosyvoice3',
     voice: '中文男 <用熱情開朗的大學生語氣>',
-    art: `@/assets/cast/character_${nextIdx}/`,
+    art: '', // set from the final id on save
   }
   isCreating.value = true
   selectedId.value = null

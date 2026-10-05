@@ -76,6 +76,10 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   await page.getByRole('button', { name: /新增角色/ }).first().click()
   await page.getByPlaceholder('例如：志明').fill('志明')
   await page.getByPlaceholder(/例如：20歲熱血青年/).fill('熱血青年，個性樂觀')
+  // The id follows project.schema.json (no underscores), since it is also the art folder name.
+  await page.getByPlaceholder('例如：zhiming').fill('zhi_ming')
+  await page.getByRole('button', { name: '儲存角色' }).click()
+  await page.getByText(/角色識別碼須以英文小寫開頭/).waitFor({ timeout: 5000 })
   await page.getByPlaceholder('例如：zhiming').fill('zhiming')
   await page.getByRole('button', { name: '儲存角色' }).click()
   await page.getByText('角色【志明】已儲存').waitFor({ timeout: 5000 })
@@ -86,6 +90,7 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   assert.equal(zhiming.name, '志明')
   assert.equal(zhiming.description, '熱血青年，個性樂觀')
   assert.equal(zhiming.provider, 'cosyvoice3')
+  assert.equal(zhiming.art, '@/assets/cast/zhiming/', 'the art folder follows the final id')
 
   // Back to the scene board
   await page.getByRole('tab', { name: /分鏡故事板/ }).click()
