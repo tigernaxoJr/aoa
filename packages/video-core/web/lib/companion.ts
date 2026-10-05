@@ -11,7 +11,12 @@ export const companion = reactive({
   /** Label of the action currently running, and its latest output line. */
   running: null as string | null,
   lastLine: '',
+  /** Actions this project's Companion offers (an older Companion sends none). */
+  actions: [] as string[],
 })
+
+/** The Companion is connected and offers `action`. */
+export const canRun = (action: string) => companion.state === 'ready' && companion.actions.includes(action)
 
 type Pairing = { port: number; token: string }
 type Pending = { resolve: (r: { ok: boolean; output: unknown }) => void; label: string }
@@ -62,6 +67,7 @@ export function connect(pairing: Pairing | null = loadPairing(), changed?: () =>
     const msg = JSON.parse(String(event.data))
     if (msg.type === 'ready') {
       companion.state = 'ready'
+      companion.actions = Array.isArray(msg.actions) ? msg.actions : []
       retries = 0
       onChanged() // changes made while disconnected were never pushed
     } else if (msg.type === 'changed') onChanged()
@@ -104,14 +110,14 @@ export function forget() {
 
 export const hasPairing = () => loadPairing() !== null
 
-/** Runs a whitelisted Companion action; resolves when it finishes. */
-export function run(action: string, label: string, scene?: string): Promise<{ ok: boolean; output: unknown }> {
+/** Runs a whitelisted Companion action on a scene or cast member (or narrator); resolves when it finishes. */
+export function run(action: string, label: string, target: { scene?: string; cast?: string } = {}): Promise<{ ok: boolean; output: unknown }> {
   if (!socket || companion.state !== 'ready') return Promise.resolve({ ok: false, output: '尚未連上本機助手' })
   const id = String(++seq)
   companion.running = label
   companion.lastLine = ''
   return new Promise((resolve) => {
     pending.set(id, { resolve, label })
-    socket!.send(JSON.stringify({ type: 'run', id, action, scene }))
+    socket!.send(JSON.stringify({ type: 'run', id, action, ...target }))
   })
 }

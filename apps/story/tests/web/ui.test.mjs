@@ -1,8 +1,11 @@
 // Story video workbench end to end, built and served like the site (see the shared harness in
 // packages/video-core/tests/web/harness.mjs): the story start page, story steps, the cast studio.
 import assert from 'node:assert/strict'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
+import { startCompanion } from '../../../../packages/video-core/template/scripts/lib/companion.mjs'
+import { FAKE_TTS, fullProject, motionScene } from '../../../../packages/video-agent/tests/helpers.mjs'
 import { BASE, fixture, prepareFolder, readOpfs, storyFixture, waitForStart, webApp } from '../../../../packages/video-core/tests/web/harness.mjs'
 import { build as buildApi } from '../../tools/build-api.mjs'
 
@@ -72,8 +75,8 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   // Add a new character "志明"
   await page.getByRole('button', { name: /新增角色/ }).first().click()
   await page.getByPlaceholder('例如：志明').fill('志明')
-  await page.getByPlaceholder('例如：zhiming').fill('zhiming')
   await page.getByPlaceholder(/例如：20歲熱血青年/).fill('熱血青年，個性樂觀')
+  await page.getByPlaceholder('例如：zhiming').fill('zhiming')
   await page.getByRole('button', { name: '儲存角色' }).click()
   await page.getByText('角色【志明】已儲存').waitFor({ timeout: 5000 })
 
@@ -87,6 +90,38 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   // Back to the scene board
   await page.getByRole('tab', { name: /分鏡故事板/ }).click()
   assert.equal(await page.getByTestId('scene-scene-001').isVisible(), true)
+})
+
+test('with the Companion, "立即產生試聽" synthesizes the saved voice; unsaved voice changes must be saved first', async (t) => {
+  if (!web.browser) return t.skip('no browser available')
+  Object.assign(process.env, FAKE_TTS)
+  const p = fullProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-pond', scene: motionScene('scene-001') }] })
+  t.after(p.cleanup)
+  const doc = JSON.parse(readFileSync(p.path('video.project.json'), 'utf8'))
+  Object.assign(doc.project, { kind: 'story', sources: { story: '小狐狸以為月亮掉進了池塘。' }, cast: [{ id: 'fox', name: '小狐狸', voice: 'zh-TW-HsiaoYuNeural' }] })
+  writeFileSync(p.path('video.project.json'), JSON.stringify(doc))
+  const c = await startCompanion({ projectDir: p.root, port: 0, site: `${web.origin}${BASE}`, log: () => {} })
+  t.after(() => c.close())
+
+  const { page } = await web.openApp(t, p, `#pair=${c.port}:${c.token}`)
+  await page.getByTestId('companion-status').getByText('本機助手已連線').waitFor()
+  await page.getByTestId('tab-cast').click()
+  const audition = page.getByTestId('audition')
+  await audition.getByText('立即產生試聽').waitFor()
+
+  // A voice picked but not saved is not what tts --sample would read.
+  const voice = page.locator('select').filter({ has: page.locator('option[value="zh-TW-YunJheNeural"]') })
+  await voice.selectOption('zh-TW-YunJheNeural')
+  assert.equal(await audition.isDisabled(), true)
+  await page.getByTestId('audition-unsaved').waitFor()
+  await voice.selectOption('zh-TW-HsiaoYuNeural')
+  await page.getByRole('button', { name: '儲存角色' }).click()
+  await page.getByText('角色【小狐狸】已儲存').waitFor({ timeout: 5000 })
+  await page.getByTestId('audition-unsaved').waitFor({ state: 'detached' })
+
+  await audition.click()
+  await page.getByTestId('notice').filter({ hasText: '已產生 小狐狸 試聽語音' }).waitFor({ timeout: 60_000 })
+  assert.ok(existsSync(p.path('brief/voices/fox.mp3')))
 })
 
 test('a product project opened here points to the product workbench', async (t) => {

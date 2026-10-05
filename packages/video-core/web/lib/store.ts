@@ -179,13 +179,14 @@ window.__avp = { open: (handle) => openHandle(handle) }
 
 /** Runs a Companion action and reports the outcome the same way writes do. */
 export async function runCompanion(action: string, label: string, scene?: string) {
-  const result = await runAction(action, label, scene)
+  const result = await runAction(action, label, { scene })
   notify(result.ok ? 'ok' : 'error', result.ok ? `${label}：完成` : `${label}：失敗。${summarize(result.output)}`)
   await reload()
   return result.ok
 }
 
-function summarize(output: unknown): string {
+/** The line of a Companion result worth showing: the last output line, or the failed step. */
+export function summarize(output: unknown): string {
   if (typeof output === 'string') return output.split('\n').filter(Boolean).at(-1) ?? ''
   if (Array.isArray(output)) {
     const failed = output.find((s: { code?: number }) => s.code)

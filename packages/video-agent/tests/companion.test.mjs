@@ -1,7 +1,7 @@
 // The Companion (`pnpm run companion`): origin and token checks, the action whitelist, running deterministic work on
 // the project, change notifications, and the restricted `claude -p /video-sync` invocation.
 import assert from 'node:assert/strict'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import WebSocket from 'ws'
@@ -125,4 +125,27 @@ test('sync runs claude -p /video-sync limited to pnpm scripts and file tools', a
   assert.deepEqual(args.slice(0, 2), ['-p', '/video-sync'])
   assert.ok(args.includes('Bash(pnpm run:*)'))
   assert.ok(!args.some((a) => /dangerously|bypass/i.test(a)), 'never skips permission checks')
+})
+
+test('sample synthesizes a voice audition; actions whose script the project lacks are not offered', async (t) => {
+  const p = fullProject()
+  t.after(p.cleanup)
+  rmSync(p.path('scripts/capture.mjs')) // the story template ships no capture
+  const c = await companionFor(t, p)
+  const s = await open(c.port, 'https://example.test', c.token)
+  t.after(() => s.ws.close())
+  const ready = await s.next((m) => m.type === 'ready')
+  assert.ok(ready.actions.includes('sample'))
+  assert.ok(!ready.actions.includes('capture'))
+  const run = (id, msg) => {
+    s.ws.send(JSON.stringify({ type: 'run', id, ...msg }))
+    return s.next((m) => m.id === id && m.type === 'result')
+  }
+
+  assert.match((await run('1', { action: 'capture', scene: 'scene-001' })).output, /not available/)
+  assert.match((await run('2', { action: 'sample', cast: '../etc' })).output, /cast id/)
+  assert.match((await run('3', { action: 'sample', cast: 'nobody' })).output, /no cast member with id nobody/)
+  const sampled = await run('4', { action: 'sample', cast: 'narrator' })
+  assert.equal(sampled.ok, true, sampled.output)
+  assert.ok(existsSync(p.path('brief/voices/narrator.mp3')))
 })

@@ -15,17 +15,32 @@ const BY = 'companion'
 const HELLO_TIMEOUT_MS = 5000
 const IGNORED = /(^|[\\/])(node_modules|\.tmp|\.git)([\\/]|$)/
 
-/** Actions the UI may request. Anything else is refused; there is no way to run arbitrary commands. */
+/**
+ * Actions the UI may request. Anything else is refused; there is no way to run arbitrary commands.
+ * `target` is the id the action needs (a scene, or a cast member / narrator); `script` is the project
+ * script it runs, so an action whose script the project lacks (the story template has no capture) is
+ * not offered.
+ */
 export const ACTIONS = {
-  status: { scene: false },
-  validate: { scene: false },
-  tts: { scene: true },
-  capture: { scene: true },
-  'render-scene': { scene: true },
-  rebuild: { scene: true },
-  assemble: { scene: false },
-  sync: { scene: false },
+  status: {},
+  validate: { script: 'validate' },
+  tts: { target: 'scene', script: 'tts' },
+  sample: { target: 'cast', script: 'tts' },
+  capture: { target: 'scene', script: 'capture' },
+  'render-scene': { target: 'scene', script: 'render-scene' },
+  rebuild: { target: 'scene' },
+  assemble: {},
+  sync: {},
 }
+
+const TARGET = {
+  scene: { field: 'scene', pattern: /^scene-[a-z0-9-]+$/, missing: 'a scene id is required' },
+  cast: { field: 'cast', pattern: /^(narrator|[a-z][a-z0-9]*(-[a-z0-9]+)*)$/, missing: 'a cast id (or narrator) is required' },
+}
+
+/** The actions this project can run: those whose script it has. */
+const available = (root) =>
+  Object.keys(ACTIONS).filter((a) => !ACTIONS[a].script || existsSync(join(root, 'scripts', `${ACTIONS[a].script}.mjs`)))
 
 function loadToken(persist) {
   if (!persist) return randomBytes(24).toString('base64url')
@@ -84,7 +99,7 @@ export async function startCompanion({ projectDir = process.cwd(), port, persist
   let queue = Promise.resolve()
   const enqueue = (job) => (queue = queue.then(job, job))
 
-  async function perform(action, sceneId, onLine) {
+  async function perform(action, id, onLine) {
     switch (action) {
       case 'status':
         return { ok: true, output: await status(root) }
@@ -92,11 +107,15 @@ export async function startCompanion({ projectDir = process.cwd(), port, persist
       case 'tts':
       case 'capture':
       case 'render-scene': {
-        const r = await runScript(root, action, sceneId ? [sceneId] : [], { onLine })
+        const r = await runScript(root, action, id ? [id] : [], { onLine })
+        return { ok: r.code === 0, output: `${r.stdout}${r.stderr}`.trim() }
+      }
+      case 'sample': {
+        const r = await runScript(root, 'tts', ['--sample', id], { onLine })
         return { ok: r.code === 0, output: `${r.stdout}${r.stderr}`.trim() }
       }
       case 'rebuild': {
-        const r = await buildScene(root, sceneId, { by: BY, onLine })
+        const r = await buildScene(root, id, { by: BY, onLine })
         return { ok: r.ok, output: r.log }
       }
       case 'assemble':
@@ -128,18 +147,21 @@ export async function startCompanion({ projectDir = process.cwd(), port, persist
         paired = true
         clearTimeout(timer)
         clients.add(ws)
-        return ws.send(JSON.stringify({ type: 'ready', project: root, actions: Object.keys(ACTIONS) }))
+        return ws.send(JSON.stringify({ type: 'ready', project: root, actions: available(root) }))
       }
       if (msg.type !== 'run') return
       const reply = (m) => ws.readyState === ws.OPEN && ws.send(JSON.stringify({ id: msg.id, ...m }))
       const spec = ACTIONS[msg.action]
       if (!spec) return reply({ type: 'result', ok: false, output: `action ${msg.action} is not allowed` })
-      if (spec.scene && !/^scene-[a-z0-9-]+$/.test(msg.scene ?? '')) return reply({ type: 'result', ok: false, output: 'a scene id is required' })
+      if (!available(root).includes(msg.action)) return reply({ type: 'result', ok: false, output: `action ${msg.action} is not available in this project` })
+      const target = spec.target && TARGET[spec.target]
+      const id = target ? msg[target.field] : null
+      if (target && !target.pattern.test(id ?? '')) return reply({ type: 'result', ok: false, output: target.missing })
       reply({ type: 'queued' })
       await enqueue(async () => {
         reply({ type: 'started' })
         try {
-          const result = await perform(msg.action, spec.scene ? msg.scene : null, (line) => reply({ type: 'log', line }))
+          const result = await perform(msg.action, id, (line) => reply({ type: 'log', line }))
           reply({ type: 'result', ...result })
         } catch (err) {
           reply({ type: 'result', ok: false, output: err.message })

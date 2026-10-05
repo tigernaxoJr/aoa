@@ -3,8 +3,8 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Icon from '@video-core/web/components/Icon.vue'
 import { audioBlobToWav } from '../audio'
 import { tryFile, writeFile } from '@aoa/web-shared/fsa'
-import { companion, run } from '@video-core/web/lib/companion'
-import { notify, root, state } from '@video-core/web/lib/store'
+import { canRun, run } from '@video-core/web/lib/companion'
+import { notify, reload, root, state, summarize } from '@video-core/web/lib/store'
 import { useFileUrl } from '@video-core/web/lib/useFileUrl'
 
 interface VoiceConfig {
@@ -206,21 +206,38 @@ function switchMode(m: Mode) {
 }
 
 // --- Audition (試聽音檔) ---
+// `tts --sample` reads the voice from video.project.json, so the cast member must be saved first.
 const auditionPath = computed(() => `brief/voices/${props.castId}.mp3`)
-const projectMtime = computed(() => state.value?.projectMtime ?? 0)
-const auditionUrl = useFileUrl(auditionPath, projectMtime)
+const auditionMtime = ref(0)
+// The sample file is not the project file: follow its own mtime (re-read on every project reload).
+watch(
+  [state, auditionPath],
+  async () => {
+    const file = root.value ? await tryFile(root.value, auditionPath.value) : null
+    auditionMtime.value = file?.lastModified ?? 0
+  },
+  { immediate: true },
+)
+const auditionUrl = useFileUrl(auditionPath, auditionMtime)
 const auditionLoading = ref(false)
+const savedMember = computed(() => state.value?.project.project.cast?.find((c) => c.id === props.castId) ?? null)
+const voiceUnsaved = computed(
+  () => !savedMember.value || savedMember.value.provider !== props.modelValue.provider || savedMember.value.voice !== props.modelValue.voice,
+)
+const sampleCommand = computed(() => `pnpm run tts --sample ${props.castId}`)
 
 async function triggerAudition() {
+  if (voiceUnsaved.value) return
   auditionLoading.value = true
   try {
-    if (companion.state === 'ready') {
-      const res = await run('tts', `生成 ${props.castName} 試聽語音`, undefined)
+    if (canRun('sample')) {
+      const res = await run('sample', `生成 ${props.castName} 試聽語音`, { cast: props.castId })
       if (res.ok) notify('ok', `已產生 ${props.castName} 試聽語音`)
-      else notify('warn', `試聽產生完成，請聽播放器`)
+      else notify('error', `試聽語音產生失敗。${summarize(res.output)}`)
+      await reload()
     } else {
-      await navigator.clipboard.writeText(`pnpm run tts --sample ${props.castId}`)
-      notify('ok', `已複製指令「pnpm run tts --sample ${props.castId}」至剪貼簿，請在終端機執行`)
+      await navigator.clipboard.writeText(sampleCommand.value)
+      notify('ok', `已複製指令「${sampleCommand.value}」至剪貼簿，請在終端機執行`)
     }
   } catch (err) {
     notify('error', (err as Error).message)
@@ -392,16 +409,19 @@ onBeforeUnmount(() => {
         <span class="text-xs font-medium text-slate-700 dark:text-slate-300">角色試聽 ({{ castName }})：</span>
         <audio v-if="auditionUrl" :src="auditionUrl" controls class="h-8 max-w-[260px]" />
         <span v-else class="text-xs text-slate-400 dark:text-slate-500">尚無試聽檔</span>
+        <span v-if="voiceUnsaved" class="text-[11px] text-amber-600 dark:text-amber-400" data-testid="audition-unsaved">聲音設定尚未儲存，儲存角色後才能試聽</span>
       </div>
 
       <button
         type="button"
         class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
-        :disabled="auditionLoading"
+        :disabled="auditionLoading || voiceUnsaved"
+        :title="voiceUnsaved ? '試聽使用已儲存的聲音設定，請先儲存角色' : ''"
+        data-testid="audition"
         @click="triggerAudition"
       >
         <Icon name="refresh" :size="13" :class="auditionLoading ? 'animate-spin' : ''" />
-        <span>{{ companion.state === 'ready' ? '🎧 立即產生試聽' : '📋 複製試聽指令' }}</span>
+        <span>{{ canRun('sample') ? '🎧 立即產生試聽' : '📋 複製試聽指令' }}</span>
       </button>
     </div>
   </div>

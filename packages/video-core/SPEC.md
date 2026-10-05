@@ -792,9 +792,9 @@ Companion（`pnpm run companion`）：
 - **連線檢查**：WebSocket 握手時檢查 `Origin`，只接受網站本身與 `http://localhost` / `http://127.0.0.1`（開發用），沒有 `Origin` 也拒絕；連線後 5 秒內須送出 `{ "type": "hello", "token" }`，以固定時間比較，不符則以代碼 4001 關閉。
 - UI **不主動掃描 port**（避免反覆觸發 Local Network Access 授權），只連線已配對的 port。
 - **訊息**：UI → `{ "type": "run", "id", "action", "scene"? }`；Companion → `queued` / `started` / `log`（逐行輸出）/ `result`（`ok`、`output`），以及專案檔案變動時的 `changed`（忽略 `node_modules`、`.tmp`、`.git`；UI 收到即重新載入，不必等輪詢）。
-- **白名單動作**：`status`、`validate`、`tts <id>`、`capture <id>`、`render-scene <id>`、`rebuild <id>`（重做流程）、`assemble`（含設為 completed）、`sync`。scene id 須符合 `scene-*` 格式；參數一律以陣列傳給子程序，不經 shell。一次只執行一個動作，其餘排隊。
+- **白名單動作**：`status`、`validate`、`tts <id>`、`sample <cast-id|narrator>`（`tts --sample`，以 `cast` 欄位傳入）、`capture <id>`、`render-scene <id>`、`rebuild <id>`（重做流程）、`assemble`（含設為 completed）、`sync`。scene id 須符合 `scene-*` 格式，cast id 須為 `narrator` 或符合角色 id 格式；參數一律以陣列傳給子程序，不經 shell。專案缺少對應腳本的動作（故事範本沒有 `capture`）不提供：`ready` 訊息的 `actions` 只列出這個專案能執行的動作，其餘請求一律拒絕。一次只執行一個動作，其餘排隊。
 - **`sync`**：在專案目錄執行 `claude -p "/video-sync" --allowedTools "Bash(pnpm run:*)" Read Edit Write Glob Grep`，只開放 pnpm scripts 與檔案工具，**不使用**略過權限檢查的選項。可用 `VIDEO_AGENT_CLAUDE` 指定其他執行檔。
-- **UI**：標頭顯示連線狀態；連上時 Scene Editor 顯示「立即重新產生」（`rebuild`），待更新提示顯示「立即重做並合成」（逐一 `rebuild` 後 `assemble`）與「交給 Agent 處理」（`sync`），Final 顯示「立即合成」。未連上時維持模式 A 的提示。
+- **UI**：標頭顯示連線狀態；連上時 Scene Editor 顯示「立即重新產生」（`rebuild`），待更新提示顯示「立即重做並合成」（逐一 `rebuild` 後 `assemble`）與「交給 Agent 處理」（`sync`），Final 顯示「立即合成」；故事的角色工坊顯示「立即產生試聽」（`sample`，聲音設定須先儲存，因為 `tts --sample` 讀取 `video.project.json`）。未連上或 Companion 未提供該動作時維持模式 A 的提示（複製指令）。
 
 ### 10.2 寫入協定
 
