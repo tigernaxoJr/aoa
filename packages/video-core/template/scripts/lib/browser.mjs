@@ -1,19 +1,18 @@
-// Browser for Playwright-driven scripts (capture, render-scene, login).
+// Browser for Playwright-driven scripts (render-scene; capture and login in product projects).
 import { UsageError } from './project.mjs'
 
 /**
- * Launches Chromium: an explicit channel wins; otherwise Playwright's own Chromium, then installed Chrome, then Edge.
- * `visible` opens a window the user works in; it prefers their installed Chrome or Edge, which sign-in pages trust more.
- * VIDEO_AGENT_HEADLESS=1 keeps even that window hidden (tests).
+ * Launches Chromium from the first of `channels` that works (undefined: Playwright's own Chromium).
+ * By default Playwright's own Chromium, then installed Chrome, then Edge; VIDEO_AGENT_BROWSER_CHANNEL
+ * forces one channel.
  */
-export async function launchBrowser({ visible = false } = {}) {
+export async function launchBrowser({ channels = [undefined, 'chrome', 'msedge'], headless = true } = {}) {
   const { chromium } = await import('playwright')
   const forced = process.env.VIDEO_AGENT_BROWSER_CHANNEL
-  const channels = forced ? [forced] : visible ? ['chrome', 'msedge', undefined] : [undefined, 'chrome', 'msedge']
   const errors = []
-  for (const channel of channels) {
+  for (const channel of forced ? [forced] : channels) {
     try {
-      return await chromium.launch({ channel, headless: !visible || process.env.VIDEO_AGENT_HEADLESS === '1' })
+      return await chromium.launch({ channel, headless })
     } catch (err) {
       errors.push(`${channel ?? 'bundled chromium'}: ${err.message.split('\n')[0]}`)
     }

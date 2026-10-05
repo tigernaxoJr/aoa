@@ -259,7 +259,7 @@ my-video-project/
 - **路徑**：一律使用正斜線的相對路徑，不得為絕對路徑、不得含 `..` 片段。scene.json 內的路徑相對於該 scene 目錄；以 `@/` 開頭表示相對於專案根目錄（如 `@/assets/logo.png`）。`video.project.json` 內的路徑相對於專案根目錄。唯一例外是 `project.sources.sourceCodePath`（唯讀輸入，可在專案外）。
 - **擴充欄位**：Schema 不接受未定義的欄位，以免拼錯欄位名稱被默默忽略。使用者或第三方工具需要自訂欄位時，一律以 `x-` 開頭（可用於專案根、`project`、scene 根、`visual`），Agent 必須原樣保留。
 - **寫入者**：`updatedBy` 為 `agent` · `user` · `companion` · `mcp`。
-- **Schema 無法表達、由 `validate.mjs` 檢查的規則**：scene id 與 dir 唯一且目錄存在；`format` 寬高與 `aspectRatio` 相符；各 scene.json 的 `id` 與 `video.project.json` 引用一致；解析後路徑不得跳出專案根目錄；狀態為 `rendered` / `approved` 時輸出檔存在且 `inputHash` 相符；`project.id` 為全 0 UUID 時視為「範本尚未初始化」。
+- **Schema 無法表達、由 `validate.mjs` 檢查的規則**：scene id 與 dir 唯一且目錄存在；`format` 寬高與 `aspectRatio` 相符；各 scene.json 的 `id` 與 `video.project.json` 引用一致；解析後路徑不得跳出專案根目錄；狀態為 `rendered` / `approved` 時輸出檔存在且 `inputHash` 相符；`project.id` 為全 0 UUID 時視為「範本尚未初始化」；專案沒有 `scripts/capture.mjs`（故事範本）時，`web-capture` / `screenshot` 類型的 scene 視為錯誤。
 - Schema 原始檔位於產品 repo 的 `specs/`（`common` / `project` / `scene` 三個檔案），`specs/examples/` 內的有效與無效範例由 `pnpm run test:specs` 驗證。
 
 ### 4.3 `script.md`
@@ -651,6 +651,7 @@ skills/product-video/
 - `workflow.md`（各步驟做法，含 `brief/product-brief.md` 與 `brief/style.json` 的格式）、`script-guide.md`（分鏡與旁白寫作）以 `<a id="…">` 明確錨點供 `workflow.json` 的 `guide` 引用；`pnpm run test:specs` 檢查所有 Skill 內部連結與錨點。
 - `SKILL.md` 中的網站網址寫成 `{{SITE_URL}}`，由 `build-api.mjs` 打包時替換。
 - 範本 `video.project.json` 使用可通過 Schema 的佔位值（全 0 UUID、`updatedAt` 為 1970-01-01），init 時由 Agent 替換。
+- 範本原始檔只有一份（`packages/video-core/template/`），打包時依影片類型（各 app 設定的 `kind`）裁切：只有一種影片用到的檔案登記在 `build-video-api.mjs` 的 `KIND_FILES`（產品：`scripts/capture.mjs`、`scripts/login.mjs`、`scripts/lib/login.mjs`；故事：`src/lib/rig.js`），另一種影片的範本不放這些檔案，`package.json` 中執行它們的指令也一併移除；`AGENTS.md`、`README.md` 中行尾標 `<!-- kind:product -->` / `<!-- kind:story -->` 的行只留在該類型的範本（標記本身不會打包）。`/api/video` 的舊範本兩種影片共用，保留全部檔案與每一行。新增只有一種影片會用到的範本檔時，要登記到 `KIND_FILES`；`tests/site/build.test.mjs` 檢查每個範本內的腳本只引用該範本有的檔案、文件只提到該範本有的指令。
 
 ### 8.3 Slash Commands（Claude Code）
 
@@ -897,4 +898,4 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 | D19 | 其他 Agent 相容性 | GPT 提及「未來支援其他 Agent」 | MVP 只測 Claude Code；AGENTS.md / Skill 中立寫法；指令檔單一來源產生各家格式，逐一驗收後才標示支援 | 協議層已通用，差異只在指令格式；支援宣告需有測試背書 |
 | D20 | 網站部署與指令來源 | 未規範（§9.4 僅提 Cloudflare / GitHub Pages） | GitHub Pages（`gh-pages` 分支），網址 `/index-url-director`，base path 從 repo 名稱推得（可用 `SITE_URL` 覆寫）；Guide API 一律絕對網址；指令檔與 prompts/rules 皆由既有單一來源（workflow.json、Skill）產生；init 以 Skill 或 agent-guide 為入口 | 子路徑部署下根相對路徑會失效；避免 YAML 與 workflow.json、prompts 與 Skill 雙重維護；init 時專案指令尚不存在 |
 | D21 | Cloud MCP | §10 原規劃由網站提供 Cloud MCP | 不另設雲端 MCP；Guide 類 resources / prompts 併入本機 `video-agent mcp`，內容來自內附或網站的 `/api/*`；專案操作只呼叫專案自己的腳本 | 網站為 GitHub Pages 靜態部署，無法運行 MCP；本機伺服器已隨 Agent 啟動，多一個雲端端點沒有額外價值；呼叫專案腳本可確保與專案的協議版本一致 |
-| D22 | 故事影片 | 無 | 以 `project.kind` 區分，同一範本與渲染器，另立 `story-video` Skill 與 `develop_story` / `design` 兩步；角色聲音以 script.md 行首【名字】指定；角色美術一次畫好、以 `rig.js` 擺姿勢 | 渲染、TTS、合成與工作台都與產品無關，分叉範本只會讓兩邊漂移；一個角色檔重複使用才能讓角色從頭到尾一致，也省 token；只把該段有說話的角色聲音算進 hash，換一個角色的聲音不必重做整部片 |
+| D22 | 故事影片 | 無 | 以 `project.kind` 區分，同一範本與渲染器（打包時各自去掉另一種影片專用的檔案，見 §8.2），另立 `story-video` Skill 與 `develop_story` / `design` 兩步；角色聲音以 script.md 行首【名字】指定；角色美術一次畫好、以 `rig.js` 擺姿勢 | 渲染、TTS、合成與工作台都與產品無關，分叉範本只會讓兩邊漂移；一個角色檔重複使用才能讓角色從頭到尾一致，也省 token；只把該段有說話的角色聲音算進 hash，換一個角色的聲音不必重做整部片 |

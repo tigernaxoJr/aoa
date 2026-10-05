@@ -77,7 +77,8 @@ export function build({ siteUrl, out = resolve(root, 'dist') } = {}) {
 function buildLegacyVideoApi({ siteUrl, out }) {
   const read = (app) => JSON.parse(readFileSync(join(app.appDir, 'specs', 'workflow.json'), 'utf8'))
   const workflow = mergeWorkflows({ product: read(product), story: read(story) })
-  const legacy = { slug: 'video', template: 'product-video', workflowText: `${JSON.stringify(workflow, null, 2)}\n`.replaceAll('/api/product/', '/api/video/') }
+  // kind: null — the one template serves both kinds, so it keeps every kind's scripts.
+  const legacy = { slug: 'video', template: 'product-video', kind: null, workflowText: `${JSON.stringify(workflow, null, 2)}\n`.replaceAll('/api/product/', '/api/video/') }
   buildVideoApi({ ...product, ...legacy, siteUrl, out })
   // The story Skill, built for /api/video into a scratch directory, then moved next to the product one.
   const scratch = join(out, '.legacy-video')

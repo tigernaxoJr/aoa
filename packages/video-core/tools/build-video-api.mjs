@@ -20,7 +20,17 @@ const sharedSkillDir = join(coreDir, 'skills')
 export const SCHEMAS = ['common.schema.json', 'project.schema.json', 'scene.schema.json', 'activity.schema.json', 'workflow.schema.json']
 /** Paths never shipped in the template zip (relative, forward slashes). */
 const TEMPLATE_EXCLUDE = [/(^|\/)node_modules\//, /^\.tmp\//, /^output\//, /^scenes\/[^/]+\/output\//, /(^|\/)\.video-agent\.lock$/, /(^|\/)\.venv\//, /(^|\/)__pycache__\//]
-/** Fixed timestamp so identical inputs give byte-identical zips (and stable hashes). */
+/**
+ * Template files only one kind of project uses (relative, forward slashes). Each app's template omits
+ * the files of the other kinds, the `package.json` scripts that run them, and Markdown lines tagged
+ * `<!-- kind:<other> -->`; the legacy /api/video template (no kind) ships everything for both kinds.
+ * Tests (tests/site/build.test.mjs) check every shipped script's imports resolve inside its zip.
+ */
+export const KIND_FILES = {
+  product: ['scripts/capture.mjs', 'scripts/login.mjs', 'scripts/lib/login.mjs'],
+  story: ['src/lib/rig.js'],
+}
+const KIND_TAG = /[ \t]*<!-- kind:([a-z]+) -->[ \t]*(?=\r?$)/
 const ZIP_MTIME = new Date(1980, 0, 1)
 
 /**
@@ -35,8 +45,9 @@ const ZIP_MTIME = new Date(1980, 0, 1)
  * @param {Record<string, string>} [o.siblings] other video Skills this one links to (`../<skill>/x.md`) → their app slug
  * @param {string} [o.template]   template name (default `<slug>-video`)
  * @param {string} [o.workflowText] workflow.json contents (default the app's specs/workflow.json)
+ * @param {string|null} [o.kind] project kind the template is for (a key of KIND_FILES); null ships every kind's files
  */
-export function buildVideoApi({ siteUrl, out, slug, appDir, skill, title, extracts = {}, siblings = {}, template = `${slug}-video`, workflowText }) {
+export function buildVideoApi({ siteUrl, out, slug, appDir, skill, title, extracts = {}, siblings = {}, template = `${slug}-video`, workflowText, kind = null }) {
   siteUrl = siteUrl.replace(/\/+$/, '')
   const api = `${siteUrl}/api/${slug}`
   const skillUrlOf = (name) => (name === skill ? `${api}/skills/${skill}` : `${siteUrl}/api/${siblings[name]}/skills/${name}`)
@@ -92,11 +103,12 @@ export function buildVideoApi({ siteUrl, out, slug, appDir, skill, title, extrac
   const skillBody = absolutizeLinks(stripFrontmatter(skillDocs['SKILL.md']).replace(/^# .*\n+/, ''), skillUrl, 'SKILL.md')
   write('agent-guide.md', agentGuide(skillBody, { api, skill, title, template }))
 
-  // Template: the shared template + synced schemas + this app's workflow + generated command files
+  // Template: the shared template (this kind's part) + synced schemas + this app's workflow + generated command files
+  const omit = templateOmit(kind)
   const templateFiles = listFiles(templateDir)
     .map((file) => relative(templateDir, file).split('\\').join('/'))
-    .filter((rel) => !TEMPLATE_EXCLUDE.some((re) => re.test(rel)))
-    .map((rel) => [rel, /\.(md|mjs)$/.test(rel) ? sub(readFileSync(join(templateDir, rel), 'utf8')) : readFileSync(join(templateDir, rel))])
+    .filter((rel) => !TEMPLATE_EXCLUDE.some((re) => re.test(rel)) && !omit.has(rel))
+    .map((rel) => [rel, templateFile(rel, readFileSync(join(templateDir, rel)), { kind, omit, sub })])
   templateFiles.push(...SCHEMAS.map((f) => [`schemas/${f}`, readFileSync(join(specsDir, f))]))
   templateFiles.push(['schemas/workflow.json', workflowText])
   templateFiles.push(...claudeCommands(workflow, skillUrlOf).map((c) => [c.path, c.content]))
@@ -130,6 +142,34 @@ export function buildVideoApi({ siteUrl, out, slug, appDir, skill, title, extrac
   }
   write('index.json', `${JSON.stringify(index, null, 2)}\n`)
   return { index, manifest }
+}
+
+/** Template files a `kind` template leaves out: the files only other kinds use. */
+function templateOmit(kind) {
+  if (kind == null) return new Set()
+  if (!KIND_FILES[kind]) throw new Error(`unknown template kind "${kind}" (expected ${Object.keys(KIND_FILES).join(', ')})`)
+  return new Set(Object.entries(KIND_FILES).flatMap(([k, files]) => (k === kind ? [] : files)))
+}
+
+/** One template file as shipped: URLs substituted, other kinds' lines and package.json scripts removed. */
+function templateFile(rel, data, { kind, omit, sub }) {
+  if (rel.endsWith('.md')) {
+    const lines = data.toString('utf8').split('\n').flatMap((line) => {
+      const tag = KIND_TAG.exec(line)
+      if (!tag) return [line]
+      if (!KIND_FILES[tag[1]]) throw new Error(`${rel}: unknown kind tag "${tag[1]}"`)
+      return kind == null || tag[1] === kind ? [line.replace(KIND_TAG, '')] : []
+    })
+    return sub(lines.join('\n'))
+  }
+  if (rel.endsWith('.mjs')) return sub(data.toString('utf8'))
+  if (rel === 'package.json' && omit.size) {
+    const pkg = JSON.parse(data.toString('utf8'))
+    const runs = (cmd) => /node (\S+\.mjs)/.exec(cmd)?.[1]
+    pkg.scripts = Object.fromEntries(Object.entries(pkg.scripts).filter(([, cmd]) => !omit.has(runs(cmd))))
+    return `${JSON.stringify(pkg, null, 2)}\n`
+  }
+  return data
 }
 
 function agentGuide(skillBody, { api, skill, title, template }) {

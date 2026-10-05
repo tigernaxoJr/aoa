@@ -5,7 +5,7 @@
 | 目錄 | 內容 |
 |---|---|
 | `specs/` | 影片協議 JSON Schema（project、scene、activity、workflow）與範例；各 app 的 `workflow.json` 以 `workflow.schema.json` 驗證 |
-| `template/` | 本機專案範本本體（scripts、src、AGENTS.md…），兩種影片共用；打包時再加上各 app 的 `workflow.json` 與指令檔 |
+| `template/` | 本機專案範本本體（scripts、src、AGENTS.md…），兩種影片共用一份原始檔；打包時依 app 的 `kind` 去掉另一種影片專用的檔案（`tools/build-video-api.mjs` 的 `KIND_FILES`）與文件中標 `<!-- kind:… -->` 的行，再加上該 app 的 `workflow.json` 與指令檔 |
 | `skills/` | 兩個 Skill 共用的文件（`rendering-guide.md`），打包時放進各自的 Skill |
 | `web/` | 共用工作台：`App.vue`（由各 app 以 `sourceForm`、`tabs` 掛載）、元件、`lib/`、產生的 `types/protocol.ts`、`vite.ts`（各 app 的 Vite 設定） |
 | `tools/` | `build-video-api.mjs`（各 app 的 `tools/build-api.mjs` 呼叫）、`gen-types.mjs`、`lib/` |

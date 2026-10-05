@@ -1,12 +1,16 @@
 // Whole-project validation: JSON Schema plus the cross-file rules Schema cannot express (SPEC §4.2.1).
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { NIL_UUID, PROJECT_FILE, UsageError, readJson, resolveProjectPath, sceneFile, scenePaths } from './project.mjs'
 import { loadSchemas, schemaErrors } from './schema.mjs'
 import { parseScript } from './narration.mjs'
 import { inspectScenes } from './status.mjs'
 
 const RATIOS = { '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:5': 4 / 5 }
+/** The story template ships no capture script, so its projects cannot record web pages. */
+const HAS_CAPTURE = existsSync(fileURLToPath(new URL('../capture.mjs', import.meta.url)))
+const CAPTURED = ['web-capture', 'screenshot']
 
 /**
  * Validates the project on disk. `overrides` maps absolute file paths to in-memory documents,
@@ -78,6 +82,9 @@ export function validateProject(root, overrides = new Map()) {
     if (schemaErrs.length) continue
     if (scene.id !== ref.id) errors.push(`${label}: id ${scene.id} does not match ${PROJECT_FILE} entry ${ref.id}`)
     loaded.push({ ref, file, scene })
+    if (!HAS_CAPTURE && CAPTURED.includes(scene.visual.type)) {
+      errors.push(`${label}: visual.type ${scene.visual.type} needs pnpm run capture, which this project's template (story-video) does not have; use a motion-graphic, or make product videos from the product-video template`)
+    }
 
     const sceneDir = join(root, ref.dir)
     for (const [field, stored] of scenePaths(scene)) {

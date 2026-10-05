@@ -87,8 +87,11 @@ export async function buildScene(root, id, { by, onLine } = {}) {
   }
   let r = await step('tts', 'tts', [id])
   if (r.code) return fail('tts', r)
-  r = await step('capture', 'capture', [id])
-  if (r.code) return fail('capture', r)
+  // Story templates ship no capture script: their scenes are all motion modules.
+  if (existsSync(join(root, 'scripts', 'capture.mjs'))) {
+    r = await step('capture', 'capture', [id])
+    if (r.code) return fail('capture', r)
+  }
   r = await step('assets ready', 'state', [id, '--status', 'assets_ready', '--by', by])
   if (r.code) return fail('other', r)
   r = await step('rendering', 'state', [id, '--status', 'rendering', '--by', by])

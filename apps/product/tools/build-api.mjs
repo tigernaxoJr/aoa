@@ -20,6 +20,7 @@ const EXTRACTS = {
 /** This app's settings for the shared builder (also used by tools/build-platform-api.mjs for /api/video). */
 export const config = {
   slug: 'product',
+  kind: 'product',
   appDir: fileURLToPath(new URL('../', import.meta.url)),
   skill: 'product-video',
   title: '產品介紹影片',

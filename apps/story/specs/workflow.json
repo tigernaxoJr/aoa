@@ -10,22 +10,6 @@
       "record": "project.tts.consent = { onlineTts: true, grantedAt }",
       "onDecline": "停下，請使用者選擇離線 provider 或 manual。"
     },
-    "domEditConsent": {
-      "appliesWhen": "scene 的 visual.capture.actions 含有 script 動作（錄製時修改頁面內容，例如在資料很少的報表頁填入示意資料）",
-      "check": "visual.capture.domEditConsent.granted == true",
-      "blocks": ["capture"],
-      "ask": "告知使用者：這個頁面的資料太少，畫面會很空。說明打算在錄製時暫時改寫哪些內容（例如表格填入 12 筆示意訂單、圖表補上 6 個月的趨勢），只影響錄下來的畫面，不會改到產品或它的資料；畫面角落會標示「示意資料」。請使用者同意，或改用真實資料、使用者提供的截圖。",
-      "record": "visual.capture.domEditConsent = { granted: true, grantedAt }（每個 scene 分別取得）",
-      "onDecline": "不加 script 動作，照實錄製；或請使用者提供有資料的帳號畫面或截圖。"
-    },
-    "productLogin": {
-      "appliesWhen": "project.sources.requiresLogin == true，或擷取時被導向登入頁（capture 輸出 gate productLogin）",
-      "check": "使用者已以 pnpm run login 登入（登入資料存於 .auth/，Agent 不讀取）",
-      "blocks": ["capture"],
-      "ask": "先提醒：錄影會拍到登入後畫面上的一切（客戶名稱、email、金額），建議用展示用帳號，或經同意後把敏感處改成示意資料（domEditConsent）。再說明：會打開一個獨立的瀏覽器視窗（為了安全，不用平常的瀏覽器，所以要再登入一次；視窗上方可能寫著受自動測試軟體控制，這是正常的），請使用者像平常一樣登入，帳號密碼只在那個視窗輸入，Agent 看不到；登入完成後關閉視窗即可。然後執行 pnpm run login。",
-      "record": "不寫入 JSON；pnpm run login 輸出 signed in 即成立。輸出 no sign-in page was seen 時問使用者是否已登入",
-      "onDecline": "不擷取需要登入的頁面：改用使用者提供的截圖或錄影（user-asset），或只擷取不需登入的公開頁面。"
-    },
     "asrConsent": {
       "appliesWhen": "欲啟用 ASR 自動檢查發音與校正時",
       "check": "project.asr.consent.installAsr == true",
@@ -56,10 +40,10 @@
       ],
       "actions": [
         { "id": "scaffold", "do": "下載並解壓 /api/story/templates/story-video.zip，以 manifest.json 的 SHA-256 驗證完整性。" },
-        { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、kind（產品介紹為 product，故事影片為 story）、sources、language、format。product 至少需要一種產品來源；story 需要 sources.story 或 sources.description。向使用者確認 targetAudience 與 style；targetDurationSec 未指定時先用預設，analyze 後再確認。" },
+        { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、kind（story）、sources、language、format。需要 sources.story 或 sources.description。向使用者確認 targetAudience 與 style；targetDurationSec 未指定時先用預設，analyze 後再確認。" },
         { "id": "install", "do": "pnpm install" },
         { "id": "check_tools", "do": "檢查 ffmpeg / ffprobe、Playwright 瀏覽器、所選 TTS 是否可用；缺少時告知安裝方式，不自行以系統權限安裝。" },
-        { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 並記錄；sources.requiresLogin 為 true 時接著處理 productLogin（pnpm run login，使用者自行登入）。" },
+        { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 並記錄。" },
         {
           "id": "validate",
           "do": "pnpm run validate",
@@ -132,8 +116,7 @@
       "scope": "project",
       "requires": { "projectStatus": ["analyzed", "designed", "script_generated", "producing", "ready_to_assemble", "completed"] },
       "reads": [
-        { "path": "brief/product-brief.md", "optional": true, "note": "product 專案" },
-        { "path": "brief/story.md", "optional": true, "note": "story 專案；另讀 brief/design.md 與 project.cast" },
+        { "path": "brief/story.md", "note": "另讀 brief/design.md 與 project.cast" },
         { "path": "{dir}/scene.json", "optional": true, "note": "重新規劃時讀取現有分鏡" },
         { "path": "{dir}/script.md", "optional": true, "note": "重新規劃時讀取現有分鏡" },
         { "path": "brief/style.json", "optional": true }
@@ -144,7 +127,7 @@
         { "path": "video.project.json", "note": "scenes 陣列" }
       ],
       "actions": [
-        { "id": "plan", "do": "規劃 3–8 個 scene。product 建議骨架：hook → problem → solution → feature → benefit → cta；story 依起承轉合：opening → setup → conflict → climax → resolution → ending，做法見 story-video Skill 的 story-guide.md#storyboard。" },
+        { "id": "plan", "do": "規劃 3–8 個 scene，依起承轉合：opening → setup → conflict → climax → resolution → ending，做法見 story-video Skill 的 story-guide.md#storyboard。" },
         {
           "id": "revise",
           "do": "已有 scene 時改為修訂現有分鏡：只改使用者要求的部分，先提出逐段的保留／修改／新增／移除清單並等使用者確認，確認後才寫入；保留的 scene 沿用原 id 與目錄。此時 write 只建立新增的 scene，register 只更新 scenes 陣列，不設定 project 狀態（state 會依 scene 自動重算）。最後執行 sync，只重做有變更的 scene 並重新合成。做法見 script-guide.md#revise。",
@@ -162,7 +145,7 @@
         },
         { "id": "validate", "do": "pnpm run validate" }
       ],
-      "checkpoint": "列出分鏡總覽（每個 scene 的標題、purpose、畫面、預估秒數），再逐段列出完整旁白稿與畫面文字，請使用者審閱。使用者明確確認前不得執行 tts、capture 或 render；確認後才可進入 build_scene。重新規劃時，總覽多一欄標示每段是保留、修改、新增或移除，並在寫入任何檔案前請使用者確認；確認後寫入並執行 sync。",
+      "checkpoint": "列出分鏡總覽（每個 scene 的標題、purpose、畫面、預估秒數），再逐段列出完整旁白稿與畫面文字，請使用者審閱。使用者明確確認前不得執行 tts 或 render；確認後才可進入 build_scene。重新規劃時，總覽多一欄標示每段是保留、修改、新增或移除，並在寫入任何檔案前請使用者確認；確認後寫入並執行 sync。",
       "guide": "skills/product-video/script-guide.md"
     },
     {
@@ -176,7 +159,7 @@
       "requires": {
         "projectStatus": ["script_generated", "producing", "ready_to_assemble", "completed"],
         "sceneStatus": ["draft", "assets_ready", "stale", "failed"],
-        "gates": ["onlineTtsConsent", "domEditConsent", "productLogin"]
+        "gates": ["onlineTtsConsent"]
       },
       "skipWhen": [
         "scene.locked == true（除非使用者明確要求）",
@@ -190,7 +173,6 @@
       "writes": [
         { "path": "{dir}/assets/narration.mp3" },
         { "path": "{dir}/assets/captions.json" },
-        { "path": "{dir}/assets/capture.*", "optional": true },
         { "path": "{dir}/output/scene.mp4" }
       ],
       "actions": [
@@ -200,7 +182,6 @@
           "transitions": [{ "target": "project", "from": ["script_generated", "ready_to_assemble", "completed"], "to": "producing" }]
         },
         { "id": "tts", "do": "pnpm run tts <id>", "when": "旁白音檔不存在或 script.md / 聲音設定已變更" },
-        { "id": "capture", "do": "pnpm run capture <id>", "when": "visual.type 為 web-capture 或 screenshot" },
         {
           "id": "assets_ready",
           "do": "pnpm run state <id> --status assets_ready",

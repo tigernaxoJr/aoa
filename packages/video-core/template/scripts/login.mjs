@@ -27,7 +27,9 @@ run(async (argv) => {
   if (!url) throw new UsageError('usage: login [url]  (the project has no sources.productUrl)')
   if (!/^https?:\/\//.test(url)) throw new UsageError('url must start with http:// or https://')
 
-  const browser = await launchBrowser({ visible: true })
+  // A window the user works in: their installed Chrome or Edge first, which sign-in pages trust more.
+  // VIDEO_AGENT_HEADLESS=1 keeps it hidden (tests).
+  const browser = await launchBrowser({ channels: ['chrome', 'msedge', undefined], headless: process.env.VIDEO_AGENT_HEADLESS === '1' })
   // The window's note asks the user to sign in until a sign-in page has come and gone.
   let sawSignIn = false
   let kept = false
