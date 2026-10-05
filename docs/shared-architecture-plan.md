@@ -30,7 +30,7 @@
 | 模組 | 目前位置 | 實測差異 | 判斷與合併要點 |
 |---|---|---|---|
 | **File System Access (FSA)** | `apps/{video,slide}/src/lib/fsa.ts`（90 / 85 行） | 41 行差異 | 與業務解耦，適合抽出。需先統一 API：video 有 `writeFile(Blob \| BufferSource \| string)`、slide 只有 `writeText`；slide 的 `listFiles(root, path = '')` 支援根目錄；`ensurePermission` 的 `prompt` 預設值不同；slide 多處 `as any` 應改回正確型別。 |
-| **Activity 輪詢** | `apps/{video,slide}/src/lib/activity.ts`（34 / 38 行） | 20 行差異 | 讀取 `*.activity.json`、`ago()`、stale 判定。檔名（`video.activity.json` / `slide.activity.json`）應改由參數傳入，不寫死在共用庫。 |
+| **Activity 輪詢** | `apps/{video,slide}/src/lib/activity.ts`（34 / 38 行） | 20 行差異 | 讀取 `*.activity.json`、`ago()`、stale 判定。共用庫不應 import 各 app 的 `store`；activity ref 改由呼叫端傳入。 |
 
 ### 2.2 暫緩共用（前提條件未滿足）
 
@@ -59,7 +59,7 @@
 
 ## 3. 共用手段的限制：不在受版控的原始碼與範本中使用 Symlink
 
-**說明**：pnpm workspace 本身會在 `node_modules/` 內建立連結（Windows 上為 junction，不需系統管理員權限），Layer A 正是依賴這個機制，屬於可接受的工具鏈行為。這裡排除的是**由 Git 追蹤的 symlink**，以及**範本目錄內的 symlink**：
+**說明**：pnpm 本身會在 `node_modules/` 內建立連結（Windows 上為 junction，不需系統管理員權限），屬於可接受的工具鏈行為；Layer A 則改用 Vite alias + tsconfig `paths`，完全不經過連結。這裡排除的是**由 Git 追蹤的 symlink**，以及**範本目錄內的 symlink**：
 
 | 維度 | 缺陷 |
 |---|---|
@@ -95,8 +95,8 @@ flowchart TD
         T_SLIDE["apps/slide/template/scripts/lib/"]
     end
 
-    P_UI -->|"pnpm workspace:*"| APP_VIDEO_WEB
-    P_UI -->|"pnpm workspace:*"| APP_SLIDE_WEB
+    P_UI -->|"Vite alias + tsconfig paths"| APP_VIDEO_WEB
+    P_UI -->|"Vite alias + tsconfig paths"| APP_SLIDE_WEB
     P_CORE --> SYNC_SCRIPT
     SYNC_SCRIPT -->|"產生 GENERATED 副本"| T_VIDEO
     SYNC_SCRIPT -->|"產生 GENERATED 副本"| T_SLIDE
@@ -108,7 +108,7 @@ flowchart TD
 
 ---
 
-### Layer A：前端 Web UI 共用（Workspace Package）
+### Layer A：前端 Web UI 共用（原始碼套件 + 路徑別名）　✅ 已實作
 
 * **適用範圍**：階段一只含 `fsa.ts`、`activity.ts`。UI 元件需等設計基礎統一（見 §2.2）。
 * **實作機制**：
@@ -124,15 +124,18 @@ flowchart TD
        }
      }
      ```
-  2. 各應用 `package.json` 宣告 `"@aoa/web-shared": "workspace:*"`。
+  2. **以路徑別名解析，不走 pnpm workspace 安裝**：各 app 沒有自己的 `package.json`（依賴集中在根目錄），且 `pnpm-workspace.yaml` 未列 `packages`。因此：
+     - [`apps/vite.shared.ts`](../apps/vite.shared.ts) 的 `appConfig` 為所有 app 加上 `resolve.alias['@aoa/web-shared'] → packages/web-shared/src`；
+     - 各 app `tsconfig.json` 加上 `"paths": { "@aoa/web-shared/*": ["../../packages/web-shared/src/*"] }`。
+     `package.json` 的 `exports` 保留作為公開入口的宣告；日後若改為 workspace 安裝，import 路徑不需變動。
   3. 各 App 引入：
      ```typescript
      import { listFiles, writeText } from '@aoa/web-shared/fsa'
      import { useActivity } from '@aoa/web-shared/activity'
      ```
 * **注意事項**：
-  - **型別檢查**：確認各 app 的 `vue-tsc` / `tsconfig` 涵蓋 `packages/web-shared/src`（workspace 原始碼不在 `node_modules` 預編譯產物中，需被一併檢查）。共用設定沿用 `apps/vite.shared.ts`。
-  - **Tailwind 掃描**：各 app 以 Tailwind v4 `@import "tailwindcss"` 自動偵測來源，**不會掃描 `node_modules` 內的 workspace 連結**。共用庫一旦含 Tailwind class，各 app 的 `src/style.css` 必須加上 `@source "../../../packages/web-shared/src";`，否則 production build 會遺漏樣式。
+  - **型別檢查**：`vue-tsc` 會沿著 `paths` 檢查被 import 的共用原始碼。File System Access API 的 DOM 型別補丁以 `declare global` 放在 `fsa.ts` 內，任何 import 它的 app 自動取得，不需在各 app 的 `env.d.ts` 重複宣告。
+  - **Tailwind 掃描**：各 app 以 Tailwind v4 `@import "tailwindcss"` 自動偵測來源，掃描範圍不含 `packages/`。共用庫一旦含 Tailwind class，各 app 的 `src/style.css` 必須加上 `@source "../../../packages/web-shared/src";`，否則 production build 會遺漏樣式。
   - **API 最小化**：共用庫是 Agent 會讀入的 Context，只匯出確實被兩個以上 app 使用的函式。
 
 ---
@@ -204,9 +207,9 @@ aoa/
    - 修改 `packages/web-shared` 時須同時跑所有使用它的 app 的檢查。
 2. 建立 `packages/web-shared`（`package.json` 含 `exports`）。
 3. 合併 `fsa.ts`：以 video 版為基礎（型別較嚴謹），納入 slide 的 `listFiles` 根目錄支援，`ensurePermission` 的 `prompt` 改為必填參數，移除 `as any`。
-4. 合併 `activity.ts`：activity 檔名改為參數。
+4. 合併 `activity.ts`：`useActivity(source)` 改為接收各 app store 的 activity ref（泛型保留各 app 的文件型別）；`ago()` 統一採 slide 版（30 秒內「剛剛」、1 分鐘內顯示秒數），時鐘 10 秒一跳。
 5. 兩個 app 改用 `@aoa/web-shared`，刪除 `apps/*/src/lib/fsa.ts`、`activity.ts`。
-6. 確認 `tsconfig` / `vue-tsc` 涵蓋共用庫。
+6. 加上 Vite alias 與各 app tsconfig `paths`；移除 video `env.d.ts` 中改由 `fsa.ts` 提供的 FSA 型別宣告。
 
 **完成定義**：
 - `apps/video/src/lib/` 與 `apps/slide/src/lib/` 中已無 `fsa.ts`、`activity.ts`；

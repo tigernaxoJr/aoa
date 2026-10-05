@@ -1,7 +1,7 @@
 // Object URL for a file inside the project folder (e.g. a scene video), refreshed when its mtime
 // changes and revoked when no longer shown.
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
-import { tryFile } from './fsa'
+import { tryFile } from '@aoa/web-shared/fsa'
 import { root } from './store'
 
 export function useFileUrl(path: Ref<string | null>, mtime: Ref<number>) {

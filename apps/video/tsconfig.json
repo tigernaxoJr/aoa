@@ -14,7 +14,8 @@
     "isolatedModules": true,
     "paths": {
       "@core": ["./template/scripts/lib/core.mjs"],
-      "@specs/*": ["./specs/*"]
+      "@specs/*": ["./specs/*"],
+      "@aoa/web-shared/*": ["../../packages/web-shared/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.d.ts"]

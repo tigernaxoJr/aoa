@@ -9,7 +9,7 @@ import sceneSchema from '@specs/scene.schema.json'
 import activitySchema from '@specs/activity.schema.json'
 import workflowJson from '@specs/workflow.json'
 import type { SceneJson, VideoActivityJson, VideoProjectJson } from '../types/protocol'
-import { listFiles, readText, tryFile } from './fsa'
+import { listFiles, readText, tryFile } from '@aoa/web-shared/fsa'
 import { START_FILE } from './site'
 
 export const PROJECT_FILE = 'video.project.json'

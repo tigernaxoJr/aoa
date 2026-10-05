@@ -34,7 +34,9 @@
    - **嚴禁將其他無關子應用（如 `apps/slide`、`apps/portal`）的原始碼載入 Context**，避免無謂消耗 Token 並防止上下文污染。
 2. **嚴禁跨 App 相互引入（No Cross-App Imports）**：
    - `apps/video`、`apps/slide`、`apps/portal` 彼此完全獨立，嚴禁相互 `import` 任何代碼或元件。
-   - 跨前端共用邏輯僅限於平台層的 [`apps/vite.shared.ts`](apps/vite.shared.ts)（Vite 打包配方）。
+   - 跨前端共用邏輯僅限於平台層的 [`apps/vite.shared.ts`](apps/vite.shared.ts)（Vite 打包配方）與 [`packages/web-shared`](packages/web-shared)（以 `@aoa/web-shared/*` 引入，例如 `@aoa/web-shared/fsa`）。
+   - **依賴方向**：`apps/*` 可 import `packages/*`；`packages/*` 嚴禁 import `apps/*`。共用庫的業務資料（如 activity ref）一律由呼叫端以參數傳入。
+   - **共用門檻**：只有兩個以上 app 實際使用的程式碼才放進 `packages/web-shared`；修改它時須對所有 app 執行 `pnpm run typecheck` 與 `pnpm run build:web`。規劃見 [`docs/shared-architecture-plan.md`](docs/shared-architecture-plan.md)。
 3. **公開 API 契約相容性（Public API Compatibility）**：
    - 網站打包產出的 `/api/*`（如 `/api/skills/*.zip`、`/api/templates/*.zip`、`/api/index.json`）是已發布給外部 Agent 的端點，其 URL 結構與 manifest 規則必須維持向後相容，不可任意破壞。
 

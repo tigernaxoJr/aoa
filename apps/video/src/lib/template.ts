@@ -3,7 +3,7 @@
 // manifest, write the differing ones from the hash-checked zip, never touching video content.
 import { unzipSync } from 'fflate'
 import type { VideoProjectJson } from '../types/protocol'
-import { readText, tryFile, writeText } from './fsa'
+import { readText, tryFile, writeText } from '@aoa/web-shared/fsa'
 import { PROJECT_FILE, dropUnknownFields } from './project'
 import { api } from './site'
 import { assertUnlocked } from './writes'

@@ -5,7 +5,7 @@
 // against the schema, set updatedBy "user", then re-derive the project status.
 import { checkTransition, deriveStatus } from '@core'
 import type { SceneJson, VideoProjectJson } from '../types/protocol'
-import { tryFile, writeText } from './fsa'
+import { tryFile, writeText } from '@aoa/web-shared/fsa'
 import { FINAL_FILE, LOCK_FILE, LOCK_STALE_MS, PROJECT_FILE, type ProjectState, type SceneState, schemaErrors, workflow } from './project'
 
 export class LockedError extends Error {}

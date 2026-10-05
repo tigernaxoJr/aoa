@@ -1,7 +1,7 @@
 // Reads a product's source folder the user picked, to prefill the guided start. Browsers never
 // reveal a folder's full path, so the user pastes it; when they don't, the agent finds the folder by
 // name and checks candidates against the hints (package name, git remote, top-level entries).
-import { tryFile } from './fsa'
+import { tryFile } from '@aoa/web-shared/fsa'
 import type { SourceHints } from './site'
 
 export interface SourceInfo {

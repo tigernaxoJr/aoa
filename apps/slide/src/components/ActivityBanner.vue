@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useActivity } from '../lib/activity'
+import { useActivity } from '@aoa/web-shared/activity'
+import { activity } from '../lib/store'
 
-const liveActivity = useActivity()
+const liveActivity = useActivity(activity)
 
 const steps = [
   { id: 'init', label: '1. 初始化' },

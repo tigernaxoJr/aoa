@@ -2,7 +2,7 @@
 // for running writes so conflicts and lock waits are reported the same way everywhere.
 import { reactive, shallowRef } from 'vue'
 import { companion, run as runAction } from './companion'
-import { ensurePermission, isSupported, tryFile } from './fsa'
+import { ensurePermission, isSupported, tryFile } from '@aoa/web-shared/fsa'
 import { forgetHandle, loadHandle, saveHandle } from './idb'
 import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
 import { type TemplateDiff, templateDiff, updateTemplate } from './template'

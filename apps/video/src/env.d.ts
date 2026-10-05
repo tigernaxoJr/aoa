@@ -24,14 +24,3 @@ declare module '@core' {
   export function deriveStatus(projectStatus: string, facts: ({ status: string; upToDate: boolean; outputMtime: number } | null)[], finalMtime: number): string | null
 }
 
-// File System Access API pieces not yet in TypeScript's DOM lib.
-interface FileSystemHandle {
-  queryPermission(descriptor?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>
-  requestPermission(descriptor?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>
-}
-interface FileSystemDirectoryHandle {
-  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
-}
-interface Window {
-  showDirectoryPicker?(options?: { mode?: 'read' | 'readwrite'; id?: string }): Promise<FileSystemDirectoryHandle>
-}

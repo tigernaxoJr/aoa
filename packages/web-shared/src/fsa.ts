@@ -1,5 +1,19 @@
-// File System Access API helpers (SPEC §9.1). Paths are project-relative with forward slashes.
+// File System Access API helpers shared by every app. Paths are project-relative with forward slashes.
 // Works with any FileSystemDirectoryHandle: a folder the user picked, or OPFS in tests.
+
+// File System Access API pieces not yet in TypeScript's DOM lib.
+declare global {
+  interface FileSystemHandle {
+    queryPermission(descriptor?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>
+    requestPermission(descriptor?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>
+  }
+  interface FileSystemDirectoryHandle {
+    entries(): AsyncIterableIterator<[string, FileSystemHandle]>
+  }
+  interface Window {
+    showDirectoryPicker?(options?: { mode?: 'read' | 'readwrite'; id?: string }): Promise<FileSystemDirectoryHandle>
+  }
+}
 
 export class NotFound extends Error {}
 
@@ -38,7 +52,7 @@ export async function tryFile(root: FileSystemDirectoryHandle, path: string): Pr
   }
 }
 
-export async function readText(root: FileSystemDirectoryHandle, path: string) {
+export async function readText(root: FileSystemDirectoryHandle, path: string): Promise<string> {
   return (await fileAt(root, path)).text()
 }
 
@@ -57,22 +71,27 @@ export async function writeText(root: FileSystemDirectoryHandle, path: string, t
   return writeFile(root, path, text)
 }
 
-/** Project-relative paths of every file under `path` (empty when the directory is missing). */
-export async function listFiles(root: FileSystemDirectoryHandle, path: string): Promise<string[]> {
+/**
+ * Project-relative paths of every file under `path` (the whole project when empty), sorted.
+ * Empty when the directory is missing.
+ */
+export async function listFiles(root: FileSystemDirectoryHandle, path = ''): Promise<string[]> {
+  const base = path.split('/').filter(Boolean)
   let dir: FileSystemDirectoryHandle
   try {
-    dir = await dirAt(root, path.split('/').filter(Boolean))
+    dir = await dirAt(root, base)
   } catch {
     return []
   }
   const out: string[] = []
   const walk = async (d: FileSystemDirectoryHandle, prefix: string) => {
     for await (const [name, handle] of d.entries()) {
-      if (handle.kind === 'file') out.push(`${prefix}/${name}`)
-      else await walk(handle as FileSystemDirectoryHandle, `${prefix}/${name}`)
+      const rel = prefix ? `${prefix}/${name}` : name
+      if (handle.kind === 'file') out.push(rel)
+      else await walk(handle as FileSystemDirectoryHandle, rel)
     }
   }
-  await walk(dir, path.replace(/\/+$/, ''))
+  await walk(dir, base.join('/'))
   return out.sort()
 }
 
@@ -81,7 +100,7 @@ export function isSupported() {
 }
 
 /** Asks for read/write permission on a stored handle; returns false when the user declines. */
-export async function ensurePermission(handle: FileSystemDirectoryHandle, prompt: boolean) {
+export async function ensurePermission(handle: FileSystemDirectoryHandle, prompt: boolean): Promise<boolean> {
   const opts = { mode: 'readwrite' as const }
   if (typeof handle.queryPermission !== 'function') return true // OPFS handles are always granted
   if ((await handle.queryPermission(opts)) === 'granted') return true

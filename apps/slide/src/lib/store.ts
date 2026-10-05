@@ -1,6 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { SlideActivity, SlideProject } from '../types/protocol'
-import { readText, tryFile, writeText } from './fsa'
+import { readText, tryFile, writeText } from '@aoa/web-shared/fsa'
 import { parseSlides, type ParsedDeck } from './slide-parser'
 
 export const dirHandle = shallowRef<FileSystemDirectoryHandle | null>(null)

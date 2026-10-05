@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { isSupported } from '../lib/fsa'
+import { isSupported } from '@aoa/web-shared/fsa'
 import { dirHandle, folderEntries, initializeProject, needsSetup, resetDirectory, setDirectory } from '../lib/store'
 
 const supported = isSupported()

@@ -1,0 +1,11 @@
+{
+  "name": "@aoa/web-shared",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Front-end helpers shared by apps/* (TypeScript source, compiled by each app's Vite build)",
+  "type": "module",
+  "exports": {
+    "./fsa": "./src/fsa.ts",
+    "./activity": "./src/activity.ts"
+  }
+}

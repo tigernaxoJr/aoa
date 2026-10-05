@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { tryFile, writeText } from '../lib/fsa'
+import { tryFile, writeText } from '@aoa/web-shared/fsa'
 import { START_FILE, api, launchMessage, newFolderId, startJson, type SourceHints, type VideoKind } from '../lib/site'
 import { baseName, pathHelp, platform, readSourceFolder } from '../lib/source'
 import { activity, pickFolder, reconnect, root, ui } from '../lib/store'

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 import { audioBlobToWav } from '../lib/audio'
-import { tryFile, writeFile } from '../lib/fsa'
+import { tryFile, writeFile } from '@aoa/web-shared/fsa'
 import { companion, run } from '../lib/companion'
 import { notify, root, state } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'

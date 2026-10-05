@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { useActivity } from '../lib/activity'
+import { useActivity } from '@aoa/web-shared/activity'
+import { activity } from '../lib/store'
 import Icon from './Icon.vue'
 
-const act = useActivity()
+const act = useActivity(activity)
 </script>
 
 <template>

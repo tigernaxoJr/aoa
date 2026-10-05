@@ -56,6 +56,8 @@ export function appConfig(appDir: string, slug: string, extra: UserConfig = {}) 
         root: appDir,
         base: new URL(siteUrl).pathname.replace(/\/?$/, '/') + (slug && `${slug}/`),
         plugins: [vue(), tailwindcss()],
+        // packages/web-shared is TypeScript source, compiled by each app's build (no workspace install).
+        resolve: { alias: { '@aoa/web-shared': here(import.meta.url, '../packages/web-shared/src') } },
         define: { __SITE_URL__: JSON.stringify(siteUrl) },
         server: { fs: { allow: [here(import.meta.url, '..')] } },
         build: { outDir: here(import.meta.url, `../dist/${slug}`), emptyOutDir: slug === '' },

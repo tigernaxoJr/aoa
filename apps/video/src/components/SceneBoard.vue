@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { PURPOSE_LABEL, TONE_CLASS, TONE_DOT, sceneBadge } from '../lib/site'
-import { state, write } from '../lib/store'
-import { useActivity } from '../lib/activity'
+import { useActivity } from '@aoa/web-shared/activity'
+import { activity, state, write } from '../lib/store'
 import type { SceneState } from '../lib/project'
 import { reorder } from '../lib/writes'
 import Icon from './Icon.vue'
@@ -12,7 +12,7 @@ const selected = defineModel<string | null>('selected', { required: true })
 const scenes = computed(() => state.value!.scenes)
 const dragging = ref<string | null>(null)
 const over = ref<string | null>(null)
-const act = useActivity()
+const act = useActivity(activity)
 /** The scene the agent says it is working on right now. */
 const working = computed(() => (act.value?.current && !act.value.waitingForUser ? act.value.scene : null))
 
