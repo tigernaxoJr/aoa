@@ -2,7 +2,7 @@
   "name": "agent-video-producer",
   "private": true,
   "version": "1.0.0",
-  "description": "Local MCP server for Agent Video Producer projects (the Companion ships with the project template)",
+  "description": "Local MCP server for Agent Video Producer projects",
   "type": "module",
   "bin": {
     "video-agent": "bin/video-agent.mjs"

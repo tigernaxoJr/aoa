@@ -8,7 +8,7 @@
 
 **Slide Studio** 是一個遵循 **AOA (Agent-Offloaded Architecture)** 模式的現代簡報生成與編輯工作台：
 1. **純靜態前端工作台**：部署於 `/<repo>/slide/`（如 `https://aoa.tigernaxo.com/slide/`），不建置後端伺服器、不呼叫雲端付費 API。
-2. **通訊機制極簡化**：完全依賴瀏覽器標準 **File System Access API (`showDirectoryPicker()`)** 與本機檔案輪詢，**不需要架設任何本機 Daemon 或 Companion（無須 packages/video-agent 形式的複雜常駐程序）**。
+2. **通訊機制極簡化**：完全依賴瀏覽器標準 **File System Access API (`showDirectoryPicker()`)** 與本機檔案輪詢，**不需要架設任何本機 Daemon 或常駐程序**。
 3. **Slidev + Agent 前端能力**：
    - 以 **Slidev** 為核心引擎（Markdown 驅動、Vue 3 組件生態、Tailwind CSS）。
    - 充分發揮 Coding Agent 的強大前端能力：動態撰寫 **HTML 排版**、繪製精密 **SVG 圖表/架構圖**、嵌入 **Three.js 3D 視覺/資料視覺化** 與 Canvas 動效。

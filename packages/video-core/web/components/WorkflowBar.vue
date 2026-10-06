@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { nextStep, stepsFor } from '../lib/site'
-import { companion } from '../lib/companion'
-import { runCompanion, state } from '../lib/store'
+import { state } from '../lib/store'
 import CopyButton from './CopyButton.vue'
 import Icon from './Icon.vue'
 
@@ -12,13 +11,6 @@ const plain = computed(() => nextStep(next.value, state.value!.scenes.length))
 /** The step after the last completed one is "current". */
 const steps = computed(() => stepsFor(state.value!.project.project.kind))
 const current = computed(() => steps.value.findIndex((s) => !s.done.includes(status.value)))
-/** Redo every stale scene with the Companion (deterministic), then assemble. */
-async function redoAll() {
-  for (const s of stale.value) {
-    if (!(await runCompanion('rebuild', `重新產生 ${s.id}`, s.id))) return
-  }
-  await runCompanion('assemble', '合成影片')
-}
 const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.scene?.status === 'stale') && !s.scene?.locked))
 </script>
 
@@ -75,20 +67,11 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
       role="status"
       data-testid="stale-banner"
     >
-      <template v-if="companion.state === 'ready'">
-        <span class="flex items-center gap-2"><Icon name="refresh" />{{ stale.length }} 個 scene 待更新。</span>
-        <span class="flex flex-wrap gap-2">
-          <button type="button" class="btn-primary btn-sm" :disabled="!!companion.running" data-testid="redo-all" @click="redoAll">立即重做並合成</button>
-          <button type="button" class="btn-secondary btn-sm" :disabled="!!companion.running" title="需要改寫文案或分鏡時，交給 Agent 判斷" @click="runCompanion('sync', 'Agent 同步變更')">交給 Agent 處理</button>
-        </span>
-      </template>
-      <template v-else>
-        <span class="flex items-start gap-2">
-          <Icon name="refresh" class="mt-0.5" />
-          <span>{{ stale.length }} 個 scene 待更新。網頁無法直接叫醒 Agent，請在 Agent 中執行 <code>/video-sync</code>（或請 Agent「開啟本機助手」，之後就能直接在這裡重做）。</span>
-        </span>
-        <CopyButton text="/video-sync" />
-      </template>
+      <span class="flex items-start gap-2">
+        <Icon name="refresh" class="mt-0.5" />
+        <span>{{ stale.length }} 個 scene 待更新。網頁無法直接叫醒 Agent，請在 Agent 中執行 <code>/video-sync</code>。</span>
+      </span>
+      <CopyButton text="/video-sync" />
     </div>
   </section>
 </template>

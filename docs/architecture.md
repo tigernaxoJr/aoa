@@ -10,7 +10,7 @@
 
 **AOA (Agent-Offloaded Architecture)** is a software architecture pattern for the AI agent era: a product offloads its agent work — LLM reasoning, tool use, and the tokens they consume — to the coding agent the user already has. The service keeps whatever else it needs, including a backend, databases, or lightweight models; what it does not run is the agent.
 
-On the frontend, AOA takes the form of a static web app that works with the user's agent through a local folder (this frontend form is sometimes called AOFA, Agent-Offloaded Frontend Architecture). Most of this document describes that form, the most direct way to apply AOA; Modes C and D (§5) show AOA with a backend and with no frontend at all.
+On the frontend, AOA takes the form of a static web app that works with the user's agent through a local folder (this frontend form is sometimes called AOFA, Agent-Offloaded Frontend Architecture). Most of this document describes that form, the most direct way to apply AOA; Modes B and C (§5) show AOA with a backend and with no frontend at all.
 
 In the traditional generative AI product (SaaS) model, the vendor bears the heavy cost of cloud inference, media transcoding, and storage, while users bear the risk of privacy leaks and cloud lock-in of their data.
 
@@ -100,7 +100,7 @@ The user's local development environment has changed dramatically in recent year
 ### Principle 3: Filesystem-Centric SSOT & Bus
 - **Local SSOT**: All concrete source code, intermediate assets, temporary files, and generated outputs use the local filesystem as the single source of truth.
 - **Files as signals**:
-  - In the pure-frontend scenario, the frontend reads and writes files via the File System Access API and detects the agent's output through metadata fingerprint polling; the agent side is triggered manually by the user (see Mode A) or driven by a Companion (see Mode B).
+  - In the pure-frontend scenario, the frontend reads and writes files via the File System Access API and detects the agent's output through metadata fingerprint polling; the agent side is triggered by the user, who pastes the command the page prepares (see Mode A).
   - In the backend-collaboration scenario, the cloud only syncs sanitized project metadata (Metadata Plane), while the core data (Data Plane) always stays local.
   - Both sides follow a locking convention for writes (e.g., lock files and write-temp-then-rename) to reduce the risk of races. The File System Access API itself provides no cross-process file locking, and agent compliance with the convention must be verified, so the frontend should still validate against the schema and tolerate errors when reading.
 
@@ -113,7 +113,7 @@ The user's local development environment has changed dramatically in recent year
 
 ## 5. Collaboration Modes
 
-AOA supports four progressive modes. Modes A and B are frontends working with a local folder; Mode C adds a thin backend; Mode D has no frontend at all.
+AOA supports three progressive modes. Mode A is a frontend working with a local folder; Mode B adds a thin backend; Mode C has no frontend at all.
 
 ### Mode A: Pure Workbench (File-Driven)
 *The simplest frontend form; no extra local server is required.*
@@ -122,16 +122,7 @@ AOA supports four progressive modes. Modes A and B are frontends working with a 
 3. When the agent finishes a storyboard or generates audio, the fingerprint changes and the frontend updates automatically.
 4. When the frontend needs the agent to act (e.g., after the user edits the script), it marks the state file as `stale` and provides a standard command (e.g., `/video-sync`) for the user to paste into their terminal.
 
-### Mode B: Companion-Enhanced (Push-Driven)
-*When the environment allows, this enables a seamless experience.*
-1. A tiny WebSocket Companion starts alongside the project (bound only to `127.0.0.1`, never exposed externally).
-2. Secure pairing: WebSocket is not protected by CORS, so the Companion must validate the connection's `Origin` header and use a one-time pairing token to prevent cross-site connection hijacking.
-3. The Companion pushes real-time events, replacing polling.
-4. The frontend can offer a "Re-render now" button, and the Companion runs whitelisted, deterministic local commands.
-
-> Note: When a public HTTPS site (e.g., GitHub Pages) connects to `127.0.0.1`, recent Chromium versions' Local Network Access mechanism requires user permission. The frontend must handle a denied permission by falling back to Mode A.
-
-### Mode C: Backend-Enabled (Hybrid AOA)
+### Mode B: Backend-Enabled (Hybrid AOA)
 *For multi-tenant systems that need team collaboration, account permissions, or enterprise management.*
 
 **Key idea**: AOA does not reject backend servers! In systems with a backend, AOA achieves **a full decoupling of the Control Plane from the Compute Plane**:
@@ -156,7 +147,7 @@ AOA supports four progressive modes. Modes A and B are frontends working with a 
    - Inference goes to the enterprise's chosen LLM provider (possibly an enterprise plan with a signed data agreement) or an in-house model.
    - Only sanitized, schema-validated "final project metadata" or videos the user explicitly chooses to publish are uploaded to the cloud backend, greatly narrowing the enterprise's privacy-compliance scope.
 
-### Mode D: Backend-Only (Agent-Operated API)
+### Mode C: Backend-Only (Agent-Operated API)
 *For services with no user interface: the agent itself is the client.*
 
 1. The service exposes an HTTP API (or wraps it as an MCP server) and publishes its specification at a URL: an OpenAPI document, a guide or skill, and JSON Schemas.
@@ -173,7 +164,7 @@ Whatever the mode, the agent must first obtain the specification, and the entry 
 
 The AOA site ships two workbenches, each with its own static UI, protocol schemas, agent skill, and project template:
 - **Slide Studio (Mode A)**: the agent builds a Slidev deck with HTML, SVG diagrams, and Three.js components and exports a PDF locally; the page only reads and writes the folder.
-- **Video Studio (Mode B)**: the agent turns a product URL or a story into a narrated video, described below.
+- **Video Studio (Mode A)**: the agent turns a product URL or a story into a narrated video, described below.
 
 Video Studio in detail:
 - **Frontend workbench**: A Vue 3 + Tailwind static site hosted on GitHub Pages, providing product spec input, a storyboard, narration editing, and video preview.
@@ -196,7 +187,7 @@ Video Studio in detail:
 - **Browser compatibility**: Relies on the File System Access API (`showDirectoryPicker`), which is currently supported only by desktop Chromium browsers such as Chrome and Edge; Brave disables it by default, and Firefox and Safari do not support it.
 - **Depends on the user's local environment**: Users need a basic runtime (e.g., Node.js, a Coding Agent) and must pay for their agent's subscription or API usage themselves.
 - **Agent output is non-deterministic**: Agent output may not fully conform to the schema; the frontend must validate it and provide retry or repair guidance.
-- **Mode A requires manual triggering**: Without a Companion, users must run a command in their terminal to drive the agent.
+- **The page cannot wake the agent**: In Mode A, users start the agent and paste the command the page prepares; the page only reflects what the agent writes.
 - **Directory permission must be re-granted**: After a page reload, read/write permission for the directory handle usually has to be granted again.
 
 ---

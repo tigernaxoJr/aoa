@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { PURPOSE_LABEL, TONE_CLASS, sceneBadge } from '../lib/site'
-import { companion } from '../lib/companion'
-import { runCompanion, state, ui, write } from '../lib/store'
+import { state, ui, write } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
 import { approve, markStale, saveSceneFields, saveScript, setLocked } from '../lib/writes'
 import Icon from './Icon.vue'
@@ -133,17 +132,6 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
         @click="write((root, st) => approve(root, st, id), '已核准')"
       >
         <Icon name="check" :size="14" />核准
-      </button>
-      <button
-        v-if="companion.state === 'ready' && !scene.locked"
-        type="button"
-        class="btn-primary"
-        :disabled="ui.saving || !!companion.running || dirty"
-        :title="dirty ? '請先儲存修改' : '在本機重新產生旁白、畫面與影片'"
-        data-testid="rebuild"
-        @click="runCompanion('rebuild', `重新產生 ${id}`, id)"
-      >
-        <Icon name="refresh" :size="14" />立即重新產生
       </button>
       <button
         v-if="['rendered', 'approved'].includes(scene.status)"

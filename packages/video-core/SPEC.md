@@ -63,28 +63,21 @@
 
 ### 2.1 UI ↔ Agent 通訊模式
 
-「靜態部署」只約束**雲端**不跑後端，不約束使用者本機。HTTPS 靜態頁連 `http://localhost` / `ws://127.0.0.1` 為瀏覽器允許的例外，因此以下模式皆與靜態部署相容：
+網站為靜態部署，UI 只透過使用者授權的資料夾與 Agent 溝通：
 
 | 模式 | 雲端 | 本機 | Agent → UI | UI → Agent | 階段 |
 |---|---|---|---|---|---|
 | **A. 檔案輪詢** | 靜態 | Claude Code | UI 輪詢檔案（自動） | 使用者在終端機下指令（手動） | **MVP** |
 | A'. 檔案佇列 | 靜態 | Claude Code 常駐監看 | UI 輪詢檔案 | UI 寫 `requests/*.json`，Agent 監看並處理 | 不採用 |
-| **B. 本機 Companion** | 靜態 | Claude Code + 專案的 `pnpm run companion` | WebSocket 推送 | WebSocket → Companion 執行腳本或 `claude -p` | Phase 5 |
+| B. 本機 Companion | 靜態 | Claude Code + 常駐的本機 WebSocket 程序 | WebSocket 推送 | WebSocket → Companion 執行腳本或 `claude -p` | 已移除 |
 
 **模式 A 的限制（MVP 必須在 UI 明示）**：Claude Code 是請求驅動的，不會背景監聽檔案；瀏覽器也無法喚起它。因此 UI → Agent 方向不是即時的——UI 修改只會把 scene 標為 `stale`，UI 顯示「N 個 scene 待更新」並提供一鍵複製 `/video-sync` 指令，由使用者在終端機觸發。
 
 **不採用 A'**：Agent 對話需長時間開著且每次檢查都消耗 token，閒置成本高。
 
-**模式 B 的設計要求**：
+**不採用 B（本機 Companion）**：曾實作過（Phase 5），讓網頁經 `127.0.0.1` WebSocket 觸發白名單腳本與 `claude -p "/video-sync"`，後移除。輪詢已足以反映 Agent 進度；確定性的重做（`pnpm run <script> <scene-id>`）使用者的 Agent 一樣能執行；而它要另外常駐程序、配對 token、Origin 檢查、處理 Local Network Access 授權，`sync` 還會在背景啟動帶寫入權限的 Agent、消耗使用者看不到的 token。省下的只是回到對話下一句指令。
 
-- Companion 是無狀態的：所有狀態仍只存在專案檔中，Companion 只監看檔案並轉發事件；關掉 Companion 系統即退回模式 A，不影響資料。
-- 職責劃分：**確定性工作**（重跑 TTS、render 單一 scene、assemble）由 Companion 直接執行 pnpm scripts；**需要推理的工作**（改寫文案、重規劃分鏡）才以 `claude -p "/video-sync"` 呼叫 Agent。
-- 安全：只綁定 `127.0.0.1`；CORS 只允許網站 origin，並檢查每個請求的 `Origin`；啟動時產生隨機配對 token，所有請求須帶 token——否則任何網頁都能叫本機執行指令。只暴露白名單動作，不接受任意指令字串。
-- 形態與配對：見 §10.1。
-- 瀏覽器限制：Chrome 對「公開網站存取本機網路」會要求使用者授權（Local Network Access），UI 需引導；Safari 對 localhost 連線限制較多，列為不支援。
-- 相容性：UI 偵測到 Companion（連 `ws://127.0.0.1:<port>` 成功）時啟用「立即重新渲染」等按鈕與推送更新；否則自動回退到模式 A。
-
-**為了讓 A → B 無痛升級，MVP 的檔案協議即須滿足**：狀態只存在 `scene.json` / `video.project.json`；「待處理」以 `status: stale` 表達（即工作佇列）；腳本介面為 `pnpm run <script> <scene-id>`，可被 Agent 或 Companion 同樣呼叫。
+**檔案協議**：狀態只存在 `scene.json` / `video.project.json`；「待處理」以 `status: stale` 表達（即工作佇列）；腳本介面為 `pnpm run <script> <scene-id>`，Agent 與 MCP 同樣呼叫。
 
 ---
 
@@ -258,7 +251,7 @@ my-video-project/
 
 - **路徑**：一律使用正斜線的相對路徑，不得為絕對路徑、不得含 `..` 片段。scene.json 內的路徑相對於該 scene 目錄；以 `@/` 開頭表示相對於專案根目錄（如 `@/assets/logo.png`）。`video.project.json` 內的路徑相對於專案根目錄。唯一例外是 `project.sources.sourceCodePath`（唯讀輸入，可在專案外）。
 - **擴充欄位**：Schema 不接受未定義的欄位，以免拼錯欄位名稱被默默忽略。使用者或第三方工具需要自訂欄位時，一律以 `x-` 開頭（可用於專案根、`project`、scene 根、`visual`），Agent 必須原樣保留。
-- **寫入者**：`updatedBy` 為 `agent` · `user` · `companion` · `mcp`。
+- **寫入者**：`updatedBy` 為 `agent` · `user` · `mcp`（`companion` 為已移除的本機 Companion 所寫，Schema 仍接受以相容舊專案）。
 - **Schema 無法表達、由 `validate.mjs` 檢查的規則**：scene id 與 dir 唯一且目錄存在；`format` 寬高與 `aspectRatio` 相符；各 scene.json 的 `id` 與 `video.project.json` 引用一致；解析後路徑不得跳出專案根目錄；狀態為 `rendered` / `approved` 時輸出檔存在且 `inputHash` 相符；`project.id` 為全 0 UUID 時視為「範本尚未初始化」；專案沒有 `scripts/capture.mjs`（故事範本）時，`web-capture` / `screenshot` 類型的 scene 視為錯誤。
 - Schema 原始檔位於產品 repo 的 `specs/`（`common` / `project` / `scene` 三個檔案），`specs/examples/` 內的有效與無效範例由 `pnpm run test:specs` 驗證。
 
@@ -530,7 +523,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 | 腳本 | 輸入 | 輸出 | 可修改 JSON？ |
 |---|---|---|---|
-| `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態、是否過期與建議的下一個指令；`--json` 輸出機器可讀結果（供 Web UI / Companion）。輸入已變更（`inputHash` 不符）只是警告，不算錯誤 | 否 |
+| `validate.mjs` | 全專案 | 退出碼（非 0 = 失敗）；`--report` 輸出各 scene 狀態、是否過期與建議的下一個指令；`--json` 輸出機器可讀結果（供 Web UI / MCP）。輸入已變更（`inputHash` 不符）只是警告，不算錯誤 | 否 |
 | `tts.mjs <id>` | script.md、voice 設定 | `assets/narration.mp3`、`assets/captions.json`；`--list-voices` 列出目前 provider 的聲音 | 否 |
 | `capture.mjs <id>` | `visual.capture` | `assets/capture.*`；`--url <網址> --out <目錄>` 模式供 analyze 擷取產品頁（整頁 + 首屏截圖、頁面文字、可 highlight 的元素與 selector）；`highlight` 一次框一個元素，找不到時警告並略過；`script` 需 `domEditConsent`。有保存的登入時以它開頁；`sources.requiresLogin` 卻沒有登入、或開頁被導到登入頁時以 `gate productLogin` 失敗 | 否 |
 | `login.mjs [url]` | `sources.productUrl` | 打開**可見**的瀏覽器視窗（優先用已安裝的 Chrome / Edge），使用者自己登入後關閉；登入狀態（cookie、localStorage、IndexedDB）存到 `.auth/login.json`（列入 `.gitignore`，Agent 不讀）。只在看過登入頁、又離開登入頁後才算登入成功，視窗下方的提示隨之由藍轉綠。`--clear` 刪除 | 否 |
@@ -645,7 +638,7 @@ skills/product-video/
 
 安裝方式：Agent 下載 `/api/skills/product-video.zip` 解壓到專案 `.claude/skills/`（或使用者層級 skills 目錄）。不安裝也可以：`/api/agent-guide.md` 與 `/api/skills/product-video/*.md` 提供相同內容供線上讀取。
 
-故事影片的 Skill 在 `skills/story-video/`（`SKILL.md`、`story-guide.md`、`design-guide.md`），共用的步驟（找專案、同步範本、安裝、本機助手、sync、translate）以 `../product-video/…` 連到產品 Skill。打包時 `rendering-guide.md` 一併複製進 `story-video.zip`，其他跨 Skill 連結改寫成產品 Skill 的網址；入口為 `/api/story-guide.md`。
+故事影片的 Skill 在 `skills/story-video/`（`SKILL.md`、`story-guide.md`、`design-guide.md`），共用的步驟（找專案、同步範本、安裝、sync、translate）以 `../product-video/…` 連到產品 Skill。打包時 `rendering-guide.md` 一併複製進 `story-video.zip`，其他跨 Skill 連結改寫成產品 Skill 的網址；入口為 `/api/story-guide.md`。
 
 - `SKILL.md` 負責「判斷目前狀態」與「初始化新專案」（此時專案內尚無 `AGENTS.md`）；初始化之後的規則以專案 `AGENTS.md` 為準，SKILL 不重複規則。
 - `workflow.md`（各步驟做法，含 `brief/product-brief.md` 與 `brief/style.json` 的格式）、`script-guide.md`（分鏡與旁白寫作）以 `<a id="…">` 明確錨點供 `workflow.json` 的 `guide` 引用；`pnpm run test:specs` 檢查所有 Skill 內部連結與錨點。
@@ -701,7 +694,7 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 - **不使用** `fetch("file://…")`（瀏覽器禁止）。
 - 支援瀏覽器：Chrome / Edge（桌面版）；需 HTTPS 或 localhost。Firefox / Safari 顯示唯讀提示或引導改用支援的瀏覽器。
 - Directory handle 存入 IndexedDB，下次開啟時請求重新授權即可，免重新選擇。
-- **更新偵測**：每 2 秒輪詢 `video.project.json` 與各 `scene.json` 的 `lastModified`（File System Observer API 可用時優先使用）；連上 Companion 時改用其 WebSocket 推送（見 §2.1），輪詢降為每 10 秒一次，只補檔案監看漏掉的事件；Companion 斷線後頁面自動重連（1 → 30 秒退避），連上時重新載入一次。
+- **更新偵測**：每 2 秒輪詢 `video.project.json` 與各 `scene.json` 的 `lastModified`（File System Observer API 可用時優先使用）。
 - **反向通知**：模式 A 下 UI 無法喚起 Agent，只能標記 `stale` 並提示使用者執行 `/video-sync`。
 
 ### 9.2 畫面
@@ -745,9 +738,9 @@ Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1�
 
 ---
 
-## 10. MCP 與 Companion（Phase 5）
+## 10. MCP（Phase 5）
 
-實作：MCP 為 `packages/video-agent/`（執行檔 `video-agent`；不發佈到 npm，`package.json` 設為 `private`，npm 上同名的 `video-agent` 是無關的套件，不要使用）；Companion 隨專案範本提供（`scripts/companion.mjs`，見 §10.1）。
+實作：MCP 為 `packages/video-agent/`（執行檔 `video-agent`；不發佈到 npm，`package.json` 設為 `private`，npm 上同名的 `video-agent` 是無關的套件，不要使用）。
 
 | | Guide（網站內容的 MCP 包裝） | Project（本機專案） |
 |---|---|---|
@@ -756,49 +749,32 @@ Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1�
 | Tools | — | `project_status`、`validate_project`、`create_project`、`create_scene`、`update_scene`、`update_project`、`render_scene`、`assemble_video` |
 
 - **沒有獨立的 Cloud MCP 伺服器**：網站部署於 GitHub Pages，只能提供靜態檔，無法運行 MCP。Guide 類 resources / prompts 改由本機 `video-agent mcp` 提供，內容依序取自 `VIDEO_AGENT_GUIDE_DIR` → 套件打包時內附的 `guide/`（`prepack` 以 `build-api.mjs` 產生）→ repo 的 `dist/api` → 以 HTTP 讀取 `VIDEO_AGENT_SITE_URL`（預設本站）。內容與 `/api/*` 完全相同（D21）。
-- **不含協議邏輯**：所有專案操作都執行專案自己的 `scripts/*.mjs`（重做流程與合成也由專案的 `scripts/lib/runner.mjs` 執行），行為與專案的範本版本一致；JSON 只經 `state.mjs` 寫入，`updatedBy` 為 `mcp` / `companion`。
+- **不含協議邏輯**：所有專案操作都執行專案自己的 `scripts/*.mjs`（重做流程與合成也由專案的 `scripts/lib/runner.mjs` 執行），行為與專案的範本版本一致；JSON 只經 `state.mjs` 寫入，`updatedBy` 為 `mcp`。
 - `create_project`：下載範本並以 manifest 的 SHA-256 驗證後解壓到空目錄，填入 `project.id`（UUID v4）、名稱、來源、語言；之後仍須 `pnpm install` 並經使用者確認後以 `update_project` 記錄 gates。
 - `create_scene`：寫入新的 `scene.json` + `script.md`，再以 JSON Patch 加入 `scenes`；註冊失敗（例如 Schema 不符）時只移除本次建立的目錄。
 - `update_scene` / `update_project`：JSON Patch，經 `state.mjs` 驗證並檢查狀態轉換。
 - `render_scene`：執行 build_scene 的確定性部分（見下方「重做流程」），失敗時以 `state --failed` 記錄。`assemble_video`：`assemble` 後將專案設為 `completed`。
 - 註冊方式（Claude Code）：從本 repo 以本機路徑註冊，`claude mcp add video-agent -- node <repo>/packages/video-agent/bin/video-agent.mjs mcp`。不從 npm 下載。
 
-**重做流程（專案 `scripts/lib/runner.mjs` 的 `buildScene`，MCP 與 Companion 共用）**：專案若為 `script_generated` / `ready_to_assemble` / `completed` 先設為 `producing` → scene 為 `rendered` / `approved` 時先設為 `stale`（workflow 不允許直接跳回 `assets_ready`）；殘留在 `rendering` 的先記為失敗 → `tts` → `capture` → `assets_ready` → `rendering` → `render:scene` → `--rendered`。任一步失敗即停止並記錄。鎖定（`locked`）的 scene 拒絕執行。Gates 由各腳本本身把關。
+**重做流程（專案 `scripts/lib/runner.mjs` 的 `buildScene`，MCP 使用）**：專案若為 `script_generated` / `ready_to_assemble` / `completed` 先設為 `producing` → scene 為 `rendered` / `approved` 時先設為 `stale`（workflow 不允許直接跳回 `assets_ready`）；殘留在 `rendering` 的先記為失敗 → `tts` → `capture` → `assets_ready` → `rendering` → `render:scene` → `--rendered`。任一步失敗即停止並記錄。鎖定（`locked`）的 scene 拒絕執行。Gates 由各腳本本身把關。
 
-### 10.1 Local MCP 與 Companion
+### 10.1 Local MCP
 
-兩者生命週期不同：Local MCP 隨 Agent 對話由 stdio 啟動與結束；Companion 須獨立常駐，才能在 Agent 未開啟時服務 UI。
-
-- **Local MCP** 是獨立的套件（`packages/video-agent/`，不發佈到 npm），因為它要在專案建立前就註冊到 Agent。
-- **Companion 隨專案範本提供**，不另外安裝：程式碼跟著範本 zip（以 SHA-256 驗證）下載、隨「同步範本」更新，只依賴範本已安裝的套件（`ws`）；執行的重做流程與專案腳本永遠同版本。`video-agent serve` 只是在專案目錄執行它的捷徑。
+Local MCP 隨 Agent 對話由 stdio 啟動與結束。它是獨立的套件（`packages/video-agent/`，不發佈到 npm），因為它要在專案建立前就註冊到 Agent。
 
 ```text
 packages/video-agent/
-├── bin/video-agent.mjs  # CLI：mcp | serve（serve 執行專案的 scripts/companion.mjs）
+├── bin/video-agent.mjs  # CLI：mcp
 ├── core/                # project.mjs（找專案、執行專案腳本；重做流程與合成委派給專案的 runner）、guide.mjs（Guide API、範本下載與驗證）
 └── mcp/                 # `video-agent mcp [--project <dir>]` → stdio MCP server（由 Agent 啟動）
 
 <專案>/scripts/
-├── companion.mjs        # `pnpm run companion [--port <n>] [--persist-token]` → 127.0.0.1 WebSocket
-└── lib/companion.mjs、lib/runner.mjs（執行專案腳本、重做流程、合成）
+└── lib/runner.mjs（執行專案腳本、重做流程、合成）
 ```
-
-Companion（`pnpm run companion`）：
-
-- **Port**：預設 `47831`，被占用時依序嘗試至 `47840`；`--port` 可強制指定。只綁定 `127.0.0.1`。
-- **配對**：啟動時產生隨機 token（`--persist-token` 時保存在 `~/.video-agent/token`，權限 600），於終端機印出配對連結
-  `<SITE_URL>/#pair=<port>:<token>`
-  使用者點擊即開啟 UI 並完成配對。資訊放在 URL fragment（`#` 之後），不會送到網站伺服器；UI 讀取後存入 `localStorage` 並立即從網址列移除。
-- **連線檢查**：WebSocket 握手時檢查 `Origin`，只接受網站本身與 `http://localhost` / `http://127.0.0.1`（開發用），沒有 `Origin` 也拒絕；連線後 5 秒內須送出 `{ "type": "hello", "token" }`，以固定時間比較，不符則以代碼 4001 關閉。
-- UI **不主動掃描 port**（避免反覆觸發 Local Network Access 授權），只連線已配對的 port。
-- **訊息**：UI → `{ "type": "run", "id", "action", "scene"? }`；Companion → `queued` / `started` / `log`（逐行輸出）/ `result`（`ok`、`output`），以及專案檔案變動時的 `changed`（忽略 `node_modules`、`.tmp`、`.git`；UI 收到即重新載入，不必等輪詢）。
-- **白名單動作**：`status`、`validate`、`tts <id>`、`sample <cast-id|narrator>`（`tts --sample`，以 `cast` 欄位傳入）、`capture <id>`、`render-scene <id>`、`rebuild <id>`（重做流程）、`assemble`（含設為 completed）、`sync`。scene id 須符合 `scene-*` 格式，cast id 須為 `narrator` 或符合角色 id 格式；參數一律以陣列傳給子程序，不經 shell。專案缺少對應腳本的動作（故事範本沒有 `capture`）不提供：`ready` 訊息的 `actions` 只列出這個專案能執行的動作，其餘請求一律拒絕。一次只執行一個動作，其餘排隊。
-- **`sync`**：在專案目錄執行 `claude -p "/video-sync" --allowedTools "Bash(pnpm run:*)" Read Edit Write Glob Grep`，只開放 pnpm scripts 與檔案工具，**不使用**略過權限檢查的選項。可用 `VIDEO_AGENT_CLAUDE` 指定其他執行檔。
-- **UI**：標頭顯示連線狀態；連上時 Scene Editor 顯示「立即重新產生」（`rebuild`），待更新提示顯示「立即重做並合成」（逐一 `rebuild` 後 `assemble`）與「交給 Agent 處理」（`sync`），Final 顯示「立即合成」；故事的角色工坊顯示「立即產生試聽」（`sample`，聲音設定須先儲存，因為 `tts --sample` 讀取 `video.project.json`）。未連上或 Companion 未提供該動作時維持模式 A 的提示（複製指令）。
 
 ### 10.2 寫入協定
 
-Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（Agent 的檔案編輯工具無法取鎖與原子替換，因此 Agent 更新 JSON 時經由 `pnpm run state <scene-id|project> <json-patch>`，由 `scripts/state.mjs` 執行以下協定並於寫入後自動 validate）：
+Agent、Local MCP、UI 皆可能寫入專案 JSON，一律遵守（Agent 的檔案編輯工具無法取鎖與原子替換，因此 Agent 更新 JSON 時經由 `pnpm run state <scene-id|project> <json-patch>`，由 `scripts/state.mjs` 執行以下協定並於寫入後自動 validate）：
 
 1. 寫入前取得專案根目錄的 `.video-agent.lock`（內容：寫入者、PID、時間）；已存在且未逾時（30 秒）則等待重試（最多 10 秒，可用環境變數 `VIDEO_AGENT_LOCK_WAIT_MS` 調整），逾時視為殘留鎖並覆蓋。
 2. 重新讀取目標檔 → 修改 → 寫到 `<file>.tmp` → rename 覆蓋（原子寫入）。
@@ -842,7 +818,7 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 │       ├── tools/                      # build-api.mjs、gen-types.mjs、lib/
 │       ├── SPEC.md                     # 本文件
 │       └── drafts/                     # 原始草稿
-├── packages/video-agent/               # Local MCP + Companion（Phase 5，§10）
+├── packages/video-agent/               # Local MCP（Phase 5，§10）
 ├── tests/site/                         # 全站發佈與打包整合測試
 └── .github/workflows/deploy-pages.yml
 ```
@@ -866,7 +842,7 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 | **2. 本機管線** | 範本 `scripts/*`、渲染器、TTS、capture、assemble | 以手寫 scene.json 可產出 final.mp4 |
 | **3. Agent 流程** | Guide API 靜態檔、slash commands、prompts；GitHub Pages 部署（§12.1） | 網站部署完成；Claude Code 從一個產品網址端到端產出影片，並能只重做單一 scene |
 | **4. Web UI** | 資料夾授權、Workflow、Scene Board/Editor、預覽 | UI 修改文案 → Agent `/video-sync` 只重做該 scene |
-| **5. MCP + Companion** | Cloud MCP + Local MCP；本機 Companion（§2.1 模式 B，可與 Local MCP 同一程式） | Agent 可透過 MCP 完成相同流程；UI 按「立即重新渲染」無需切到終端機 |
+| **5. MCP** | Local MCP（Cloud MCP 見 D21） | Agent 可透過 MCP 完成相同流程 |
 | **6. 進階（視需要）** | 帳號、雲端專案、團隊協作、歷史版本、物件儲存 | — 需重新評估零後端原則 |
 
 > 註：GPT 草稿將 Web UI 排在 Agent 流程之前；本規格調整為先打通「本機管線 + Agent」，因為 UI 只是檔案的視覺化，沒有可運作的管線就無法驗證 UI。
@@ -889,12 +865,12 @@ Agent、Local MCP、Companion、UI 皆可能寫入專案 JSON，一律遵守（A
 | D10 | 參考影片風格分析 | 必要步驟(D) | 可選；無法取得影片時跳過 | Agent 無法直接「觀看」線上影片，需本機抽影格 |
 | D11 | 腳本是否改 JSON | 未規範 | 產出類腳本不改 JSON；狀態由 Agent 決定、經 `state.mjs` 寫入 | 集中狀態寫入，避免競態（見 D18 寫入協定） |
 | D12 | 使用者審閱 | review 步驟(Q, GPT) | analyze（對象、風格、長度）、storyboard 與每 scene 渲染後各有 checkpoint | 在最便宜的階段攔截錯誤 |
-| D13 | UI ↔ Agent 通訊 | 各稿僅提「UI 讀寫檔案」，未處理反向通知 | MVP 採模式 A（檔案輪詢 + 使用者觸發）；Phase 5 加本機 Companion（模式 B）；不採檔案佇列 A' | 靜態部署不排除本機服務；A' 閒置 token 成本高；協議預先設計成可無痛升級 |
+| D13 | UI ↔ Agent 通訊 | 各稿僅提「UI 讀寫檔案」，未處理反向通知 | 採模式 A（檔案輪詢 + 使用者觸發）；不採檔案佇列 A'；本機 Companion（模式 B）曾於 Phase 5 加入，後移除（見 D18） | A' 閒置 token 成本高；B 的價值抵不過常駐程序、配對與安全面的成本 |
 | D14 | TTS 預設 | edge-tts(Gm) / 未指定 | 可替換 provider；預設 edge-tts，首次使用需同意；支援自帶 key、Piper、系統、手動錄音 | 繁中免費堪用者僅 edge-tts，但其為非官方介面，不能綁死 |
 | D15 | 渲染器授權 | 未處理 | 移除 Remotion，只保留逐幀截圖渲染器 | Remotion 對 >3 人公司需付費，使用者難以自行判斷級距；兩個渲染器畫面相同，維持兩套版面與授權詢問不划算。代價是渲染較慢 |
 | D16 | BGM 與字幕 | 可選(Q) / 未規範 | 兩者皆進 MVP：字幕預設輸出 SRT、可選燒入；BGM 自備音檔 + ducking；兩者只在 assemble 處理 | 旁白即字幕來源，成本低；集中在 assemble 使樣式調整不觸發 scene 重渲染 |
 | D17 | 多語系 | 未提及 | MVP 一專案一語言；`/video-translate` 複製專案並翻譯；預留 `<locale>` 命名 | 語言影響時長→畫面時間軸→每 scene 重渲染，原生支援會使狀態機二維化，MVP 成本過高 |
-| D18 | Companion 形態 | 無 | 同一套件 `video-agent` 兩入口（`mcp` / `serve`）共用核心；port 47831–47840；以 `#pair=` 連結配對；統一寫入協定（鎖檔 + 原子寫入） | 生命週期不同不能同程序；邏輯相同應共用；fragment 不外洩 token 且免掃 port |
+| D18 | Companion 與寫入協定 | 無 | 不提供本機 Companion（曾實作 `video-agent serve` / `pnpm run companion`，已移除）；所有寫入者遵守統一寫入協定（鎖檔 + 原子寫入） | 網頁按鈕省下的只是一句指令，卻要常駐程序、token 配對、Origin 檢查與 Local Network Access 授權；`sync` 在背景啟動 Agent 有安全與成本疑慮 |
 | D19 | 其他 Agent 相容性 | GPT 提及「未來支援其他 Agent」 | MVP 只測 Claude Code；AGENTS.md / Skill 中立寫法；指令檔單一來源產生各家格式，逐一驗收後才標示支援 | 協議層已通用，差異只在指令格式；支援宣告需有測試背書 |
 | D20 | 網站部署與指令來源 | 未規範（§9.4 僅提 Cloudflare / GitHub Pages） | GitHub Pages（`gh-pages` 分支），網址 `/index-url-director`，base path 從 repo 名稱推得（可用 `SITE_URL` 覆寫）；Guide API 一律絕對網址；指令檔與 prompts/rules 皆由既有單一來源（workflow.json、Skill）產生；init 以 Skill 或 agent-guide 為入口 | 子路徑部署下根相對路徑會失效；避免 YAML 與 workflow.json、prompts 與 Skill 雙重維護；init 時專案指令尚不存在 |
 | D21 | Cloud MCP | §10 原規劃由網站提供 Cloud MCP | 不另設雲端 MCP；Guide 類 resources / prompts 併入本機 `video-agent mcp`，內容來自內附或網站的 `/api/*`；專案操作只呼叫專案自己的腳本 | 網站為 GitHub Pages 靜態部署，無法運行 MCP；本機伺服器已隨 Agent 啟動，多一個雲端端點沒有額外價值；呼叫專案腳本可確保與專案的協議版本一致 |

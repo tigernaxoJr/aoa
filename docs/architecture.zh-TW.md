@@ -12,7 +12,7 @@
 
 **AOA（Agent-Offloaded Architecture，代理卸載式架構）** 是一種針對 AI Agent 時代提出的軟體架構模式：產品把其中的 Agent 工作——LLM 推理、工具操作，以及它們消耗的 token——卸載給使用者既有的 Coding Agent。服務端仍可保留它需要的其他部分，包括後端、資料庫或輕量模型；它不執行的是 Agent。
 
-AOA 在前端的形式，是一個透過本機資料夾與使用者 Agent 協作的靜態網頁應用（這種前端形式有時也稱為 AOFA，Agent-Offloaded Frontend Architecture）。本文多數篇幅描述這種形式，因為它是套用 AOA 最直接的方式；模式 C、D（§5）則說明有後端，以及完全沒有前端時的 AOA。
+AOA 在前端的形式，是一個透過本機資料夾與使用者 Agent 協作的靜態網頁應用（這種前端形式有時也稱為 AOFA，Agent-Offloaded Frontend Architecture）。本文多數篇幅描述這種形式，因為它是套用 AOA 最直接的方式；模式 B、C（§5）則說明有後端，以及完全沒有前端時的 AOA。
 
 在傳統生成式 AI 產品（SaaS）模式中，服務商必須在雲端承擔高昂的推論算力、多媒體轉碼與儲存成本，同時使用者必須承擔隱私外洩與資料被雲端綁定的風險。
 
@@ -102,7 +102,7 @@ AOA 提出責任邊界的反轉與重構：
 ### 原則三：Filesystem-Centric SSOT & Bus（以檔案系統為核心的真實來源與匯流排）
 - **本地執行真實來源 (Local SSOT)**：所有具體的原始碼、中間素材、暫存檔與生成產物，均以本機檔案系統為唯一真實來源。
 - **檔案即通訊訊號**：
-  - 在純前端場景，前端透過 File System Access API 讀寫檔案，並以中繼資料特徵碼輪詢（Fingerprint Polling）偵測 Agent 的產出；Agent 端則由使用者手動觸發（見模式 A）或由 Companion 推動（見模式 B）。
+  - 在純前端場景，前端透過 File System Access API 讀寫檔案，並以中繼資料特徵碼輪詢（Fingerprint Polling）偵測 Agent 的產出；Agent 端則由使用者貼上網頁準備好的指令來觸發（見模式 A）。
   - 在具後端協同場景，雲端僅同步脫敏後的專案中繼資料（Metadata Plane），核心資料（Data Plane）永遠扎根本機。
   - 雙方寫入遵守鎖定約定（如 lock 檔、先寫暫存檔再改名的 write-temp-then-rename），以降低並行競態風險。File System Access API 本身不提供跨行程檔案鎖，Agent 是否遵守約定亦需驗證，因此前端讀取時仍應做 Schema 驗證與容錯。
 
@@ -115,7 +115,7 @@ AOA 提出責任邊界的反轉與重構：
 
 ## 5. 協作模式 (Collaboration Modes)
 
-AOA 支援漸進式的四種模式：模式 A、B 是搭配本機資料夾的前端；模式 C 加上輕量後端；模式 D 則完全沒有前端。
+AOA 支援漸進式的三種模式：模式 A 是搭配本機資料夾的前端；模式 B 加上輕量後端；模式 C 則完全沒有前端。
 
 ### 模式 A：純工作台模式（Pure Workbench / File-Driven）
 *最簡單的前端形式，無需本機安裝任何額外伺服器。*
@@ -124,16 +124,7 @@ AOA 支援漸進式的四種模式：模式 A、B 是搭配本機資料夾的前
 3. 當 Agent 完成分鏡或生成音訊時，特徵碼變更，前端無感自動更新。
 4. 前端需要 Agent 介入時（例如修改了文案），在狀態檔標註 `stale`，並提供標準指令（如 `/video-sync`），使用者在終端機貼上執行。
 
-### 模式 B：伴侶增強模式（Companion-Enhanced / Push-Driven）
-*當環境允許時，啟用極致的無感體驗。*
-1. 本機隨專案啟動微型 WebSocket Companion（僅綁定 `127.0.0.1`，不對外暴露）。
-2. 安全配對機制：WebSocket 不受 CORS 保護，Companion 必須驗證連線的 `Origin` header 並搭配一次性配對 Token，以防範跨站連線劫持。
-3. Companion 提供即時事件推播（Push），取代輪詢。
-4. 前端可直接點擊「立即重新渲染」，由 Companion 執行白名單內的本機確定性指令。
-
-> 注意：從公開 HTTPS 網站（如 GitHub Pages）連線至 `127.0.0.1`，新版 Chromium 的 Local Network Access 機制會要求使用者授權，前端需處理授權被拒時退回模式 A 的流程。
-
-### 模式 C：具後端混合架構（Backend-Enabled / Hybrid AOA）
+### 模式 B：具後端混合架構（Backend-Enabled / Hybrid AOA）
 *適用於需要團隊協作、帳號權限或企業級管理的多租戶系統。*
 
 **重要觀念**：AOA 並不排斥後端伺服器！在具後端的系統中，AOA 實現了**「控制平面（Control Plane）與算力平面（Compute Plane）的徹底解耦」**：
@@ -158,7 +149,7 @@ AOA 支援漸進式的四種模式：模式 A、B 是搭配本機資料夾的前
    - 推論則走企業自選的 LLM 供應商（可為已簽署資料協議的企業方案）或內部自建模型。
    - 只有經過脫敏、通過 Schema 驗證的「最終專案中繼資料」或使用者明確同意發布的成片，才會上傳同步至雲端後端，大幅簡化企業的隱私合規範圍。
 
-### 模式 D：純後端（Backend-Only / Agent-Operated API）
+### 模式 C：純後端（Backend-Only / Agent-Operated API）
 *適用於沒有使用者介面的服務：Agent 本身就是客戶端。*
 
 1. 服務提供 HTTP API（或包成 MCP server），並在一個 URL 發布規格：OpenAPI 文件、Guide 或 Skill，以及 JSON Schema。
@@ -175,7 +166,7 @@ AOA 支援漸進式的四種模式：模式 A、B 是搭配本機資料夾的前
 
 AOA 網站提供兩個工作台，各自有獨立的靜態介面、協議 Schema、Agent Skill 與專案範本：
 - **Slide Studio（模式 A）**：Agent 以 Slidev 搭配 HTML、SVG 架構圖與 Three.js 組件製作簡報，在本機匯出 PDF；網頁只讀寫資料夾。
-- **Video Studio（模式 B）**：Agent 把產品網址或一段故事做成有旁白的影片，細節如下。
+- **Video Studio（模式 A）**：Agent 把產品網址或一段故事做成有旁白的影片，細節如下。
 
 Video Studio 的組成：
 - **前端工作台**：Vue 3 + Tailwind 靜態網站，託管於 GitHub Pages。提供產品規格填寫、分鏡看板、旁白編輯與成片預覽。
@@ -198,7 +189,7 @@ Video Studio 的組成：
 - **瀏覽器相容性**：依賴 File System Access API（`showDirectoryPicker`），目前僅桌面版 Chrome、Edge 等 Chromium 瀏覽器支援；Brave 預設停用，Firefox 與 Safari 不支援。
 - **依賴使用者本機環境**：使用者環境需具備基本執行環境（如 Node.js、Coding Agent 等），並自行負擔 Agent 的訂閱或 API 費用。
 - **Agent 輸出不具確定性**：Agent 產出未必完全符合 Schema，前端需驗證並提供重試或修復指引。
-- **模式 A 需人工觸發**：無 Companion 時，使用者需手動在終端機執行指令才能推動 Agent。
+- **網頁無法喚起 Agent**：模式 A 下，使用者需自行啟動 Agent 並貼上網頁準備好的指令；網頁只反映 Agent 寫入的結果。
 - **目錄授權需重新取得**：重新整理頁面後，目錄 Handle 的讀寫權限通常需使用者再次授權。
 
 ---

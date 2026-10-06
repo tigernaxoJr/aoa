@@ -1,15 +1,10 @@
 // Product video workbench end to end, built and served like the site (see the shared harness in
-// packages/video-core/tests/web/harness.mjs): the start page, the scene workbench, the Companion.
+// packages/video-core/tests/web/harness.mjs): the start page and the scene workbench.
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
-import { startCompanion } from '../../../../packages/video-core/template/scripts/lib/companion.mjs'
 import { baseProject } from '../../../../packages/video-core/tests/template/helpers.mjs'
 import { BASE, activityJson, fixture, prepareFolder, readOpfs, storyFixture, waitForStart, webApp } from '../../../../packages/video-core/tests/web/harness.mjs'
-import { FAKE_TTS, fullProject, motionScene } from '../../../../packages/video-agent/tests/helpers.mjs'
 import { build as buildApi } from '../../tools/build-api.mjs'
 
 const web = webApp({ slug: 'product', viteConfig: fileURLToPath(new URL('../../vite.config.ts', import.meta.url)), buildApi })
@@ -192,53 +187,6 @@ test('writes wait while an agent holds the lock', async (t) => {
   await page.getByTestId('save').click()
   await page.getByTestId('notice').filter({ hasText: 'Agent 正在寫入' }).waitFor()
   assert.equal(await read('scenes/003-extra/script.md'), '這是一段旁白。\n')
-})
-
-test('the pairing link connects the Companion; "立即重新產生" rebuilds the scene without a terminal', async (t) => {
-  if (!web.browser) return t.skip('no browser available')
-  Object.assign(process.env, FAKE_TTS)
-  const p = fullProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene: motionScene('scene-001', { title: '開場' }) }] })
-  t.after(p.cleanup)
-  const c = await startCompanion({ projectDir: p.root, port: 0, site: `${web.origin}${BASE}`, log: () => {} })
-  t.after(() => c.close())
-
-  const app = await openApp(t, p, `#pair=${c.port}:${c.token}`)
-  const { page } = app
-  await page.getByTestId('companion-status').getByText('本機助手已連線').waitFor()
-  assert.equal(await page.evaluate(() => location.hash), '', 'the token is removed from the address bar')
-
-  await page.getByTestId('scene-scene-001').getByRole('button', { name: /開場/ }).click()
-  await page.getByTestId('rebuild').click()
-  await page.getByTestId('notice').filter({ hasText: '重新產生 scene-001：完成' }).waitFor({ timeout: 120_000 })
-  const scene = JSON.parse(readFileSync(p.path('scenes/001-hook/scene.json'), 'utf8'))
-  assert.equal(scene.status, 'rendered')
-  assert.equal(scene.updatedBy, 'companion')
-})
-
-test('the page reconnects by itself when the Companion restarts', async (t) => {
-  if (!web.browser) return t.skip('no browser available')
-  // --persist-token keeps the pairing valid across restarts; point it at a throwaway home.
-  const home = process.env.HOME
-  process.env.HOME = mkdtempSync(join(tmpdir(), 'avp-home-'))
-  t.after(() => {
-    rmSync(process.env.HOME, { recursive: true, force: true })
-    process.env.HOME = home
-  })
-  const p = fixture()
-  t.after(() => p.cleanup())
-  const start = (port) => startCompanion({ projectDir: p.root, port, persistToken: true, site: `${web.origin}${BASE}`, log: () => {} })
-  let c = await start(0)
-  t.after(() => c.close())
-
-  const app = await openApp(t, p, `#pair=${c.port}:${c.token}`)
-  const { page } = app
-  const status = page.getByTestId('companion-status')
-  await status.getByText('本機助手已連線').waitFor()
-
-  await c.close()
-  await status.getByText('本機助手已連線').waitFor({ state: 'detached' })
-  c = await start(c.port)
-  await status.getByText('本機助手已連線').waitFor({ timeout: 15_000 })
 })
 
 test('activity: before the project exists, the page shows what the agent is waiting for', async (t) => {

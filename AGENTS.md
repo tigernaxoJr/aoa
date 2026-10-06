@@ -21,7 +21,7 @@
 2. **前後端溝通機制（File System Access API + 檔案輪詢）**：
    - **預設通訊管道**：前端使用瀏覽器標準 **File System Access API (`showDirectoryPicker()`)** 取得使用者本機工作目錄的授權。
    - **輪詢狀態同步（State Polling）**：前端透過定期讀取本機狀態檔（例如 `*.activity.json` 取得 Agent 即時進度、`*.project.json` 取得專案狀態、`output/` 取得產物）來反映進度，無需架設雲端中繼。
-   - **本機可選助手（Optional Local Companion）**：若需在網頁上直接觸發本機指令重跑，僅透過本機 localhost WebSocket 配對本機進程，通訊全程不出本機。
+   - **網頁不喚起 Agent**：需要重跑時，網頁把 scene 標為 `stale` 並給出指令（如 `/video-sync`），由使用者貼給自己的 Agent 執行；不架設任何本機常駐程序。
 
 ---
 
@@ -63,7 +63,7 @@ apps/<slug>/
 ├── skills/            # 對應此應用的 Agent Skills（供使用者本機 Agent 安裝或讀取）
 │   └── <skill-name>/  # SKILL.md（Agent Skills 格式）、分步指引文件
 ├── template/          # 供 Agent 在本機 unpack 的空專案範本
-│   ├── scripts/       # 本機執行腳本（validate, state, companion 等）
+│   ├── scripts/       # 本機執行腳本（validate, state 等）
 │   ├── package.json   # 本機專案依賴
 │   ├── AGENTS.md      # 專案內的 Agent 規則與工作流程
 │   └── *.project.json # 範本設定檔
@@ -110,7 +110,7 @@ apps/<slug>/
 | `pnpm run build` | 完整打包全站（Portal ➔ Story ➔ Product ➔ Slide ➔ Guide API ➔ 平台索引與 `/api/video` 相容層） |
 | `pnpm test` | 執行所有 App 的單元測試、規格測試與整合測試 |
 | `pnpm run test:video` | 僅執行影片相關測試（video-core、story、product） |
-| `pnpm run test:agent` | 僅執行 Video Agent (MCP/Companion) 測試 |
+| `pnpm run test:agent` | 僅執行 Video Agent (MCP) 測試 |
 | `pnpm run test:specs` | 僅執行影片與 Slide 的協議與 Schema 測試 |
 | `pnpm run typecheck` | 檢查所有 App 的 TypeScript 型別 |
 | `pnpm run gen:types` | 依據 `packages/video-core/specs/` 與 `apps/slide/specs/` 重新生成前端協議型別 |

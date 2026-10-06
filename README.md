@@ -28,9 +28,9 @@ This repository includes three AOA workbenches:
 
 | Workbench | Path | Collaboration Mode | Highlights & Description |
 |---|---|---|---|
-| **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **Mode A: Pure Workbench** | Pure FSA API + Slidev + Three.js 3D visuals + Vector SVG diagrams + Lossless vector PDF export via Playwright. Zero local companion daemon needed. |
-| **Story Video Studio** | [`/story/`](https://aoa.tigernaxo.com/story/) | **Mode B: Companion-Enhanced** | FSA API + Local companion WebSocket pairing. Turns a story or an idea into an animated video: cast studio, SVG character rigs, per-character voices (CosyVoice / Edge TTS), and FFmpeg assembly. |
-| **Product Video Studio** | [`/product/`](https://aoa.tigernaxo.com/product/) | **Mode B: Companion-Enhanced** | FSA API + Local companion WebSocket pairing. Converts product URLs or source code into narrated walkthrough videos with voiceover (TTS), Playwright capture, and FFmpeg assembly. |
+| **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **Mode A: Pure Workbench** | Pure FSA API + Slidev + Three.js 3D visuals + Vector SVG diagrams + Lossless vector PDF export via Playwright. |
+| **Story Video Studio** | [`/story/`](https://aoa.tigernaxo.com/story/) | **Mode A: Pure Workbench** | Pure FSA API. Turns a story or an idea into an animated video: cast studio, SVG character rigs, per-character voices (CosyVoice / Edge TTS), and FFmpeg assembly. |
+| **Product Video Studio** | [`/product/`](https://aoa.tigernaxo.com/product/) | **Mode A: Pure Workbench** | Pure FSA API. Converts product URLs or source code into narrated walkthrough videos with voiceover (TTS), Playwright capture, and FFmpeg assembly. |
 
 ---
 

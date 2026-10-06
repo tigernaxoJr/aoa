@@ -1,6 +1,6 @@
 // pnpm run validate            → validate; exit 1 on errors
 // pnpm run status              → (validate --report) per-scene status table and the suggested next step
-// add --json for machine-readable output (Web UI / Companion)
+// add --json for machine-readable output (Web UI / MCP)
 import { run, parseArgs } from './lib/cli.mjs'
 import { suggestNext } from './lib/core.mjs'
 import { findRoot } from './lib/project.mjs'

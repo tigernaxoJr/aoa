@@ -1,7 +1,6 @@
 // App state: the open project folder, the loaded project, polling (SPEC §9.1), and a single path
 // for running writes so conflicts and lock waits are reported the same way everywhere.
 import { reactive, shallowRef } from 'vue'
-import { companion, run as runAction } from './companion'
 import { ensurePermission, isSupported, tryFile } from '@aoa/web-shared/fsa'
 import { forgetHandle, loadHandle, saveHandle } from './idb'
 import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
@@ -10,8 +9,6 @@ import type { VideoActivityJson } from '../types/protocol'
 import { LockedError } from './writes'
 
 const POLL_MS = 2000
-/** With the Companion pushing changes, polling only backs up a missed file-watch event. */
-const POLL_PUSHED_MS = 10_000
 
 export const root = shallowRef<FileSystemDirectoryHandle | null>(null)
 export const state = shallowRef<ProjectState | null>(null)
@@ -33,7 +30,6 @@ export const ui = reactive({
 
 let print = ''
 let timer: ReturnType<typeof setInterval> | null = null
-let polled = 0
 
 export function notify(kind: 'ok' | 'warn' | 'error', text: string) {
   ui.notice = { kind, text }
@@ -58,8 +54,6 @@ export async function reload() {
 
 async function poll() {
   if (!root.value || ui.saving || document.hidden) return
-  if (companion.state === 'ready' && Date.now() - polled < POLL_PUSHED_MS) return
-  polled = Date.now()
   try {
     if ((await fingerprint(root.value, state.value)) !== print) await reload()
   } catch {
@@ -177,20 +171,3 @@ declare global {
 }
 window.__avp = { open: (handle) => openHandle(handle) }
 
-/** Runs a Companion action and reports the outcome the same way writes do. */
-export async function runCompanion(action: string, label: string, scene?: string) {
-  const result = await runAction(action, label, { scene })
-  notify(result.ok ? 'ok' : 'error', result.ok ? `${label}：完成` : `${label}：失敗。${summarize(result.output)}`)
-  await reload()
-  return result.ok
-}
-
-/** The line of a Companion result worth showing: the last output line, or the failed step. */
-export function summarize(output: unknown): string {
-  if (typeof output === 'string') return output.split('\n').filter(Boolean).at(-1) ?? ''
-  if (Array.isArray(output)) {
-    const failed = output.find((s: { code?: number }) => s.code)
-    return failed ? `${failed.step}：${String(failed.output).split('\n').filter(Boolean).at(-1) ?? ''}` : ''
-  }
-  return ''
-}

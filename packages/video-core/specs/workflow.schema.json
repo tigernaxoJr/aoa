@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "workflow.schema.json",
   "title": "workflow.json",
-  "description": "機器可讀的工作流程定義（SPEC §6）。Agent、UI 與 Companion 依此判斷下一步。",
+  "description": "機器可讀的工作流程定義（SPEC §6）。Agent、UI 與 MCP 依此判斷下一步。",
   "type": "object",
   "additionalProperties": false,
   "required": ["specVersion", "gates", "steps", "operations", "derivedProjectStatus"],

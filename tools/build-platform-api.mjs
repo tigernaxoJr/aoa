@@ -43,13 +43,13 @@ export function build({ siteUrl, out = resolve(root, 'dist') } = {}) {
     tools: {
       story: {
         name: 'Story Video Studio',
-        mode: 'Mode B (Companion)',
+        mode: 'Mode A (Pure workbench)',
         workbench: `${siteUrl}/story/`,
         index: `${siteUrl}/api/story/index.json`,
       },
       product: {
         name: 'Product Video Studio',
-        mode: 'Mode B (Companion)',
+        mode: 'Mode A (Pure workbench)',
         workbench: `${siteUrl}/product/`,
         index: `${siteUrl}/api/product/index.json`,
       },

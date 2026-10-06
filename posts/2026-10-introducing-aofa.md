@@ -107,7 +107,7 @@ This gives SaaS builders **near-zero marginal compute costs** and gives enterpri
 ### The Honest Trade-offs
 - File System Access API (`showDirectoryPicker`) currently works only in desktop Chrome / Edge and other Chromium browsers; Brave disables it by default, and Firefox and Safari don't support it.
 - Users need a working agent setup — and pay for it themselves.
-- In pure static mode, the user still triggers the agent by pasting a command into their terminal (an optional local companion can remove that step).
+- In pure static mode, the user still triggers the agent by pasting a command into their agent session; the page can't wake the agent on its own.
 
 ---
 

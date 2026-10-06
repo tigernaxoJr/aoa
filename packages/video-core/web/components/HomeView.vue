@@ -224,7 +224,7 @@ const links = [
     </ol>
 
     <details class="mt-10 rounded-xl border border-slate-200 p-4 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400">
-      <summary class="cursor-pointer font-medium select-none">進階：Guide API 與本機助手</summary>
+      <summary class="cursor-pointer font-medium select-none">進階：Guide API</summary>
       <p class="mt-3">Agent 讀取的規則與範本都是靜態檔案：</p>
       <ul class="mt-2 space-y-1.5">
         <li v-for="[label, url] in links" :key="url" class="flex gap-2">
@@ -232,7 +232,6 @@ const links = [
           <span>{{ label }}：<a :href="url" class="link break-all">{{ url }}</a></span>
         </li>
       </ul>
-      <p class="mt-3">想直接在網頁上按鈕重做影片，可以請 Agent「在影片專案啟動 video-agent 本機助手並給我配對連結」，再點那個連結。</p>
     </details>
   </div>
 </template>

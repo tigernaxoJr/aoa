@@ -30,8 +30,8 @@ AOA 也適用於有後端的系統：帳號、計費、團隊協同留在輕量�
 
 | 工具工作台 | 路由路徑 | 協作模式 | 特色技術與說明 |
 |---|---|---|---|
-| **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **模式 A：純工作台** | 純 FSA API + Slidev + Three.js 3D 視覺 + 向量 SVG 圖表 + Playwright 無損向量 PDF 匯出（零常駐伴侶、極簡零依賴）。 |
-| **Video Studio** | [`/video/`](https://aoa.tigernaxo.com/video/) | **模式 B：伴侶增強** | FSA API + 本機 Companion WebSocket 配對，將產品網址自動轉為包含繁中配音（TTS）、動態截圖與 FFmpeg 合成的展示影片。 |
+| **Slide Studio** | [`/slide/`](https://aoa.tigernaxo.com/slide/) | **模式 A：純工作台** | 純 FSA API + Slidev + Three.js 3D 視覺 + 向量 SVG 圖表 + Playwright 無損向量 PDF 匯出。 |
+| **Video Studio** | [`/video/`](https://aoa.tigernaxo.com/video/) | **模式 A：純工作台** | 純 FSA API，將產品網址自動轉為包含繁中配音（TTS）、動態截圖與 FFmpeg 合成的展示影片。 |
 
 ---
 

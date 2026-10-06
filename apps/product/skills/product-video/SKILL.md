@@ -30,7 +30,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    node -e "const fs=require('fs'),c=require('crypto');const m=JSON.parse(fs.readFileSync('.tmp/template-manifest.json'));const d=m.files.filter(f=>f.path!=='video.project.json'&&(!fs.existsSync(f.path)||c.createHash('sha256').update(fs.readFileSync(f.path)).digest('hex')!==f.sha256)).map(f=>f.path);console.log(d.length?d.join('\n'):'UP_TO_DATE');console.log('specVersion',m.specVersion)"
    ```
    印出 `UP_TO_DATE` 就跳過這一節。
-2. 有差異時：先確認沒有其他程式正在處理專案（專案根目錄沒有 `.video-agent.lock`；有的話等它消失，或問使用者網頁上的本機助手是否還在執行），然後寫 `video.activity.json` 並用白話告訴使用者：「網站上的製作工具有新版本，我先更新，不會動到你的影片內容。」
+2. 有差異時：先確認沒有其他程式正在處理專案（專案根目錄沒有 `.video-agent.lock`；有的話等它消失），然後寫 `video.activity.json` 並用白話告訴使用者：「網站上的製作工具有新版本，我先更新，不會動到你的影片內容。」
 3. 下載範本 zip 到 `.tmp/`，以 manifest 的 `zip.sha256` 驗證（雜湊不符就停止並告知使用者），解壓到 `.tmp/template/`（macOS / Linux `unzip -q .tmp/product-video.zip -d .tmp/template`；Windows PowerShell `Expand-Archive .tmp/product-video.zip -DestinationPath .tmp/template`），再把除了 `video.project.json` 以外的檔案覆蓋到專案：
    ```bash
    node -e "const p=require('path');require('fs').cpSync('.tmp/template','.',{recursive:true,filter:s=>p.basename(s)!=='video.project.json'})"
@@ -39,7 +39,6 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 4. 清單裡有 `package.json` 或 `pnpm-lock.yaml` 時執行 `pnpm install`。
 5. manifest 的 `specVersion` 和 `video.project.json` 的 `specVersion` 不同時，以新的 `schemas/` 為準把專案資料調整成新格式，再用 `pnpm run state project --patch '[{"op":"replace","path":"/specVersion","value":"<新版本>"}]'` 更新版本；會刪除或改寫使用者內容（旁白、分鏡）的調整要先問使用者。
 6. 執行 `pnpm run validate`，刪除 `.tmp/template*` 與下載的 zip，用一句白話告訴使用者更新了什麼（例如「已更新製作工具，影片內容沒有變動」）。更新後 `pnpm run status` 若顯示某些 scene 需要重做，照實告訴使用者，等他同意再重做。
-7. 本機助手（§6）正在執行、且第 1 步的清單裡有 `scripts/` 底下的檔案或 `package.json` 時，它還在用舊版程式：停掉它（是你在背景啟動的就停止那個背景工作），再照 §6 用同一個指令重新啟動。用了 `--persist-token` 時網頁會自己重新連上，不必再點配對連結；告訴使用者一句「本機助手也更新好了」即可。不確定它有沒有在執行時，問使用者網頁右上角是否顯示本機助手已連線。
 
 ## <a id="init"></a>2. 初始化新專案（init）
 
@@ -120,20 +119,4 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 - **讓網頁知道你在做什麼**：專案資料夾裡的 `video.activity.json`（格式見 {{API_URL}}/schemas/activity.schema.json）會顯示在網頁工作台上。每開始一個步驟或一個 scene、每次停下來等使用者回覆（checkpoint、gate、任何提問）之前，都直接覆寫這個檔案：`{ "message": "正在錄第 3 段的畫面", "waitingForUser": false, "step": "build_scene", "scene": "scene-003", "updatedAt": "<現在時間，含時區>" }`。`message` 是給使用者看的一句白話；等使用者時 `waitingForUser` 為 `true`，`message` 說明要他回答什麼（例如「分鏡寫好了，請在對話中確認或告訴我要改哪裡」）。專案建立前（§1、§2）也要寫，網頁從使用者準備資料夾時就在看。工作全部完成時寫一句結果，`waitingForUser` 為 `false`。這個檔案不需要鎖、不經過 `pnpm run state`。
 - **修改只重做受影響的部分**：使用者說「第三段文案改成…」，只改該 scene 的 `script.md`，只重做該 scene，再重新合成。
 - **告訴使用者怎麼看成果**：用「文件 > acme-video > scenes > 003-solution > output > scene.mp4」這種資料夾順序描述位置，並建議打開網頁工作台 {{APP_URL}}/ 預覽每一段、直接修改旁白。專案是網頁準備的（有 `video.start.json`）時，網頁已經開著這個資料夾，會自動顯示；否則請他在網頁步驟 1 選擇這個專案資料夾。
-- **Web UI**：使用者可能同時開著 Agent Video Producer 網頁工作台，它會直接修改專案檔。使用者說「我在網頁上改好了」時，執行 `/video-sync`；完成後視情況提議開啟本機助手（§6）。
-
-## <a id="companion"></a>6. 本機助手（可選）
-
-本機助手（Companion）是專案裡附的小程式（`pnpm run companion`），隨範本下載、隨「同步範本」更新，不需要另外安裝。網頁配對後會出現「立即重新產生」「立即重做並合成」「立即合成」按鈕，使用者在網頁改完就能直接重做，不必回到對話；專案檔變動也會即時顯示在網頁上。沒有它一切照常運作，只是網頁上的修改要回到對話請你同步。
-
-**什麼時候提**：不要在初始化時提，那時還沒有東西可以重做。使用者**第一次**在網頁上修改、並由你完成 `/video-sync` 之後，在回報的最後用一句白話問一次，例如：「之後在網頁上改完，想直接按按鈕重做、不用回來找我嗎？我可以幫你開啟『本機助手』。」使用者拒絕或沒有回應就不再主動提；他之後主動要求時再做。
-
-不要從 npm 下載任何「video-agent」套件來代替它：npm 上名為 `video-agent` 的套件與本專案無關。
-
-**開啟方式**：
-
-1. 在專案資料夾於**背景**執行（不要等它結束，它會一直執行）：`pnpm run companion --persist-token`。`--persist-token` 讓之後重新開啟時不必再配對。出現 `scripts/companion.mjs not found` 或缺少 `ws` 時，先依「既有專案：同步範本」更新。
-2. 從輸出找到 `open this link to pair the web UI:` 下一行的配對連結（`…/#pair=<port>:<token>`），請使用者點開。這個連結只在本機有效，**不要寫進任何檔案**。告訴使用者：「點開這個連結，網頁右上角顯示『本機助手已連線』就完成了。」
-3. 開啟後，你和本機助手可能同時處理專案；開始修改專案前，照常檢查 `.video-agent.lock`。
-
-**關閉與重開**：本機助手可能隨這次對話結束而停止。使用者說網頁顯示「本機助手未連線」時，告訴他先按網頁上的「重新連線本機助手」；仍然不行就請他跟你說「幫我開啟本機助手」，你再照上面的方式啟動（已配對過的不必再點連結）。不要設定開機自動啟動，那會修改系統設定。
+- **Web UI**：使用者可能同時開著 Agent Video Producer 網頁工作台，它會直接修改專案檔。使用者說「我在網頁上改好了」時，執行 `/video-sync`。

@@ -209,7 +209,7 @@ export interface VideoProjectJson {
    */
   updatedAt: string;
   /**
-   * 最後寫入者：agent（Agent 經 state.mjs）、user（Web UI 或手動）、companion、mcp。
+   * 最後寫入者：agent（Agent 經 state.mjs）、user（Web UI 或手動）、mcp。companion 為已移除的本機助手所寫，僅為相容舊專案保留。
    */
   updatedBy: "agent" | "user" | "companion" | "mcp";
   /**
@@ -454,7 +454,7 @@ export interface SceneJson {
    */
   updatedAt?: string;
   /**
-   * 最後寫入者：agent（Agent 經 state.mjs）、user（Web UI 或手動）、companion、mcp。
+   * 最後寫入者：agent（Agent 經 state.mjs）、user（Web UI 或手動）、mcp。companion 為已移除的本機助手所寫，僅為相容舊專案保留。
    */
   updatedBy?: "agent" | "user" | "companion" | "mcp";
   /**

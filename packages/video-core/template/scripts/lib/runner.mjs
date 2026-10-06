@@ -1,6 +1,6 @@
 // Runs this project's scripts as child processes, and the deterministic part of build_scene built
-// on them. Shared by the Companion (scripts/companion.mjs) and the video-agent MCP server, which
-// imports it from the project so its behaviour always matches the project's template version.
+// on them. Used by the video-agent MCP server, which imports it from the project so its behaviour
+// always matches the project's template version.
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -8,7 +8,7 @@ import { PROJECT_FILE, UsageError } from './project.mjs'
 
 /**
  * Runs `node scripts/<script>.mjs ...args` in the project. Resolves { code, stdout, stderr };
- * `onLine` receives output lines as they arrive (for progress in the Web UI).
+ * `onLine` receives output lines as they arrive.
  */
 export function runScript(root, script, args = [], { onLine, env } = {}) {
   const file = join(root, 'scripts', `${script}.mjs`)
@@ -55,7 +55,7 @@ const firstLine = (text) => text.trim().split(/\r?\n/).filter(Boolean).at(-1) ??
 /**
  * The deterministic part of build_scene (workflow.json): tts → capture → assets_ready → rendering →
  * render:scene → rendered. Stops at the first failure and records it with `state --failed`.
- * Used by the Companion's "redo now" and the MCP `render_scene` tool. Returns { ok, log }.
+ * Used by the MCP `render_scene` tool. Returns { ok, log }.
  */
 export async function buildScene(root, id, { by, onLine } = {}) {
   const log = []

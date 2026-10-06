@@ -77,32 +77,17 @@
         font-size: 0.875rem;
         color: var(--muted);
       }
-      .pair {
-        margin-top: 20px;
-        padding: 12px 14px;
-        border-radius: 10px;
-        border: 1px solid var(--line);
-        font-size: 0.875rem;
-      }
     </style>
   </head>
   <body>
     <main>
       <h1>影片工作台已分成兩個</h1>
       <p>Video Studio 已拆成兩個獨立的工作台。請選擇你的影片類型；已經做到一半的專案，到對應的工作台選它的資料夾就能繼續。</p>
-      <p class="pair" id="pair" hidden>你是從本機助手的配對連結過來的：選擇工作台後會自動完成配對。</p>
       <div class="cards">
         <a href="../story/" data-testid="go-story"><strong>🎭 故事動畫工作台</strong><span>把故事或點子做成動畫：角色、聲音與 SVG 動畫。</span></a>
         <a href="../product/" data-testid="go-product"><strong>🎬 產品介紹影片工作台</strong><span>把產品網址或原始碼做成有旁白的產品介紹影片。</span></a>
       </div>
       <p><a href="../" style="color: var(--accent)">← 回到平台總覽</a></p>
     </main>
-    <script>
-      // Keep a Companion pairing link (#pair=<port>:<token>) when moving on to a workbench.
-      if (/[#&]pair=/.test(location.hash)) {
-        document.getElementById('pair').hidden = false
-        for (const a of document.querySelectorAll('.cards a')) a.href = a.getAttribute('href') + location.hash
-      }
-    </script>
   </body>
 </html>

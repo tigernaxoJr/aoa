@@ -5,7 +5,7 @@
 //   pnpm run state <scene-id> --failed <step> "<message>" [--hint "<hint>"]
 //   pnpm run state <project|scene-id> --patch-file <file>     (RFC 6902 JSON Patch)
 //   pnpm run state <project|scene-id> --patch '<json>'
-// options: --by agent|user|companion|mcp (default agent), --force (skip transition check)
+// options: --by agent|user|mcp (default agent), --force (skip transition check)
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import jsonpatch from 'fast-json-patch'
@@ -18,7 +18,7 @@ import { loadSchemas } from './lib/schema.mjs'
 import { checkTransition, deriveProjectStatus } from './lib/status.mjs'
 import { assertValid, validateProject } from './lib/validate.mjs'
 
-const WRITERS = ['agent', 'user', 'companion', 'mcp']
+const WRITERS = ['agent', 'user', 'mcp']
 const ERROR_STEPS = ['tts', 'capture', 'render', 'validate', 'other']
 
 run((argv) => {

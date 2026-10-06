@@ -118,7 +118,7 @@ Under AOA, proprietary source repositories, internal web credentials, and scratc
 
 ### 4.3 Limitations & Future Horizons
 - **Browser API Support**: Directory access via the File System Access API (`showDirectoryPicker`) is currently available only in desktop Chromium-based browsers such as Chrome and Edge; Brave disables it by default, and Firefox and Safari do not support it. Fallback mechanisms for these and mobile environments remain an active area of exploration.
-- **Cognitive Load of Hybrid Execution**: Users must coordinate between two windows (the visual browser workbench and the terminal agent). We have partially mitigated this through a local Companion WebSocket bridge (bound to `127.0.0.1`, authenticated via `Origin` checks and a pairing token), but browsers' local-network-access permission prompts add friction, so pure file-mediated zero-setup interaction remains the most robust baseline.
+- **Cognitive Load of Hybrid Execution**: Users must coordinate between two windows (the visual browser workbench and the terminal agent). We prototyped a local WebSocket bridge that let the page trigger deterministic re-runs, but removed it: the extra daemon, pairing, and browsers' local-network-access prompts cost more than the clicks it saved, and the user's agent can run the same commands. Pure file-mediated, zero-setup interaction is the baseline we keep.
 - **Agent Non-Determinism**: Agent outputs may violate the schema or diverge across runs, requiring validation, retries, and repair guidance in the UI.
 - **Cost Shifting**: AOA eliminates provider-side inference cost by shifting it to users, which presumes users already hold (and pay for) a capable agent setup or local hardware.
 

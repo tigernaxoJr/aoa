@@ -24,7 +24,7 @@ export function findProject(start = process.cwd()) {
 
 /**
  * Runs `node scripts/<script>.mjs ...args` in the project. Resolves { code, stdout, stderr };
- * `onLine` receives output lines as they arrive (for progress in the Web UI).
+ * `onLine` receives output lines as they arrive.
  */
 export function runScript(root, script, args = [], { onLine, env } = {}) {
   const file = join(root, 'scripts', `${script}.mjs`)

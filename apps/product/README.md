@@ -46,9 +46,8 @@ apps/product/
 
 ---
 
-## 本機助手與 MCP（可選）
+## 本機 MCP（可選）
 
-- **Companion**：專案範本內建本機助手腳本。在專案目錄下執行 `pnpm run companion`，配對連結會依專案類型開啟 `/product/` 或 `/story/`，之後即可直接在網頁點擊按鈕重做 Scene。
 - **Local MCP**：可透過 [`packages/video-agent`](../../packages/video-agent) 將本機 MCP 伺服器註冊至 Claude Code：
   ```bash
   claude mcp add video-agent -- node "<repo-path>/packages/video-agent/bin/video-agent.mjs" mcp

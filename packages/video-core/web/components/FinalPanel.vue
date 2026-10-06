@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { FINAL_FILE } from '../lib/project'
-import { companion } from '../lib/companion'
 import { TONE_CLASS, sceneBadge } from '../lib/site'
-import { runCompanion, state } from '../lib/store'
+import { state } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
 import Icon from './Icon.vue'
 
@@ -45,12 +44,7 @@ const outdated = computed(() => scenes.value.filter((s) => !s.upToDate || (final
       </div>
     </div>
 
-    <div v-if="companion.state === 'ready' && ready && (!final.exists || outdated.length)" class="mt-4">
-      <button type="button" class="btn-primary" :disabled="!!companion.running" data-testid="assemble" @click="runCompanion('assemble', '合成影片')">
-        <Icon name="play" :size="14" />立即合成
-      </button>
-    </div>
-    <p v-else-if="ready && (!final.exists || outdated.length)" class="mt-4 text-sm text-slate-600 dark:text-slate-400">
+    <p v-if="ready && (!final.exists || outdated.length)" class="mt-4 text-sm text-slate-600 dark:text-slate-400">
       在 Agent 中執行 <code class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">/video-assemble</code> 合成影片。
     </p>
 

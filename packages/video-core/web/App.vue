@@ -9,11 +9,9 @@ import SceneBoard from './components/SceneBoard.vue'
 import SceneEditor from './components/SceneEditor.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
-import CompanionStatus from './components/CompanionStatus.vue'
-import { companion, connect, takePairingFromUrl } from './lib/companion'
 import { VIDEO_KIND, workbenchUrl } from './lib/site'
 import type { WorkbenchTab } from './lib/workbench'
-import { close, outdated, reload, restore, state, syncTemplate, ui } from './lib/store'
+import { close, outdated, restore, state, syncTemplate, ui } from './lib/store'
 
 const props = withDefaults(defineProps<{ sourceForm: Component; tabs?: WorkbenchTab[] }>(), { tabs: () => [] })
 
@@ -54,8 +52,6 @@ const warnUnsaved = (e: BeforeUnloadEvent) => {
   if (dirty.value) e.preventDefault()
 }
 onMounted(() => {
-  takePairingFromUrl()
-  connect(undefined, reload)
   restore()
   window.addEventListener('beforeunload', warnUnsaved)
 })
@@ -90,7 +86,6 @@ watch(state, (st) => {
         <span class="min-w-0 truncate text-sm font-medium" data-testid="project-name">{{ state.project.project.name }}</span>
       </template>
       <span class="ml-auto" />
-      <CompanionStatus />
       <button v-if="state" type="button" class="btn-ghost btn-sm shrink-0" title="關閉專案（檔案會留在資料夾）" @click="closeProject">
         <Icon name="logout" :size="14" /><span class="hidden sm:inline">關閉專案</span>
       </button>
@@ -103,7 +98,7 @@ watch(state, (st) => {
       <div class="callout bg-amber-50 text-amber-950 dark:bg-amber-950/60 dark:text-amber-100" role="status" data-testid="other-kind">
         <Icon name="alert" class="mt-0.5" />
         <div class="min-w-0 flex-1">
-          <p>「{{ state.project.project.name }}」是{{ otherKind === 'story' ? '故事動畫' : '產品介紹影片' }}專案，請到{{ otherKind === 'story' ? '故事動畫' : '產品介紹影片' }}工作台開啟。本機助手的配對會沿用，不需重新配對。</p>
+          <p>「{{ state.project.project.name }}」是{{ otherKind === 'story' ? '故事動畫' : '產品介紹影片' }}專案，請到{{ otherKind === 'story' ? '故事動畫' : '產品介紹影片' }}工作台開啟。</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <a :href="workbenchUrl(otherKind)" class="btn-primary btn-sm" data-testid="open-other-kind"><Icon name="link" :size="14" />前往{{ otherKind === 'story' ? '故事動畫' : '產品介紹影片' }}工作台</a>
             <button type="button" class="btn-secondary btn-sm" @click="closeProject">選擇其他資料夾</button>
@@ -179,19 +174,7 @@ watch(state, (st) => {
 
   <div class="pointer-events-none fixed inset-x-4 bottom-4 z-40 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:items-end">
     <div
-      v-if="companion.running"
-      class="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg dark:bg-slate-700"
-      role="status"
-      data-testid="companion-running"
-    >
-      <span class="mt-0.5 h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
-      <span class="min-w-0">
-        <span class="block font-medium">{{ companion.running }}…</span>
-        <span v-if="companion.lastLine" class="mt-1 block truncate font-mono text-xs text-slate-300">{{ companion.lastLine }}</span>
-      </span>
-    </div>
-    <div
-      v-else-if="ui.notice"
+      v-if="ui.notice"
       class="pointer-events-auto flex w-full max-w-md items-start gap-2.5 rounded-xl px-4 py-3 text-sm shadow-lg"
       :class="{
         'bg-emerald-700 text-white': ui.notice.kind === 'ok',

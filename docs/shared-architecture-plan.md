@@ -248,10 +248,10 @@ rev.2 曾把拆分列為範圍外。使用者決定完整拆分後，依下列�
 
 | rev.2 待回答的問題 | 決定 |
 |---|---|
-| 使用者資料遷移 | 兩邊沿用 `video.project.json` 與 `project.kind`，舊專案不需轉換；沒有 kind 視為 product。在錯的工作台開啟時，提示並連到正確的工作台（配對存在 localStorage，同源共用，不需重新配對）。 |
+| 使用者資料遷移 | 兩邊沿用 `video.project.json` 與 `project.kind`，舊專案不需轉換；沒有 kind 視為 product。在錯的工作台開啟時，提示並連到正確的工作台。 |
 | `packages/video-agent` | 維持單一 MCP server 支援兩種 kind：guide 依 kind 讀 `/api/product`、`/api/story`，`create_project` 依 kind 解壓對應範本。打包 guide 的腳本移到 `tools/bundle-video-agent-guide.mjs`，修正原本 packages→apps 的反向依賴。 |
 | 重複成本 | Schema、範本、共用工作台（`web/`）、`build-video-api.mjs`、`gen-types.mjs` 都只有一份，在 `packages/video-core`。各 app 只有自己的 `workflow.json`（線性、無 `kinds`）、Skill、首頁步驟 2 表單、故事專屬的角色工坊元件與薄殼 `tools/build-api.mjs`。 |
-| 公開 API 相容 | 新增 `/api/story/*`、`/api/product/*`。`/api/video/*` 由 `tools/build-platform-api.mjs` 組回拆分前的檔案配置：workflow 與拆分前逐字相同（兩種 kind 合併、帶 `kinds`），`index.json` 加上 `deprecated`。`tests/site/build.test.mjs` 斷言舊路徑全部存在。舊的 `/video/` 網址是選擇頁，保留 `#pair=` 轉交給選定的工作台；companion 的配對連結依專案 kind 指向 `/story/` 或 `/product/`。 |
+| 公開 API 相容 | 新增 `/api/story/*`、`/api/product/*`。`/api/video/*` 由 `tools/build-platform-api.mjs` 組回拆分前的檔案配置：workflow 與拆分前逐字相同（兩種 kind 合併、帶 `kinds`），`index.json` 加上 `deprecated`。`tests/site/build.test.mjs` 斷言舊路徑全部存在。舊的 `/video/` 網址是選擇頁。 |
 | Portal 呈現 | 首頁改為 Slide、故事動畫、產品介紹影片三張卡片，各自連到 `/slide/`、`/story/`、`/product/`。 |
 
 **尚未做（下一輪）**：範本依 kind 瘦身——故事範本仍帶有 `capture.mjs`、`login.mjs`，產品範本仍帶有 `rig.js`、`motion.js`。這些腳本彼此 import 交錯（`render-html`、`scene-plan`、`browser`），拆開風險較高，另行處理。目前兩個範本 zip 只差在 `schemas/workflow.json` 與產生的 `.claude/commands/`。

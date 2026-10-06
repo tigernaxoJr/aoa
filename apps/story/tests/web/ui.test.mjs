@@ -1,11 +1,10 @@
 // Story video workbench end to end, built and served like the site (see the shared harness in
 // packages/video-core/tests/web/harness.mjs): the story start page, story steps, the cast studio.
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
-import { startCompanion } from '../../../../packages/video-core/template/scripts/lib/companion.mjs'
-import { FAKE_TTS, fullProject, motionScene } from '../../../../packages/video-agent/tests/helpers.mjs'
+import { fullProject, motionScene } from '../../../../packages/video-agent/tests/helpers.mjs'
 import { BASE, fixture, prepareFolder, readOpfs, storyFixture, waitForStart, webApp } from '../../../../packages/video-core/tests/web/harness.mjs'
 import { build as buildApi } from '../../tools/build-api.mjs'
 
@@ -97,22 +96,18 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   assert.equal(await page.getByTestId('scene-scene-001').isVisible(), true)
 })
 
-test('with the Companion, "立即產生試聽" synthesizes the saved voice; unsaved voice changes must be saved first', async (t) => {
+test('the audition button offers the sample command; unsaved voice changes must be saved first', async (t) => {
   if (!web.browser) return t.skip('no browser available')
-  Object.assign(process.env, FAKE_TTS)
   const p = fullProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-pond', scene: motionScene('scene-001') }] })
   t.after(p.cleanup)
   const doc = JSON.parse(readFileSync(p.path('video.project.json'), 'utf8'))
   Object.assign(doc.project, { kind: 'story', sources: { story: '小狐狸以為月亮掉進了池塘。' }, cast: [{ id: 'fox', name: '小狐狸', voice: 'zh-TW-HsiaoYuNeural' }] })
   writeFileSync(p.path('video.project.json'), JSON.stringify(doc))
-  const c = await startCompanion({ projectDir: p.root, port: 0, site: `${web.origin}${BASE}`, log: () => {} })
-  t.after(() => c.close())
 
-  const { page } = await web.openApp(t, p, `#pair=${c.port}:${c.token}`)
-  await page.getByTestId('companion-status').getByText('本機助手已連線').waitFor()
+  const { page } = await web.openApp(t, p)
   await page.getByTestId('tab-cast').click()
   const audition = page.getByTestId('audition')
-  await audition.getByText('立即產生試聽').waitFor()
+  await audition.getByText('複製試聽指令').waitFor()
 
   // A voice picked but not saved is not what tts --sample would read.
   const voice = page.locator('select').filter({ has: page.locator('option[value="zh-TW-YunJheNeural"]') })
@@ -123,10 +118,7 @@ test('with the Companion, "立即產生試聽" synthesizes the saved voice; unsa
   await page.getByRole('button', { name: '儲存角色' }).click()
   await page.getByText('角色【小狐狸】已儲存').waitFor({ timeout: 5000 })
   await page.getByTestId('audition-unsaved').waitFor({ state: 'detached' })
-
-  await audition.click()
-  await page.getByTestId('notice').filter({ hasText: '已產生 小狐狸 試聽語音' }).waitFor({ timeout: 60_000 })
-  assert.ok(existsSync(p.path('brief/voices/fox.mp3')))
+  assert.equal(await audition.isDisabled(), false)
 })
 
 test('a product project opened here points to the product workbench', async (t) => {

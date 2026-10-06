@@ -3,8 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Icon from '@video-core/web/components/Icon.vue'
 import { audioBlobToWav } from '../audio'
 import { tryFile, writeFile } from '@aoa/web-shared/fsa'
-import { canRun, run } from '@video-core/web/lib/companion'
-import { notify, reload, root, state, summarize } from '@video-core/web/lib/store'
+import { notify, root, state } from '@video-core/web/lib/store'
 import { useFileUrl } from '@video-core/web/lib/useFileUrl'
 
 interface VoiceConfig {
@@ -230,15 +229,8 @@ async function triggerAudition() {
   if (voiceUnsaved.value) return
   auditionLoading.value = true
   try {
-    if (canRun('sample')) {
-      const res = await run('sample', `生成 ${props.castName} 試聽語音`, { cast: props.castId })
-      if (res.ok) notify('ok', `已產生 ${props.castName} 試聽語音`)
-      else notify('error', `試聽語音產生失敗。${summarize(res.output)}`)
-      await reload()
-    } else {
-      await navigator.clipboard.writeText(sampleCommand.value)
-      notify('ok', `已複製指令「${sampleCommand.value}」至剪貼簿，請在終端機執行`)
-    }
+    await navigator.clipboard.writeText(sampleCommand.value)
+    notify('ok', `已複製指令「${sampleCommand.value}」至剪貼簿，請在終端機執行`)
   } catch (err) {
     notify('error', (err as Error).message)
   } finally {
@@ -421,7 +413,7 @@ onBeforeUnmount(() => {
         @click="triggerAudition"
       >
         <Icon name="refresh" :size="13" :class="auditionLoading ? 'animate-spin' : ''" />
-        <span>{{ canRun('sample') ? '🎧 立即產生試聽' : '📋 複製試聽指令' }}</span>
+        <span>📋 複製試聽指令</span>
       </button>
     </div>
   </div>
