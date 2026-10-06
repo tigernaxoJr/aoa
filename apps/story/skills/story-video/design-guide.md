@@ -61,6 +61,13 @@
 - **`data-pivot="x y"`**：部件旋轉、縮放的支點，用 viewBox 座標：手臂是肩膀、腿是髖、頭是脖子、尾巴是根部。沒寫時支點是 (0, 0)，轉起來會飛走。
 - **疊放順序**：寫在後面的蓋在前面。手、腳和身體的接縫處要互相重疊一點，轉動時才不會露出縫。
 - **表情是互斥的一組**：`eye-open` / `eye-closed` / `eye-happy`…、`mouth-closed` / `mouth-open` / `mouth-smile`…，同一組同一時間只顯示一個（`rig.only()`）。至少要有 `eye-open`、`eye-closed`、`mouth-closed`、`mouth-open`，說話和眨眼才做得出來。
+- **會彎曲、擠壓的形狀用 `data-morph-<名稱>`（選用）**：轉動做不出來的變化，例如尾巴捲起、身體蹲下壓扁、嘴巴慢慢張大，可以在同一條 `<path>` 上多寫一份「變形後」的 `d`，動畫裡用 `rig.morph()` 在兩者之間漸變：
+  ```svg
+  <g id="tail" data-pivot="120 470">
+    <path d="M120 470 C60 460 40 400 70 350" data-morph-curl="M120 470 C50 480 20 420 60 390" …/>
+  </g>
+  ```
+  兩份 `d` **必須用相同的指令、相同的順序**（上例都是 `M` 加一個 `C`），只有座標不同；最簡單的做法是先畫好原形，複製一份只挪動控制點。名稱用英文小寫（`curl`、`squash`、`wide`）。不同的嘴型、眼型仍用互斥的 `<g>` 切換，`morph` 只用在需要平順變化的地方。
 - **側面角色**：大多數故事角色畫成四分之三側面朝右即可；要朝左時在動畫裡把整個角色水平翻轉（`scale(-1, 1)`），不要另畫一份。
 - 和 [rendering-guide.md#svg](rendering-guide.md#svg) 相同：要有 `xmlns`、`viewBox`、`width`、`height`；不放 `<script>`、SMIL / CSS 動畫、外部連結與外部字型；不用文字。顏色只用 `brief/design.md` 的色票。
 - 每個檔案保持在 30 KB 以內；路徑點數太多的形狀簡化掉，畫面看不出差別。
@@ -183,7 +190,8 @@ export default async function setup({ root, width, height, cues }) {
 | 函式 | 用途 |
 |---|---|
 | `loadSvg(url)` | 載入 SVG 檔成可操作的 `<svg>` 元素 |
-| `rig(svg)` | `pose(id, { x, y, rotate, scale })` 依支點擺姿勢、`only(ids, id)` 切換表情、`show(id, bool)`、`part(id)` |
+| `rig(svg)` | `pose(id, { x, y, rotate, scale })` 依支點擺姿勢、`only(ids, id)` 切換表情、`show(id, bool)`、`part(id)`、`morph(id, 名稱, amount)` 把部件裡的 path 漸變成 `data-morph-<名稱>` 的形狀（0 是原形、1 是變形後，超過 1 會過頭） |
+| `morphPath(from, to, amount)` | 兩條指令相同的 path `d` 之間的形狀；不在角色檔裡的形狀（道具、場景）直接用它設定 `d` |
 | `speakerAt(cues, t)`、`cueAt(cues, t)` | 這個時間誰在說話、正在說哪句 |
 | `mouthOpen(t, speaking)` | 說話時嘴巴開合 |
 | `blinking(t, seed)` | 自然的眨眼；每個角色用不同 `seed` |
@@ -195,7 +203,7 @@ export default async function setup({ root, width, height, cues }) {
 
 - **一直有一點動**：靜止的角色看起來像貼紙。站著時尾巴、耳朵慢慢晃（`wave` 0.3–0.6 Hz），身體有呼吸般的上下 1–2%。
 - **說話的人要動**：說話時嘴巴開合、頭或手有小動作；**沒說話的人**偶爾眨眼、看向說話的人（頭轉向那邊）。
-- **動作先預備再動**：跳之前先蹲一下、轉身前先停一下，動作結束時稍微過頭再回來（`ease.out` 之後補一點反向）。
+- **動作先預備再動**：跳之前先蹲一下、轉身前先停一下，動作結束時稍微過頭再回來（`ease.out` 之後補一點反向）。蹲下、落地的壓扁和尾巴的甩動用 `morph` 會比只轉動自然，例如 `fox.morph('body', 'squash', tween(t, 2, 2.2, 0, 1) - tween(t, 2.2, 2.5, 0, 1))`。
 - **配合台詞時間**：用 `cues` 的 `start` 安排動作，例如角色開口前 0.2 秒先轉頭；旁白說「水面碎成好多片」時正好讓水波散開。
 - **鏡頭**：要推近或平移時，把整個場景放在一個容器裡，對容器做 `transform`（例如 2 秒內 `scale` 1 → 1.15），角色跟背景一起動。一段最多一個鏡頭動作。
 - **控制份量**：一段只做 3–5 個重點動作；太多動作搶戲，也會拖慢渲染。

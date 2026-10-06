@@ -20,11 +20,13 @@ export async function loadSvg(url) {
 
 /**
  * Wraps a character SVG. Parts are <g id="…"> groups; `data-pivot="x y"` (viewBox units) is the
- * point a part rotates and scales around, e.g. the shoulder of an arm.
- * Returns { svg, part(id), pose(id, { x, y, rotate, scale }), show(id, visible), only(ids, id) }.
+ * point a part rotates and scales around, e.g. the shoulder of an arm. A <path> may also carry
+ * other shapes of itself as `data-morph-<name>="…"` (same commands as its `d`) to morph into.
+ * Returns { svg, part(id), pose(id, { x, y, rotate, scale }), show(id, visible), only(ids, id), morph(id, name, amount) }.
  */
 export function rig(svg) {
   const cache = new Map()
+  const baseShapes = new WeakMap()
   const part = (id) => {
     if (!cache.has(id)) {
       const el = svg.querySelector(`#${CSS.escape(id)}`)
@@ -48,8 +50,93 @@ export function rig(svg) {
     only(ids, id) {
       for (const each of ids) part(each).el.style.display = each === id ? '' : 'none'
     },
+    /**
+     * Moves the paths of part `id` (the part itself, if it is a <path>, or the paths inside it)
+     * toward their `data-morph-<name>` shape: 0 is the drawn shape, 1 the named one.
+     */
+    morph(id, name, amount) {
+      const { el } = part(id)
+      const attr = `data-morph-${name}`
+      const paths = el.hasAttribute(attr) ? [el] : [...el.querySelectorAll(`path[${attr}]`)]
+      if (!paths.length) throw new Error(`part #${id} has no path with ${attr}`)
+      for (const path of paths) {
+        if (!baseShapes.has(path)) baseShapes.set(path, path.getAttribute('d') ?? '')
+        path.setAttribute('d', morphPath(baseShapes.get(path), path.getAttribute(attr), amount))
+      }
+    },
   }
 }
+
+/** Arguments per SVG path command; arcs (a) carry two 0/1 flags at positions 3 and 4. */
+const PATH_ARGS = { m: 2, l: 2, h: 1, v: 1, c: 6, s: 4, q: 4, t: 2, a: 7, z: 0 }
+const NUMBER = /[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/y
+const parsed = new Map()
+
+/** Splits a path's `d` into [{ cmd, args }], one entry per command (implicit repeats spelled out). */
+export function parsePath(d) {
+  if (parsed.has(d)) return parsed.get(d)
+  const segments = []
+  let i = 0
+  let cmd = null
+  const skip = () => {
+    while (i < d.length && /[\s,]/.test(d[i])) i++
+  }
+  const number = () => {
+    skip()
+    NUMBER.lastIndex = i
+    const m = NUMBER.exec(d)
+    if (!m) throw new Error(`bad path data near "${d.slice(i, i + 12)}"`)
+    i = NUMBER.lastIndex
+    return Number(m[0])
+  }
+  const flag = () => {
+    skip()
+    if (d[i] !== '0' && d[i] !== '1') throw new Error(`bad arc flag near "${d.slice(i, i + 12)}"`)
+    return Number(d[i++])
+  }
+  for (skip(); i < d.length; skip()) {
+    if (/[a-z]/i.test(d[i])) {
+      cmd = d[i++]
+      if (!(cmd.toLowerCase() in PATH_ARGS)) throw new Error(`unknown path command "${cmd}"`)
+      if (cmd.toLowerCase() === 'z') {
+        segments.push({ cmd, args: [] })
+        continue
+      }
+    } else if (!cmd || cmd.toLowerCase() === 'z') {
+      throw new Error(`bad path data near "${d.slice(i, i + 12)}"`)
+    }
+    const arc = cmd.toLowerCase() === 'a'
+    const args = Array.from({ length: PATH_ARGS[cmd.toLowerCase()] }, (_, k) => (arc && (k === 3 || k === 4) ? flag() : number()))
+    segments.push({ cmd, args })
+    if (cmd === 'M') cmd = 'L' // numbers after a moveto are implicit linetos
+    if (cmd === 'm') cmd = 'l'
+  }
+  parsed.set(d, segments)
+  return segments
+}
+
+/**
+ * The shape `amount` of the way from path `from` to path `to` (0 → from, 1 → to; outside 0–1
+ * overshoots). Both must use the same commands in the same order, e.g. a mouth drawn closed and
+ * open with the same curves. Arc flags switch at the halfway point.
+ */
+export function morphPath(from, to, amount) {
+  const a = parsePath(from)
+  const b = parsePath(to)
+  if (a.length !== b.length) throw new Error(`cannot morph paths with ${a.length} and ${b.length} commands; draw both with the same commands`)
+  return a
+    .map(({ cmd, args }, i) => {
+      if (b[i].cmd !== cmd) throw new Error(`cannot morph paths: command ${i + 1} is "${cmd}" in one and "${b[i].cmd}" in the other`)
+      const arc = cmd.toLowerCase() === 'a'
+      const mixed = args.map((x, k) =>
+        arc && (k === 3 || k === 4) ? (amount < 0.5 ? x : b[i].args[k]) : round(x + (b[i].args[k] - x) * amount),
+      )
+      return mixed.length ? `${cmd}${mixed.join(' ')}` : cmd
+    })
+    .join(' ')
+}
+
+const round = (x) => Math.round(x * 1000) / 1000
 
 function pivotOf(el) {
   const [x = 0, y = 0] = (el.getAttribute('data-pivot') ?? '').trim().split(/[\s,]+/).map(Number)

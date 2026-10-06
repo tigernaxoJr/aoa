@@ -299,7 +299,7 @@ my-video-project/
 | 聲音 | 旁白一種聲音 | 旁白 + `project.cast[]` 每個角色各自的聲音 |
 
 - `workflow.json` 的步驟以 `kinds` 標示只適用於哪些類型。
-- 故事專案的角色美術放在 `assets/cast/<id>/`（一個 SVG 內以 `<g id>` 分出部件、`data-pivot` 標示支點），場景在 `assets/sets/`；動畫模組以範本的 `src/lib/rig.js` 擺姿勢，並把用到的共用檔列在 `visual.motion.uses`（資料夾以 `/` 結尾）。
+- 故事專案的角色美術放在 `assets/cast/<id>/`（一個 SVG 內以 `<g id>` 分出部件、`data-pivot` 標示支點，需要彎曲或擠壓的 `<path>` 以 `data-morph-<名稱>` 附上變形後的形狀），場景在 `assets/sets/`；動畫模組以範本的 `src/lib/rig.js` 擺姿勢，並把用到的共用檔列在 `visual.motion.uses`（資料夾以 `/` 結尾）。
 - `inputHash` 另外涵蓋 `motion.uses` 的檔案，以及該 scene 中有說話的角色的 `cast` 設定（D22）。
 - 動畫模組的 `setup(ctx)` 多收到 `cues`（含 `speaker` 的字幕時間軸）與 `cast`，讓說話的角色動嘴、做動作。
 - **角色工坊 (Cast Studio)**：當 `project.kind === 'story'` 時，前端工作台提供專屬角色管理視圖：

@@ -4,7 +4,7 @@ import { cpSync, existsSync } from 'node:fs'
 import { afterEach, test } from 'node:test'
 import { suggestNext } from '../../template/scripts/lib/core.mjs'
 import { computeInputHash } from '../../template/scripts/lib/hash.mjs'
-import { blinking, cueAt, mouthOpen, poseTransform, speakerAt, tween } from '../../template/src/lib/rig.js'
+import { blinking, cueAt, morphPath, mouthOpen, parsePath, poseTransform, speakerAt, tween } from '../../template/src/lib/rig.js'
 import { baseProject, baseScene, makeProject } from './helpers.mjs'
 
 let p
@@ -141,6 +141,15 @@ test('rig helpers are pure functions of t', () => {
   assert.equal(poseTransform(), '')
 })
 
+test('morphPath blends two paths drawn with the same commands', () => {
+  assert.equal(morphPath('M0 0 L10 10 20 0 Z', 'M0 10 L10 30 20 10 Z', 0.5), 'M0 5 L10 20 L20 5 Z', 'implicit linetos after M')
+  assert.equal(morphPath('m0 0 q5-5 10 0', 'm0 0 q5 5 10 0', 1.2), 'm0 0 q5 7 10 0', 'overshoots past 1')
+  assert.equal(morphPath('M0,0 a5 5 0 01 10 0', 'M0,0 a5 5 0 1 0 20 0', 0.25), 'M0 0 a5 5 0 0 1 12.5 0', 'arc flags switch, not blend')
+  assert.deepEqual(parsePath('M1.5.5 1e1-2z'), [{ cmd: 'M', args: [1.5, 0.5] }, { cmd: 'L', args: [10, -2] }, { cmd: 'z', args: [] }])
+  assert.throws(() => morphPath('M0 0 L1 1', 'M0 0 Q1 1 2 2', 0.5), /command 2 is "L" in one and "Q" in the other/)
+  assert.throws(() => morphPath('M0 0 L1 1', 'M0 0', 0.5), /2 and 1 commands/)
+})
+
 test('a story scene renders with a motion module that sees the cues and the shared art', async (t) => {
   makeStory()
   const project = p.read('video.project.json')
@@ -151,6 +160,7 @@ test('a story scene renders with a motion module that sees the cues and the shar
     'assets/cast/fox/fox.svg',
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
   <g id="body"><ellipse cx="100" cy="210" rx="60" ry="80" fill="#f97316"/></g>
+  <g id="tail" data-pivot="50 260"><path d="M50 260 Q10 250 20 200" data-morph-curl="M50 260 Q0 280 10 230" stroke="#ea580c" stroke-width="12" fill="none"/></g>
   <g id="arm-r" data-pivot="140 180"><rect x="140" y="175" width="50" height="14" rx="7" fill="#ea580c"/></g>
   <g id="head" data-pivot="100 130">
     <circle cx="100" cy="90" r="55" fill="#fb923c"/>
@@ -185,6 +195,8 @@ export default async function setup({ root, width, height, cues, cast }) {
     fox.pose('arm-r', { rotate: talking ? -30 : 0 })
     fox.only(['mouth-open', 'mouth-closed'], mouthOpen(t, talking) ? 'mouth-open' : 'mouth-closed')
     fox.only(['eye-open', 'eye-closed'], blinking(t, 1) ? 'eye-closed' : 'eye-open')
+    fox.morph('tail', 'curl', tween(t, 0, 1, 0, 1))
+    if (t >= 1 && fox.part('tail').firstElementChild.getAttribute('d') !== 'M50 260 Q0 280 10 230') throw new Error('tail did not curl')
   }
 }
 `,
