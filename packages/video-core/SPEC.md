@@ -244,7 +244,7 @@ my-video-project/
 | `visual.type` | `web-capture`（Playwright 擷取網頁操作）· `screenshot`（靜態截圖 + 動效）· `motion-graphic`（純動畫，無擷取素材；`visual.motion.file` 可指定 Agent 撰寫的動畫模組，預設匯出 `setup(ctx)` 並回傳 `seek(t)`，受 `project.customMotion` 限制）· `code`（程式碼展示）· `user-asset`（使用者提供的影片/圖片） |
 | `narration.provider` | TTS 提供者，省略時沿用 `project.tts.provider`。見 §7.4 |
 | `durationSec` | `null` 表示由 TTS 音檔長度決定（音長 + 0.5s 緩衝）；有值則為強制秒數。幀數一律由 `durationSec × fps` 推得，**不存幀數**。 |
-| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format`（`captions.mode` 為 `burn` 時連同 `captions`）計算的 SHA-256。與目前內容不符即視為過期。 |
+| `render.inputHash` | 對 scene.json（排除 `$schema`、`status`、`render`、`error`、`attempts`、`locked`、`feedback`、`updatedAt`、`updatedBy`，鍵排序後序列化）、旁白稿、該 scene `assets/` 下所有檔案、scene 引用的 `@/` 檔案、專案 `format`（`captions.mode` 為 `burn` 時連同 `captions`）計算的 SHA-256。與目前內容不符即視為過期。 |
 | `locked` | `true` 時 Agent 不得修改此 scene（除非使用者明確要求）。使用者在 UI 手動核准後可設為 `true`。 |
 
 ### 4.2.1 共通規則（由 Schema 強制）
@@ -693,9 +693,9 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 - 使用 **File System Access API**：使用者在首頁步驟 1 點擊「選擇或建立資料夾」（新專案時在 Agent 開始之前，見 §9.2）→ `window.showDirectoryPicker({ mode: "readwrite" })` → 取得 `FileSystemDirectoryHandle`。
 - **不使用** `fetch("file://…")`（瀏覽器禁止）。
 - 支援瀏覽器：Chrome / Edge（桌面版）；需 HTTPS 或 localhost。Firefox / Safari 顯示唯讀提示或引導改用支援的瀏覽器。
-- Directory handle 存入 IndexedDB，下次開啟時請求重新授權即可，免重新選擇。
+- 最近開過的 directory handle（最多 6 個，連同專案名稱與類型）存入 IndexedDB。下次開啟時，上次的專案若瀏覽器仍保有權限（Chrome 中使用者選了「每次造訪時都允許」）就直接開啟；否則首頁列出「最近的專案」，點一下重新授權即可，免重新選擇。「關閉專案」只取消自動開啟，不從清單移除。
 - **更新偵測**：每 2 秒輪詢 `video.project.json` 與各 `scene.json` 的 `lastModified`（File System Observer API 可用時優先使用）。
-- **反向通知**：模式 A 下 UI 無法喚起 Agent，只能標記 `stale` 並提示使用者執行 `/video-sync`。
+- **反向通知**：模式 A 下 UI 無法喚起 Agent，只能標記 `stale`，並給使用者一句可以直接貼給 Agent 的白話（句末括號附上 `/video-sync` 等指令供 Agent 對照）。畫面上不出現指令、`pnpm` 或終端機操作：使用者只需要會跟 Agent 說話。
 
 ### 9.2 畫面
 
@@ -717,7 +717,8 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 
 ### 9.3 UI 寫入規則
 
-- 只能寫：`script.md`、`scene.json` 的可編輯欄位（`title`、`visual.description`、`narration.voice/speed`、`durationSec`、`locked`、`status: approved|stale`）、`video.project.json.scenes` 的順序。
+- 只能寫：`script.md`、`scene.json` 的可編輯欄位（`title`、`visual.description`、`narration.voice/speed`、`durationSec`、`locked`、`status: approved|stale`、新增或刪除尚未處理的 `feedback`）、`video.project.json.scenes` 的順序。
+- **回饋（`feedback`）**：使用者在一段影片上點一下畫面、寫一句話，UI 存成一則意見（原話、時間點 `atSec`、畫面位置 `point`），不必用文字描述是哪一段、哪一秒、哪個位置。對 `rendered` / `approved` 的 scene 留意見時同時設為 `stale`，所以下一步一樣是 sync；鎖定的 scene 不能留意見。UI 只能刪除尚未處理的意見；Agent 處理後以 `pnpm run state` 填 `resolvedAt` 與 `reply`，意見保留作為紀錄。`feedback` 不納入 `inputHash`：意見本身不改變影片，Agent 依意見做的修改才會。
 - 內容修改後，`rendered` / `approved` 的 scene 設為 `stale`（其他狀態維持原狀，Agent 產生時自然使用新內容）；`approved` / `stale` 只依 workflow.json 允許的轉換寫入（核准僅限 `rendered` 且未過期）。
 - 排序修改只影響 assemble；專案為 `completed` 時改為 `ready_to_assemble`，因為 `final.mp4` 已不符合新順序。
 - 寫入 scene 後依 workflow.json `derivedProjectStatus` 重算並寫回 `project.status`（與 `state.mjs` 相同規則，實作共用）。
@@ -733,7 +734,7 @@ Vue 3 + Vite + TypeScript + Tailwind，純靜態部署（GitHub Pages，§12.1�
 
 - **與本機腳本共用協議邏輯**：`packages/video-core/template/scripts/lib/core.mjs` 不依賴 Node 或 DOM，提供 inputHash 的內容序列（`hashParts`）、下一步建議（`suggestNext`）、狀態轉換檢查與 `derivedProjectStatus`。Node 端以串流 SHA-256、瀏覽器以 WebCrypto 計算，結果逐位元組相同，因此 UI 能正確顯示「渲染後內容已變更」。雜湊依檔案大小與修改時間快取，輪詢時不重讀影片素材。
 - **輪詢**：每 2 秒取各檔（專案、scene、旁白稿、輸出、素材、鎖檔、final）的 `lastModified` 與大小組成指紋，變了才重新載入；分頁隱藏或寫入中時暫停。
-- **畫面**：首頁（尚無專案）＝ 準備資料夾 + Source 啟動訊息產生器 + 等待 Agent 建立專案 + Guide API 連結；開啟後為 Workflow（五步驟進度、專案狀態、下一步指令、待更新提示與 `/video-sync` 複製）、Scene Board（拖曳或上下按鈕排序）、Scene Editor、Final。窄螢幕單欄排列。
+- **畫面**：首頁（尚無專案）＝ 準備資料夾 + Source 啟動訊息產生器 + 等待 Agent 建立專案 + Guide API 連結；開啟後為 Workflow（五步驟進度、專案狀態、下一步要交給 Agent 的一句話與複製按鈕）、Scene Board（拖曳或上下按鈕排序）、Scene Editor、Final。窄螢幕單欄排列。
 - **測試**：原生資料夾選擇器無法自動化，E2E 以 OPFS（`navigator.storage.getDirectory()`，同樣是 `FileSystemDirectoryHandle`）搭配 `window.__avp.open(handle)` 開啟；fixture 由本機腳本產生，驗證瀏覽器與 Node 的 inputHash 一致（`tests/web/ui.test.mjs`）。
 
 ---

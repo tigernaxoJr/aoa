@@ -416,7 +416,7 @@ export interface SceneJson {
    */
   render?: {
     /**
-     * SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 計算。
+     * SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、feedback、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 計算。
      */
     inputHash: string;
     /**
@@ -445,6 +445,39 @@ export interface SceneJson {
      */
     hint?: string;
   } | null;
+  /**
+   * 使用者在網頁上看這一段影片時留的意見，可指出時間點與畫面位置（SPEC §9.3）。Agent 重做這一段時逐條處理，處理完填 resolvedAt 與 reply；不刪除。不納入 inputHash。
+   */
+  feedback?: {
+    id: string;
+    /**
+     * 使用者的意見，原話。
+     */
+    text: string;
+    /**
+     * 意見指的時間點，相對於這一段影片開頭（秒）。
+     */
+    atSec?: number;
+    /**
+     * 意見指的畫面位置，以畫面寬高的比例表示（左上角為 0,0）。
+     */
+    point?: {
+      x: number;
+      y: number;
+    };
+    /**
+     * ISO 8601 / RFC 3339 日期時間，須含時區。
+     */
+    createdAt: string;
+    /**
+     * Agent 處理完的時間；null 或不存在表示尚未處理。
+     */
+    resolvedAt?: string | null;
+    /**
+     * Agent 給使用者的簡短說明：改了什麼，或為什麼沒改。
+     */
+    reply?: string;
+  }[];
   /**
    * 連續失敗次數，成功後歸零。Agent 自動重試上限 2 次（SPEC §8.1 規則 10）。
    */

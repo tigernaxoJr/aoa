@@ -1,6 +1,6 @@
 // Reads a video project through a directory handle: JSON + schema validation, scripts, outputs,
 // the lock file, and each scene's current input hash (same algorithm as scripts/lib/hash.mjs).
-import { MISSING, deriveStatus, hashFiles, hashParts, hashedDirs, projectRelative, scriptSpeakers, suggestNext } from '@core'
+import { MISSING, deriveStatus, hashFiles, hashParts, hashedDirs, openFeedback, projectRelative, scriptSpeakers, suggestNext } from '@core'
 import Ajv2020 from 'ajv/dist/2020'
 import addFormats from 'ajv-formats'
 import commonSchema from '@specs/common.schema.json'
@@ -240,7 +240,14 @@ export async function loadProject(root: FileSystemDirectoryHandle): Promise<Proj
     derivedStatus: errors.length ? null : deriveStatus(project.status, facts, final?.lastModified ?? 0),
     next: suggestNext(
       project,
-      scenes.map((s) => ({ id: s.id, status: s.scene?.status ?? 'missing', outdated: s.outdated, locked: Boolean(s.scene?.locked), error: s.scene?.error?.message ?? null })),
+      scenes.map((s) => ({
+        id: s.id,
+        status: s.scene?.status ?? 'missing',
+        outdated: s.outdated,
+        locked: Boolean(s.scene?.locked),
+        error: s.scene?.error?.message ?? null,
+        openFeedback: openFeedback(s.scene).length,
+      })),
       errors,
     ),
   }

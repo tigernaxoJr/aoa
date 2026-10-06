@@ -59,7 +59,7 @@
 <!-- kind:story -->
 影片做到一半或已合成後，仍可再執行 `/video-storyboard` 重新規劃分鏡：只修改被點名的段落，保留的段落沿用現有影片，確認後以 `/video-sync` 只重做有變更的段落並重新合成。
 
-隨時可用：`/video-status`（狀態摘要）、`/video-sync`（只重做有變更的 scene 並重新合成）、`/video-approve <id>`（核准）、`/video-translate <locale>`（複製專案並翻譯）。
+隨時可用：`/video-status`（狀態摘要）、`/video-sync`（套用網頁上的修改與意見，只重做有變更的 scene 並重新合成）、`/video-approve <id>`（核准）、`/video-translate <locale>`（複製專案並翻譯）。
 
 不確定下一步時，執行 `pnpm run status`，它會列出每個 scene 的狀態、是否過期，以及建議的下一個指令。
 
@@ -69,7 +69,7 @@
 2. **修改既有 JSON 一律透過 `pnpm run state`**（見 §4），不得直接編輯 `video.project.json` 或既有的 `scene.json`。只有新建 `scene.json` 時可直接寫入檔案，寫完立即執行 `pnpm run validate`。
 3. **只重做受影響的 scene。** 修改只重做受影響的 scene，不重新產生整部影片。多個 scene 都要渲染時，可一次交給 `render:scene` 平行處理。
 4. **不動鎖定或已核准的 scene。** `locked: true` 或 `status: approved` 的 scene，除非使用者明確要求，否則不修改、不重做。
-5. **尊重使用者的修改。** 編輯任何檔案前先重新讀取（Web UI 或使用者可能剛改過）。不覆蓋使用者寫的內容；原樣保留所有 `x-` 開頭的欄位。
+5. **尊重使用者的修改。** 編輯任何檔案前先重新讀取（Web UI 或使用者可能剛改過）。不覆蓋使用者寫的內容；原樣保留所有 `x-` 開頭的欄位。scene 的 `feedback` 是使用者在網頁上指著畫面留的意見：重做該 scene 時逐條處理，處理完以 `pnpm run state` 填 `resolvedAt` 與一句 `reply`，不刪除意見（做法見 workflow.md 的 sync）。
 6. **路徑規則。**
    - 一律使用正斜線的相對路徑；不得使用絕對路徑或 `..`。
    - `scene.json` 內的路徑相對於該 scene 目錄；引用專案共用素材用 `@/` 開頭（如 `@/assets/logo.png`）。

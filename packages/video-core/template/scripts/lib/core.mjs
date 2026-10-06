@@ -2,7 +2,7 @@
 // No Node or DOM APIs here: callers supply file access and hashing.
 
 /** Fields that describe state rather than content; excluded from the input hash (SPEC §4.2). */
-export const HASH_EXCLUDED = new Set(['$schema', 'status', 'render', 'error', 'attempts', 'locked', 'updatedAt', 'updatedBy'])
+export const HASH_EXCLUDED = new Set(['$schema', 'status', 'render', 'error', 'attempts', 'locked', 'feedback', 'updatedAt', 'updatedBy'])
 
 /** JSON with object keys sorted, so key order never changes the hash. */
 export function canonical(value) {
@@ -112,8 +112,11 @@ export function hashFiles(sceneDir, scene, assetFiles) {
 
 /**
  * Suggests the next agent command from the project status and per-scene facts
- * ({ id, status, outdated, locked, error }). Shared by `pnpm run status` and the Web UI.
+ * ({ id, status, outdated, locked, error, openFeedback }). Shared by `pnpm run status` and the Web UI.
  */
+/** Feedback notes on a scene the agent has not handled yet. */
+export const openFeedback = (scene) => (scene?.feedback ?? []).filter((f) => !f.resolvedAt)
+
 export function suggestNext(project, scenes, errors = []) {
   if (errors.length) return { command: null, reason: 'fix the validation errors first' }
   const status = project.status
@@ -126,7 +129,8 @@ export function suggestNext(project, scenes, errors = []) {
   if (['analyzed', 'designed'].includes(status)) return { command: '/video-storyboard', reason: 'brief is ready' }
   const failed = scenes.filter((s) => s.status === 'failed')
   if (failed.length) return { command: `/video-scene ${failed[0].id}`, reason: `${failed.length} scene(s) failed: ${failed[0].error}` }
-  const stale = scenes.filter((s) => (s.outdated || s.status === 'stale') && !s.locked)
+  // A rendered scene with feedback not yet handled needs redoing too (the UI marks it stale, but an agent may not have).
+  const stale = scenes.filter((s) => (s.outdated || s.status === 'stale' || (s.openFeedback && ['rendered', 'approved'].includes(s.status))) && !s.locked)
   if (stale.length) return { command: '/video-sync', reason: `${stale.length} scene(s) changed since their last render` }
   const lockedOutdated = scenes.filter((s) => s.outdated && s.locked)
   if (lockedOutdated.length) return { command: null, reason: `locked scene(s) changed: ${lockedOutdated.map((s) => s.id).join(', ')}; ask the user` }

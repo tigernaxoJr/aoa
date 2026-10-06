@@ -35,6 +35,11 @@
     "error": {
       "anyOf": [{ "$ref": "#/$defs/error" }, { "type": "null" }]
     },
+    "feedback": {
+      "description": "使用者在網頁上看這一段影片時留的意見，可指出時間點與畫面位置（SPEC §9.3）。Agent 重做這一段時逐條處理，處理完填 resolvedAt 與 reply；不刪除。不納入 inputHash。",
+      "type": "array",
+      "items": { "$ref": "#/$defs/feedbackNote" }
+    },
     "attempts": {
       "description": "連續失敗次數，成功後歸零。Agent 自動重試上限 2 次（SPEC §8.1 規則 10）。",
       "type": "integer",
@@ -285,13 +290,39 @@
       "required": ["inputHash", "outputFile", "renderedAt"],
       "properties": {
         "inputHash": {
-          "description": "SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 計算。",
+          "description": "SPEC §4.2：對 scene.json（排除 status、render、error、attempts、locked、feedback、updatedAt、updatedBy）、旁白稿、scene 素材、project.format 計算。",
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
         "outputFile": { "$ref": "common.schema.json#/$defs/relPath", "default": "output/scene.mp4" },
         "renderedAt": { "$ref": "common.schema.json#/$defs/timestamp" },
         "actualDurationSec": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "feedbackNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^fb-[0-9a-z]{4,16}$" },
+        "text": { "description": "使用者的意見，原話。", "type": "string", "minLength": 1, "maxLength": 1000 },
+        "atSec": { "description": "意見指的時間點，相對於這一段影片開頭（秒）。", "type": "number", "minimum": 0 },
+        "point": {
+          "description": "意見指的畫面位置，以畫面寬高的比例表示（左上角為 0,0）。",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y"],
+          "properties": {
+            "x": { "type": "number", "minimum": 0, "maximum": 1 },
+            "y": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "createdAt": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "resolvedAt": {
+          "description": "Agent 處理完的時間；null 或不存在表示尚未處理。",
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }, { "type": "null" }]
+        },
+        "reply": { "description": "Agent 給使用者的簡短說明：改了什麼，或為什麼沒改。", "type": "string", "maxLength": 500 }
       }
     },
     "error": {

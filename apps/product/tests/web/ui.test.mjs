@@ -124,7 +124,9 @@ test('opened project shows scenes; browser inputHash matches the Node scripts', 
   assert.equal(await status('scene-001'), '已渲染', 'rendered, not "內容已變更": hashes agree')
   assert.equal(await status('scene-002'), '已渲染')
   assert.equal(await status('scene-003'), '草稿')
-  assert.equal(await page.getByTestId('next-command').textContent(), '/video-scene all')
+  const next = page.getByTestId('next-command')
+  assert.equal(await next.getAttribute('data-command'), '/video-scene all')
+  assert.equal(await next.getByTestId('agent-say-text').textContent(), '請繼續做影片：製作還沒完成的段落。（/video-scene all）', 'a plain request, not a bare command')
   assert.match(await page.getByTestId('scene-summary').textContent(), /^已完成 2\/3 · 約 \d+\.\d 秒$/)
 
   // Script view: every scene's narration, in playback order.
@@ -137,7 +139,7 @@ test('opened project shows scenes; browser inputHash matches the Node scripts', 
   assert.match(await page.getByTestId('scene-scene-002').getAttribute('class'), /border-sky-500/, 'clicking a script entry selects that scene')
 })
 
-test('editing a rendered scene marks it stale, re-derives the project, and shows the sync banner', async (t) => {
+test('editing a rendered scene marks it stale, re-derives the project, and asks the agent to apply it', async (t) => {
   const p = fixture()
   t.after(() => p.cleanup())
   const app = await openApp(t, p)
@@ -146,7 +148,7 @@ test('editing a rendered scene marks it stale, re-derives the project, and shows
   await page.getByTestId('scene-scene-001').getByRole('button', { name: /開場/ }).click()
   await page.getByTestId('script-input').fill('改過的第一句。')
   await page.getByTestId('save').click()
-  await page.getByTestId('stale-banner').waitFor()
+  await page.getByTestId('next-command').and(page.locator('[data-command="/video-sync"]')).waitFor()
 
   assert.equal(await read('scenes/001-hook/script.md'), '改過的第一句。\n')
   const scene = JSON.parse(await read('scenes/001-hook/scene.json'))
@@ -155,7 +157,88 @@ test('editing a rendered scene marks it stale, re-derives the project, and shows
   assert.ok(scene.render, 'render record is kept for comparison')
   const project = JSON.parse(await read('video.project.json'))
   assert.equal(project.status, 'producing')
-  assert.equal(await page.getByTestId('next-command').textContent(), '/video-sync')
+  assert.match(await page.getByTestId('next-command').textContent(), /請套用我的修改/)
+  assert.equal(await page.getByTestId('stale-banner').count(), 0, 'the next step already asks for the sync; no second banner')
+})
+
+test('recent projects: a reload reopens the last project; a closed one stays one click away', async (t) => {
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page } = app
+  await page.getByTestId('project-name').waitFor()
+  await page.reload()
+  await page.getByTestId('project-name').waitFor()
+  assert.equal(await page.getByTestId('project-name').textContent(), '網頁測試專案', 'reopened without picking the folder again')
+
+  await page.getByRole('button', { name: '關閉專案' }).click()
+  const recent = page.getByTestId('recent')
+  await recent.waitFor()
+  assert.match(await recent.textContent(), /網頁測試專案/)
+  assert.match(await recent.textContent(), /資料夾「proj」/)
+  await page.reload()
+  await recent.waitFor()
+  assert.equal(await page.getByTestId('project-name').count(), 0, 'a closed project is not reopened by itself')
+
+  await recent.getByTestId('recent-open').click()
+  await page.getByTestId('project-name').waitFor()
+  await page.getByRole('button', { name: '關閉專案' }).click()
+  await page.getByRole('button', { name: '從清單移除 proj' }).click()
+  await recent.waitFor({ state: 'detached' })
+})
+
+test('feedback: point at the frame, write a line; the scene goes stale and the agent reply shows up', async (t) => {
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page, read } = app
+  await page.getByTestId('scene-scene-001').getByRole('button', { name: /開場/ }).click()
+  await page.getByTestId('scene-video').evaluate((v) => new Promise((resolve) => (v.readyState >= 1 ? resolve() : v.addEventListener('loadedmetadata', resolve))))
+
+  // Point: the overlay maps the click to the picture (fixture videos are 16:9, so the whole player).
+  await page.getByTestId('feedback-point').click()
+  const box = await page.getByTestId('feedback-overlay').boundingBox()
+  await page.getByTestId('feedback-overlay').click({ position: { x: box.width * 0.25, y: box.height * 0.5 } })
+  await page.getByTestId('feedback-spot').waitFor()
+  assert.match(await page.getByTestId('feedback-where').textContent(), /已標記位置 · 第 0:00\.0/)
+  await page.getByTestId('feedback-text').fill('這裡太暗了')
+  await page.getByTestId('feedback-submit').click()
+  await page.getByTestId('feedback-open').getByText('這裡太暗了').waitFor()
+
+  const scene = JSON.parse(await read('scenes/001-hook/scene.json'))
+  assert.equal(scene.status, 'stale', 'a note on a rendered scene asks for a redo')
+  assert.equal(scene.feedback.length, 1)
+  const [note] = scene.feedback
+  assert.match(note.id, /^fb-[0-9a-f]{8}$/)
+  assert.equal(note.text, '這裡太暗了')
+  assert.equal(note.atSec, 0)
+  assert.ok(Math.abs(note.point.x - 0.25) < 0.02 && Math.abs(note.point.y - 0.5) < 0.02, JSON.stringify(note.point))
+  assert.equal(await page.getByTestId('next-command').getAttribute('data-command'), '/video-sync')
+  assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-feedback-count').textContent(), '1')
+
+  // A note without pointing, then taken back before the agent saw it.
+  await page.getByTestId('feedback-text').fill('先不用改')
+  await page.getByTestId('feedback-submit').click()
+  await page.getByRole('button', { name: '刪除意見：先不用改' }).click()
+  await page.getByTestId('notice').filter({ hasText: '已刪除意見' }).waitFor()
+  assert.deepEqual(JSON.parse(await read('scenes/001-hook/scene.json')).feedback.map((f) => f.text), ['這裡太暗了'])
+
+  // The agent handles it: the page shows its reply and drops the count.
+  const handled = JSON.parse(await read('scenes/001-hook/scene.json'))
+  Object.assign(handled.feedback[0], { resolvedAt: new Date().toISOString(), reply: '把背景調亮了' })
+  await page.evaluate(async (text) => {
+    const proj = await (await navigator.storage.getDirectory()).getDirectoryHandle('proj')
+    const dir = await (await proj.getDirectoryHandle('scenes')).getDirectoryHandle('001-hook')
+    const w = await (await dir.getFileHandle('scene.json')).createWritable()
+    await w.write(text)
+    await w.close()
+  }, JSON.stringify(handled))
+  await page.getByTestId('feedback-done').getByText('把背景調亮了').waitFor()
+  assert.equal(await page.getByTestId('feedback-open').count(), 0)
+  assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-feedback-count').count(), 0)
+  assert.equal(await page.getByRole('button', { name: /刪除意見/ }).count(), 0, 'handled notes stay as the record')
 })
 
 test('approve and reorder follow the UI write rules', async (t) => {

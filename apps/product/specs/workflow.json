@@ -247,9 +247,10 @@
         {
           "id": "mark_stale",
           "do": "pnpm run state <id> --status stale",
-          "when": "scene 為 rendered 或 approved 但 inputHash 不相符（例如使用者直接改檔）",
+          "when": "scene 為 rendered 或 approved 但 inputHash 不相符（例如使用者直接改檔），或有尚未處理的 feedback",
           "transitions": [{ "target": "scene", "from": ["rendered", "approved"], "to": "stale" }]
         },
+        { "id": "feedback", "do": "讀取每個未鎖定 scene 尚未處理的 feedback（沒有 resolvedAt）：依原話、atSec 與 point 找出被指到的畫面或旁白，修改 script.md、scene.json 或素材；之後以 pnpm run state <id> --patch 填 resolvedAt 與一句 reply（做不到時也填 reply 說明原因）。", "when": "pnpm run status 的 scene 標有 [N feedback]" },
         { "id": "rebuild", "do": "對每個需要處理且未鎖定的 scene 執行 build_scene（略過 checkpoint，最後一併回報）。" },
         { "id": "assemble", "do": "全部完成後執行 assemble。" }
       ],

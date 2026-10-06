@@ -4,6 +4,7 @@ import { FINAL_FILE } from '../lib/project'
 import { TONE_CLASS, sceneBadge } from '../lib/site'
 import { state } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
+import AgentSay from './AgentSay.vue'
 import Icon from './Icon.vue'
 
 const emit = defineEmits<{ select: [id: string] }>()
@@ -33,8 +34,8 @@ const outdated = computed(() => scenes.value.filter((s) => !s.upToDate || (final
     <div v-else class="mt-4 flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl bg-slate-100 px-6 text-center dark:bg-slate-800/60">
       <Icon name="film" :size="32" class="text-slate-300 dark:text-slate-600" />
       <p class="text-sm text-slate-600 dark:text-slate-400">
-        <template v-if="ready">所有 scene 都完成了，可以合成影片。</template>
-        <template v-else>每段 scene 完成後，就能合成完整影片。</template>
+        <template v-if="ready">所有段落都完成了，可以合成影片。</template>
+        <template v-else>每一段都完成後，就能合成完整影片。</template>
       </p>
       <div v-if="scenes.length" class="w-48">
         <div class="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
@@ -44,12 +45,10 @@ const outdated = computed(() => scenes.value.filter((s) => !s.upToDate || (final
       </div>
     </div>
 
-    <p v-if="ready && (!final.exists || outdated.length)" class="mt-4 text-sm text-slate-600 dark:text-slate-400">
-      在 Agent 中執行 <code class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">/video-assemble</code> 合成影片。
-    </p>
+    <AgentSay v-if="ready && (!final.exists || outdated.length)" command="/video-assemble" class="mt-4" />
 
     <div v-if="outdated.length" class="mt-5" data-testid="final-outdated">
-      <p class="text-sm font-medium">{{ final.exists ? '影片合成後有變動的 scene' : '尚未完成的 scene' }}</p>
+      <p class="text-sm font-medium">{{ final.exists ? '影片合成後有變動的段落' : '尚未完成的段落' }}</p>
       <ul class="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
         <li v-for="s in outdated" :key="s.id">
           <button type="button" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/60" @click="emit('select', s.id)">
@@ -60,6 +59,6 @@ const outdated = computed(() => scenes.value.filter((s) => !s.upToDate || (final
         </li>
       </ul>
     </div>
-    <p v-else-if="final.exists" class="mt-3 flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-400"><Icon name="check" :size="14" />影片與所有 scene 一致。</p>
+    <p v-else-if="final.exists" class="mt-3 flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-400"><Icon name="check" :size="14" />影片與所有段落一致。</p>
   </section>
 </template>

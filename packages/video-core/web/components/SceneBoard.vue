@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { openFeedback } from '@core'
 import { PURPOSE_LABEL, TONE_CLASS, TONE_DOT, sceneBadge } from '../lib/site'
 import { useActivity } from '@aoa/web-shared/activity'
 import { activity, state, write } from '../lib/store'
@@ -91,7 +92,7 @@ function drop(target: string) {
 
     <div v-if="!scenes.length" class="mt-4 rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
       <Icon name="film" :size="28" class="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-      還沒有 scene。Agent 寫好分鏡後會出現在這裡；也可以在 Agent 中執行 <code>/video-storyboard</code>。
+      還沒有分鏡。Agent 寫好分鏡後，每一段會出現在這裡。
     </div>
 
     <ol v-else-if="view === 'script'" class="mt-4 space-y-1" data-testid="script-view">
@@ -116,7 +117,7 @@ function drop(target: string) {
     </ol>
 
     <template v-else>
-      <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">點選 scene 預覽與修改；拖曳或用箭頭調整播放順序。</p>
+      <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">點選一段預覽與修改；拖曳或用箭頭調整播放順序。</p>
       <ol class="mt-2 space-y-1.5">
         <li
           v-for="(s, i) in scenes"
@@ -141,6 +142,7 @@ function drop(target: string) {
             <span class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               {{ PURPOSE_LABEL[s.scene?.purpose ?? ''] ?? s.scene?.purpose }} · {{ duration(s) }}
               <span v-if="s.scene?.locked" class="flex items-center gap-0.5" title="已鎖定"><Icon name="lock" :size="11" /><span class="sr-only">已鎖定</span></span>
+              <span v-if="openFeedback(s.scene).length" class="flex items-center gap-0.5 text-amber-700 dark:text-amber-400" title="還沒處理的意見" data-testid="scene-feedback-count"><Icon name="message" :size="11" />{{ openFeedback(s.scene).length }}</span>
             </span>
           </button>
           <span v-if="working === s.id" class="flex shrink-0 items-center gap-1.5 text-xs font-medium text-sky-700 dark:text-sky-300" data-testid="scene-working">

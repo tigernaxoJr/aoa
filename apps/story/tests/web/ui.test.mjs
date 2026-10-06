@@ -107,7 +107,7 @@ test('the audition button offers the sample command; unsaved voice changes must 
   const { page } = await web.openApp(t, p)
   await page.getByTestId('tab-cast').click()
   const audition = page.getByTestId('audition')
-  await audition.getByText('複製試聽指令').waitFor()
+  await audition.getByText('複製給 Agent：產生試聽').waitFor()
 
   // A voice picked but not saved is not what tts --sample would read.
   const voice = page.locator('select').filter({ has: page.locator('option[value="zh-TW-YunJheNeural"]') })

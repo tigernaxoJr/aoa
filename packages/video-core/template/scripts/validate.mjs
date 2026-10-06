@@ -2,7 +2,7 @@
 // pnpm run status              → (validate --report) per-scene status table and the suggested next step
 // add --json for machine-readable output (Web UI / MCP)
 import { run, parseArgs } from './lib/cli.mjs'
-import { suggestNext } from './lib/core.mjs'
+import { openFeedback, suggestNext } from './lib/core.mjs'
 import { findRoot } from './lib/project.mjs'
 import { deriveProjectStatus } from './lib/status.mjs'
 import { validateProject } from './lib/validate.mjs'
@@ -39,6 +39,7 @@ function buildReport(root, { project, inspected, errors }) {
     locked: Boolean(s.scene?.locked),
     durationSec: s.scene?.render?.actualDurationSec ?? s.scene?.durationSec ?? null,
     error: s.scene?.error?.message ?? null,
+    openFeedback: openFeedback(s.scene).length,
   }))
   const derived = inspected ? deriveProjectStatus(root, project, inspected) : null
   return {
@@ -56,7 +57,7 @@ function printReport({ project, scenes, next }) {
       String(i + 1),
       s.id,
       s.purpose ?? '',
-      s.status + (s.outdated ? ' (outdated)' : '') + (s.locked ? ' [locked]' : ''),
+      s.status + (s.outdated ? ' (outdated)' : '') + (s.locked ? ' [locked]' : '') + (s.openFeedback ? ` [${s.openFeedback} feedback]` : ''),
       s.durationSec === null ? '' : `${s.durationSec}s`,
       s.title ?? '',
     ])

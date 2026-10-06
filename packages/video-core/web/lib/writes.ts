@@ -1,6 +1,6 @@
 // UI write rules (SPEC §9.3, §10.2 item 4). The UI may only change:
 //   script.md; scene.json title, visual.description, narration.voice/speed, durationSec, locked,
-//   status approved|stale; and the order of video.project.json scenes.
+//   status approved|stale, and unresolved feedback notes; and the order of video.project.json scenes.
 // Every write: refuse while an agent holds the lock, detect conflicts by lastModified, validate
 // against the schema, set updatedBy "user", then re-derive the project status.
 import { checkTransition, deriveStatus } from '@core'
@@ -118,8 +118,8 @@ export async function setLocked(root: Root, state: ProjectState, id: string, loc
 export async function approve(root: Root, state: ProjectState, id: string) {
   const { s, scene } = sceneOf(state, id)
   const problem = checkTransition(workflow, 'scene', scene.status, 'approved')
-  if (problem) throw new Error('只有已渲染（rendered）的 scene 可以核准。')
-  if (s.outdated) throw new Error('這個 scene 的內容在渲染後改過了，請先重新產生再核准。')
+  if (problem) throw new Error('只有已渲染的段落可以核准。')
+  if (s.outdated) throw new Error('這一段的內容在渲染後改過了，請先讓 Agent 重新產生再核准。')
   scene.status = 'approved'
   await writeScene(root, state, s, scene)
 }
@@ -127,8 +127,47 @@ export async function approve(root: Root, state: ProjectState, id: string) {
 /** Marks a rendered/approved scene stale without editing it (e.g. "please redo this one"). */
 export async function markStale(root: Root, state: ProjectState, id: string) {
   const { s, scene } = sceneOf(state, id)
-  if (checkTransition(workflow, 'scene', scene.status, 'stale')) throw new Error('只有已渲染或已核准的 scene 可以標記為需要重做。')
+  if (checkTransition(workflow, 'scene', scene.status, 'stale')) throw new Error('只有已渲染或已核准的段落可以標記為需要重做。')
   scene.status = 'stale'
+  await writeScene(root, state, s, scene)
+}
+
+type FeedbackNote = NonNullable<SceneJson['feedback']>[number]
+
+export interface FeedbackInput {
+  text: string
+  /** Seconds into this scene's video. */
+  atSec?: number | null
+  /** Where on the frame, as fractions of its width and height. */
+  point?: { x: number; y: number } | null
+}
+
+const round = (n: number, digits: number) => Number(n.toFixed(digits))
+
+/**
+ * Adds a note the user wrote while looking at the scene (SPEC §9.3). A rendered/approved scene
+ * becomes stale, so the next step is the same sync that applies any other edit.
+ */
+export async function addFeedback(root: Root, state: ProjectState, id: string, input: FeedbackInput) {
+  const { s, scene } = sceneOf(state, id)
+  if (scene.locked) throw new Error('這一段已鎖定，Agent 不會處理意見；請先解除鎖定。')
+  const text = input.text.trim()
+  if (!text) throw new Error('請寫下這一段要怎麼改。')
+  const note: FeedbackNote = { id: `fb-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`, text, createdAt: now() }
+  if (input.atSec != null) note.atSec = round(Math.max(0, input.atSec), 2)
+  if (input.point) note.point = { x: round(input.point.x, 3), y: round(input.point.y, 3) }
+  scene.feedback = [...(scene.feedback ?? []), note]
+  staleIfRendered(scene)
+  await writeScene(root, state, s, scene)
+}
+
+/** Takes back a note the agent has not handled yet; handled ones stay as the record of what changed. */
+export async function removeFeedback(root: Root, state: ProjectState, id: string, noteId: string) {
+  const { s, scene } = sceneOf(state, id)
+  const note = scene.feedback?.find((f) => f.id === noteId)
+  if (!note) return
+  if (note.resolvedAt) throw new Error('Agent 已經處理過這則意見，不能刪除。')
+  scene.feedback = scene.feedback!.filter((f) => f.id !== noteId)
   await writeScene(root, state, s, scene)
 }
 

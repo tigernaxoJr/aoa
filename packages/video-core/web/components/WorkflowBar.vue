@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { nextStep, stepsFor } from '../lib/site'
 import { state } from '../lib/store'
-import CopyButton from './CopyButton.vue'
+import AgentSay from './AgentSay.vue'
 import Icon from './Icon.vue'
 
 const status = computed(() => state.value!.project.status)
@@ -49,29 +49,24 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
     <div class="mt-5 flex flex-col gap-4 border-t border-slate-100 bg-slate-50/60 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-900/60">
       <div class="min-w-0">
         <p class="font-semibold">{{ plain.title }}</p>
-        <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-400" :data-testid="next.command ? undefined : 'next-command'">{{ plain.hint }}</p>
+        <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{{ plain.hint }}</p>
         <p v-if="state!.lock.active" class="mt-1 flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400">
           <Icon name="lock" :size="14" />{{ state!.lock.writer ?? 'Agent' }} 正在寫入，網頁上的修改會稍候再存
         </p>
       </div>
-      <div v-if="next.command" class="flex shrink-0 flex-wrap items-center gap-2 text-sm">
-        <span class="text-slate-500 dark:text-slate-400">在 Agent 對話中輸入</span>
-        <code class="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-sm dark:border-slate-700 dark:bg-slate-950" data-testid="next-command">{{ next.command }}</code>
-        <CopyButton :text="next.command" />
-      </div>
+      <AgentSay v-if="next.command" :command="next.command" class="md:max-w-[55%]" data-testid="next-command" />
     </div>
 
     <div
-      v-if="stale.length"
+      v-if="stale.length && next.command !== '/video-sync'"
       class="flex flex-col gap-3 border-t border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:px-6 md:flex-row md:items-center md:justify-between dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-100"
       role="status"
       data-testid="stale-banner"
     >
       <span class="flex items-start gap-2">
         <Icon name="refresh" class="mt-0.5" />
-        <span>{{ stale.length }} 個 scene 待更新。網頁無法直接叫醒 Agent，請在 Agent 中執行 <code>/video-sync</code>。</span>
+        <span>還有 {{ stale.length }} 段的修改沒有套用。上面這一步完成後，這裡會告訴你下一句要對 Agent 說什麼。</span>
       </span>
-      <CopyButton text="/video-sync" />
     </div>
   </section>
 </template>

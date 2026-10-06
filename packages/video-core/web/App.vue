@@ -9,6 +9,7 @@ import SceneBoard from './components/SceneBoard.vue'
 import SceneEditor from './components/SceneEditor.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
+import AgentSay from './components/AgentSay.vue'
 import { VIDEO_KIND, workbenchUrl } from './lib/site'
 import type { WorkbenchTab } from './lib/workbench'
 import { close, outdated, restore, state, syncTemplate, ui } from './lib/store'
@@ -34,7 +35,7 @@ const selected = computed<string | null>({
   get: () => current.value,
   set(id) {
     if (id === current.value) return
-    if (dirty.value && !confirm('這個 scene 有尚未儲存的修改，要放棄嗎？')) return
+    if (dirty.value && !confirm('這一段有尚未儲存的修改，要放棄嗎？')) return
     dirty.value = false
     current.value = id
     // On a narrow screen the detail pane sits below the list: bring it into view.
@@ -116,12 +117,24 @@ watch(state, (st) => {
           </button>
         </div>
       </div>
+      <div v-if="ui.needsInstall" class="callout bg-amber-50 text-amber-950 dark:bg-amber-950/60 dark:text-amber-100" role="status" data-testid="needs-install">
+        <Icon name="refresh" class="mt-0.5" />
+        <div class="min-w-0 flex-1">
+          <p>專案工具更新後需要的套件變了，Agent 下次動手前要先安裝。</p>
+          <AgentSay command="pnpm install" class="mt-2" />
+        </div>
+        <button type="button" class="icon-btn -mt-1 -mr-1" aria-label="我已經告訴 Agent 了" title="我已經告訴 Agent 了" @click="ui.needsInstall = false"><Icon name="x" /></button>
+      </div>
       <div v-if="state.errors.length" class="callout bg-red-50 text-red-900 dark:bg-red-950/60 dark:text-red-200" role="alert">
         <Icon name="alert" class="mt-0.5" />
-        <p class="min-w-0">
-          專案檔有問題，{{ outdated ? '請先按上方「更新專案工具」；仍有問題時' : '' }}請讓 Agent 執行 <code>pnpm run validate</code> 修正：
-          <span v-for="e in state.errors.slice(0, 5)" :key="e" class="mt-1 block font-mono text-xs break-all">{{ e }}</span>
-        </p>
+        <div class="min-w-0">
+          <p>專案檔有問題{{ outdated ? '，請先按上方「更新專案工具」；仍有問題時' : '。' }}</p>
+          <AgentSay command="pnpm run validate" class="mt-2" />
+          <details class="mt-2 text-xs">
+            <summary class="cursor-pointer">錯誤細節（給 Agent 看的）</summary>
+            <span v-for="e in state.errors.slice(0, 5)" :key="e" class="mt-1 block font-mono break-all">{{ e }}</span>
+          </details>
+        </div>
       </div>
       <ActivityBanner />
       <WorkflowBar />

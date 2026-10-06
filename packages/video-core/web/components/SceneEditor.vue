@@ -5,6 +5,7 @@ import { state, ui, write } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
 import { approve, markStale, saveSceneFields, saveScript, setLocked } from '../lib/writes'
 import Icon from './Icon.vue'
+import SceneFeedback from './SceneFeedback.vue'
 
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -112,47 +113,43 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
     </div>
     <div v-if="scene.locked" class="callout mt-3 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
       <Icon name="lock" class="mt-0.5" />
-      <p>已鎖定：Agent 不會修改或重做這個 scene。你仍可以編輯，但 <code>/video-sync</code> 不會套用，直到解除鎖定。</p>
+      <p>已鎖定：Agent 不會修改或重做這一段。你仍可以編輯，但要解除鎖定後，修改才會被套用。</p>
     </div>
 
-    <video v-if="videoUrl" :key="videoUrl" :src="videoUrl" controls class="mt-4 aspect-video w-full rounded-xl bg-black" data-testid="scene-video" />
-    <div v-else class="mt-4 flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-      <Icon name="film" :size="28" class="text-slate-300 dark:text-slate-600" />
-      尚未渲染
-    </div>
-
-    <!-- Review: the decisions about this scene's current video. -->
-    <div class="mt-3 flex flex-wrap items-center gap-2">
-      <button
-        v-if="scene.status === 'rendered' && !s.outdated"
-        type="button"
-        class="btn-success"
-        :disabled="ui.saving"
-        data-testid="approve"
-        @click="write((root, st) => approve(root, st, id), '已核准')"
-      >
-        <Icon name="check" :size="14" />核准
-      </button>
-      <button
-        v-if="['rendered', 'approved'].includes(scene.status)"
-        type="button"
-        class="btn-secondary"
-        :disabled="ui.saving"
-        @click="write((root, st) => markStale(root, st, id), '已標記需要重做')"
-      >
-        標記需要重做
-      </button>
-      <button
-        type="button"
-        class="btn-ghost ml-auto"
-        :disabled="ui.saving"
-        :aria-pressed="scene.locked"
-        :title="scene.locked ? '讓 Agent 可以再修改這個 scene' : '不讓 Agent 修改或重做這個 scene'"
-        @click="write((root, st) => setLocked(root, st, id, !scene!.locked), scene!.locked ? '已解除鎖定' : '已鎖定')"
-      >
-        <Icon :name="scene.locked ? 'unlock' : 'lock'" :size="14" />{{ scene.locked ? '解除鎖定' : '鎖定' }}
-      </button>
-    </div>
+    <SceneFeedback :id="id" :video-url="videoUrl">
+      <!-- Review: the decisions about this scene's current video. -->
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          v-if="scene.status === 'rendered' && !s.outdated"
+          type="button"
+          class="btn-success"
+          :disabled="ui.saving"
+          data-testid="approve"
+          @click="write((root, st) => approve(root, st, id), '已核准')"
+        >
+          <Icon name="check" :size="14" />核准
+        </button>
+        <button
+          v-if="['rendered', 'approved'].includes(scene.status)"
+          type="button"
+          class="btn-secondary"
+          :disabled="ui.saving"
+          @click="write((root, st) => markStale(root, st, id), '已標記需要重做')"
+        >
+          標記需要重做
+        </button>
+        <button
+          type="button"
+          class="btn-ghost ml-auto"
+          :disabled="ui.saving"
+          :aria-pressed="scene.locked"
+          :title="scene.locked ? '讓 Agent 可以再修改這一段' : '不讓 Agent 修改或重做這一段'"
+          @click="write((root, st) => setLocked(root, st, id, !scene!.locked), scene!.locked ? '已解除鎖定' : '已鎖定')"
+        >
+          <Icon :name="scene.locked ? 'unlock' : 'lock'" :size="14" />{{ scene.locked ? '解除鎖定' : '鎖定' }}
+        </button>
+      </div>
+    </SceneFeedback>
 
     <form ref="form" class="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800" @submit.prevent="save">
       <fieldset class="space-y-4">
@@ -206,7 +203,7 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
       >
         <p v-if="dirty" class="mr-auto text-sm">
           <span class="font-medium">有尚未儲存的修改</span>
-          <span v-if="rendered" class="block text-xs text-amber-700 dark:text-amber-400">儲存後這個 scene 會標為「需要重做」，由 Agent 執行 <code>/video-sync</code> 重新產生。</span>
+          <span v-if="rendered" class="block text-xs text-amber-700 dark:text-amber-400">儲存後這一段會標為「需要重做」，再請 Agent 套用修改。</span>
         </p>
         <p v-else class="mr-auto text-sm text-slate-500 dark:text-slate-400">修改會存回專案資料夾。</p>
         <button v-if="dirty" type="button" class="btn-ghost" @click="discard">放棄修改</button>

@@ -2,11 +2,12 @@
 // for running writes so conflicts and lock waits are reported the same way everywhere.
 import { reactive, shallowRef } from 'vue'
 import { ensurePermission, isSupported, tryFile } from '@aoa/web-shared/fsa'
-import { forgetHandle, loadHandle, saveHandle } from './idb'
+import { type RecentFolder, forgetLast, loadRecent, rememberFolder, removeFolder } from './idb'
 import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
 import { type TemplateDiff, templateDiff, updateTemplate } from './template'
 import type { VideoActivityJson } from '../types/protocol'
 import { LockedError } from './writes'
+import { VIDEO_KIND } from './site'
 
 const POLL_MS = 2000
 
@@ -18,17 +19,21 @@ export const activity = shallowRef<VideoActivityJson | null>(null)
 export const outdated = shallowRef<TemplateDiff | null>(null)
 export const ui = reactive({
   supported: isSupported(),
-  /** A folder remembered from last visit that still needs the user to re-grant access. */
-  remembered: null as FileSystemDirectoryHandle | null,
+  /** Folders opened before (this workbench's kind), most recent first; reopening one may need a click to re-grant access. */
+  recent: [] as RecentFolder[],
   /** The folder is open but holds no project yet: the page waits for the agent to create it. */
   waiting: false,
   loading: false,
   error: null as string | null,
   notice: null as { kind: 'ok' | 'warn' | 'error'; text: string } | null,
   saving: false,
+  /** The tools update changed dependencies: the agent must install them before running anything. */
+  needsInstall: false,
 })
 
 let print = ''
+/** The project name and kind last written to the recent list for the open folder. */
+let recorded = ''
 let timer: ReturnType<typeof setInterval> | null = null
 
 export function notify(kind: 'ok' | 'warn' | 'error', text: string) {
@@ -47,6 +52,12 @@ export async function reload() {
     ui.waiting = !next
     print = await fingerprint(root.value, next)
     ui.error = null
+    // The agent may create or rename the project while the folder is open: keep the recent list in step.
+    const info = { projectName: next?.project.project.name ?? null, kind: next?.project.project.kind ?? null }
+    if (JSON.stringify(info) !== recorded) {
+      recorded = JSON.stringify(info)
+      await rememberFolder(root.value, info)
+    }
   } catch (err) {
     ui.error = (err as Error).message
   }
@@ -65,7 +76,7 @@ async function poll() {
  * Opens a project folder, or prepares an empty one for a new project (SPEC §9.2). A folder with
  * other files is refused before anything changes, so a wrong pick keeps the previous folder.
  */
-export async function openHandle(handle: FileSystemDirectoryHandle, remember = true) {
+export async function openHandle(handle: FileSystemDirectoryHandle) {
   ui.loading = true
   try {
     if (!(await tryFile(handle, PROJECT_FILE)) && !(await readyForNewProject(handle))) {
@@ -73,7 +84,7 @@ export async function openHandle(handle: FileSystemDirectoryHandle, remember = t
       return
     }
     root.value = handle
-    ui.remembered = null
+    recorded = ''
     state.value = null
     activity.value = null
     await reload()
@@ -81,7 +92,6 @@ export async function openHandle(handle: FileSystemDirectoryHandle, remember = t
       root.value = null
       return
     }
-    if (remember) await saveHandle(handle)
     timer ??= setInterval(poll, POLL_MS)
     outdated.value = state.value ? await templateDiff(handle) : null
   } finally {
@@ -99,20 +109,30 @@ export async function pickFolder() {
   }
 }
 
-/** On start: offer the folder from last time (permission needs a click, so only remember it here). */
-export async function restore() {
-  if (!ui.supported) return
-  const handle = await loadHandle()
-  if (!handle) return
-  if (await ensurePermission(handle, false)) await openHandle(handle, false)
-  else ui.remembered = handle
+async function refreshRecent() {
+  // Folders without a project yet (kind unknown) belong to whichever workbench opens them.
+  ui.recent = (await loadRecent()).filter((r) => !r.kind || r.kind === VIDEO_KIND)
 }
 
-export async function reconnect() {
-  const handle = ui.remembered
-  if (!handle) return
-  if (await ensurePermission(handle, true)) await openHandle(handle, false)
+/**
+ * On start: reopen the folder from last time when the browser still allows it (Chrome keeps the
+ * grant when the user chose "allow on every visit"); otherwise list it, since re-granting needs a click.
+ */
+export async function restore() {
+  if (!ui.supported) return
+  await refreshRecent()
+  const last = ui.recent.find((r) => r.last)
+  if (last && (await ensurePermission(last.handle, false))) await openHandle(last.handle)
+}
+
+export async function reconnect(handle: FileSystemDirectoryHandle) {
+  if (await ensurePermission(handle, true)) await openHandle(handle)
   else notify('warn', '沒有取得資料夾的存取權限。')
+}
+
+export async function forgetRecent(handle: FileSystemDirectoryHandle) {
+  await removeFolder(handle)
+  await refreshRecent()
 }
 
 export async function close() {
@@ -121,9 +141,11 @@ export async function close() {
   activity.value = null
   outdated.value = null
   ui.waiting = false
+  ui.needsInstall = false
   if (timer) clearInterval(timer)
   timer = null
-  await forgetHandle()
+  await forgetLast()
+  await refreshRecent()
 }
 
 /** Runs a write against the current snapshot, then reloads. Returns true on success. */
@@ -153,8 +175,8 @@ export async function syncTemplate() {
     outdated.value = null
     const parts = ['專案工具已更新到最新版']
     if (dropped.length) parts.push(`已移除新版不再使用的欄位：${dropped.join('、')}`)
-    if (needsInstall) parts.push('相依套件有變更，請讓 Agent 執行 pnpm install')
-    notify(needsInstall ? 'warn' : 'ok', parts.join('。'))
+    ui.needsInstall = needsInstall
+    notify('ok', parts.join('。'))
   } catch (err) {
     notify(err instanceof LockedError ? 'warn' : 'error', (err as Error).message)
   } finally {

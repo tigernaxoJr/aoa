@@ -122,6 +122,28 @@ test('locking or approving a scene does not make it outdated', () => {
   assert.equal(out.report.scenes[0].locked, true)
 })
 
+test('open feedback asks for a sync without making the scene outdated; resolving it clears that', () => {
+  p = makeProject({ scenes: twoScenes() })
+  renderScene(p, 'scene-001', 'scenes/001-hook')
+  renderScene(p, 'scene-002', 'scenes/002-cta')
+  const note = { id: 'fb-k3x9', text: '這裡太暗', atSec: 0.1, point: { x: 0.5, y: 0.4 }, createdAt: '2026-10-07T09:00:00Z' }
+  let r = p.run('state.mjs', ['scene-001', '--patch', JSON.stringify([{ op: 'add', path: '/feedback', value: [note] }]), '--by', 'user'])
+  assert.equal(r.code, 0, r.stderr)
+  const report = () => JSON.parse(p.run('validate.mjs', ['--report', '--json']).stdout).report
+  let out = report()
+  assert.equal(out.scenes[0].outdated, false, 'a note alone does not change the video')
+  assert.equal(out.scenes[0].openFeedback, 1)
+  assert.equal(out.next.command, '/video-sync')
+  assert.match(p.run('validate.mjs', ['--report']).stdout, /rendered \[1 feedback\]/)
+
+  const done = [{ op: 'add', path: '/feedback/0/resolvedAt', value: '2026-10-07T10:00:00Z' }, { op: 'add', path: '/feedback/0/reply', value: '提高了卡片亮度' }]
+  r = p.run('state.mjs', ['scene-001', '--patch', JSON.stringify(done)])
+  assert.equal(r.code, 0, r.stderr)
+  out = report()
+  assert.equal(out.scenes[0].openFeedback, 0)
+  assert.equal(out.next.command, '/video-assemble')
+})
+
 test('--failed records the error and counts attempts; recovery clears it', () => {
   p = makeProject({ scenes: twoScenes() })
   let r = p.run('state.mjs', ['scene-001', '--failed', 'tts', 'edge-tts timeout', '--hint', 'retry later'])

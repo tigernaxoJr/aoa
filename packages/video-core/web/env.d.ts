@@ -18,9 +18,10 @@ declare module '@core' {
   export function hashParts(project: unknown, scene: unknown, files: string[], speakers?: string[]): ({ label: string; text: string; file?: undefined } | { label: string; file: string; text?: undefined })[]
   export function suggestNext(
     project: { status: string; project?: { kind?: string } },
-    scenes: { id: string; status: string; outdated: boolean; locked: boolean; error: string | null }[],
+    scenes: { id: string; status: string; outdated: boolean; locked: boolean; error: string | null; openFeedback?: number }[],
     errors?: string[],
   ): { command: string | null; reason: string }
+  export function openFeedback<T extends { resolvedAt?: string | null }>(scene: { feedback?: T[] } | null | undefined): T[]
   export function checkTransition(workflow: unknown, target: 'project' | 'scene', from: string, to: string): string | null
   export function deriveStatus(projectStatus: string, facts: ({ status: string; upToDate: boolean; outputMtime: number } | null)[], finalMtime: number): string | null
 }

@@ -223,14 +223,15 @@ const savedMember = computed(() => state.value?.project.project.cast?.find((c) =
 const voiceUnsaved = computed(
   () => !savedMember.value || savedMember.value.provider !== props.modelValue.provider || savedMember.value.voice !== props.modelValue.voice,
 )
-const sampleCommand = computed(() => `pnpm run tts --sample ${props.castId}`)
+/** What the user hands the agent to make the audition clip; the command in brackets is for the agent. */
+const sampleRequest = computed(() => `請用【${props.castName}】目前的聲音設定產生試聽檔。（pnpm run tts --sample ${props.castId}）`)
 
 async function triggerAudition() {
   if (voiceUnsaved.value) return
   auditionLoading.value = true
   try {
-    await navigator.clipboard.writeText(sampleCommand.value)
-    notify('ok', `已複製指令「${sampleCommand.value}」至剪貼簿，請在終端機執行`)
+    await navigator.clipboard.writeText(sampleRequest.value)
+    notify('ok', '已複製，請貼給 Agent；試聽檔做好後會出現在這裡。')
   } catch (err) {
     notify('error', (err as Error).message)
   } finally {
@@ -413,7 +414,7 @@ onBeforeUnmount(() => {
         @click="triggerAudition"
       >
         <Icon name="refresh" :size="13" :class="auditionLoading ? 'animate-spin' : ''" />
-        <span>📋 複製試聽指令</span>
+        <span>📋 複製給 Agent：產生試聽</span>
       </button>
     </div>
   </div>

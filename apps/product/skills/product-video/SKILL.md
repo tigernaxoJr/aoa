@@ -119,4 +119,4 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 - **讓網頁知道你在做什麼**：專案資料夾裡的 `video.activity.json`（格式見 {{API_URL}}/schemas/activity.schema.json）會顯示在網頁工作台上。每開始一個步驟或一個 scene、每次停下來等使用者回覆（checkpoint、gate、任何提問）之前，都直接覆寫這個檔案：`{ "message": "正在錄第 3 段的畫面", "waitingForUser": false, "step": "build_scene", "scene": "scene-003", "updatedAt": "<現在時間，含時區>" }`。`message` 是給使用者看的一句白話；等使用者時 `waitingForUser` 為 `true`，`message` 說明要他回答什麼（例如「分鏡寫好了，請在對話中確認或告訴我要改哪裡」）。專案建立前（§1、§2）也要寫，網頁從使用者準備資料夾時就在看。工作全部完成時寫一句結果，`waitingForUser` 為 `false`。這個檔案不需要鎖、不經過 `pnpm run state`。
 - **修改只重做受影響的部分**：使用者說「第三段文案改成…」，只改該 scene 的 `script.md`，只重做該 scene，再重新合成。
 - **告訴使用者怎麼看成果**：用「文件 > acme-video > scenes > 003-solution > output > scene.mp4」這種資料夾順序描述位置，並建議打開網頁工作台 {{APP_URL}}/ 預覽每一段、直接修改旁白。專案是網頁準備的（有 `video.start.json`）時，網頁已經開著這個資料夾，會自動顯示；否則請他在網頁步驟 1 選擇這個專案資料夾。
-- **Web UI**：使用者可能同時開著 Agent Video Producer 網頁工作台，它會直接修改專案檔。使用者說「我在網頁上改好了」時，執行 `/video-sync`。
+- **Web UI**：使用者可能同時開著 Agent Video Producer 網頁工作台，它會直接修改專案檔，也會在 scene 的 `feedback` 留下使用者指著畫面寫的意見。網頁請使用者貼給你的是一句白話，句末括號附上對應的指令，例如「我在網頁上改了影片，請套用我的修改……（/video-sync）」：照括號裡的指令做。使用者只說「我在網頁上改好了」時，同樣執行 `/video-sync`。

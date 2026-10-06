@@ -211,12 +211,27 @@ pnpm run status
 | `project.tts`（專案層） | 未覆寫 provider / voice 的 scene | 這些 scene 重做 tts → render |
 | `video.project.json` 的 scene 順序 | 只影響合成 | 只重新 assemble |
 | `captions`、`audio` | 只影響合成 | 只重新 assemble |
+| scene 的 `feedback` 有尚未處理的意見 | 該 scene | 依意見修改（見下方「處理網頁上的意見」）→ 依改動重做 |
 | 新增 scene | 該 scene | build_scene |
 | 刪除 scene | 只影響合成 | 確認使用者要刪除後，從 `scenes` 陣列移除（目錄保留，由使用者自行刪除） |
 
+#### 處理網頁上的意見
+
+使用者在網頁上看影片時，可以在某一段的畫面上點一下、寫一句話，存在該 scene 的 `feedback`（`pnpm run status` 會標 `[N feedback]`）。沒有 `resolvedAt` 的就是還沒處理的：
+
+- `text` 是使用者原話；`atSec` 是這一段影片的第幾秒；`point` 是畫面位置（`x`、`y` 為寬高比例，左上角為 0,0）。需要時用 `ffmpeg -ss <atSec> -i <scene 輸出> -frames:v 1` 擷取那一格來看被指到的東西。
+- 依意見改 `script.md`、`scene.json`（經 `pnpm run state`）或素材；看不懂、做不到或和其他意見衝突時，先問使用者。
+- 每則處理完都要回覆，讓使用者在網頁上看到結果：
+
+```bash
+pnpm run state <id> --patch '[{"op":"add","path":"/feedback/0/resolvedAt","value":"<現在時間>"},{"op":"add","path":"/feedback/0/reply","value":"<一句話：改了什麼，或為什麼沒改>"}]'
+```
+
+- 不刪除意見，也不改 `text`、`atSec`、`point`。`feedback` 不算在 `inputHash` 裡：只留意見不會讓影片過期，你依意見做的修改才會。
+
 ### 2. 標記與重做
 
-1. `status` 為 `rendered` / `approved`、但 `inputHash` 不相符的 scene：`pnpm run state <id> --status stale`。
+1. `status` 為 `rendered` / `approved`、但 `inputHash` 不相符或有尚未處理 `feedback` 的 scene：`pnpm run state <id> --status stale`。
 2. **`locked: true` 的 scene 即使過期也不重做**，列出來請使用者決定。
 3. 依播放順序對每個需要處理的 scene 執行 build_scene。sync 時不在每個 scene 停下，全部完成後一次回報。有多個 scene 要渲染時，先完成各自的 `tts`、`capture` 與狀態，再一次 `render:scene <id> <id>…` 平行渲染（[rendering-guide.md](rendering-guide.md#flow)）。
 4. 失敗的 scene 依 `AGENTS.md` 規則處理，不影響其他 scene 繼續；最後在回報中列出。

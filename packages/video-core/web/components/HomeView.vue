@@ -3,7 +3,7 @@ import { computed, reactive, ref, watch, type Component } from 'vue'
 import { tryFile, writeText } from '@aoa/web-shared/fsa'
 import { SKILL, START_FILE, TEMPLATE, VIDEO_KIND, api, launchMessage, newFolderId, startJson, type SourceInput } from '../lib/site'
 import { platform } from '../lib/source'
-import { activity, pickFolder, reconnect, root, ui } from '../lib/store'
+import { activity, forgetRecent, pickFolder, reconnect, root, ui } from '../lib/store'
 import ActivityBanner from './ActivityBanner.vue'
 import CopyButton from './CopyButton.vue'
 import Icon from './Icon.vue'
@@ -77,6 +77,8 @@ const INTRO = isStory
 const current = computed(() => (needsFolder.value ? 1 : !hasSource.value ? 2 : 3))
 const message = computed(() => launchMessage(form, prepared.value))
 
+const when = (t: number) => new Date(t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
+
 const links = [
   ['Agent 指引', api('agent-guide.md')],
   ['資源索引', api('index.json')],
@@ -121,9 +123,30 @@ const links = [
           </div>
           <template v-else>
             <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">影片專案的所有檔案都會放在這裡。建議新建一個空資料夾，例如「acme-video」。</p>
+            <div v-if="ui.recent.length" class="mt-4" data-testid="recent">
+              <p class="text-sm font-medium">最近的專案</p>
+              <ul class="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+                <li v-for="r in ui.recent" :key="`${r.handle.name}-${r.openedAt}`" class="flex items-center">
+                  <button
+                    type="button"
+                    class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    :disabled="ui.loading"
+                    data-testid="recent-open"
+                    @click="reconnect(r.handle)"
+                  >
+                    <Icon name="folder" class="shrink-0 text-sky-600 dark:text-sky-400" />
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate font-medium">{{ r.projectName ?? '還沒建立專案' }}</span>
+                      <span class="block truncate text-xs text-slate-500 dark:text-slate-400">資料夾「{{ r.handle.name }}」· {{ when(r.openedAt) }}</span>
+                    </span>
+                  </button>
+                  <button type="button" class="icon-btn mr-1.5" :aria-label="`從清單移除 ${r.handle.name}`" title="從清單移除（不會刪除檔案）" @click="forgetRecent(r.handle)"><Icon name="x" :size="14" /></button>
+                </li>
+              </ul>
+              <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">瀏覽器詢問存取權限時選「每次造訪時都允許」，下次打開網頁就會直接回到上次的專案。</p>
+            </div>
             <div class="mt-4 flex flex-wrap gap-2">
-              <button v-if="ui.remembered" type="button" class="btn-primary" @click="reconnect"><Icon name="folder" />繼續使用「{{ ui.remembered.name }}」</button>
-              <button type="button" :class="ui.remembered ? 'btn-secondary' : 'btn-primary'" :disabled="ui.loading" data-testid="pick-folder" @click="pickFolder">
+              <button type="button" :class="ui.recent.length ? 'btn-secondary' : 'btn-primary'" :disabled="ui.loading" data-testid="pick-folder" @click="pickFolder">
                 <Icon name="folder" />{{ ui.loading ? '載入中…' : '選擇或建立資料夾…' }}
               </button>
             </div>

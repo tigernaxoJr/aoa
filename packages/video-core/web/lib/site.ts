@@ -147,7 +147,7 @@ export function stepsFor(kind: string | undefined): { id: string; label: string;
   return [
     { id: 'init', label: '初始化', done: ['initialized', 'analyzed', 'designed', ...AFTER_SCRIPT] },
     ...middle,
-    { id: 'build_scene', label: '產生 scene', done: ['ready_to_assemble', 'completed'] },
+    { id: 'build_scene', label: '製作每一段', done: ['ready_to_assemble', 'completed'] },
     { id: 'assemble', label: '合成', done: ['completed'] },
   ]
 }
@@ -181,7 +181,30 @@ export const PURPOSE_LABEL: Record<string, string> = {
   custom: '自訂',
 }
 
-/** What the project's next step means for the user, in plain words; the slash command stays for copying. */
+const SAY: Record<string, string> = {
+  '/video-analyze': '請繼續做影片：分析產品，整理影片要講的重點。',
+  '/video-story': '請繼續做影片：整理故事。',
+  '/video-design': '請繼續做影片：設計角色、場景與聲音。',
+  '/video-storyboard': '請繼續做影片：寫分鏡與旁白。',
+  '/video-sync': '我在網頁上改了影片，請套用我的修改：只重做有變更的段落，再重新合成。',
+  '/video-assemble': '所有段落都完成了，請合成完整影片。',
+  'pnpm run validate': '網頁說專案檔有格式錯誤，請檢查並修正。',
+  'pnpm install': '請安裝影片專案的相依套件。',
+}
+
+/**
+ * The sentence the user hands to their agent for `command`: a plain request any agent understands,
+ * ending with the command in brackets so an agent following the project's AGENTS.md knows the step.
+ * The user never has to know what the command means.
+ */
+export function agentSay(command: string): string {
+  const [cmd, arg] = command.split(' ')
+  let text = SAY[command] ?? SAY[cmd]
+  if (cmd === '/video-scene') text = arg === 'all' ? '請繼續做影片：製作還沒完成的段落。' : `請重做製作失敗的段落 ${arg}。`
+  return `${text ?? '請繼續做影片的下一步。'}（${command}）`
+}
+
+/** What the project's next step means for the user, in plain words; agentSay() gives what to paste. */
 export function nextStep(next: { command: string | null; reason: string }, scenes: number) {
   const cmd = next.command?.split(' ')[0]
   const n = Number(next.reason.match(/^(\d+)/)?.[1] ?? 0)
@@ -193,19 +216,19 @@ export function nextStep(next: { command: string | null; reason: string }, scene
     case '/video-design':
       return { title: '下一步：設計角色與聲音', hint: 'Agent 會畫出角色和場景的設定稿，並為每個角色挑聲音讓你試聽。' }
     case '/video-storyboard':
-      return { title: '下一步：寫分鏡與旁白', hint: 'Agent 會把影片拆成幾段 scene，並寫好每段的旁白。' }
+      return { title: '下一步：寫分鏡與旁白', hint: 'Agent 會把影片拆成幾段，並寫好每段的旁白。' }
     case '/video-scene':
       return next.command === '/video-scene all'
-        ? { title: `下一步：製作剩下的${n ? ` ${n} 段` : ''} scene`, hint: '旁白、畫面與影片都由 Agent 產生；你可以先檢查已完成的段落。' }
-        : { title: '有 scene 製作失敗', hint: '請 Agent 重做失敗的段落；點選該段可以看到錯誤原因。' }
+        ? { title: `下一步：製作剩下的${n ? ` ${n} 段` : '段落'}`, hint: '旁白、畫面與影片都由 Agent 產生；你可以先檢查已完成的段落。' }
+        : { title: '有段落製作失敗', hint: '請 Agent 重做失敗的段落；點選該段可以看到錯誤原因。' }
     case '/video-sync':
-      return { title: `有${n ? ` ${n} 段` : ''} scene 修改過，需要重做`, hint: '你在網頁上的修改要讓 Agent 套用，重新產生那幾段影片。' }
+      return { title: `有${n ? ` ${n} 段` : '段落'}修改過，需要重做`, hint: '你在網頁上的修改和意見要讓 Agent 套用，重新產生那幾段影片。' }
     case '/video-assemble':
-      return { title: '所有 scene 都完成了，可以合成影片', hint: 'Agent 會把每段接起來，加上字幕與背景音樂，輸出完整影片。' }
+      return { title: '所有段落都完成了，可以合成影片', hint: 'Agent 會把每段接起來，加上字幕與背景音樂，輸出完整影片。' }
   }
-  if (next.reason.startsWith('done')) return { title: '影片完成', hint: '完整影片與所有 scene 一致，可以下載或分享了。' }
-  if (next.reason.startsWith('locked')) return { title: '已鎖定的 scene 有變動', hint: 'Agent 不會修改鎖定的段落；請確認後解除鎖定，或在對話中告訴 Agent 怎麼處理。' }
-  if (next.reason.startsWith('fix')) return { title: '專案檔有問題', hint: '請讓 Agent 執行 pnpm run validate 並修正。' }
+  if (next.reason.startsWith('done')) return { title: '影片完成', hint: '完整影片與所有段落一致，可以下載或分享了。' }
+  if (next.reason.startsWith('locked')) return { title: '已鎖定的段落有變動', hint: 'Agent 不會修改鎖定的段落；請確認後解除鎖定，或在對話中告訴 Agent 怎麼處理。' }
+  if (next.reason.startsWith('fix')) return { title: '專案檔有問題', hint: '請把上方紅框裡的那句話交給 Agent，讓它修正。' }
   return { title: scenes ? '下一步' : '等待 Agent', hint: next.reason }
 }
 
