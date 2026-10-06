@@ -80,3 +80,8 @@ Pause here and ask the audience.
 `)
   assert.equal(deck.slides[0].notes, 'Pause here and ask the audience.')
 })
+
+test('parseSlides: a hand-drawn <RoughSketch> counts as SVG', () => {
+  const deck = parseSlides('# Sketch\n\n<RoughSketch viewBox="0 0 100 100"><rect x="0" y="0" width="10" height="10" /></RoughSketch>\n')
+  assert.deepEqual(deck.slides[0].visualTypes, ['SVG'])
+})

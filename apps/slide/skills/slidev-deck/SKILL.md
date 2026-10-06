@@ -55,12 +55,12 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 - 打開有問題頁面的截圖親眼確認版面；檢查通過也要抽看幾頁，留意文字過小、對比不足、版面擁擠等腳本抓不到的問題。
 - 「這頁沒有渲染出來」通常是別頁的錯誤中斷了渲染，先修正其他頁的錯誤再重新檢查。
 
-1. <a id="outline"></a>**規劃大綱（`/slide-outline`）**：依主題、對象與資料擬定分頁大綱，決定每頁的核心訊息與呈現方式（文字、SVG 圖、3D、引言）。向使用者展示大綱並等待確認，確認後 `pnpm run state project --status outlined --pages <頁數>`。
+1. <a id="outline"></a>**規劃大綱（`/slide-outline`）**：依主題、對象與資料擬定分頁大綱，決定每頁的核心訊息與呈現方式（文字、SVG 圖、Mermaid 圖表、3D、引言）。向使用者展示大綱並等待確認，確認後 `pnpm run state project --status outlined --pages <頁數>`。
 2. <a id="draft"></a>**撰寫簡報（`/slide-draft`）**：編輯 `slides.md`，以單獨一行的 `---` 分頁；每頁可在開頭用 frontmatter 指定版型：
    - `cover`：首頁與大標題；`two-cols`：左右雙欄（右欄以 `::right::` 開始）；`center`：聚焦單一重點；`quote`：引言。
    - **講者備忘錄**：寫在該頁**最後一個** HTML 註解裡（Slidev 的規則），例如 `<!-- 這裡先停頓，問聽眾是否用過 Agent -->`。不要寫成 `<!-- notes -->` 這種標籤；頁中其他註解不會被當成備忘錄。
    `pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status drafted`。
-3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。內嵌 SVG 架構圖與流程圖、在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後 `pnpm run state project --status visualized`。
+3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。內嵌 SVG 架構圖、以 Mermaid 畫流程圖與時序圖、需要白板風格時用 `<RoughSketch>` 手繪、在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後 `pnpm run state project --status visualized`。
 4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。匯出前先確認 `pnpm run check` 通過。
    - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
    - **匯出網頁簡報**：`pnpm run build` 產出單檔網頁簡報 `dist/index.html`（雙擊即可離線放映；不要刪 `vite.config.ts` 或 `slides.md` 的 `routerMode: hash`）。
@@ -77,4 +77,4 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 3. **資料不離開本機**：不把使用者資料上傳到任何外部端點。
 4. **單一真理來源**：簡報內容只在 `slides.md`；狀態只透過 `pnpm run state` 修改，不手寫 `slide.project.json` / `slide.activity.json`。
 5. **先檢查再交付**：`pnpm run check` 沒通過，不請使用者確認、不匯出。
-6. **向量優先**：圖表與圖示優先使用 SVG 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。
+6. **向量優先**：圖表與圖示優先使用 SVG、Mermaid 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。

@@ -107,7 +107,7 @@ export function parseSlides(markdown: string): ParsedDeck {
 
     // Detect visuals
     const visualTypes: string[] = []
-    if (/<(?:svg|Svg[A-Z0-9_-]*)/i.test(bodyText)) visualTypes.push('SVG')
+    if (/<(?:svg|Svg[A-Z0-9_-]*|Rough[A-Z0-9_-]*)/i.test(bodyText)) visualTypes.push('SVG')
     if (/<(?:Three[A-Z0-9_-]*|canvas)/i.test(bodyText)) visualTypes.push('Three.js / 3D')
     if (/```mermaid/i.test(bodyText)) visualTypes.push('Mermaid')
     if (/v-click/i.test(bodyText)) visualTypes.push('Motion / Clicks')

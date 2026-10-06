@@ -38,6 +38,9 @@ test('template: has all required files and components', () => {
     'README.md',
     'components/SvgDiagram.vue',
     'components/ThreeGlobe.vue',
+    'components/RoughSketch.vue',
+    'setup/mermaid.ts',
+    'uno.config.ts',
     'scripts/validate.mjs',
     'scripts/state.mjs',
     'scripts/check.mjs',
@@ -51,6 +54,7 @@ test('template: has all required files and components', () => {
   const pkg = JSON.parse(readFileSync(join(templateDir, 'package.json'), 'utf8'))
   assert.ok(pkg.dependencies['@slidev/cli'], 'package.json must depend on @slidev/cli')
   assert.ok(pkg.dependencies['three'], 'package.json must depend on three')
+  assert.ok(pkg.dependencies['roughjs'], 'package.json must depend on roughjs (components/RoughSketch.vue)')
   assert.ok(pkg.scripts['export'], 'package.json must have export script')
   assert.ok(pkg.scripts['check'], 'package.json must have check script')
 })
@@ -65,6 +69,7 @@ test('template: slides.md parses cleanly and includes 3D and SVG', () => {
 
   assert.ok(hasSvg, 'Template slides.md should include an SVG diagram')
   assert.ok(hasThree, 'Template slides.md should include Three.js globe')
+  assert.ok(deck.slides.some((s) => s.visualTypes.includes('Mermaid')), 'Template slides.md should include a Mermaid diagram')
 })
 
 test('published API: absolute URLs, no {{SITE_URL}} left, schemas and commands in the template', () => {

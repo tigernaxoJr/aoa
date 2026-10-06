@@ -70,6 +70,35 @@ layout: two-cols
 
 ---
 
+# 工作流程
+
+Mermaid 以文字描述流程，`<RoughSketch>` 把一般 SVG 畫成手繪風格，兩者在 PDF 中都是向量
+
+```mermaid {look: 'handDrawn', scale: 0.7}
+flowchart LR
+  A[填寫需求] --> B[規劃大綱]
+  B --> C{確認?}
+  C -- 否 --> B
+  C -- 是 --> D[匯出 PDF]
+```
+
+<div class="mx-auto w-80 text-sky-500">
+  <RoughSketch viewBox="0 0 360 200">
+    <defs>
+      <marker id="tip" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 8 5 L 0 9 z" fill="currentColor" />
+      </marker>
+    </defs>
+    <rect x="20" y="65" width="120" height="70" fill="#bae6fd" />
+    <text x="80" y="106" font-size="18" text-anchor="middle" fill="currentColor">草稿</text>
+    <line x1="145" y1="100" x2="210" y2="100" marker-end="url(#tip)" />
+    <circle cx="275" cy="100" r="55" fill="#bbf7d0" data-fill-style="cross-hatch" />
+    <text x="275" y="106" font-size="18" text-anchor="middle" fill="currentColor">定稿</text>
+  </RoughSketch>
+</div>
+
+---
+
 # 3D 互動視覺展示
 
 封裝 Three.js 組件，直接在簡報內渲染 3D 場景
