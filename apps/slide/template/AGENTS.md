@@ -13,7 +13,7 @@
 | `slide.activity.json` | 即時進度，網頁工作台會顯示（格式見 `schemas/activity.schema.json`） |
 | `slide.start.json` | 網頁表單寫入的需求（只在網頁準備的資料夾中出現；唯讀） |
 | `components/*.vue` | 自訂 Vue / Three.js / SVG 組件，Slidev 自動註冊，不必 import；`RoughSketch.vue` 把 SVG 畫成手繪風格 |
-| `setup/mermaid.ts` | Mermaid 全域設定（固定手繪線條的種子） |
+| `setup/mermaid.ts` | Mermaid 全域設定：配合簡報色系的 `themeVariables`（取代預設紫色）與固定的手繪線條種子 |
 | `uno.config.ts` | 讓 SVG 的 `font-size` 等屬性不被 UnoCSS 當成樣式；不要刪除 |
 | `schemas/` | 協議 Schema 與 `workflow.json`，`validate` 與 `state` 依此驗證 |
 | `output/check.json`、`output/slides-png/` | `pnpm run check` 的檢查結果與每頁截圖，網頁工作台會顯示 |
@@ -24,9 +24,14 @@
 
 ## 2. 工作流程
 
-1. **規劃大綱（`/slide-outline`）**：規劃分頁結構、頁數與每頁核心訊息。**停下確認**，確認後狀態改為 `outlined`。
+1. **規劃大綱（`/slide-outline`）**：規劃分頁結構、頁數、每頁核心訊息與呈現方式（流程用 Mermaid `flowchart`、角色間呼叫用 `sequenceDiagram`），並和使用者決定**整體風格**：
+   - `formal` 正式：簡潔排版、SVG、Mermaid、Iconify；不用手繪與 3D。
+   - `tech` 科技：深色卡片、SVG 架構圖、Mermaid 流程圖與時序圖、程式碼；氛圍頁可用 `<ThreeGlobe />`。
+   - `whiteboard` 白板手繪（工作坊、教學）：圖一律用 `<RoughSketch>`，Mermaid 區塊都加 `{look: 'handDrawn'}`；不用 3D。
+
+   **停下確認**，確認後 `pnpm run state project --status outlined --pages <頁數> --style <風格>`。
 2. **撰寫內文（`/slide-draft`）**：編寫 `slides.md`，善用 Slidev 版型（`cover`、`two-cols`、`center`、`quote`）。講者備忘錄寫在每頁**最後一個** HTML 註解裡，例如 `<!-- 這裡停頓，先問聽眾 -->`。`pnpm run check` 通過後**停下確認**，確認後狀態改為 `drafted`。
-3. **注入視覺（`/slide-visual`）**：SVG 架構圖、Mermaid 流程圖與時序圖、`<RoughSketch>` 手繪風格、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、`v-click` 動畫。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。`pnpm run check` 通過後狀態改為 `visualized`。
+3. **注入視覺（`/slide-visual`）**：先讀 `slide.project.json` 的 `style`，依上面的對應選工具。SVG 架構圖、Mermaid 流程圖與時序圖、`<RoughSketch>` 手繪風格、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、`v-click` 動畫。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。`pnpm run check` 通過後狀態改為 `visualized`。
 4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run build` 打包為單檔網頁簡報（`dist/index.html`）。成功後狀態改為 `exported`，失敗改為 `failed` 並告知使用者原因。
 
 ---
@@ -44,6 +49,9 @@ pnpm run state activity --step outline --message "大綱完成，請確認是否
 
 # 更新專案狀態
 pnpm run state project --status drafted --pages 8
+
+# 大綱確認時記下整體風格（formal / tech / whiteboard）
+pnpm run state project --status outlined --style whiteboard
 ```
 
 每次修改後執行 `pnpm run validate`。
@@ -58,4 +66,4 @@ pnpm run state project --status drafted --pages 8
 pnpm run check
 ```
 
-它以 `slidev export` 相同的方式逐頁渲染，回報內容超出版面、文字被截斷、找不到的組件或圖示、無法編譯的頁面、載入失敗的圖片、空白畫布與執行錯誤（附頁碼與 `slides.md` 行號），並把每頁截圖存到 `output/slides-png/`。修到通過為止，並打開截圖親眼確認版面。
+它以 `slidev export` 相同的方式逐頁渲染，回報內容超出版面、文字被截斷、找不到的組件或圖示、無法編譯的頁面與畫不出來的 Mermaid 圖、載入失敗的圖片、空白畫布與執行錯誤（附頁碼與 `slides.md` 行號），並把每頁截圖存到 `output/slides-png/`。修到通過為止，並打開截圖親眼確認版面。

@@ -8,6 +8,10 @@ export interface SlideProject {
   description?: string;
   theme?: string;
   aspectRatio?: string;
+  /**
+   * 整體視覺風格，大綱階段與使用者確認：formal 正式（簡潔排版、SVG 與 Mermaid 預設樣式）、tech 科技（深色卡片、架構圖、程式碼、可用 3D 氛圍頁）、whiteboard 白板手繪（<RoughSketch> 與 Mermaid look: 'handDrawn'）
+   */
+  style?: "formal" | "tech" | "whiteboard";
   status: "initialized" | "outlined" | "drafted" | "visualized" | "exported" | "failed";
   pagesCount?: number;
   export?: {

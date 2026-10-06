@@ -49,18 +49,28 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 
 `--step` 只能是 `init`、`outline`、`draft`、`visual`、`export`、`idle`；`--status` 只能是 schema 列出的值。腳本會先依 `schemas/` 驗證、驗證失敗不寫檔，並以原子寫入（暫存檔改名）避免留下損壞的 JSON。
 
-<a id="check"></a>**渲染檢查（`pnpm run check`）**：以 `slidev export` 相同的方式逐頁渲染，檢查內容超出版面、區塊文字被截斷、找不到的組件或 Iconify 圖示、無法編譯的頁面、載入失敗的圖片、空白畫布（WebGL 匯出會是空的）與執行錯誤。每頁截圖存到 `output/slides-png/<頁碼>.png`，結果寫入 `output/check.json`（網頁工作台會顯示每頁的截圖與問題）。有問題時結束碼為 1，並列出頁碼、`slides.md` 行號與原因。
+<a id="check"></a>**渲染檢查（`pnpm run check`）**：以 `slidev export` 相同的方式逐頁渲染，檢查內容超出版面、區塊文字被截斷、找不到的組件或 Iconify 圖示、無法編譯的頁面與畫不出來的 Mermaid 圖、載入失敗的圖片、空白畫布（WebGL 匯出會是空的）與執行錯誤。每頁截圖存到 `output/slides-png/<頁碼>.png`，結果寫入 `output/check.json`（網頁工作台會顯示每頁的截圖與問題）。有問題時結束碼為 1，並列出頁碼、`slides.md` 行號與原因。
 
 - 每次修改 `slides.md` 或 `components/` 後、停下來請使用者確認前，都執行 `pnpm run check`，修到通過為止。
 - 打開有問題頁面的截圖親眼確認版面；檢查通過也要抽看幾頁，留意文字過小、對比不足、版面擁擠等腳本抓不到的問題。
 - 「這頁沒有渲染出來」通常是別頁的錯誤中斷了渲染，先修正其他頁的錯誤再重新檢查。
 
-1. <a id="outline"></a>**規劃大綱（`/slide-outline`）**：依主題、對象與資料擬定分頁大綱，決定每頁的核心訊息與呈現方式（文字、SVG 圖、Mermaid 圖表、3D、引言）。向使用者展示大綱並等待確認，確認後 `pnpm run state project --status outlined --pages <頁數>`。
+1. <a id="outline"></a>**規劃大綱（`/slide-outline`）**：依主題、對象與資料擬定分頁大綱，決定每頁的核心訊息與呈現方式。
+   - **整體風格**：和大綱一起向使用者提出一種（依場合推薦，使用者說了就照用），之後每頁都照這個風格選工具：
+
+     | `style` | 適合 | 視覺工具 |
+     |---|---|---|
+     | `formal` 正式 | 對外報告、提案、管理層 | 簡潔排版、內嵌 SVG 圖、Mermaid（範本配色）、Iconify 圖示；不用手繪與 3D |
+     | `tech` 科技 | 技術分享、架構介紹、新人訓練 | 深色卡片、SVG 架構圖、Mermaid 流程圖與 `sequenceDiagram`、程式碼區塊；開場或氛圍頁可用 `<ThreeGlobe />` |
+     | `whiteboard` 白板手繪 | 工作坊、腦力激盪、教學、輕鬆分享 | 圖一律用 `<RoughSketch>` 手繪，Mermaid 區塊都加 `{look: 'handDrawn'}`；不用 3D 與漸層卡片 |
+
+   - **每頁的呈現方式**：在大綱中逐頁寫出（文字、SVG 圖、Mermaid 圖表類型、手繪圖、3D、引言）。有步驟、流程、先後順序的內容用 Mermaid `flowchart`；有角色之間來回呼叫（服務、API、人與系統）的用 `sequenceDiagram`；時程用 `gantt` / `timeline`（見 [visual-guide.md](visual-guide.md)）。
+   向使用者展示大綱與風格並等待確認，確認後 `pnpm run state project --status outlined --pages <頁數> --style <formal|tech|whiteboard>`。之後的階段（可能在新的對話中）先讀 `slide.project.json` 的 `style` 再動手。
 2. <a id="draft"></a>**撰寫簡報（`/slide-draft`）**：編輯 `slides.md`，以單獨一行的 `---` 分頁；每頁可在開頭用 frontmatter 指定版型：
    - `cover`：首頁與大標題；`two-cols`：左右雙欄（右欄以 `::right::` 開始）；`center`：聚焦單一重點；`quote`：引言。
    - **講者備忘錄**：寫在該頁**最後一個** HTML 註解裡（Slidev 的規則），例如 `<!-- 這裡先停頓，問聽眾是否用過 Agent -->`。不要寫成 `<!-- notes -->` 這種標籤；頁中其他註解不會被當成備忘錄。
    `pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status drafted`。
-3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。內嵌 SVG 架構圖、以 Mermaid 畫流程圖與時序圖、需要白板風格時用 `<RoughSketch>` 手繪、在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後 `pnpm run state project --status visualized`。
+3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。先看 `slide.project.json` 的 `style`，照上表選工具：內嵌 SVG 架構圖、以 Mermaid 畫流程圖與時序圖、`whiteboard` 風格用 `<RoughSketch>` 手繪並在 Mermaid 加 `{look: 'handDrawn'}`、`tech` 風格可在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後 `pnpm run state project --status visualized`。
 4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。匯出前先確認 `pnpm run check` 通過。
    - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
    - **匯出網頁簡報**：`pnpm run build` 產出單檔網頁簡報 `dist/index.html`（雙擊即可離線放映；不要刪 `vite.config.ts` 或 `slides.md` 的 `routerMode: hash`）。

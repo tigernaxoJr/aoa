@@ -3,6 +3,7 @@
 //
 //   pnpm run state activity --step outline --message "正在規劃大綱" [--waiting] [--slide 3 --total 8]
 //   pnpm run state project --status drafted [--pages 8] [--title ...] [--id ...] [--description ...] [--theme ...]
+//                     [--style formal|tech|whiteboard]
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ACTIVITY_FILE, PROJECT_FILE, loadSchemas, schemaErrors, writeJsonAtomic } from './lib/schema.mjs'
@@ -50,7 +51,7 @@ if (target === 'activity') {
   } catch (err) {
     fail(`${PROJECT_FILE} is not valid JSON (${err.message}); fix it before updating, nothing was written`)
   }
-  for (const key of ['id', 'title', 'description', 'theme', 'status']) if (flag(key) !== undefined) doc[key] = flag(key)
+  for (const key of ['id', 'title', 'description', 'theme', 'style', 'status']) if (flag(key) !== undefined) doc[key] = flag(key)
   if (flag('pages') !== undefined) doc.pagesCount = int('pages')
   doc.updatedAt = new Date().toISOString()
   doc.updatedBy = 'agent'
@@ -59,7 +60,7 @@ if (target === 'activity') {
 } else {
   console.log('Usage:')
   console.log('  pnpm run state activity --step outline --message "正在寫大綱" [--waiting] [--slide 3 --total 8]')
-  console.log('  pnpm run state project --status drafted [--pages 6] [--title ...]')
+  console.log('  pnpm run state project --status drafted [--pages 6] [--title ...] [--style whiteboard]')
   process.exit(target ? 1 : 0)
 }
 

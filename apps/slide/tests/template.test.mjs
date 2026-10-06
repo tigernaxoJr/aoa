@@ -118,6 +118,12 @@ test('template: state validates before writing and never clobbers a broken proje
   assert.equal(updated.pagesCount, 6)
   assert.equal(updated.id, JSON.parse(original).id, 'other fields are kept')
 
+  assert.equal(run('state', 'project', '--style', 'sketchy').status, 1, 'style outside the enum is refused')
+  const styled = run('state', 'project', '--style', 'whiteboard')
+  assert.equal(styled.status, 0, styled.stderr)
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).style, 'whiteboard')
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).status, 'outlined', 'setting the style keeps the status')
+
   writeFileSync(file, '{"broken')
   assert.equal(run('state', 'project', '--status', 'drafted').status, 1)
   assert.equal(readFileSync(file, 'utf8'), '{"broken', 'a broken file is left for the user to fix')

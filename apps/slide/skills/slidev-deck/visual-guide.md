@@ -32,7 +32,19 @@ flowchart LR
 
 - **常用圖型**：`flowchart`（流程圖、架構圖）、`sequenceDiagram`（時序、API 呼叫）、`stateDiagram-v2`（狀態）、`gantt`（時程）、`timeline`（里程碑）、`mindmap`（心智圖）、`pie`、`xychart-beta`（長條、折線）、`quadrantChart`（四象限）、`sankey-beta`（流量）。
 - **大小**：`{scale: 0.8}` 縮放整張圖。橫向的 `flowchart LR` 很寬，放在 `two-cols` 的半欄會蓋到另一欄；橫向圖放整頁寬度，半欄裡用 `flowchart TD` 並控制在 5 個節點左右。`pnpm run check` 只抓超出頁面的內容，**欄位之間互相重疊要看截圖確認**。
-- **手繪風格**：`{look: 'handDrawn'}`，搭配下方的 `<RoughSketch>` 可以做出白板風格的簡報。範本的 `setup/mermaid.ts` 固定了手繪線條的種子，檢查截圖、PDF 與網頁版的線條才會一致；其他全域 Mermaid 設定（例如 `theme: 'neutral'`）也寫在這個檔案。
+- **配色從哪裡來**：範本的 `setup/mermaid.ts` 以 `theme: 'base'` 加上 `themeVariables` 把所有 Mermaid 圖換成 §1 的色系（框線 sky / emerald / amber、淡色底、`#1e293b` 文字、`#64748b` 連線），取代 Mermaid 預設的紫色。預設 Slidev 主題是白底，節點用淡色底配深色字；深色模式（`colorSchema: dark`）會自動換成 `#1e293b` 底、`#f8fafc` 字、`#94a3b8` 連線，不用改設定。不要在每個區塊各自寫 `%%{init: {theme: …}}%%`，整份簡報的圖才會一致；單一節點需要強調時用 `style A stroke:#f59e0b` 或 `classDef`。
+- **手繪風格**：`{look: 'handDrawn'}`，搭配下方的 `<RoughSketch>` 可以做出白板風格的簡報（見 [SKILL.md](SKILL.md#outline) 的「整體風格」）。`setup/mermaid.ts` 也固定了手繪線條的種子，檢查截圖、PDF 與網頁版的線條才會一致；其他全域 Mermaid 設定也寫在這個檔案。
+- **放在 HTML 容器裡要空行**：` ```mermaid ` 區塊（以及清單、程式碼等任何 Markdown）放進 `<div>` 時，`<div …>` 之後與 `</div>` 之前都要**空一行**，否則 Markdown 不會解析，頁面上會直接印出 `mermaid flowchart …` 原始文字（`pnpm run check` 會回報「Mermaid 區塊被當成文字印出來」；Mermaid 語法錯誤則回報「Mermaid 圖畫不出來」）：
+  ````markdown
+  <div class="mt-4">
+
+  ```mermaid {look: 'handDrawn'}
+  flowchart LR
+    A --> B
+  ```
+
+  </div>
+  ````
 - **文字**：節點文字要短（10 個字以內），長說明放在投影片的 HTML 文字裡；中文標點會讓節點變寬。
 
 ---

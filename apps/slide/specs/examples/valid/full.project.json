@@ -5,6 +5,7 @@
   "description": "向開發者介紹 AOA 理念與實作",
   "theme": "default",
   "aspectRatio": "16/9",
+  "style": "tech",
   "status": "exported",
   "pagesCount": 10,
   "export": {

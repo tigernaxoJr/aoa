@@ -1,7 +1,7 @@
 // Renders every slide the way `slidev export` does and checks what a reader would see:
 // content running off the slide, text clipped inside a box, components or icons Slidev could not
 // resolve, images that failed to load, blank canvases (WebGL that will print empty), slides that do
-// not compile and runtime errors. Writes a screenshot per slide to output/slides-png/<no>.png (the
+// not compile, Mermaid diagrams that fail to draw and runtime errors. Writes a screenshot per slide to output/slides-png/<no>.png (the
 // names `pnpm run export:png` uses) and the findings to output/check.json, which the web workbench
 // shows next to each slide.
 //
@@ -259,6 +259,19 @@ function inspect(no) {
     } catch {
       // a tainted canvas cannot be read; nothing to report
     }
+  }
+
+  // 6. Mermaid that did not draw: Slidev prints a syntax error as a red-bordered <pre>, and a ```mermaid
+  // fence glued to an HTML tag (no blank line) is never parsed, so its source shows up as page text.
+  for (const pre of slide.querySelectorAll('pre[border="1 red rounded"]')) {
+    const first = (pre.textContent || '').trim().split('\n')[0].slice(0, 80)
+    issues.push({ type: 'compile', message: `Mermaid 圖畫不出來：${first}` })
+  }
+  const walker = document.createTreeWalker(slide, NodeFilter.SHOW_TEXT)
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.textContent.includes('```mermaid') || node.parentElement.closest('pre, code')) continue
+    issues.push({ type: 'compile', message: 'Mermaid 區塊被當成文字印出來：```mermaid 放在 HTML 標籤裡時，標籤前後要空一行' })
+    break
   }
   return issues
 }
