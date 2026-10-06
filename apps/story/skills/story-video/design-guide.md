@@ -27,6 +27,17 @@
 
 - 色票控制在 10–14 個，寫出色碼。
 - 「比例」與「地平線」是讓每段畫面接得起來的關鍵，一定要寫。
+- **手法**：依畫風從下表選定，寫進 `brief/design.md` 的「手法」一行（例如「場景與道具用 Rough.js，seed 3、roughness 1.4、fillStyle solid；只有水波 boiling」），之後每段都照同一組參數，畫面才一致。
+
+| 畫風 | 角色（`assets/cast/`） | 場景與道具（`assets/sets/`、道具） | 氛圍 |
+|---|---|---|---|
+| 溫暖繪本風 | 一般 SVG，色塊為主、圓角 | 一般 SVG，前中遠三層 | CSS 柔光、落地陰影（[§7](#animate)） |
+| 扁平可愛風 | 一般 SVG，粗外框、高彩度 | 一般 SVG，少細節 | 幾乎不用濾鏡 |
+| 剪紙風 | 一般 SVG，每層一個色塊 | 一般 SVG，多層疊放 | 每層 `drop-shadow` 做出紙張厚度 |
+| 簡筆線條風 | 一般 SVG，黑色線條、無填色或一個重點色 | **Rough.js**：`roughness` 0.8–1.2、不填色或 `fillStyle: 'solid'` | 白底或淡色紙底；不用光暈 |
+| 蠟筆／草圖風 | 一般 SVG，粗而不平整的外框 | **Rough.js**：`roughness` 1.5–2.5、`fillStyle: 'hachure'` / `'zigzag'`（大面積用 `'solid'` 或加大 `hachureGap`） | 可選 boiling：線條每秒換幾次 seed |
+
+  Rough.js 的寫法、固定 `seed` 與 boiling 見 [rendering-guide.md#motion](rendering-guide.md#motion)；在場景上的用法見 [§3](#sets)。**角色不用 Rough.js**：`rig.morph()` 改的是原本的 `<path>`，換成 Rough.js 的線條就不能變形；角色用一般 SVG，外框粗細與顏色配合場景的手繪線條即可。沒選這兩種畫風時不需要 Rough.js，不要為了用而用。
 
 ## 2. <a id="rig"></a>角色檔 `assets/cast/<id>/<id>.svg`
 
@@ -61,13 +72,23 @@
 - **`data-pivot="x y"`**：部件旋轉、縮放的支點，用 viewBox 座標：手臂是肩膀、腿是髖、頭是脖子、尾巴是根部。沒寫時支點是 (0, 0)，轉起來會飛走。
 - **疊放順序**：寫在後面的蓋在前面。手、腳和身體的接縫處要互相重疊一點，轉動時才不會露出縫。
 - **表情是互斥的一組**：`eye-open` / `eye-closed` / `eye-happy`…、`mouth-closed` / `mouth-open` / `mouth-smile`…，同一組同一時間只顯示一個（`rig.only()`）。至少要有 `eye-open`、`eye-closed`、`mouth-closed`、`mouth-open`，說話和眨眼才做得出來。
-- **會彎曲、擠壓的形狀用 `data-morph-<名稱>`（選用）**：轉動做不出來的變化，例如尾巴捲起、身體蹲下壓扁、嘴巴慢慢張大，可以在同一條 `<path>` 上多寫一份「變形後」的 `d`，動畫裡用 `rig.morph()` 在兩者之間漸變：
+- **會彎曲、擠壓的形狀用 `data-morph-<名稱>`**：轉動做不出來的變化（尾巴捲起、身體蹲下壓扁），在同一條 `<path>` 上多寫一份「變形後」的 `d`，動畫裡用 `rig.morph()` 在兩者之間漸變。**下面這些在畫角色時就要畫好**，不是之後有需要再補：角色檔是所有段落共用的，之後才加要改共用檔，用到這個角色的段落全部要重做。
+  - **有尾巴**：`tail` 的 path 加 `data-morph-curl`（捲起、甩動）。
+  - **會跳、蹲、跌倒或落地的角色**（大多數動物主角）：`body` 的 path 加 `data-morph-squash`（變矮變寬，腳底不動）。
+  - **嘴型、眼型**仍是互斥的 `<g>`（`mouth-open`、`mouth-smile`…）用 `rig.only()` 切換，不要改成 morph。
+  - 其他（耳朵垂下、翅膀收合、衣襬飄動）依故事需要再加。
+  網頁「角色工坊」的部件檢測會提示缺少的 `curl` / `squash`。
   ```svg
   <g id="tail" data-pivot="120 470">
     <path d="M120 470 C60 460 40 400 70 350" data-morph-curl="M120 470 C50 480 20 420 60 390" …/>
   </g>
   ```
-  兩份 `d` **必須用相同的指令、相同的順序**（上例都是 `M` 加一個 `C`），只有座標不同；最簡單的做法是先畫好原形，複製一份只挪動控制點。名稱用英文小寫（`curl`、`squash`、`wide`）。不同的嘴型、眼型仍用互斥的 `<g>` 切換，`morph` 只用在需要平順變化的地方。
+  ```svg
+  <g id="body">
+    <path d="M140 520 C140 400 260 400 260 520 Z" data-morph-squash="M120 520 C120 440 280 440 280 520 Z" …/>
+  </g>
+  ```
+  兩份 `d` **必須用相同的指令、相同的順序**（上例分別是 `M` 加一個 `C`、`M` + `C` + `Z`），只有座標不同；最簡單的做法是先畫好原形，複製一份只挪動控制點。名稱用英文小寫（`curl`、`squash`、`wide`）。畫完在設定稿（[§4](#sheet)）旁邊放一張變形後的樣子，確認形狀沒有扭曲。
 - **側面角色**：大多數故事角色畫成四分之三側面朝右即可；要朝左時在動畫裡把整個角色水平翻轉（`scale(-1, 1)`），不要另畫一份。
 - 和 [rendering-guide.md#svg](rendering-guide.md#svg) 相同：要有 `xmlns`、`viewBox`、`width`、`height`；不放 `<script>`、SMIL / CSS 動畫、外部連結與外部字型；不用文字。顏色只用 `brief/design.md` 的色票。
 - 每個檔案保持在 30 KB 以內；路徑點數太多的形狀簡化掉，畫面看不出差別。
@@ -86,6 +107,33 @@
 - 會動的東西（月亮、水波、螢火蟲、飄落的葉子）不要畫死在背景裡：分成獨立的 `<g id>`，或在動畫模組裡用程式畫。
 - 道具（`basket.svg`、`lantern.svg`）和角色一樣畫成獨立檔，需要時加 `data-pivot`。
 - 背景可以分前景、中景、遠景三個 `<g id="far">`、`<g id="mid">`、`<g id="near">`，鏡頭移動時讓它們以不同速度移動，畫面會有深度。
+- **用 Rough.js 的畫風**（[§1](#style) 的簡筆線條風、蠟筆／草圖風）：場景檔照常畫成一般 SVG，形狀**全部寫成 `<path>`**，動畫模組載入後再換成手繪線條。這樣場景檔仍可在設定稿與瀏覽器裡直接看、改，手繪參數集中在一處。在設定稿上也用同樣的程式畫一次，讓使用者確認的是手繪後的樣子。
+
+  ```js
+  import rough from 'roughjs'
+  // 把 svg 裡的 <path> 換成手繪線條；variants > 1 時每條線畫幾份不同 seed，seek 裡輪流顯示（boiling）
+  function sketch(svg, { seed = 3, variants = 1, ...style } = {}) {
+    const rc = rough.svg(svg)
+    const layers = Array.from({ length: variants }, () => [])
+    for (const el of [...svg.querySelectorAll('path')]) {
+      const base = { stroke: el.getAttribute('stroke') ?? 'none', fill: el.getAttribute('fill') ?? undefined, strokeWidth: Number(el.getAttribute('stroke-width') ?? 2), ...style }
+      for (let i = 0; i < variants; i++) {
+        const g = rc.path(el.getAttribute('d'), { ...base, seed: seed + i })
+        el.before(g)
+        layers[i].push(g)
+      }
+      el.remove()
+    }
+    return (t, hz = 8) => layers.forEach((gs, i) => gs.forEach((g) => (g.style.display = i === Math.floor(t * hz) % variants ? '' : 'none')))
+  }
+
+  // setup 裡：const boil = sketch(set.querySelector('#water'), { variants: 3, roughness: 1.6, fillStyle: 'solid' })
+  //           sketch(set.querySelector('#far'), { roughness: 1.6, fillStyle: 'solid' })   // 不晃的部分只畫一份
+  // seek 裡：boil(t)
+  ```
+  - 每個場景用固定的 `seed`（寫在 `brief/design.md`），同一個場景在不同段落才會長得一樣。
+  - boiling 只用在需要「活著」的元素（水、火、草、主角身邊的特效），整個畫面一起晃會讓人累；`variants` 3、`hz` 6–8 就夠。
+  - 會動的物件（月亮、葉子）照常是獨立的 `<g id>`，手繪化之後一樣用 `transform` 移動。
 
 ## 4. <a id="sheet"></a>設定稿與確認
 
@@ -229,7 +277,7 @@ export default async function setup({ root, width, height, cues }) {
 
 渲染完請使用者預覽。使用者說「狐狸的手轉錯方向」這類意見時，多半是 `data-pivot` 或旋轉方向的問題，改角色檔會影響所有用到它的段落，改動畫模組只影響這一段，先判斷是哪一種再改。
 
-## 7. <a id="changes"></a>之後要改角色
+## 8. <a id="changes"></a>之後要改角色
 
 - **改長相**：改 `assets/cast/<id>/` 的檔案。所有在 `motion.uses` 列了這個資料夾的段落都會變成需要重做；先告訴使用者有幾段、大約多久，同意後再改，改完用 `/video-sync` 重做。
 - **改聲音**：用 `pnpm run state project --patch-file` 改 `project.cast[].voice`。只有這個角色有說話的段落會變成需要重做（重新 `tts` 與渲染）；先告訴使用者是哪幾段。改旁白的聲音（`project.tts.voice`）不會自動標示，要自己把所有段落標為 `stale`。

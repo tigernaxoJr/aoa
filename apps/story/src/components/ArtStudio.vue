@@ -53,11 +53,21 @@ const hasHead = computed(() => detectedParts.value.includes('head'))
 const hasBody = computed(() => detectedParts.value.includes('body'))
 const hasLimbs = computed(() => detectedParts.value.some((p) => p.startsWith('arm-') || p.startsWith('leg-')))
 const hasFace = computed(() => detectedParts.value.some((p) => p.startsWith('eye-') || p.startsWith('mouth-')))
+// Parts holding a data-morph-* path. A missing tail curl or body squash is only a hint: adding it later means
+// editing a character file every scene shares, so it is cheaper to draw while the character is being made.
+const morphParts = ref<string[]>([])
+const morphHints = computed(() => {
+  const hints: string[] = []
+  if (detectedParts.value.includes('tail') && !morphParts.value.includes('tail')) hints.push('tail 可加 data-morph-curl（尾巴捲起）')
+  if (hasBody.value && !morphParts.value.includes('body')) hints.push('body 可加 data-morph-squash（蹲下、落地壓扁）')
+  return hints
+})
 
 async function loadSvg() {
   if (!root.value || !props.castId) {
     svgRaw.value = null
     detectedParts.value = []
+    morphParts.value = []
     return
   }
   // Check <id>.svg or rig.svg
@@ -68,6 +78,7 @@ async function loadSvg() {
   if (!file) {
     svgRaw.value = null
     detectedParts.value = []
+    morphParts.value = []
     return
   }
 
@@ -79,6 +90,8 @@ async function loadSvg() {
   const doc = parser.parseFromString(text, 'image/svg+xml')
   const groups = Array.from(doc.querySelectorAll('g[id]'))
   detectedParts.value = groups.map((g) => g.id)
+  const morphed = Array.from(doc.querySelectorAll('*')).filter((el) => el.getAttributeNames().some((n) => n.startsWith('data-morph-')))
+  morphParts.value = [...new Set(morphed.map((el) => el.closest('g[id]')?.id).filter((id): id is string => !!id))]
 }
 
 watch([() => props.castId, projectMtime], loadSvg, { immediate: true })
@@ -89,7 +102,8 @@ function copyAgentPrompt() {
 - 存放路徑：assets/cast/${props.castId}/${props.castId}.svg
 - 角色外觀描述：${props.castDescription || '無特別描述，請參考角色名稱風格'}
 - 參考概念圖位置：assets/cast/${props.castId}/reference.png
-- 規格要求：viewBox="0 0 400 600"，腳底位於畫布底部中心。包含分層部件 <g id="head" data-pivot="...">, <g id="body">, <g id="arm-l">, <g id="arm-r">, <g id="leg-l">, <g id="leg-r">，以及表情切換部件 (eye-open, eye-closed, mouth-open, mouth-closed)。`
+- 規格要求：viewBox="0 0 400 600"，腳底位於畫布底部中心。包含分層部件 <g id="head" data-pivot="...">, <g id="body">, <g id="arm-l">, <g id="arm-r">, <g id="leg-l">, <g id="leg-r">，以及表情切換部件 (eye-open, eye-closed, mouth-open, mouth-closed)。
+- 變形形狀：有尾巴時在 tail 的 path 加 data-morph-curl；會跳、蹲或落地的角色在 body 的 path 加 data-morph-squash（與原形相同的指令與順序，只改座標）。`
 
   navigator.clipboard.writeText(prompt)
   notify('ok', '已複製繪製提示詞，請直接貼給 Coding Agent！')
@@ -209,7 +223,17 @@ function copyAgentPrompt() {
             >
               {{ hasFace ? '✔️ 表情 (eye/mouth)' : '❌ 表情' }}
             </span>
+            <span
+              v-for="id in morphParts"
+              :key="id"
+              class="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+            >
+              ✔️ 變形 {{ id }}
+            </span>
           </div>
+          <ul v-if="morphHints.length" class="space-y-0.5 text-[11px] text-amber-700 dark:text-amber-400">
+            <li v-for="hint in morphHints" :key="hint">💡 {{ hint }}</li>
+          </ul>
         </div>
       </div>
     </div>
