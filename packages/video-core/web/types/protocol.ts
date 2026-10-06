@@ -344,7 +344,7 @@ export interface SceneJson {
       fit?: "contain" | "cover";
     };
     /**
-     * motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL 等），取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。
+     * motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL、Rough.js 等），取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。
      */
     motion?: {
       /**

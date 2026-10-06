@@ -134,6 +134,7 @@ async function openPlayer(browser, href, width, height) {
 const LIBRARIES = {
   gsap: { gsap: 'index.js', 'gsap/': '.' },
   three: { three: 'build/three.module.js', 'three/addons/': 'examples/jsm' },
+  roughjs: { roughjs: 'bundled/rough.esm.js' },
 }
 
 function importMap(root, url) {

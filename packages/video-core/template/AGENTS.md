@@ -81,7 +81,7 @@
 10. **失敗時保留現場。** 不刪除既有檔案；以 `pnpm run state <id> --failed …` 記錄錯誤。同一 scene 自動重試至多 2 次（看 `attempts`），之後停下並告訴使用者原因與重試方式。
 11. **未經同意不安裝工具。** 缺少 Node.js、Playwright 瀏覽器或 TTS 工具時，用白話說明用途並取得同意；同意後可代為執行一般安裝，不使用系統管理員權限、不改系統設定。需要使用者點擊確認時，給逐步說明。
 12. **太趕時依 `project.durationAdjust` 處理。** `auto` 時可自行在限度內拉長 scene 並事後回報，`ask` 時先問；刪改已確認的旁白、增減 scene 一律先問。做法見 Skill `rendering-guide.md#pacing`。
-13. **自訂動畫依 `project.customMotion` 處理。** 寫動畫模組（`visual.motion`：SVG、Canvas、GSAP、Three.js、GLSL）或畫新的 SVG 插圖會耗用較多 token：`allow` 可自行使用，`ask` 在分鏡審閱時逐段請使用者決定，`deny` 不使用。重複使用 `assets/svg/` 已存的 SVG 不受限。模組寫法見 Skill `rendering-guide.md#motion`。
+13. **自訂動畫依 `project.customMotion` 處理。** 寫動畫模組（`visual.motion`：SVG、Canvas、GSAP、Three.js、GLSL、Rough.js）或畫新的 SVG 插圖會耗用較多 token：`allow` 可自行使用，`ask` 在分鏡審閱時逐段請使用者決定，`deny` 不使用。重複使用 `assets/svg/` 已存的 SVG 不受限。模組寫法見 Skill `rendering-guide.md#motion`。
    何時值得用自訂動畫，見 Skill `script-guide.md#custom-motion`。 <!-- kind:product -->
    `story` 專案每段都是自訂動畫，`customMotion` 設為 `allow`，不逐段詢問；角色動畫寫法見 Skill `design-guide.md#animate`。 <!-- kind:story -->
 14. **假設使用者不懂電腦操作。** 所有指令由你執行，不要求使用者開終端機或打指令；使用者用白話下指示（「繼續」「第三段改成…」），由你對應到工作流程步驟。說明避免術語，回報檔案位置用「文件 > 專案 > output > final.mp4」這類資料夾順序，並可建議用網頁工作台預覽。

@@ -216,6 +216,25 @@ describe('render-scene', () => {
     near(pixel(out, 0.5, 560, 300), [0, 255, 0], 'SVG element in the bottom-right corner')
   })
 
+  test('a motion module imports animation libraries installed in the project by name', async (t) => {
+    const scene = baseScene('scene-001', { durationSec: 0.5, visual: { type: 'motion-graphic', description: 'x', motion: { file: 'assets/motion.js' } } })
+    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
+    cpSync(templateSrc, p.path('src'), { recursive: true })
+    // A stand-in for `pnpm add roughjs`: the import map points bare `roughjs` at its ES module build.
+    p.write('node_modules/roughjs/package.json', '{ "name": "roughjs" }')
+    p.write('node_modules/roughjs/bundled/rough.esm.js', "export default { color: '#00ff00' }\n")
+    p.write('scenes/001-hook/assets/motion.js', `import rough from 'roughjs'
+export default function setup({ root }) {
+  root.style.background = rough.color
+  return () => {}
+}
+`)
+    const r = await p.runAsync('render-scene.mjs', ['scene-001'])
+    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
+    assert.equal(r.code, 0, r.stderr)
+    near(pixel(p.path('scenes/001-hook/output/scene.mp4'), 0.2, 320, 180), [0, 255, 0], 'the module drew with the imported library')
+  })
+
   test('a motion module that does not return seek(t) fails the render', async (t) => {
     const scene = baseScene('scene-001', { durationSec: 0.5, visual: { type: 'motion-graphic', description: 'x', motion: { file: 'assets/motion.js' } } })
     p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })

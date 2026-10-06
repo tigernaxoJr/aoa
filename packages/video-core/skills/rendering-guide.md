@@ -110,8 +110,34 @@ export default async function setup({ root, width, height, fps, durationSec, the
 | GSAP | 多段編排的動畫（依序進場、彈性緩動） | `const tl = gsap.timeline({ paused: true })` 編排好，`seek` 裡 `tl.seek(t)` |
 | Three.js | 3D 物件、產品展示、空間感 | `new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })`，`seek` 依 `t` 設定位置與相機後 `renderer.render(scene, camera)` |
 | GLSL shader | 光線流動、漸層波紋、背景質感 | Three.js 的 `ShaderMaterial` 或原生 WebGL，把 `t` 傳進 uniform（例如 `uTime`） |
+| Rough.js | 手繪、草圖風格的圖形、流程圖、白板說明 | `rough.svg(svg)` 或 `rough.canvas(canvas)` 畫圖形，**一定要給 `seed`**，寫法見下方 |
 
-GSAP 與 Three.js 不在範本裡，要用時先在專案安裝（`pnpm add gsap`、`pnpm add three`，依硬性規則 11 先用白話取得同意），模組裡直接 `import { gsap } from 'gsap'`、`import * as THREE from 'three'`、`import { OrbitControls } from 'three/addons/controls/OrbitControls.js'`，渲染器會從專案的 `node_modules` 提供，不需要網路。其他函式庫不支援 bare import；需要時把單一 ES module 檔放在 `assets/` 以相對路徑匯入。
+GSAP、Three.js、Rough.js 不在範本裡，要用時先在專案安裝（`pnpm add gsap`、`pnpm add three`、`pnpm add roughjs`，依硬性規則 11 先用白話取得同意），模組裡直接 `import { gsap } from 'gsap'`、`import * as THREE from 'three'`、`import { OrbitControls } from 'three/addons/controls/OrbitControls.js'`、`import rough from 'roughjs'`，渲染器會從專案的 `node_modules` 提供，不需要網路。其他函式庫不支援 bare import；需要時把單一 ES module 檔放在 `assets/` 以相對路徑匯入。
+
+Rough.js 每次畫都會隨機抖動線條，沒給 `seed` 時每一格的線條都不同，畫面會一直亂跳。`seed` 要是 1 以上的整數（0 等於不固定）：
+
+```js
+import rough from 'roughjs'
+
+export default async function setup({ root, width, height, theme }) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
+  root.append(svg)
+  const rc = rough.svg(svg)
+  const style = { seed: 7, roughness: 1.4, stroke: theme.text, strokeWidth: 3, fill: theme.accent, fillStyle: 'hachure' }
+  // 不會變形的圖形在 setup 畫一次，seek 只改位置、透明度
+  const box = svg.appendChild(rc.rectangle(200, 200, 400, 240, style))
+  return (t) => {
+    box.style.opacity = String(Math.min(1, t / 0.5))
+  }
+}
+```
+
+- **靜態的圖形在 `setup` 畫一次**，`seek` 只改 `transform`、`opacity`；形狀會變（長度、大小隨 `t` 改）時才在 `seek` 裡清空重畫，`seed` 不變，線條就穩定。
+- **想要手繪動畫那種線條微微晃動**（boiling），讓 seed 每隔幾格換一次並循環：`seed: 1 + (Math.floor(t * 8) % 3)`，每秒換 8 次、3 種輪流。只在需要手繪感的元素用，整個畫面都晃會讓人累。
+- 現有的 SVG 形狀用 `rc.path(d, style)` 轉成手繪版，例如 `assets/svg/` 的圖示或角色部件的 `d`。
+- 產生的是一般 `<path>`，可以照常用 `stroke-dasharray` / `stroke-dashoffset` 做線條描繪。`fillStyle: 'hachure'`、`'cross-hatch'` 會產生很多條線，大面積填色改用 `'solid'`，或把 `hachureGap` 調大讓線條少一點。
+- 文字不要用 Rough.js 畫；搭配手繪風格的字仍用 `theme.fontFamily` 或 `elements` 的文字元素。
 
 寫完先渲染這一段確認畫面（短的 scene 可以先把 `durationSec` 設短測試，確認後改回）。`motion.js` 與 scene `assets/` 內的檔案都納入 `inputHash`，修改後該 scene 會自動變成需要重做；模組匯入的共用檔案（`@/assets/` 下）不在內，改了要自己把用到它的 scene 標為 `stale`。
 
