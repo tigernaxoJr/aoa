@@ -4,6 +4,11 @@
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
 export default {
+  build: {
+    // Slidev's code.css expands `--uno: … dark-text-gray-600` into a rule nested in ::before, which
+    // lightningcss refuses to minify (browsers just skip it). Unminified CSS costs a few KB.
+    cssMinify: false,
+  },
   plugins: [
     viteSingleFile(),
     {
