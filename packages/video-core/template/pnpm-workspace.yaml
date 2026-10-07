@@ -3,3 +3,7 @@ allowBuilds:
   ffmpeg-static: true
   # Its preinstall is only `npx only-allow pnpm` (a dev guard); nothing to build.
   msedge-tts: false
+
+# 套件（含 ffmpeg-static 下載的二進位檔）放在 pnpm 的全域 store，node_modules 只剩連結，
+# 所有影片專案共用同一份，不必每個專案各存幾百 MB。
+enableGlobalVirtualStore: true

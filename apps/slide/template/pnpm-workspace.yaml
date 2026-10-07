@@ -1,3 +1,12 @@
 allowBuilds:
   # Downloads the Chromium build that `slidev export` prints with.
   playwright-chromium: true
+
+# 套件放在 pnpm 的全域 store，node_modules 只剩連結，所有簡報專案共用同一份。
+enableGlobalVirtualStore: true
+packageExtensions:
+  # unplugin-icons 透過 local-pkg 找 @vue/compiler-sfc 卻沒有宣告依賴；在全域 store 中
+  # local-pkg 看不到專案的 node_modules，需替它補上，否則 slidev build 失敗。
+  local-pkg:
+    dependencies:
+      '@vue/compiler-sfc': '*'

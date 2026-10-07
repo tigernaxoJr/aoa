@@ -8,6 +8,24 @@
 
 ---
 
+## 📦 跨專案共用安裝位置
+
+PyTorch、CosyVoice 與模型權重合計數 GB，而本機服務與專案無關，所以**整台機器只裝一份**，所有影片專案共用：
+
+```text
+~/.aoa/cosyvoice/
+├── .venv/                                 # Python 虛擬環境（torch、cosyvoice、fastapi…）
+└── pretrained_models/Fun-CosyVoice3-0.5B/ # 模型權重
+```
+
+- 設定環境變數 `AOA_HOME` 可改放到其他位置（例如空間較大的磁碟）：`AOA_HOME=D:oa`。
+- 第二個專案起執行 `pnpm run cosyvoice:setup` 會沿用已安裝的環境與權重，不會重複下載。
+- 一個 `pnpm run cosyvoice:serve` 可同時供所有專案使用；聲音克隆的 `@/` 參考音檔由各專案的 `pnpm run tts` 換成絕對路徑後送出。
+- 舊版範本把權重下載在專案內的 `scripts/cosyvoice/pretrained_models/`；執行 `cosyvoice:setup` 或 `cosyvoice:serve` 時會自動搬到共用位置（共用位置已有時則刪除專案內的重複副本）。
+- 若之前為專案另外建立過 Python 虛擬環境（例如專案內的 `.venv/`），確認不再需要後可自行刪除。
+
+---
+
 ## ⚡ 硬體加速環境導引 (Hardware Acceleration)
 
 `pnpm run cosyvoice:setup` 具備**智慧硬體偵測**，會自動替您的系統安裝最佳加速版本：

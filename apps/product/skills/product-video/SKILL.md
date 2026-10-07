@@ -36,7 +36,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    node -e "const p=require('path');require('fs').cpSync('.tmp/template','.',{recursive:true,filter:s=>p.basename(s)!=='video.project.json'})"
    ```
    只會覆蓋範本本身的檔案；`scenes/`、`brief/`、`assets/`、`output/` 等影片內容不在範本裡，不會被動到。
-4. 清單裡有 `package.json` 或 `pnpm-lock.yaml` 時執行 `pnpm install`。
+4. 清單裡有 `package.json`、`pnpm-lock.yaml` 或 `pnpm-workspace.yaml` 時執行 `pnpm install`（`pnpm-workspace.yaml` 決定套件是否放在跨專案共用的全域 store）。
 5. manifest 的 `specVersion` 和 `video.project.json` 的 `specVersion` 不同時，以新的 `schemas/` 為準把專案資料調整成新格式，再用 `pnpm run state project --patch '[{"op":"replace","path":"/specVersion","value":"<新版本>"}]'` 更新版本；會刪除或改寫使用者內容（旁白、分鏡）的調整要先問使用者。
 6. 執行 `pnpm run validate`，刪除 `.tmp/template*` 與下載的 zip，用一句白話告訴使用者更新了什麼（例如「已更新製作工具，影片內容沒有變動」）。更新後 `pnpm run status` 若顯示某些 scene 需要重做，照實告訴使用者，等他同意再重做。
 

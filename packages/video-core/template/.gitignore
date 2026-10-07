@@ -8,3 +8,7 @@ video.activity.json
 .auth/
 output/
 scenes/*/output/
+
+# CosyVoice 舊版下載在專案內的權重（現已改放 ~/.aoa/cosyvoice，執行時自動搬移）
+scripts/cosyvoice/pretrained_models/
+__pycache__/

@@ -3,7 +3,9 @@
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
+import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
+import { join } from 'node:path'
 import { afterEach, test } from 'node:test'
 import { locate } from '../../template/scripts/lib/media.mjs'
 import { baseProject, baseScene, makeProject } from './helpers.mjs'
@@ -63,6 +65,30 @@ test('cosyvoice with local endpoint does not require online consent and hints se
   assert.equal(r.code, 1)
   assert.match(r.stderr, /CosyVoice 3.*(service unavailable|model weights not ready)/)
   assert.match(r.stderr, /pnpm run cosyvoice:setup/)
+})
+
+test('cosyvoice sends clone prompts as absolute paths, since one local server serves every project', async () => {
+  const project = baseProject()
+  project.project.tts.provider = 'cosyvoice3'
+  project.project.tts.voice = '@/assets/voices/star.wav <用英語說>'
+  p = makeProject({ project, scenes: [{ id: 'scene-001', dir: 'scenes/001-hook' }] })
+  let payload
+  const server = createServer((req, res) => {
+    let body = ''
+    req.on('data', (c) => (body += c)).on('end', () => {
+      payload = JSON.parse(body)
+      res.writeHead(503).end('not loaded')
+    })
+  })
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+  try {
+    const r = await p.runAsync('tts.mjs', ['scene-001'], { COSYVOICE_URL: `http://127.0.0.1:${server.address().port}/api/tts` })
+    assert.equal(r.code, 1)
+    assert.equal(payload.speaker, join(p.root, 'assets', 'voices', 'star.wav'))
+    assert.equal(payload.instruct, '用英語說')
+  } finally {
+    server.close()
+  }
 })
 
 test('cosyvoice listVoices lists available speakers and custom voice prompt option', () => {

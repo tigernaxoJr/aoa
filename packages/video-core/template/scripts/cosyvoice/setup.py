@@ -4,6 +4,7 @@ CosyVoice 3 (Fun-CosyVoice 3.0) 本地環境初始化腳本 (Agent Video Produce
 具備智慧硬體加速偵測 (NVIDIA CUDA / AMD ROCm / Apple Silicon MPS / CPU)，
 自動安裝對應硬體的最佳 PyTorch 加速版本，並下載 CosyVoice 3 代 Basic 基礎模型 (Fun-CosyVoice3-0.5B-2512)。
 嚴格避開 RL (Fun-CosyVoice3-0.5B-2512_RL) 版本。
+環境與權重裝在跨專案共用的 ~/.aoa/cosyvoice/（見 aoa_home.py），每台機器只需安裝一次。
 """
 import os
 import sys
@@ -11,9 +12,12 @@ import shutil
 import platform
 import subprocess
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import aoa_home
+
 REQUIRED_PYTHON_VERSION = (3, 10)
 COSYVOICE3_BASIC_MODEL_ID = "FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
-TARGET_MODEL_DIR = os.path.join(os.path.dirname(__file__), "pretrained_models", "Fun-CosyVoice3-0.5B")
+TARGET_MODEL_DIR = aoa_home.MODEL_DIR
 
 def check_python_version():
     current = sys.version_info[:2]
@@ -153,7 +157,7 @@ def install_server_and_cosyvoice():
 def download_cosyvoice3_basic_model():
     print(f"\n[下載 CosyVoice 3 Basic 基礎模型權重 ({COSYVOICE3_BASIC_MODEL_ID})]")
     print("注意: 嚴格採用 3 代 Basic 基礎模型 (Fun-CosyVoice3-0.5B-2512)，排除不可用的 RL 實驗版本。")
-    if os.path.exists(TARGET_MODEL_DIR) and len(os.listdir(TARGET_MODEL_DIR)) > 3:
+    if aoa_home.model_ready(TARGET_MODEL_DIR):
         print(f"✓ CosyVoice 3 Basic 模型已存在於: {TARGET_MODEL_DIR}")
         return
 
@@ -187,6 +191,13 @@ if __name__ == "__main__":
     print("  Agent Video Producer - CosyVoice 3.0 (Basic) 硬體加速與環境安裝")
     print("=================================================================")
     check_python_version()
+    aoa_home.migrate_legacy_models()
+    if not aoa_home.in_venv():
+        if not os.path.exists(aoa_home.venv_python()):
+            aoa_home.create_venv()
+        else:
+            print(f"✓ 沿用共用 Python 虛擬環境: {aoa_home.VENV_DIR}")
+        aoa_home.run_in_venv(os.path.abspath(__file__))
     hw_type, hw_name = detect_hardware()
     install_pytorch(hw_type)
     install_server_and_cosyvoice()
@@ -194,5 +205,6 @@ if __name__ == "__main__":
     print("\n=================================================================")
     print("✓ 安裝設置完成！")
     print(f"  運行硬體: {hw_name} ({hw_type.upper()})")
+    print(f"  共用環境: {aoa_home.COSYVOICE_HOME}（所有影片專案共用，不需重複安裝）")
     print("  啟動指令: pnpm run cosyvoice:serve   # 於背景啟動本地服務")
     print("=================================================================")

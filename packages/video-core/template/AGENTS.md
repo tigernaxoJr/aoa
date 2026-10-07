@@ -152,5 +152,5 @@ draft → assets_ready → rendering → rendered → approved
 | `pnpm run login` | 打開瀏覽器視窗讓使用者自己登入產品；`--clear` 清除保存的登入 | <!-- kind:product -->
 | `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`）；單一 scene 也以多個瀏覽器分攤影格（`--pages N`） |
 | `pnpm run assemble` | 依順序合成 `output/final.mp4` |
-| `pnpm run cosyvoice:setup` | 安裝本機 CosyVoice 3 服務環境與依賴（使用前需取得使用者同意） |
-| `pnpm run cosyvoice:serve` | 在本機背景啟動 CosyVoice 3 HTTP 伺服器（監聽 127.0.0.1:50000） |
+| `pnpm run cosyvoice:setup` | 安裝本機 CosyVoice 3 服務環境與依賴（使用前需取得使用者同意）；裝在所有專案共用的 `~/.aoa/cosyvoice/`，已裝過就沿用 |
+| `pnpm run cosyvoice:serve` | 在本機背景啟動 CosyVoice 3 HTTP 伺服器（監聽 127.0.0.1:50000）；服務由所有專案共用，已在執行就不必再啟動 |

@@ -4,9 +4,11 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { UsageError } from './project.mjs'
+import { findRoot, UsageError } from './project.mjs'
 
 export const ONLINE_PROVIDERS = new Set(['edge-tts', 'azure', 'openai', 'elevenlabs'])
+
+const isLocalEndpoint = (url) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(url)
 
 const escapeXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -84,6 +86,9 @@ const providers = {
         instruct = match[1].trim()
         speaker = speaker.slice(0, match.index).trim()
       }
+
+      // 本機服務由所有專案共用，克隆參考音檔的 @/ 路徑改由這裡轉成本專案的絕對路徑；遠端端點不送出本機路徑
+      if (speaker.startsWith('@/') && isLocalEndpoint(endpoint)) speaker = join(findRoot(), speaker.slice(2))
 
       const payload = {
         text,

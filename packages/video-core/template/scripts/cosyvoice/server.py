@@ -8,6 +8,7 @@ CosyVoice 3 (Fun-CosyVoice 3.0) 本地 HTTP API 服務 (Agent Video Producer)
 - 富文字情感標籤 (Rich text tags: <laughter>, <whisper> 等)
 使用 CosyVoice 3 代 Basic 模型 (Fun-CosyVoice3-0.5B-2512，嚴格排除 RL 版本)。
 預設監聽: http://127.0.0.1:50000
+環境與權重來自跨專案共用的 ~/.aoa/cosyvoice/（見 aoa_home.py），一個服務可供所有專案使用。
 """
 import argparse
 import io
@@ -16,6 +17,14 @@ import os
 import re
 import sys
 from typing import Optional
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import aoa_home
+
+aoa_home.migrate_legacy_models()
+# 共用環境已安裝時改用它的 Python；尚未安裝則沿用目前的 Python（例如只裝了 fastapi 跑 --mock）
+if os.path.exists(aoa_home.venv_python()):
+    aoa_home.run_in_venv(os.path.abspath(__file__))
 
 try:
     from fastapi import FastAPI, HTTPException, Response
@@ -27,7 +36,7 @@ except ImportError:
 
 app = FastAPI(title="CosyVoice 3 Basic Local Server (Instruct & Multilingual)", version="3.0.0")
 
-DEFAULT_COSYVOICE3_MODEL_DIR = os.path.join(os.path.dirname(__file__), "pretrained_models", "Fun-CosyVoice3-0.5B")
+DEFAULT_COSYVOICE3_MODEL_DIR = aoa_home.MODEL_DIR
 
 cosyvoice_model = None
 is_mock_mode = False
@@ -104,7 +113,8 @@ def parse_speaker_and_instruct(speaker_str: str, explicit_instruct: Optional[str
     return speaker, instruct
 
 def resolve_audio_path(path: str) -> str:
-    """若音色傳入的是相對檔案路徑 (Zero-shot 聲音克隆)，解析其實際路徑"""
+    """若音色傳入的是相對檔案路徑 (Zero-shot 聲音克隆)，解析其實際路徑。
+    服務由多個專案共用，tts.mjs 會先把 @/ 轉成絕對路徑；這裡的 @/ 解析只是舊版用戶端的後備。"""
     if path.startswith("@/"):
         base = os.getcwd()
         return os.path.normpath(os.path.join(base, path[2:]))
