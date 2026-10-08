@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     "./fsa": "./src/fsa.ts",
-    "./activity": "./src/activity.ts"
+    "./activity": "./src/activity.ts",
+    "./recent": "./src/recent.ts"
   }
 }

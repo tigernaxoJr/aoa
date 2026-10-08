@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { isSupported } from '@aoa/web-shared/fsa'
-import { dirHandle, folderEntries, initializeProject, needsSetup, resetDirectory, setDirectory } from '../lib/store'
+import { abandonFolder, dirHandle, folderError, forgetRecent, initializeProject, needsSetup, pickFolder, recentList, reopen } from '../lib/store'
 
 const supported = isSupported()
 const error = ref<string | null>(null)
@@ -15,32 +15,20 @@ const pagesCount = ref(5)
 const theme = ref('default')
 const notes = ref('著重系統架構與技術解析，運用 SVG 流程圖與 3D 視覺組件提升質感')
 
-async function pickFolder() {
+const when = (t: number) => new Date(t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
+
+async function run(fn: () => Promise<void>) {
   error.value = null
   loading.value = true
   try {
-    const handle = await (window as any).showDirectoryPicker({
-      mode: 'readwrite',
-    })
-    await setDirectory(handle)
-    if (needsSetup.value) {
-      // The Agent unpacks the template here, so a new project needs an empty folder.
-      const names = await folderEntries(handle)
-      if (names.length) {
-        resetDirectory()
-        error.value = `「${handle.name}」不是空的資料夾，也不是簡報專案（找到 ${names.slice(0, 3).join('、')}${names.length > 3 ? ' 等' : ''}）。請選擇空資料夾開始新專案，或選擇既有的簡報專案資料夾。`
-        return
-      }
-      title.value = handle.name || '新簡報專案'
-    }
-  } catch (err: any) {
-    if (err.name !== 'AbortError') {
-      error.value = err.message || '無法開啟目錄'
-    }
+    await fn()
   } finally {
     loading.value = false
   }
 }
+
+// A new project starts titled after its folder.
+watch([needsSetup, dirHandle], ([on]) => on && (title.value = dirHandle.value?.name || '新簡報專案'), { immediate: true })
 
 async function handleCreate() {
   if (!title.value.trim()) {
@@ -100,7 +88,8 @@ async function handleCreate() {
           <button
             type="button"
             :disabled="loading"
-            @click="pickFolder"
+            @click="run(pickFolder)"
+            data-testid="pick-folder"
             class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-sm hover:bg-slate-800 active:bg-slate-950 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:active:bg-slate-200 cursor-pointer disabled:opacity-50 transition-colors"
           >
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -111,9 +100,45 @@ async function handleCreate() {
           <span class="text-xs text-slate-400">所有檔案直接讀寫本機，全程零後端無雲端傳輸</span>
         </div>
 
-        <p v-if="error" class="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400">
-          {{ error }}
+        <p v-if="folderError" class="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400" role="alert">
+          {{ folderError }}
         </p>
+
+        <!-- Recent projects: one click to reopen (the browser may ask for access again) -->
+        <div v-if="recentList.length" class="mx-auto mt-8 max-w-md text-left" data-testid="recent">
+          <p class="text-sm font-medium text-slate-900 dark:text-slate-100">最近的專案</p>
+          <ul class="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+            <li v-for="r in recentList" :key="`${r.handle.name}-${r.openedAt}`" class="flex items-center">
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-slate-50 cursor-pointer disabled:opacity-50 dark:hover:bg-slate-800/60"
+                :disabled="loading"
+                data-testid="recent-open"
+                @click="run(() => reopen(r.handle))"
+              >
+                <svg class="h-4 w-4 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate font-medium text-slate-900 dark:text-slate-100">{{ r.projectName ?? '還沒建立專案' }}</span>
+                  <span class="block truncate text-xs text-slate-500 dark:text-slate-400">資料夾「{{ r.handle.name }}」· {{ when(r.openedAt) }}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                class="mr-1.5 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                :aria-label="`從清單移除 ${r.handle.name}`"
+                title="從清單移除（不會刪除檔案）"
+                @click="forgetRecent(r.handle)"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </li>
+          </ul>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">瀏覽器詢問存取權限時選「每次造訪時都允許」，下次打開網頁就會直接回到上次的專案。</p>
+        </div>
       </div>
 
       <!-- Feature Highlights -->
@@ -208,7 +233,7 @@ async function handleCreate() {
         <div class="flex items-center justify-end gap-3 pt-4">
           <button
             type="button"
-            @click="resetDirectory"
+            @click="abandonFolder"
             class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 cursor-pointer dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             換一個資料夾

@@ -1,6 +1,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { SlideActivity, SlideCheck, SlideProject } from '../types/protocol'
-import { listFiles, readText, tryFile, writeText } from '@aoa/web-shared/fsa'
+import { ensurePermission, isSupported, listFiles, readText, tryFile, writeText } from '@aoa/web-shared/fsa'
+import { type RecentFolder, recentFolders } from '@aoa/web-shared/recent'
 import { parseSlides, type ParsedDeck } from './slide-parser'
 
 export const dirHandle = shallowRef<FileSystemDirectoryHandle | null>(null)
@@ -28,6 +29,14 @@ export const isPolling = ref(false)
 export const lastSync = ref<Date | null>(null)
 export const syncError = ref<string | null>(null)
 const loaded = ref(false)
+
+const recent = recentFolders({ db: 'aoa-slide' })
+/** Folders opened before, most recent first; the open one has `last` set. */
+export const recentList = shallowRef<RecentFolder[]>([])
+/** Why the last folder could not be opened; shown on the folder picker. */
+export const folderError = ref<string | null>(null)
+/** The title last written to the recent list for the open folder; null while it is not recorded. */
+let recorded: string | null = null
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -69,6 +78,7 @@ export async function setDirectory(handle: FileSystemDirectoryHandle) {
 
 export function resetDirectory() {
   stopPolling()
+  recorded = null
   if (pdfUrl.value) {
     URL.revokeObjectURL(pdfUrl.value)
     pdfUrl.value = null
@@ -181,6 +191,9 @@ export async function pollFiles() {
     lastSync.value = new Date()
     loaded.value = true
     syncError.value = null
+    // The Agent may create or retitle the project while the folder is open: keep the recent list in step.
+    const title = project.value?.title || start.value?.title || ''
+    if (recorded !== null && recorded !== title && dirHandle.value === root) await record(root, title)
   } catch (err: any) {
     syncError.value = err.message || '讀取本機檔案失敗'
   }
@@ -210,6 +223,89 @@ async function pollImages(root: FileSystemDirectoryHandle) {
     }
   }
   if (changed) slideImages.value = next
+}
+
+async function record(handle: FileSystemDirectoryHandle, title: string) {
+  recorded = title
+  await recent.remember(handle, { projectName: title || null, kind: 'slide' })
+  await refreshRecent()
+}
+
+async function refreshRecent() {
+  recentList.value = await recent.load()
+}
+
+/**
+ * Opens a slide project folder, or an empty one for a new project. A folder holding other files is
+ * refused (the Agent unpacks the template there) and is not added to the recent list.
+ */
+export async function openFolder(handle: FileSystemDirectoryHandle) {
+  await setDirectory(handle)
+  if (needsSetup.value) {
+    const names = await folderEntries(handle)
+    if (names.length) {
+      resetDirectory()
+      throw new Error(`「${handle.name}」不是空的資料夾，也不是簡報專案（找到 ${names.slice(0, 3).join('、')}${names.length > 3 ? ' 等' : ''}）。請選擇空資料夾開始新專案，或選擇既有的簡報專案資料夾。`)
+    }
+  }
+  await record(handle, project.value?.title || start.value?.title || '')
+}
+
+/** Reopens a folder from the recent list; asks for access again when the browser no longer has it. */
+export async function reopen(handle: FileSystemDirectoryHandle) {
+  folderError.value = null
+  try {
+    if (!(await ensurePermission(handle, true))) throw new Error(`沒有取得「${handle.name}」的存取權限。`)
+    await openFolder(handle)
+  } catch (err) {
+    folderError.value = (err as Error).message
+  }
+}
+
+/** Lets the user pick a folder and opens it; cancelling the picker changes nothing. */
+export async function pickFolder() {
+  folderError.value = null
+  try {
+    await openFolder(await window.showDirectoryPicker!({ mode: 'readwrite', id: 'slide-project' }))
+  } catch (err) {
+    if ((err as DOMException).name !== 'AbortError') folderError.value = (err as Error).message || '無法開啟目錄'
+  }
+}
+
+/** The empty folder picked for a new project is not wanted after all: drop it from the list too. */
+export async function abandonFolder() {
+  const handle = dirHandle.value
+  resetDirectory()
+  if (handle) await forgetRecent(handle)
+}
+
+/**
+ * On start: reopen the folder from last time when the browser still allows it (Chrome keeps the
+ * grant when the user chose "allow on every visit"); otherwise list it, since re-granting needs a click.
+ */
+export async function restore() {
+  if (!isSupported()) return
+  await refreshRecent()
+  const last = recentList.value.find((r) => r.last)
+  if (!last) return
+  try {
+    if (await ensurePermission(last.handle, false)) await openFolder(last.handle)
+  } catch {
+    // Moved or emptied since last time: it stays in the list for the user to remove.
+  }
+}
+
+/** Closes the project: it stays in the recent list but is not reopened on the next visit. */
+export async function closeProject() {
+  folderError.value = null
+  resetDirectory()
+  await recent.forgetLast()
+  await refreshRecent()
+}
+
+export async function forgetRecent(handle: FileSystemDirectoryHandle) {
+  await recent.remove(handle)
+  await refreshRecent()
 }
 
 export function startPolling(intervalMs = 2500) {

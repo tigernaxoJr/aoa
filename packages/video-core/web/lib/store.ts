@@ -2,7 +2,7 @@
 // for running writes so conflicts and lock waits are reported the same way everywhere.
 import { reactive, shallowRef } from 'vue'
 import { ensurePermission, isSupported, tryFile } from '@aoa/web-shared/fsa'
-import { type RecentFolder, forgetLast, loadRecent, rememberFolder, removeFolder } from './idb'
+import { type RecentFolder, recent } from './idb'
 import { PROJECT_FILE, fingerprint, loadActivity, loadProject, readyForNewProject, type ProjectState } from './project'
 import { type TemplateDiff, templateDiff, updateTemplate } from './template'
 import type { VideoActivityJson } from '../types/protocol'
@@ -56,7 +56,8 @@ export async function reload() {
     const info = { projectName: next?.project.project.name ?? null, kind: next?.project.project.kind ?? null }
     if (JSON.stringify(info) !== recorded) {
       recorded = JSON.stringify(info)
-      await rememberFolder(root.value, info)
+      await recent.remember(root.value, info)
+      await refreshRecent()
     }
   } catch (err) {
     ui.error = (err as Error).message
@@ -111,7 +112,7 @@ export async function pickFolder() {
 
 async function refreshRecent() {
   // Folders without a project yet (kind unknown) belong to whichever workbench opens them.
-  ui.recent = (await loadRecent()).filter((r) => !r.kind || r.kind === VIDEO_KIND)
+  ui.recent = (await recent.load()).filter((r) => !r.kind || r.kind === VIDEO_KIND)
 }
 
 /**
@@ -126,12 +127,30 @@ export async function restore() {
 }
 
 export async function reconnect(handle: FileSystemDirectoryHandle) {
-  if (await ensurePermission(handle, true)) await openHandle(handle)
-  else notify('warn', '沒有取得資料夾的存取權限。')
+  try {
+    if (await ensurePermission(handle, true)) await openHandle(handle)
+    else notify('warn', '沒有取得資料夾的存取權限。')
+  } catch (err) {
+    // The folder was moved or deleted since it was opened.
+    notify('error', `無法開啟「${handle.name}」：${(err as Error).message}`)
+  }
+}
+
+/**
+ * Switches the open project to another recent folder. A folder that cannot be opened leaves the
+ * current project open and says why in a notice (the home page error is not visible from here).
+ */
+export async function switchTo(handle: FileSystemDirectoryHandle) {
+  const before = root.value
+  await reconnect(handle)
+  if (root.value === before && ui.error) {
+    notify('error', ui.error)
+    ui.error = null
+  }
 }
 
 export async function forgetRecent(handle: FileSystemDirectoryHandle) {
-  await removeFolder(handle)
+  await recent.remove(handle)
   await refreshRecent()
 }
 
@@ -144,7 +163,7 @@ export async function close() {
   ui.needsInstall = false
   if (timer) clearInterval(timer)
   timer = null
-  await forgetLast()
+  await recent.forgetLast()
   await refreshRecent()
 }
 

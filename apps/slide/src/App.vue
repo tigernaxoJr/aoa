@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import PdfViewer from './components/PdfViewer.vue'
 import ProjectPicker from './components/ProjectPicker.vue'
+import ProjectSwitcher from './components/ProjectSwitcher.vue'
 import PromptLauncher from './components/PromptLauncher.vue'
 import SlideDeckView from './components/SlideDeckView.vue'
 import {
   dirHandle,
+  folderError,
   hasHtml,
   hasPdf,
   isPolling,
@@ -14,7 +16,7 @@ import {
   needsSetup,
   pollFiles,
   project,
-  resetDirectory,
+  restore,
   slidesMarkdown,
   start,
 } from './lib/store'
@@ -32,6 +34,10 @@ const syncTimeStr = computed(() => {
 async function reload() {
   await pollFiles()
 }
+
+onMounted(restore)
+// Another project opened: start from its slides.
+watch(dirHandle, () => (activeTab.value = 'slides'))
 </script>
 
 <template>
@@ -39,7 +45,7 @@ async function reload() {
     <!-- Navbar -->
     <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
       <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div class="flex items-center gap-3">
+        <div class="flex min-w-0 items-center gap-3">
           <a
             href="../"
             class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
@@ -52,14 +58,18 @@ async function reload() {
           <span class="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap">
             <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 font-mono text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs" aria-hidden="true">S</span>
             <span class="hidden sm:inline">Slide Studio</span>
-            <span class="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
+            <span class="hidden rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 md:inline text-[11px] font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
               Slidev + AOA
             </span>
           </span>
+          <template v-if="dirHandle">
+            <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">/</span>
+            <ProjectSwitcher :name="projectTitle" />
+          </template>
         </div>
 
         <!-- Right Side: Directory status & Actions -->
-        <div v-if="dirHandle" class="flex items-center gap-3">
+        <div v-if="dirHandle" class="flex shrink-0 items-center gap-3">
           <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
             <span
               class="h-2 w-2 rounded-full"
@@ -80,14 +90,6 @@ async function reload() {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
-
-          <button
-            type="button"
-            @click="resetDirectory"
-            class="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
-          >
-            更換資料夾
-          </button>
         </div>
       </div>
     </header>
@@ -99,6 +101,10 @@ async function reload() {
 
       <!-- Workspace when folder is selected -->
       <div v-else class="space-y-6">
+        <div v-if="folderError" class="flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300" role="alert">
+          <span>{{ folderError }}</span>
+          <button type="button" class="shrink-0 text-xs font-medium underline cursor-pointer" @click="folderError = null">關閉</button>
+        </div>
         <!-- Project Title Header -->
         <div class="flex flex-wrap items-baseline justify-between gap-2">
           <div>

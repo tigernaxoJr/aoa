@@ -7,12 +7,13 @@ import HomeView from './components/HomeView.vue'
 import Icon from './components/Icon.vue'
 import SceneBoard from './components/SceneBoard.vue'
 import SceneEditor from './components/SceneEditor.vue'
+import ProjectSwitcher from './components/ProjectSwitcher.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import AgentSay from './components/AgentSay.vue'
 import { VIDEO_KIND, workbenchUrl } from './lib/site'
 import type { WorkbenchTab } from './lib/workbench'
-import { close, outdated, restore, state, syncTemplate, ui } from './lib/store'
+import { close, outdated, pickFolder, restore, root, state, switchTo, syncTemplate, ui } from './lib/store'
 
 const props = withDefaults(defineProps<{ sourceForm: Component; tabs?: WorkbenchTab[] }>(), { tabs: () => [] })
 
@@ -49,6 +50,12 @@ function closeProject() {
   close()
 }
 
+/** Leaving for another project drops unsaved edits: ask first. */
+function leave(go: () => void) {
+  if (dirty.value && !confirm('有尚未儲存的修改，仍要切換專案嗎？')) return
+  go()
+}
+
 const warnUnsaved = (e: BeforeUnloadEvent) => {
   if (dirty.value) e.preventDefault()
 }
@@ -57,6 +64,12 @@ onMounted(() => {
   window.addEventListener('beforeunload', warnUnsaved)
 })
 onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnsaved))
+// Another project opened: start from its overview (scene ids repeat across projects).
+watch(root, () => {
+  current.value = null
+  dirty.value = false
+  activeTab.value = 'scenes'
+})
 // Drop the selection when that scene leaves the project.
 watch(state, (st) => {
   if (current.value && !st?.scenes.some((s) => s.id === current.value)) {
@@ -84,12 +97,14 @@ watch(state, (st) => {
       </span>
       <template v-if="state">
         <span class="hidden text-slate-300 sm:inline dark:text-slate-700" aria-hidden="true">/</span>
-        <span class="min-w-0 truncate text-sm font-medium" data-testid="project-name">{{ state.project.project.name }}</span>
+        <ProjectSwitcher
+          :name="state.project.project.name"
+          @switch="(h) => leave(() => switchTo(h))"
+          @pick="leave(pickFolder)"
+          @close="closeProject"
+        />
       </template>
       <span class="ml-auto" />
-      <button v-if="state" type="button" class="btn-ghost btn-sm shrink-0" title="關閉專案（檔案會留在資料夾）" @click="closeProject">
-        <Icon name="logout" :size="14" /><span class="hidden sm:inline">關閉專案</span>
-      </button>
     </div>
   </header>
 

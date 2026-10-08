@@ -167,12 +167,16 @@ test('recent projects: a reload reopens the last project; a closed one stays one
   const app = await openApp(t, p)
   if (!app) return
   const { page } = app
+  const closeProject = async () => {
+    await page.getByTestId('project-name').click()
+    await page.getByRole('menuitem', { name: '關閉專案' }).click()
+  }
   await page.getByTestId('project-name').waitFor()
   await page.reload()
   await page.getByTestId('project-name').waitFor()
   assert.equal(await page.getByTestId('project-name').textContent(), '網頁測試專案', 'reopened without picking the folder again')
 
-  await page.getByRole('button', { name: '關閉專案' }).click()
+  await closeProject()
   const recent = page.getByTestId('recent')
   await recent.waitFor()
   assert.match(await recent.textContent(), /網頁測試專案/)
@@ -183,9 +187,55 @@ test('recent projects: a reload reopens the last project; a closed one stays one
 
   await recent.getByTestId('recent-open').click()
   await page.getByTestId('project-name').waitFor()
-  await page.getByRole('button', { name: '關閉專案' }).click()
+  await closeProject()
   await page.getByRole('button', { name: '從清單移除 proj' }).click()
   await recent.waitFor({ state: 'detached' })
+})
+
+test('project switcher: the header menu switches between recent projects without closing first', async (t) => {
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page } = app
+  await page.getByTestId('project-name').getByText('網頁測試專案').waitFor()
+  // A second project: a copy of the first under another name.
+  await page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory()
+    await root.removeEntry('proj2', { recursive: true }).catch(() => {})
+    const copy = async (from, to) => {
+      for await (const [name, h] of from.entries()) {
+        if (h.kind === 'directory') await copy(h, await to.getDirectoryHandle(name, { create: true }))
+        else {
+          let data = await (await h.getFile()).arrayBuffer()
+          if (name === 'video.project.json') data = new TextEncoder().encode((new TextDecoder().decode(data)).replace('網頁測試專案', '第二個專案'))
+          const w = await (await to.getFileHandle(name, { create: true })).createWritable()
+          await w.write(data)
+          await w.close()
+        }
+      }
+    }
+    const proj2 = await root.getDirectoryHandle('proj2', { create: true })
+    await copy(await root.getDirectoryHandle('proj'), proj2)
+    await window.__avp.open(proj2)
+  })
+  await page.getByTestId('project-name').getByText('第二個專案').waitFor()
+
+  await page.getByTestId('project-name').click()
+  const items = page.getByTestId('switch-project')
+  await items.nth(1).waitFor() // the list catches up just after the project shows
+  assert.equal(await items.count(), 2, 'both projects are listed')
+  assert.equal(await items.first().getAttribute('aria-current'), 'true', 'the open project comes first and is marked')
+  assert.match(await items.first().textContent(), /第二個專案.*開啟中/)
+  await items.filter({ hasText: '網頁測試專案' }).click()
+  await page.getByTestId('project-name').getByText('網頁測試專案').waitFor()
+  assert.equal(await page.getByRole('menu').count(), 0, 'the menu closes after switching')
+
+  await page.reload()
+  await page.getByTestId('project-name').getByText('網頁測試專案').waitFor({ timeout: 10_000 })
+  await page.getByTestId('project-name').click()
+  await page.keyboard.press('Escape')
+  assert.equal(await page.getByRole('menu').count(), 0, 'Escape closes the menu')
 })
 
 test('feedback: point at the frame, write a line; the scene goes stale and the agent reply shows up', async (t) => {
