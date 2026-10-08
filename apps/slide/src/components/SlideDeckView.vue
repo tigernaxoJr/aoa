@@ -167,7 +167,7 @@ function downloadDeck() {
     <!-- Two-Column Workbench Layout (Matching video SceneBoard + SceneEditor) -->
     <div
       v-else
-      class="grid items-start gap-5 lg:grid-cols-[minmax(300px,1.2fr)_2.8fr]"
+      class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(300px,1.2fr)_2.8fr]"
     >
       <!-- Left Column: Slide List -->
       <div class="lg:sticky lg:top-18">
