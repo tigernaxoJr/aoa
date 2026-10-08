@@ -108,8 +108,72 @@ export const STYLES = {
 }
 export const DEFAULT_STYLE = 'pop'
 
-/** General MIDI programs for each part: the style's, overridden by music.instruments (null = silent). */
-export const instrumentsFor = (music) => ({ ...STYLES[music.style ?? DEFAULT_STYLE].instruments, ...music.instruments })
+/** Lead program when a style has no melody but the agent wrote one (flute). */
+const WRITTEN_LEAD = 73
+
+/**
+ * General MIDI programs for each part: the style's, overridden by music.instruments (null = silent).
+ * A style without a lead still plays a melody the agent wrote, unless instruments.lead says null.
+ */
+export function instrumentsFor(music) {
+  const programs = { ...STYLES[music.style ?? DEFAULT_STYLE].instruments, ...music.instruments }
+  if (programs.lead === null && music.instruments?.lead === undefined && music.sections?.some((s) => s.melody)) programs.lead = WRITTEN_LEAD
+  return programs
+}
+
+// --- Written melodies ---
+//
+// One token per note: pitch and octave, then "/" and the length as a fraction of a whole note,
+// optionally dotted: C5/4 (quarter), F#4/8 (eighth), Bb4/2. (dotted half), r/4 (quarter rest).
+// "|" separates bars; every bar must add up to a whole 4/4 bar. C4 is middle C (MIDI 60).
+
+const LENGTHS = { 1: 16, 2: 8, 4: 4, 8: 2, 16: 1 }
+export const MELODY_RANGE = [55, 91]
+
+/**
+ * Parses a written melody into bars of notes { s, len, n } (sixteenths; n null for rests).
+ * Throws a UsageError naming the bar and token for anything that cannot be played.
+ */
+export function parseMelody(text, where = 'melody') {
+  const bars = text.split('|').map((b) => b.trim())
+  if (bars.at(-1) === '') bars.pop()
+  if (bars.every((b) => b === '')) throw new UsageError(`${where} is empty`)
+  return bars.map((bar, i) => {
+    let s = 0
+    const notes = bar.split(/\s+/).filter(Boolean).map((token) => {
+      const m = /^(?:([A-G])([#b]?)(\d)|(r))\/(1|2|4|8|16)(\.?)$/.exec(token)
+      if (!m) throw new UsageError(`${where} bar ${i + 1}: cannot read "${token}" (write notes like C5/4, F#4/8, Bb4/2., rests like r/4)`)
+      const len = LENGTHS[m[5]] * (m[6] ? 1.5 : 1)
+      if (!Number.isInteger(len)) throw new UsageError(`${where} bar ${i + 1}: "${token}" is shorter than a sixteenth`)
+      const n = m[4] ? null : (Number(m[3]) + 1) * 12 + pitchClass(m[1], m[2])
+      if (n !== null && (n < MELODY_RANGE[0] || n > MELODY_RANGE[1])) throw new UsageError(`${where} bar ${i + 1}: ${token} is outside G3–G6`)
+      const note = { s, len, n }
+      s += len
+      return note
+    })
+    if (s !== 16) throw new UsageError(`${where} bar ${i + 1}: adds up to ${s / 4} beats, a bar needs 4`)
+    return notes
+  })
+}
+
+/**
+ * Notes on beat 1 or 3, a quarter or longer, that clash with the chord (a semitone from a chord
+ * tone without being one). Returned as warnings; the agent may mean them.
+ */
+function clashes(bars, chords, where) {
+  const out = []
+  bars.forEach((notes, i) => {
+    const chord = parseChord(chords[i % chords.length])
+    for (const { s, len, n } of notes) {
+      if (n === null || (s !== 0 && s !== 8) || len < 4 || chord.pcs.includes(n % 12)) continue
+      if (chord.pcs.some((pc) => Math.abs(((n - pc + 6) % 12 + 12) % 12 - 6) === 1)) {
+        out.push(`${where} bar ${i + 1}: ${NAMES[n % 12]}${Math.floor(n / 12) - 1} on beat ${s / 4 + 1} clashes with ${chords[i % chords.length]}`)
+      }
+    }
+  })
+  return out
+}
+const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 
 /** Deterministic PRNG (mulberry32), so the same seed always gives the same music. */
 export function rng(seed) {
@@ -213,6 +277,16 @@ export function compose(music, sections) {
   const soft = style.soft ?? 1
   const scale = parseKey(music.key)
   const parts = instrumentsFor(music)
+  const warnings = []
+  // Written melodies, parsed up front so errors name the section before anything is rendered
+  const written = sections.map((sec, i) => {
+    if (!sec.melody) return null
+    const where = `music.sections[${i}].melody`
+    const bars = parseMelody(sec.melody, where)
+    if (bars.length > sec.bars) warnings.push(`${where} has ${bars.length} bars but the section has ${sec.bars}; the rest is not played`)
+    warnings.push(...clashes(bars.slice(0, sec.bars), sec.chords, where))
+    return bars
+  })
   const drums = music.drums ?? true
   const events = []
 
@@ -255,6 +329,15 @@ export function compose(music, sections) {
 
       for (const n of voicing) add('pad', t0, 0, ending ? bar * 1.5 : bar, n, (48 + e * 30) * fade)
 
+      if (written[si]) {
+        // The agent's melody plays whatever the energy, cycling when shorter than the section
+        for (const { s, len, n } of written[si][b % written[si].length]) {
+          if (n === null) continue
+          add('lead', t0, s, len * step * 0.95, n, (s % 8 === 0 ? 90 : s % 4 === 0 ? 82 : 74) * fade)
+          prevMel = n
+        }
+      }
+
       if (ending) {
         for (const n of [...voicing, voicing[0] + 12]) add('keys', t0, 0, bar * 1.5, n, 68 * fade)
         add('bass', t0, 0, bar * 1.5, bassRoot, 88)
@@ -290,7 +373,7 @@ export function compose(music, sections) {
       if (variation && grid.kick) add('kick', t0, 14, 0.25, GM_DRUMS.kick, 78)
       if (fill) for (const [k, s] of [12, 13, 14, 15].entries()) add('snare', t0, s, 0.1, GM_DRUMS.snare, 64 + k * 14)
 
-      if (level === 'high') {
+      if (level === 'high' && !written[si]) {
         prevMel = melody(b, sec, chord, scale, prevMel, lift, b % 4 < 2 ? motifA : motifB, (s, d, n, v) => add('lead', t0, s, d * step, n, v), r)
       }
 
@@ -303,7 +386,7 @@ export function compose(music, sections) {
 
   // An ending rings out for half a bar more; otherwise the music stops at the last bar line.
   const duration = barIdx * bar + (ended ? bar * 1.5 : 0)
-  return { events: events.sort((a, b) => a.t - b.t || a.n - b.n), duration, beat }
+  return { events: events.sort((a, b) => a.t - b.t || a.n - b.n), duration, beat, warnings }
 }
 
 /** The keys (piano) part for one bar: play(sixteenth, lengthInSixteenths, note, velocity). */

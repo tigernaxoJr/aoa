@@ -46,6 +46,7 @@ run(async (argv) => {
   const timeline = sceneTimeline(root, project, music.sections.some((s) => s.scenes))
   const sections = resolveSections(music, { timeline, order: project.scenes.map((s) => s.id) })
   const song = compose(music, sections)
+  for (const w of song.warnings) console.warn(`warning: ${w}`)
   const parts = PARTS.filter((part) => song.events.some((e) => partOf(e.track) === part))
 
   const outFile = join(root, MUSIC_FILE)

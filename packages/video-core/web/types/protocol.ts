@@ -261,6 +261,10 @@ export interface VideoProjectJson {
              * 最後一小節收尾：延長主和弦、鼓只敲一下。
              */
             ending?: boolean;
+            /**
+             * Agent 自己寫的旋律，取代自動旋律（不論 energy 都演奏）。每個音寫成 音名八度/時值：C5/4 四分音符、F#4/8 八分、Bb4/2. 附點二分、r/4 四分休止；| 分隔小節，每小節要剛好 4 拍；C4 為中央 C，音域 G3–G6。比段落短時循環。
+             */
+            melody?: string;
           },
           ...{
             name?: string;
@@ -348,6 +352,10 @@ export interface VideoProjectJson {
              * 最後一小節收尾：延長主和弦、鼓只敲一下。
              */
             ending?: boolean;
+            /**
+             * Agent 自己寫的旋律，取代自動旋律（不論 energy 都演奏）。每個音寫成 音名八度/時值：C5/4 四分音符、F#4/8 八分、Bb4/2. 附點二分、r/4 四分休止；| 分隔小節，每小節要剛好 4 拍；C4 為中央 C，音域 G3–G6。比段落短時循環。
+             */
+            melody?: string;
           }[]
         ];
       };

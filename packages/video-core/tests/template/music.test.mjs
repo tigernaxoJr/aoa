@@ -8,7 +8,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, test } from 'node:test'
-import { STYLES, barSec, compose, instrumentsFor, parseChord, parseKey, partOf, resolveSections, toMidi, voiceLead } from '../../template/scripts/lib/music.mjs'
+import { STYLES, barSec, compose, instrumentsFor, parseChord, parseKey, parseMelody, partOf, resolveSections, toMidi, voiceLead } from '../../template/scripts/lib/music.mjs'
 import { findFluidSynth } from '../../template/scripts/lib/music-engines.mjs'
 import { baseProject, makeProject } from './helpers.mjs'
 
@@ -131,6 +131,45 @@ describe('composer', () => {
     assert.equal(bar, 2)
     assert.throws(() => resolveSections(music, {}), /render them first/)
     assert.throws(() => resolveSections({ ...music, sections: [{ scenes: ['scene-009'], chords: ['C'], energy: 1 }] }, { timeline, order }), /not in video.project.json/)
+  })
+})
+
+describe('written melody', () => {
+  // The example in skills/rendering-guide.md#melody
+  const EXAMPLE = 'A4/4 C5/8 D5/8 F5/2 | E5/4. D5/8 C5/2 | D5/8 E5/8 F5/4 A5/4 G5/8 F5/8 | F5/2. r/4'
+
+  test('notation', () => {
+    const [bar] = parseMelody('C4/4 F#4/8 Bb4/8 r/4 G6/4')
+    assert.deepEqual(bar, [{ s: 0, len: 4, n: 60 }, { s: 4, len: 2, n: 66 }, { s: 6, len: 2, n: 70 }, { s: 8, len: 4, n: null }, { s: 12, len: 4, n: 91 }])
+    assert.deepEqual(parseMelody('E5/4. D5/16 D5/16 C5/2 |')[0].map((n) => n.len), [6, 1, 1, 8])
+    assert.equal(parseMelody(EXAMPLE).length, 4)
+    assert.throws(() => parseMelody('C5/4 D5/4 | E5/1', 'm'), /m bar 1: adds up to 2 beats/)
+    assert.throws(() => parseMelody('C5/1 | C5/4 H5/4 C5/2'), /bar 2: cannot read "H5\/4"/)
+    assert.throws(() => parseMelody('C3/1'), /outside G3–G6/)
+    assert.throws(() => parseMelody('C5/16.'), /shorter than a sixteenth/)
+    assert.throws(() => parseMelody(' | '), /empty/)
+  })
+
+  test('replaces the generated melody at any energy, cycling over the section', () => {
+    const music = { ...MUSIC, style: 'warm', sections: [{ bars: 8, chords: ['F', 'C', 'Dm', 'Bb'], energy: 0.2, melody: EXAMPLE }] }
+    const song = compose(music, music.sections)
+    assert.deepEqual(song.warnings, [])
+    const lead = song.events.filter((e) => e.track === 'lead')
+    assert.equal(lead.length, 2 * 14, 'the four bars (14 notes) twice')
+    assert.deepEqual(lead.slice(0, 4).map((e) => e.n), [69, 72, 74, 77])
+    assert.ok(Math.abs(lead[14].t - 4 * barSec(120)) < 0.01, 'second time round starts at bar 5')
+  })
+
+  test('warnings for clashes and extra bars; flute when the style has no lead', () => {
+    const music = { ...MUSIC, sections: [{ bars: 1, chords: ['C'], energy: 0.8, melody: 'B4/2 C5/2 | C5/1' }] }
+    assert.deepEqual(compose(music, music.sections).warnings, [
+      'music.sections[0].melody has 2 bars but the section has 1; the rest is not played',
+      'music.sections[0].melody bar 1: B4 on beat 1 clashes with C',
+    ])
+    const sections = [{ bars: 1, chords: ['Am'], energy: 0.8, melody: 'A4/1' }]
+    assert.equal(instrumentsFor({ style: 'suspense', sections }).lead, 73)
+    assert.equal(instrumentsFor({ style: 'suspense', sections, instruments: { lead: null } }).lead, null)
+    assert.equal(instrumentsFor({ style: 'suspense', sections: [] }).lead, null)
   })
 })
 
