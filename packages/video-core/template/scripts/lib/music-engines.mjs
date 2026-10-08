@@ -145,11 +145,11 @@ async function synth({ events, duration, sr, seed, mix }) {
 
   const bus = {}
   for (const [name, g, send, pan] of [
-    ['kick', 0.9, 0, 0], ['snare', 0.45, 0.2, 0], ['hat', 0.18, 0.05, 0.3],
+    ['kick', 0.9, 0, 0], ['snare', 0.45, 0.2, 0], ['hat', 0.18, 0.05, 0.3], ['crash', 0.16, 0.3, -0.3],
     ['bass', 0.55, 0, 0], ['keys', 0.22, 0.35, -0.2], ['pad', 0.09, 0.5, 0.2], ['lead', 0.2, 0.4, 0.1],
   ]) {
     const gain = ctx.createGain()
-    const part = ['kick', 'snare', 'hat'].includes(name) ? 'drums' : name
+    const part = ['kick', 'snare', 'hat', 'crash'].includes(name) ? 'drums' : name
     gain.gain.value = g * Math.pow(10, (mix[part] ?? 0) / 20)
     const p = ctx.createStereoPanner()
     p.pan.value = pan
@@ -216,6 +216,12 @@ async function synth({ events, duration, sr, seed, mix }) {
       hp.frequency.value = 8000
       noiseSrc(t, t + 0.1).connect(hp).connect(g)
       env(g, t, pk, 0.001, 0.015, 0.001, t + 0.08, 0.01)
+    } else if (track === 'crash') {
+      const hp = ctx.createBiquadFilter()
+      hp.type = 'highpass'
+      hp.frequency.value = 5000
+      noiseSrc(t, t + 1.8).connect(hp).connect(g)
+      env(g, t, pk, 0.002, 0.5, 0.001, t + 1.6, 0.2)
     } else if (track === 'bass') {
       const lp = ctx.createBiquadFilter()
       lp.type = 'lowpass'

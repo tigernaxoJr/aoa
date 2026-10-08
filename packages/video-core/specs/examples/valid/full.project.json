@@ -26,6 +26,7 @@
       "ducking": true,
       "music": {
         "engine": "auto",
+        "style": "warm",
         "bpm": 104,
         "key": "C",
         "seed": 7,

@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync 
 import { basename, join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
 import { ffmpeg, probeDuration, probeVideoDuration } from './lib/media.mjs'
-import { MIDI_FILE, MUSIC_DIR, MUSIC_FILE, MUSIC_META, compose, partOf, resolveSections, toMidi } from './lib/music.mjs'
+import { MIDI_FILE, MUSIC_DIR, MUSIC_FILE, MUSIC_META, compose, instrumentsFor, partOf, resolveSections, toMidi } from './lib/music.mjs'
 import { PARTS, SAMPLE_RATE, findFluidSynth, renderFluidSynth, renderWebAudio } from './lib/music-engines.mjs'
 import { UsageError, findRoot, loadProject } from './lib/project.mjs'
 import { inspectScenes } from './lib/status.mjs'
@@ -72,13 +72,13 @@ run(async (argv) => {
   const pcm = ['-ar', String(SAMPLE_RATE), '-ac', '2', '-c:a', 'pcm_s16le']
   const t = Date.now()
   try {
-    writeFileSync(midiFile, toMidi(song, music.instruments))
+    writeFileSync(midiFile, toMidi(song, instrumentsFor(music)))
     if (engine === 'fluidsynth') {
       // One render per part, each with its own SoundFont, then mixed with the part's gain.
       const stems = parts.map((part) => {
         const mid = join(work, `${part}.mid`)
         const wav = join(work, `${part}.wav`)
-        writeFileSync(mid, toMidi(song, music.instruments, part))
+        writeFileSync(mid, toMidi(song, instrumentsFor(music), part))
         renderFluidSynth(fluid.exe, fluid.fonts[part], mid, wav)
         return { part, wav }
       })

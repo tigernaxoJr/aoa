@@ -124,6 +124,10 @@ export interface VideoProjectJson {
          * auto：有安裝 FluidSynth 與音色庫就用它（真實樂器取樣），否則用 webaudio（程式合成，免安裝）。
          */
         engine?: "auto" | "fluidsynth" | "webaudio";
+        /**
+         * 曲風模板，決定配器與鼓、鋼琴、貝斯的型態及旋律節奏：pop 輕快科技、warm 溫馨、fairytale 童話、suspense 懸疑科幻（預設無旋律）、anthem 激勵片尾、lofi 慵懶搖擺。
+         */
+        style?: "pop" | "warm" | "fairytale" | "suspense" | "anthem" | "lofi";
         bpm: number;
         /**
          * 調性，大調寫音名（C、F#、Bb），小調加 m（Am、C#m）。
@@ -135,7 +139,7 @@ export interface VideoProjectJson {
         seed?: number;
         drums?: boolean;
         /**
-         * 各聲部的 General MIDI 音色編號（0–127，只影響 fluidsynth）；null 表示不演奏該聲部。
+         * 覆蓋曲風預設的 General MIDI 音色編號（0–127，只影響 fluidsynth）；null 表示不演奏該聲部。
          */
         instruments?: {
           lead?: number | null;
@@ -250,7 +254,7 @@ export interface VideoProjectJson {
                   string
                 ];
             /**
-             * 0–1。<0.3 只有鋪底；0.3–0.6 加入輕鼓與貝斯；≥0.6 完整鼓組與旋律。
+             * 0–1。<0.3 只有鋪底；0.3–0.6 加入鋼琴、貝斯與輕鼓；≥0.6 完整鼓組與旋律；≥0.85 旋律移高。進入能量較高的段落前會漸強、過門並加鈸。
              */
             energy: number;
             /**
@@ -337,7 +341,7 @@ export interface VideoProjectJson {
                   string
                 ];
             /**
-             * 0–1。<0.3 只有鋪底；0.3–0.6 加入輕鼓與貝斯；≥0.6 完整鼓組與旋律。
+             * 0–1。<0.3 只有鋪底；0.3–0.6 加入鋼琴、貝斯與輕鼓；≥0.6 完整鼓組與旋律；≥0.85 旋律移高。進入能量較高的段落前會漸強、過門並加鈸。
              */
             energy: number;
             /**

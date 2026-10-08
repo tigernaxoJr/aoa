@@ -10,15 +10,106 @@ export const MUSIC_FILE = `${MUSIC_DIR}/bgm.wav`
 export const MIDI_FILE = `${MUSIC_DIR}/song.mid`
 export const MUSIC_META = `${MUSIC_DIR}/bgm.json`
 
-/** General MIDI programs used when music.instruments leaves a part unset. */
-export const DEFAULT_INSTRUMENTS = { lead: 11, keys: 0, pad: 48, bass: 33 }
-export const DRUM_TRACKS = ['kick', 'snare', 'hat']
-const GM_DRUMS = { kick: 36, snare: 38, hat: 42 }
+export const DRUM_TRACKS = ['kick', 'snare', 'hat', 'crash']
+const GM_DRUMS = { kick: 36, snare: 38, hat: 42, crash: 49 }
 
 const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
 const MAJOR = [0, 2, 4, 5, 7, 9, 11]
 const MINOR = [0, 2, 3, 5, 7, 8, 10]
 const pitchClass = (letter, accidental) => (NOTE[letter] + (accidental === '#' ? 1 : accidental === 'b' ? -1 : 0) + 12) % 12
+
+// --- Styles ---
+//
+// A style is the arrangement: General MIDI programs, the piano (keys) pattern, the bass pattern,
+// drum grids for medium and high energy, the melody rhythms it draws from, and swing.
+// Drum grids are 16 sixteenth notes: X accent, x normal, o soft, . rest.
+// Bass patterns are [step, length in steps, note]: r root, 5 fifth, 8 octave, a approach to the next chord.
+
+const MOTIFS = [
+  [[0, 2], [2, 1], [3, 1], [4, 3], [8, 1], [9, 1], [10, 2], [12, 4]],
+  [[0, 1], [1, 1], [2, 2], [4, 2], [6, 2], [8, 3], [11, 1], [12, 4]],
+  [[0, 3], [3, 1], [4, 2], [6, 2], [8, 2], [10, 1], [11, 1], [12, 4]],
+  [[0, 4], [4, 2], [6, 2], [8, 6]],
+  [[0, 1], [1, 1], [2, 1], [3, 1], [4, 2], [7, 1], [8, 1], [9, 1], [10, 2], [12, 3]],
+  [[1, 2], [3, 1], [4, 2], [7, 2], [9, 1], [10, 2], [12, 4]],
+  [[0, 2], [2, 2], [4, 4], [8, 2], [10, 2], [12, 4]],
+]
+
+const BASS = {
+  drive: { mid: [[0, 15, 'r']], high: [[0, 6, 'r'], [6, 2, 'r'], [8, 4, 'r'], [12, 2, '5'], [14, 2, 'a']] },
+  root5: { mid: [[0, 8, 'r'], [8, 8, '5']], high: [[0, 6, 'r'], [6, 2, 'r'], [8, 6, '5'], [14, 2, 'a']] },
+  pulse8: { mid: [[0, 4, 'r'], [4, 4, 'r'], [8, 4, 'r'], [12, 4, 'r']], high: [[0, 2, 'r'], [2, 2, 'r'], [4, 2, 'r'], [6, 2, 'r'], [8, 2, 'r'], [10, 2, 'r'], [12, 2, '5'], [14, 2, 'a']] },
+  lofi: { mid: [[0, 7, 'r'], [10, 4, '5']], high: [[0, 6, 'r'], [7, 3, '5'], [10, 4, 'r'], [14, 2, 'a']] },
+}
+
+export const STYLES = {
+  pop: {
+    instruments: { lead: 11, keys: 4, pad: 89, bass: 38 },
+    keys: 'pulse',
+    bass: 'drive',
+    drums: {
+      mid: { kick: 'x.......x.......', hat: 'o...o...o...o...' },
+      high: { kick: 'X......xX.x.....', snare: '....X.......X...', hat: 'x.o.x.o.x.o.x.o.' },
+    },
+    motifs: [0, 1, 4, 5],
+  },
+  warm: {
+    instruments: { lead: 73, keys: 0, pad: 48, bass: 32 },
+    keys: 'broken',
+    bass: 'root5',
+    drums: {
+      mid: { kick: 'x.......x.......', hat: '....o.......o...' },
+      high: { kick: 'x.......x..x....', snare: '....x.......x...', hat: 'o.o.o.o.o.o.o.o.' },
+    },
+    motifs: [2, 3, 6],
+  },
+  fairytale: {
+    instruments: { lead: 9, keys: 0, pad: 49, bass: 32 },
+    keys: 'arp',
+    bass: 'root5',
+    drums: {
+      mid: { hat: 'o...o...o...o...' },
+      high: { kick: 'x.......x.......', snare: '........x.......', hat: 'o.o.o.o.o.o.o.o.' },
+    },
+    motifs: [0, 4],
+  },
+  suspense: {
+    instruments: { lead: null, keys: 46, pad: 95, bass: 38 },
+    keys: 'arp',
+    bass: 'pulse8',
+    drums: {
+      mid: { kick: 'x...x...x...x...' },
+      high: { kick: 'x...x...x...x.x.', snare: '............x...', hat: '..o...o...o...o.' },
+    },
+    motifs: [3, 2],
+  },
+  anthem: {
+    instruments: { lead: 60, keys: 0, pad: 48, bass: 33 },
+    keys: 'stabs',
+    bass: 'pulse8',
+    drums: {
+      mid: { kick: 'x...x...x...x...', hat: '..o...o...o...o.' },
+      high: { kick: 'X...x...X...x...', snare: '....X.......X...', hat: 'x.x.x.x.x.x.x.x.' },
+    },
+    motifs: [6, 0],
+  },
+  lofi: {
+    instruments: { lead: 11, keys: 4, pad: 89, bass: 32 },
+    keys: 'pulse',
+    bass: 'lofi',
+    drums: {
+      mid: { kick: 'x.........x.....', snare: '....x.......x...', hat: 'o.o.o.o.o.o.o.o.' },
+      high: { kick: 'x.....x...x.....', snare: '....X.......X...', hat: 'x.o.x.o.x.o.x.o.' },
+    },
+    motifs: [5, 3],
+    swing: 0.62,
+    soft: 0.85,
+  },
+}
+export const DEFAULT_STYLE = 'pop'
+
+/** General MIDI programs for each part: the style's, overridden by music.instruments (null = silent). */
+export const instrumentsFor = (music) => ({ ...STYLES[music.style ?? DEFAULT_STYLE].instruments, ...music.instruments })
 
 /** Deterministic PRNG (mulberry32), so the same seed always gives the same music. */
 export function rng(seed) {
@@ -81,100 +172,131 @@ export function resolveSections(music, { timeline = null, order = [] } = {}) {
   })
 }
 
-// Two-bar melody rhythms, in eighth notes: [position, length].
-const MOTIFS = [
-  [[0, 2], [2, 1], [3, 1], [4, 3], [8, 1], [9, 1], [10, 2], [12, 4]],
-  [[0, 1], [1, 1], [2, 2], [4, 2], [6, 2], [8, 3], [11, 1], [12, 4]],
-  [[0, 3], [3, 1], [4, 2], [6, 2], [8, 2], [10, 1], [11, 1], [12, 4]],
-]
-
 /** Puts pitch class `pc` in [lo, lo + 12). */
 const place = (pc, lo) => lo + ((((pc - lo) % 12) + 12) % 12)
+/** The note with pitch class `pc` closest to `target`. */
+const nearest = (pc, target) => place(pc, target - 6)
 
 /**
- * Writes the parts for `sections` (bars resolved). Energy decides the arrangement: below 0.3 only
- * the pad; from 0.3 bass, a light beat and sparse piano; from 0.6 the full beat, piano rhythm and
- * melody. Returns { events, duration, beat }.
+ * Close-position voicing of `chord` (lowest note in [52, 64)) that moves least from `prev`:
+ * every inversion is tried, so consecutive chords share or step to nearby notes.
+ */
+export function voiceLead(chord, prev) {
+  const candidates = chord.pcs.map((_, k) => {
+    const order = [...chord.pcs.slice(k), ...chord.pcs.slice(0, k)]
+    const notes = [place(order[0], 52)]
+    for (const pc of order.slice(1)) notes.push(place(pc, notes.at(-1) + 1))
+    return notes
+  })
+  if (!prev) return candidates.reduce((a, c) => (Math.abs(avg(c) - 60) < Math.abs(avg(a) - 60) ? c : a))
+  const cost = (c) => c.reduce((s, n) => s + Math.min(...prev.map((p) => Math.abs(p - n))), 0)
+  return candidates.reduce((a, c) => (cost(c) < cost(a) ? c : a))
+}
+const avg = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length
+
+/** Velocity for a drum grid character. */
+const HIT = { X: 112, x: 88, o: 52 }
+
+/**
+ * Writes the parts for `sections` (bars resolved) in `music.style`. Energy decides how much plays:
+ * below 0.3 only the pad; from 0.3 bass, keys and the medium drum grid; from 0.6 the high grid and
+ * the melody; from 0.85 the melody moves up. Sections build into louder ones (crescendo, a fill, a
+ * crash) and an ending fades and holds the last chord. Returns { events, duration, beat }.
  */
 export function compose(music, sections) {
+  const style = STYLES[music.style ?? DEFAULT_STYLE]
   const r = rng(music.seed ?? 1)
   const beat = 60 / music.bpm
   const bar = beat * 4
+  const step = beat / 4
+  const swing = ((style.swing ?? 0.5) - 0.5) * beat
+  const soft = style.soft ?? 1
   const scale = parseKey(music.key)
-  const parts = { ...DEFAULT_INSTRUMENTS, ...music.instruments }
+  const parts = instrumentsFor(music)
   const drums = music.drums ?? true
   const events = []
-  const add = (track, t, d, n, v) => {
+
+  /** Adds a note at sixteenth `s` of the bar starting at `t0`; off-beat eighths swing. */
+  const add = (track, t0, s, d, n, v) => {
     if (DRUM_TRACKS.includes(track) ? !drums : parts[track] === null) return
-    events.push({ track, t, d, n, v: Math.max(1, Math.min(127, Math.round(v + (r() - 0.5) * 14))) })
+    const humanize = track === 'pad' || s === 0 ? 0 : (r() - 0.5) * 0.012
+    const t = Math.max(0, t0 + s * step + (s % 4 === 2 ? swing : 0) + humanize)
+    events.push({ track, t, d, n, v: Math.max(1, Math.min(127, Math.round(v * soft + (r() - 0.5) * 12))) })
   }
 
-  const motif = MOTIFS[Math.floor(r() * MOTIFS.length)]
+  const motifSet = style.motifs.map((i) => MOTIFS[i])
+  const motifA = motifSet[Math.floor(r() * motifSet.length)]
+  const motifB = r() < 0.5 ? motifA : motifSet[Math.floor(r() * motifSet.length)]
   let barIdx = 0
-  let prevMel = 72
+  let prevVoicing = null
+  let prevMel = 69
   let ended = false
 
   sections.forEach((sec, si) => {
+    const prev = sections[si - 1]
     const next = sections[si + 1]
+    const e = sec.energy
+    const level = e >= 0.6 ? 'high' : e >= 0.3 ? 'mid' : null
+    const lift = e >= 0.85 ? 5 : 0
+
     for (let b = 0; b < sec.bars; b++, barIdx++) {
       const t0 = barIdx * bar
+      const first = events.length
       const chord = parseChord(sec.chords[b % sec.chords.length])
-      const e = sec.energy
+      const nextChord = b + 1 < sec.bars ? parseChord(sec.chords[(b + 1) % sec.chords.length]) : next ? parseChord(next.chords[0]) : chord
       const lastBar = b === sec.bars - 1
       const ending = sec.ending && lastBar
-      const voicing = chord.pcs.map((pc) => place(pc, 55)).sort((x, y) => x - y)
-      const bassN = place(chord.root, 36)
+      const voicing = voiceLead(chord, prevVoicing)
+      prevVoicing = voicing
+      const bassRoot = place(chord.root, 36)
+      // An ending section fades towards its last bar
+      const fade = sec.ending ? 1 - (0.25 * b) / Math.max(1, sec.bars - 1) : 1
       ended = ending
 
-      for (const n of voicing) add('pad', t0, ending ? bar * 1.5 : bar, n, 50 + e * 30)
+      for (const n of voicing) add('pad', t0, 0, ending ? bar * 1.5 : bar, n, (48 + e * 30) * fade)
 
       if (ending) {
-        for (const n of [...voicing, voicing[0] + 12]) add('keys', t0, bar * 1.5, n, 70)
-        add('bass', t0, bar * 1.5, bassN, 90)
-        add('kick', t0, 0.3, GM_DRUMS.kick, 100)
+        for (const n of [...voicing, voicing[0] + 12]) add('keys', t0, 0, bar * 1.5, n, 68 * fade)
+        add('bass', t0, 0, bar * 1.5, bassRoot, 88)
+        add('kick', t0, 0, 0.3, GM_DRUMS.kick, 96)
+        if (prev && prev.energy >= 0.6) add('crash', t0, 0, 1.5, GM_DRUMS.crash, 70)
         continue
       }
+      if (!level) continue
 
-      if (e >= 0.3) {
-        const comp = e >= 0.6 ? [0, 1.5, 2.5, 3] : [0, 2]
-        for (const p of comp) for (const n of voicing) add('keys', t0 + p * beat, beat * (e >= 0.6 ? 0.9 : 1.8), n, 58 + e * 25)
+      // Crash where a section lifts into high energy
+      if (level === 'high' && b === 0 && (!prev || prev.energy < e)) add('crash', t0, 0, 1.5, GM_DRUMS.crash, 92)
+
+      keysPattern(style.keys, level, voicing, (s, d, n, v) => add('keys', t0, s, d * step, n, v * fade))
+
+      for (const [s, len, what] of BASS[style.bass][level]) {
+        let n = bassRoot
+        if (what === '5') n = bassRoot + 7
+        else if (what === '8') n = bassRoot + 12
+        else if (what === 'a') n = nextChord.root === chord.root ? bassRoot + 7 : approach(nextChord.root, scale, bassRoot)
+        add('bass', t0, s, len * step * 0.95, n, (level === 'high' ? 92 : 80) * fade)
       }
 
-      if (e >= 0.6) {
-        for (const [p, n, d] of [[0, bassN, 1.4], [1.5, bassN, 0.4], [2, bassN, 0.9], [3, bassN + 7, 0.5], [3.5, bassN + 12, 0.4]]) add('bass', t0 + p * beat, d * beat, n, 92)
-        for (const p of [0, 1.75, 2, 2.5]) add('kick', t0 + p * beat, 0.3, GM_DRUMS.kick, p === 0 || p === 2 ? 110 : 80)
-        for (const p of [1, 3]) add('snare', t0 + p * beat, 0.2, GM_DRUMS.snare, 100)
-        for (let i = 0; i < 8; i++) add('hat', t0 + i * beat * 0.5, 0.05, GM_DRUMS.hat, i % 2 ? 55 : 80)
-        // Fill into the next section unless it is the ending
-        if (lastBar && next && !next.ending) for (let i = 0; i < 4; i++) add('snare', t0 + 3 * beat + (i * beat) / 4, 0.1, GM_DRUMS.snare, 60 + i * 12)
-      } else if (e >= 0.3) {
-        add('bass', t0, bar * 0.95, bassN, 80)
-        add('kick', t0, 0.3, GM_DRUMS.kick, 85)
-        add('kick', t0 + 2 * beat, 0.3, GM_DRUMS.kick, 70)
-        for (let i = 0; i < 4; i++) add('hat', t0 + i * beat, 0.05, GM_DRUMS.hat, 50)
-      }
-
-      // Melody: the same two-bar rhythm throughout, pitches refitted to each chord
-      if (e >= 0.6) {
-        const half = b % 2
-        for (const [pos, len] of motif) {
-          if (Math.floor(pos / 8) !== half) continue
-          let n
-          if (pos % 4 === 0) {
-            // On the beat: the chord tone closest to the previous note
-            const cands = chord.pcs.flatMap((pc) => [place(pc, 64), place(pc, 76)])
-            n = cands.reduce((a, c) => (Math.abs(c - prevMel) < Math.abs(a - prevMel) ? c : a))
-          } else {
-            // Off the beat: one scale step up or down
-            const idx = Math.max(0, scale.indexOf(((prevMel % 12) + 12) % 12))
-            n = place(scale[(idx + (r() < 0.5 ? -1 : 1) + 7) % 7], prevMel - 6)
-          }
-          n = Math.max(64, Math.min(84, n))
-          // A section's last long note lands on the chord root
-          if (lastBar && pos >= 12) n = place(chord.root, 67)
-          add('lead', t0 + ((pos % 8) * beat) / 2, ((len * beat) / 2) * 0.95, n, 85)
-          prevMel = n
+      const grid = style.drums[level]
+      const fill = lastBar && next && !next.ending && next.energy >= e && next.energy >= 0.6
+      const variation = level === 'high' && b % 4 === 3 && !lastBar
+      for (const [track, pattern] of Object.entries(grid)) {
+        for (let s = 0; s < 16; s++) {
+          if (fill && s >= 12 && track !== 'kick') continue
+          const c = pattern[s]
+          if (HIT[c]) add(track, t0, s, track === 'hat' ? 0.05 : 0.25, GM_DRUMS[track], HIT[c] * fade)
         }
+      }
+      if (variation && grid.kick) add('kick', t0, 14, 0.25, GM_DRUMS.kick, 78)
+      if (fill) for (const [k, s] of [12, 13, 14, 15].entries()) add('snare', t0, s, 0.1, GM_DRUMS.snare, 64 + k * 14)
+
+      if (level === 'high') {
+        prevMel = melody(b, sec, chord, scale, prevMel, lift, b % 4 < 2 ? motifA : motifB, (s, d, n, v) => add('lead', t0, s, d * step, n, v), r)
+      }
+
+      // Crescendo into a louder section
+      if (lastBar && next && next.energy > e) {
+        for (const ev of events.slice(first)) ev.v = Math.min(127, Math.round(ev.v * (0.85 + (0.3 * (ev.t - t0)) / bar)))
       }
     }
   })
@@ -182,6 +304,69 @@ export function compose(music, sections) {
   // An ending rings out for half a bar more; otherwise the music stops at the last bar line.
   const duration = barIdx * bar + (ended ? bar * 1.5 : 0)
   return { events: events.sort((a, b) => a.t - b.t || a.n - b.n), duration, beat }
+}
+
+/** The keys (piano) part for one bar: play(sixteenth, lengthInSixteenths, note, velocity). */
+function keysPattern(kind, level, voicing, play) {
+  const top = [...voicing, voicing[0] + 12]
+  if (kind === 'pulse') {
+    const hits = level === 'high' ? [[0, 5], [6, 4], [10, 2], [12, 4]] : [[0, 7], [8, 7]]
+    for (const [s, d] of hits) for (const n of voicing) play(s, d, n, level === 'high' ? 78 : 64)
+  } else if (kind === 'broken') {
+    // Broken chord in eighths (quarters at medium energy), each note left to ring
+    const order = [0, 2, 1, 2, 0, 2, 1, 3]
+    const every = level === 'high' ? 2 : 4
+    for (let s = 0; s < 16; s += every) play(s, every * 1.8, top[order[(s / every) % order.length] % top.length], s === 0 ? 74 : 60)
+  } else if (kind === 'arp') {
+    const order = [0, 1, 2, 3, 2, 1, 2, 3]
+    const every = level === 'high' ? 2 : 4
+    for (let s = 0; s < 16; s += every) play(s, every * 1.5, top[order[(s / every) % order.length] % top.length] + 12, s === 0 ? 72 : 58)
+  } else if (kind === 'stabs') {
+    const hits = level === 'high' ? [0, 4, 8, 12] : [0, 8]
+    for (const s of hits) for (const n of voicing) play(s, level === 'high' ? 2.5 : 7, n, s === 0 ? 84 : 72)
+  }
+}
+
+/** A scale note just below `targetPc`, near `around` (a bass line stepping into the next chord). */
+function approach(targetPc, scale, around) {
+  const target = place(targetPc, around - 5)
+  for (let n = target - 1; n >= target - 2; n--) if (scale.includes(((n % 12) + 12) % 12)) return n
+  return target - 1
+}
+
+/**
+ * One bar of melody. Two bars of rhythm (`motif`) make a half-phrase; a phrase is a question
+ * (ending on the 3rd or 5th) and an answer (ending on the root, also at the end of a section).
+ * Pitches follow an arch over the phrase: on the beat the chord tone nearest the arch, off the beat
+ * one scale step towards it. Returns the last note played.
+ */
+function melody(b, sec, chord, scale, prevMel, lift, motif, play, r) {
+  const half = b % 2
+  const unit = Math.floor(b / 2)
+  const answer = unit % 2 === 1 || b >= sec.bars - 2
+  const low = 64 + lift
+  const high = 84 + lift
+  for (const [pos, len] of motif) {
+    if (Math.floor(pos / 8) !== half) continue
+    const inPhrase = ((b % 4) * 8 + (pos % 8)) / 32
+    const arch = 69 + lift + Math.round(5 * Math.sin(Math.PI * inPhrase))
+    const lastNote = half === 1 && pos === motif.at(-1)[0]
+    let n
+    if (lastNote) {
+      const pcs = answer ? [chord.root] : chord.pcs.slice(1)
+      n = pcs.map((pc) => nearest(pc, prevMel)).reduce((a, c) => (Math.abs(c - prevMel) < Math.abs(a - prevMel) ? c : a))
+    } else if (pos % 4 === 0) {
+      n = chord.pcs.map((pc) => nearest(pc, arch)).reduce((a, c) => (Math.abs(c - prevMel) + Math.abs(c - arch) < Math.abs(a - prevMel) + Math.abs(a - arch) ? c : a))
+    } else {
+      const dir = arch > prevMel ? 1 : arch < prevMel ? -1 : r() < 0.5 ? -1 : 1
+      n = prevMel + dir
+      while (!scale.includes(((n % 12) + 12) % 12)) n += dir
+    }
+    n = Math.max(low, Math.min(high, n))
+    play((pos % 8) * 2, len * 2 * 0.95, n, lastNote ? 80 : pos % 4 === 0 ? 88 : 76)
+    prevMel = n
+  }
+  return prevMel
 }
 
 // --- Standard MIDI File (type 1) ---
@@ -205,10 +390,10 @@ function chunk(type, bytes) {
 
 /**
  * Song from compose() → MIDI file bytes. Drums go to channel 10 as General MIDI requires.
- * `only` keeps a single part ('lead', 'keys', 'pad', 'bass' or 'drums'), for rendering stems.
+ * `programs` are the General MIDI programs per part (instrumentsFor); `only` keeps a single part
+ * ('lead', 'keys', 'pad', 'bass' or 'drums'), for rendering stems.
  */
-export function toMidi({ events, beat }, instruments = {}, only = null) {
-  const programs = { ...DEFAULT_INSTRUMENTS, ...instruments }
+export function toMidi({ events, beat }, programs, only = null) {
   const ticks = (sec) => Math.max(0, Math.round((sec / beat) * PPQ))
   const us = Math.round(beat * 1e6)
   const tracks = [[0, 0xff, 0x51, 3, (us >> 16) & 0xff, (us >> 8) & 0xff, us & 0xff, 0, 0xff, 0x2f, 0]]

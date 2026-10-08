@@ -302,7 +302,7 @@ pnpm run state project --status completed
   "bpm": 108,
   "key": "C",
   "seed": 1,
-  "instruments": { "lead": 11, "keys": 4, "pad": 89, "bass": 38 },
+  "style": "pop",
   "mix": { "lead": -4 },
   "sections": [
     { "name": "開場", "scenes": ["scene-001"], "chords": ["C", "G", "Am", "F"], "energy": 0.3 },
@@ -313,19 +313,22 @@ pnpm run state project --status completed
 ```
 
 - **段落對齊 scene**：所有 scene 都渲染後，用 `scenes` 讓每段音樂的起訖落在畫面切換點（自動取最接近的小節線），這樣情緒轉折會跟著畫面走。還沒渲染時先用 `bars` 試聽，渲染完再改成 `scenes`。
-- **energy**：`<0.3` 只有鋪底和弦（適合開場、沉靜處）；`0.3–0.6` 加入貝斯、輕鼓與鋼琴；`≥0.6` 完整鼓組與旋律（適合重點、高潮）。最後一段加 `ending: true` 收尾。
+- **energy**：`<0.3` 只有鋪底和弦（適合開場、沉靜處）；`0.3–0.6` 加入鋼琴、貝斯與輕鼓；`≥0.6` 完整鼓組與旋律（適合重點、高潮）；`≥0.85` 旋律再移高。進入能量較高的段落前會自動漸強、過門並加鈸；最後一段加 `ending: true` 漸弱收尾。
 - **旋律與旁白**：旋律只在 `energy ≥ 0.6` 出現，容易和旁白搶耳朵；旁白密集時把 `mix.lead` 調低（-4 到 -8），或設 `instruments.lead: null` 不要旋律。
 - **和弦**：每小節一個，不足時循環。大調常用 I–V–vi–IV（C G Am F）、vi–IV–I–V（Am F C G）；小調常用 i–VI–III–VII（Am F C G）。
 
-依氣氛挑起點（`instruments` 為 General MIDI 編號，只影響 fluidsynth）：
+依氣氛選 `style`（決定配器與鼓、鋼琴、貝斯的型態，旋律節奏也從曲風的組合中挑），再配上速度、調性與和弦：
 
-| 氣氛 | bpm | key | 和弦 | instruments |
+| style | 氣氛 | bpm | key | 和弦範例 |
 |---|---|---|---|---|
-| 輕快科技、產品介紹 | 110–125 | C、G | C G Am F | lead 11 鐵琴、keys 4 電鋼琴、pad 89 暖墊、bass 38 合成貝斯 |
-| 溫馨、生活故事 | 72–90 | F、C | F C Dm Bb | lead 73 長笛、keys 0 鋼琴、pad 48 弦樂、bass 32 原聲貝斯 |
-| 童話、可愛 | 90–110 | F、G | F C Bb C | lead 9 鐘琴、keys 0 鋼琴、pad 49 弦樂、bass 32 原聲貝斯 |
-| 懸疑、科幻 | 70–90 | Am、Dm | Am F C G | lead null、keys 46 豎琴、pad 95 掃頻墊、bass 38；`drums: false` 或 energy 壓低 |
-| 激勵、片尾 | 120–135 | D、G | G D Em C | lead 61 銅管、keys 0 鋼琴、pad 48 弦樂、bass 33 電貝斯 |
+| `pop` | 輕快科技、產品介紹 | 110–125 | C、G | C G Am F |
+| `warm` | 溫馨、生活故事（分解和弦鋼琴、長笛、弦樂） | 72–90 | F、C | F C Dm Bb |
+| `fairytale` | 童話、可愛（鐘琴、琶音） | 90–110 | G、F | G D Em C |
+| `suspense` | 懸疑、科幻（豎琴琶音、心跳般的鼓，預設沒有旋律） | 70–90 | Am、Dm | Am F C G、Dm Am F E |
+| `anthem` | 激勵、片尾（法國號、和弦重音） | 120–135 | D、G | D A Bm G |
+| `lofi` | 慵懶、咖啡廳（搖擺節奏、電鋼琴，適合七和弦） | 70–85 | C、F | Cmaj7 Am7 Dm7 G7 |
+
+`instruments` 只在想換掉曲風的某個樂器時才寫（General MIDI 編號，只影響 fluidsynth；例：0 鋼琴、4 電鋼琴、9 鐘琴、11 鐵琴、46 豎琴、48 弦樂、60 法國號、73 長笛、89 暖墊）。
 
 ### 引擎與音色庫
 
@@ -343,7 +346,8 @@ pnpm run state project --status completed
 | 太快、太慢 | `bpm` |
 | 太吵、太平淡 | 各段 `energy`；整體太大聲改 `audio.bgmVolume` |
 | 某個樂器太大聲 | `mix.<聲部>`（dB） |
-| 換樂器 | `instruments.<聲部>` |
+| 換風格 | `style` |
+| 換某個樂器 | `instruments.<聲部>` |
 | 想自己編曲 | 告訴使用者 `assets/music/song.mid` 可以用 MuseScore 等軟體打開 |
 
 改完重新 `pnpm run music` 再 `pnpm run assemble`；配樂只影響合成，不需要重做 scene。`--stems` 會把各聲部另存到 `assets/music/stems/`，使用者想自己混音時才用。

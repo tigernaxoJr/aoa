@@ -8,7 +8,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, test } from 'node:test'
-import { barSec, compose, parseChord, parseKey, partOf, resolveSections, toMidi } from '../../template/scripts/lib/music.mjs'
+import { STYLES, barSec, compose, instrumentsFor, parseChord, parseKey, partOf, resolveSections, toMidi, voiceLead } from '../../template/scripts/lib/music.mjs'
 import { findFluidSynth } from '../../template/scripts/lib/music-engines.mjs'
 import { baseProject, makeProject } from './helpers.mjs'
 
@@ -63,11 +63,48 @@ describe('composer', () => {
     const intro = song.events.filter((e) => e.t < 2 * bar)
     assert.deepEqual(tracks({ events: intro }), new Set(['pad']), 'below 0.3 only the pad plays')
     const main = song.events.filter((e) => e.t >= 2 * bar && e.t < 6 * bar)
-    for (const t of ['lead', 'keys', 'pad', 'bass', 'kick', 'snare', 'hat']) assert.ok(tracks({ events: main }).has(t), `main has ${t}`)
+    for (const t of ['lead', 'keys', 'pad', 'bass', 'kick', 'snare', 'hat', 'crash']) assert.ok(tracks({ events: main }).has(t), `main has ${t}`)
+    assert.ok(main.some((e) => e.track === 'crash' && Math.abs(e.t - 2 * bar) < 1e-9), 'crash where the music lifts')
     // The ending bar: one kick, chords held
     const last = song.events.filter((e) => e.t >= 7 * bar)
     assert.equal(last.filter((e) => e.track === 'kick').length, 1)
     assert.ok(last.filter((e) => e.track === 'keys').every((e) => e.d === 1.5 * bar))
+  })
+
+  test('every style composes, with its own instruments and grooves', () => {
+    const seen = new Set()
+    for (const style of Object.keys(STYLES)) {
+      const song = compose({ ...MUSIC, style }, MUSIC.sections)
+      assert.ok(song.events.length > 50, style)
+      assert.ok(song.events.every((e) => e.t >= 0 && e.d > 0 && e.v >= 1 && e.v <= 127 && Number.isInteger(e.n)), style)
+      const groove = song.events.filter((e) => e.track === 'kick').map((e) => e.t.toFixed(2)).join()
+      seen.add(groove)
+      assert.deepEqual(instrumentsFor({ style }), STYLES[style].instruments)
+    }
+    assert.ok(seen.size >= 5, 'kick patterns differ between styles')
+    assert.ok(!tracks(compose({ ...MUSIC, style: 'suspense' }, MUSIC.sections)).has('lead'), 'suspense has no melody by default')
+    assert.ok(tracks(compose({ ...MUSIC, style: 'suspense', instruments: { lead: 73 } }, MUSIC.sections)).has('lead'))
+  })
+
+  test('lofi swings the off-beat eighths', () => {
+    const beat = 0.5
+    const hats = compose({ ...MUSIC, style: 'lofi' }, MUSIC.sections).events.filter((e) => e.track === 'hat')
+    const offbeats = hats.map((e) => (e.t / beat) % 1).filter((f) => f > 0.3 && f < 0.9)
+    assert.ok(offbeats.length > 0 && offbeats.every((f) => f > 0.55), `off-beats land late: ${offbeats.slice(0, 4)}`)
+  })
+
+  test('chords move to the nearest inversion', () => {
+    const c = voiceLead(parseChord('C'), null)
+    const f = voiceLead(parseChord('F'), c)
+    const moved = f.reduce((s, n) => s + Math.min(...c.map((p) => Math.abs(p - n))), 0)
+    assert.ok(moved <= 3, `C ${c} → F ${f} moves ${moved} semitones`)
+    assert.ok(f.includes(60), 'the common tone C stays')
+  })
+
+  test('a section ends its melody on the chord root', () => {
+    const music = { ...MUSIC, sections: [{ bars: 4, chords: ['F', 'G', 'Am', 'C'], energy: 0.8 }] }
+    const lead = compose(music, music.sections).events.filter((e) => e.track === 'lead')
+    assert.equal(lead.at(-1).n % 12, 0)
   })
 
   test('parts can be left out', () => {
@@ -112,7 +149,7 @@ describe('MIDI', () => {
 
   test('one track per part, plus the tempo track', () => {
     const song = compose(MUSIC, MUSIC.sections)
-    const midi = chunks(toMidi(song))
+    const midi = chunks(toMidi(song, instrumentsFor(MUSIC)))
     assert.equal(midi[0].type, 'MThd')
     assert.equal(midi[0].data.readUInt16BE(0), 1, 'format 1')
     assert.equal(midi[0].data.readUInt16BE(2), 6, 'tempo + lead, keys, pad, bass, drums')
@@ -123,10 +160,10 @@ describe('MIDI', () => {
 
   test('a single part for stems; programs from instruments', () => {
     const song = compose(MUSIC, MUSIC.sections)
-    const keys = chunks(toMidi(song, { keys: 4 }, 'keys'))
+    const keys = chunks(toMidi(song, instrumentsFor({ ...MUSIC, instruments: { keys: 4 } }), 'keys'))
     assert.equal(keys[0].data.readUInt16BE(2), 2)
     assert.deepEqual([...keys[2].data.subarray(0, 3)], [0, 0xc1, 4], 'program change to 4 on channel 2')
-    const drums = chunks(toMidi(song, {}, 'drums'))
+    const drums = chunks(toMidi(song, instrumentsFor(MUSIC), 'drums'))
     assert.equal(drums[2].data[1], 0xb9, 'drums on channel 10, no program change')
     assert.equal(partOf('hat'), 'drums')
   })
