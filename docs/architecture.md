@@ -107,6 +107,7 @@ The user's local development environment has changed dramatically in recent year
 ### Principle 4: Local-First & Data Sovereignty
 - **Assets never pass through the service**: Proprietary code, private assets, internal site credentials, and original drafts stay in the user's controlled environment; the service's servers (if any) never handle them.
 - **The privacy boundary is the user's choice**: During inference, the agent sends the necessary context to the LLM provider the user chose, so the privacy boundary equals that provider's data policy. If data must never leave the machine, local LLM / TTS models can be used instead.
+- **Inference can migrate step by step**: Where inference runs is part of the agent's configuration, not the service. An organization can adopt AOA on a cloud LLM or a CSP-hosted plan (such as AWS Bedrock, Google Vertex AI, or Azure OpenAI), then move to a self-hosted model served with tools such as Ollama or vLLM as privacy and compliance needs grow. The migration touches no part of the service, frontend, protocol, or existing projects; only the agent's model setting changes. Self-hosted models may handle complex tasks less well, but agent output is already validated against the schema with retry and repair paths, which absorbs that gap.
 - **Self-Sustaining**: Even if the cloud backend goes offline or the service shuts down, local projects and generated assets remain fully readable and can be built and run independently with local toolchains.
 
 ---

@@ -173,6 +173,7 @@
               <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">四大核心原則</h2>
               <p class="mt-3 text-sm leading-relaxed text-stone-500">怎樣的架構才算 AOA。</p>
             </div>
+            <div>
             <ol class="grid gap-x-12 sm:grid-cols-2">
               <li class="border-t border-stone-300 py-6 dark:border-stone-700">
                 <span class="font-mono text-sm text-accent">01</span>
@@ -195,6 +196,11 @@
                 <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Agent 處理的檔案留在使用者端；唯一會看到這些上下文的第三方是使用者自選的 LLM 供應商，改用本機模型則沒有。</p>
               </li>
             </ol>
+            <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
+              <p class="font-mono text-[11px] uppercase tracking-wider text-accent">推論可漸進遷移 · 從雲端到地端，產品不用改</p>
+              <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">推論接在哪裡，由使用者的 Agent 設定決定，服務只認協議。導入初期可以直接用熱門雲端方案，例如 Anthropic、OpenAI，或 AWS Bedrock、Google Vertex AI、Azure OpenAI 等 CSP 託管服務，快速驗證流程；等到資料敏感度提高，再把同一個 Agent 改接以 Ollama 或 vLLM 架設的地端模型，資料完全不出內網。整個過程中，服務端、前端與專案格式都不需要變動。</p>
+            </div>
+            </div>
           </div>
         </div>
       </section>
