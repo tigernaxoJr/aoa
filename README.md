@@ -58,7 +58,7 @@ This repository includes three AOA workbenches:
 
 ## Local Development
 
-Requires Node.js 20.12+ and pnpm:
+Requires Node.js 24+ and pnpm (the version in `.nvmrc` with nvm: `nvm use`):
 
 ```bash
 pnpm install

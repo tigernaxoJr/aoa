@@ -69,7 +69,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    - `updatedAt`：目前時間
    新專案沒有其他寫入者，這一次可以直接編輯 `video.project.json`；之後一律依 `AGENTS.md` 透過 `pnpm run state` 修改。
 6. **安裝與檢查**：由你執行，不要請使用者打指令。
-   - **Node.js**（20.12 以上，`node -v`）：沒有時先說明「需要安裝一個叫 Node.js 的免費工具」並取得同意。可以代為安裝時（Windows `winget install OpenJS.NodeJS.LTS`、macOS `brew install node`）就代為執行；不行時給點擊式步驟：「打開 https://nodejs.org → 按左邊綠色的 LTS 下載 → 打開下載的檔案 → 一直按『下一步』直到完成 → 完成後告訴我」。安裝後可能需要重新開啟 Agent 的對話。
+   - **Node.js**（24 以上，`node -v`）：沒有時先說明「需要安裝一個叫 Node.js 的免費工具」並取得同意。可以代為安裝時（Windows `winget install OpenJS.NodeJS.LTS`、macOS `brew install node`）就代為執行；不行時給點擊式步驟：「打開 https://nodejs.org → 按左邊綠色的 LTS 下載 → 打開下載的檔案 → 一直按『下一步』直到完成 → 完成後告訴我」。安裝後可能需要重新開啟 Agent 的對話。
    - **pnpm**（安裝套件用的工具，`pnpm -v`）：沒有時說明並取得同意後代為安裝（Windows `winget install pnpm.pnpm`、macOS `brew install pnpm`；兩者都不能用時 `npm install -g pnpm`）。安裝後可能需要重新開啟 Agent 的對話。
    - 執行 `pnpm install`（會一併取得 FFmpeg）。
    - 瀏覽器：已有 Chrome 或 Edge 就不需要其他動作；都沒有時，取得同意後執行 `pnpm exec playwright install chromium`。

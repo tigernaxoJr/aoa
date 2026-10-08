@@ -494,7 +494,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 | 用途 | 工具 | 備註 |
 |---|---|---|
-| 執行環境 | Node.js ≥ 20.12、pnpm | 需要 `readdirSync` 遞迴列出與 `parentPath` |
+| 執行環境 | Node.js ≥ 24、pnpm | 目前的 Active LTS；Node 20 已於 2026-04 停止維護，版本由 nvm 依 `.nvmrc` 管理 |
 | 網頁擷取 | Playwright | 截圖、錄製操作、抓取產品頁內容。瀏覽器依序使用：Playwright 內建 Chromium → 系統 Chrome → 系統 Edge（可用 `VIDEO_AGENT_BROWSER_CHANNEL` 指定），Windows 使用者無需另外下載 |
 | 語音合成 | 可替換 provider，預設 `edge-tts` | 見 §7.4 |
 | 影片合成 | Playwright 逐幀截圖 + FFmpeg | 不需額外授權；見 §7.6 |

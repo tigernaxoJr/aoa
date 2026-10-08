@@ -3,6 +3,9 @@
   "private": true,
   "packageManager": "pnpm@11.22.0",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "test:specs": "node --test packages/video-core/tests/specs.test.mjs apps/slide/tests/specs.test.mjs",
     "test": "node --test \"apps/*/tests/**/*.test.mjs\" \"packages/*/tests/**/*.test.mjs\" \"tests/**/*.test.mjs\" && node packages/video-core/tools/gen-types.mjs --check && node apps/slide/tools/gen-types.mjs --check",

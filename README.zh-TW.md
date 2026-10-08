@@ -59,7 +59,7 @@ AOA 也適用於有後端的系統：帳號、計費、團隊協同留在輕量�
 
 ## 本機開發與指令
 
-需要 Node.js 20.12+ 與 pnpm：
+需要 Node.js 24+ 與 pnpm（用 nvm 時執行 `nvm use` 切到 `.nvmrc` 的版本）：
 
 ```bash
 pnpm install

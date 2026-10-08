@@ -14,7 +14,7 @@
     "guide"
   ],
   "engines": {
-    "node": ">=20.12"
+    "node": ">=24"
   },
   "scripts": {
     "prepack": "node ../../tools/bundle-video-agent-guide.mjs"

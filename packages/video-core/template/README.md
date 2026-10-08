@@ -40,7 +40,7 @@
 
 ## 需要的工具
 
-- Node.js 20.12 以上與 pnpm。執行 `pnpm install` 會一併取得 FFmpeg。
+- Node.js 24 以上與 pnpm。執行 `pnpm install` 會一併取得 FFmpeg。
 - 瀏覽器：Playwright 內建的 Chromium，或系統安裝的 Chrome / Edge。
 
 ## 產出
