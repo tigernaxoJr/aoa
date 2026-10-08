@@ -246,77 +246,21 @@ export default function setup({ root }) {
     assert.match(r.stderr, /must return seek\(t\)/)
   })
 
-  // A stand-in for a GSAP timeline: totalTime(t) moves a white square 200 px per second, from its
-  // onUpdate callback as HyperFrames blocks often do, so it moves only when events fire.
-  const squareTimeline = (doc) => `const box = ${doc}.getElementById('box')
-  return { totalTime(t, suppressEvents) { if (!suppressEvents) box.style.left = (100 + t * 200) + 'px' } }`
-
-  test('a motion module may register timelines on window.__timelines; timed clips show in their window', async (t) => {
-    const scene = baseScene('scene-001', { durationSec: 1.5, visual: { type: 'motion-graphic', description: 'x', motion: { file: 'assets/motion.js' } } })
+  test('a seek(t) that returns a never-settling thenable (a GSAP timeline) does not stall the render', async (t) => {
+    const scene = baseScene('scene-001', { durationSec: 0.5, visual: { type: 'motion-graphic', description: 'x', motion: { file: 'assets/motion.js' } } })
     p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
     cpSync(templateSrc, p.path('src'), { recursive: true })
-    // The square sits in a sub-composition starting at 0.5 s; the red clip shows 0.25–0.75 s.
+    // `(t) => tl.seek(t)` hands back the paused timeline, whose then() resolves only when it finishes playing.
     p.write('scenes/001-hook/assets/motion.js', `export default function setup({ root }) {
-  root.innerHTML = '<div style="position:absolute;inset:0;background:#0000ff"></div>'
-    + '<div data-composition-id="sub" data-start="0.5"><div id="box" style="position:absolute;top:40px;width:40px;height:40px;background:#fff"></div></div>'
-    + '<div class="clip" data-start="0.25" data-duration="0.5" style="position:absolute;left:0;bottom:0;width:80px;height:80px;background:#ff0000"></div>'
-  window.__timelines.sub = (() => { ${squareTimeline('document')} })()
+  root.style.background = '#00ff00'
+  const timeline = { then() {} }
+  return () => timeline
 }
 `)
     const r = await p.runAsync('render-scene.mjs', ['scene-001'])
     if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
     assert.equal(r.code, 0, r.stderr)
-    const out = p.path('scenes/001-hook/output/scene.mp4')
-    assert.equal(whiteBox(out, 0.25), null, 'the sub-composition is hidden before its data-start')
-    assert.ok(Math.abs(whiteBox(out, 0.75).left - 150) <= 3, 'its timeline starts at the composition start')
-    assert.ok(Math.abs(whiteBox(out, 1.0).left - 200) <= 3, 'its timeline runs with the scene')
-    near(pixel(out, 0.1, 20, 340), [0, 0, 255], 'clip hidden before data-start')
-    near(pixel(out, 0.5, 20, 340), [255, 0, 0], 'clip shown during its window')
-    near(pixel(out, 1.0, 20, 340), [0, 0, 255], 'clip hidden after data-duration')
-  })
-
-  test('a HyperFrames composition (.html) renders scaled to the frame, with CDN libraries served from node_modules', async (t) => {
-    const scene = baseScene('scene-001', { durationSec: 1.5, visual: { type: 'motion-graphic', description: 'x', motion: { file: 'assets/block.html' } } })
-    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
-    cpSync(templateSrc, p.path('src'), { recursive: true })
-    // A stand-in for `pnpm add gsap`: the block's CDN script resolves to the installed copy.
-    p.write('node_modules/fakelib/package.json', '{ "name": "fakelib" }')
-    p.write('node_modules/fakelib/dist/lib.js', `window.makeTimeline = function () { ${squareTimeline('document')} }\n`)
-    // Authored at 1280×720, so every distance halves in the 640×360 frame.
-    p.write('scenes/001-hook/assets/block.html', `<!doctype html>
-<html><head>
-<script src="https://cdn.jsdelivr.net/npm/fakelib@1.2.3/dist/lib.js"></script>
-<style>* { margin: 0 } body { width: 1280px; height: 720px; background: #0000ff; overflow: hidden }
-#box { position: absolute; top: 80px; width: 80px; height: 80px; background: #fff }</style>
-</head><body>
-<div id="root" data-composition-id="main" data-start="0" data-width="1280" data-height="720">
-  <div id="box"></div>
-</div>
-<script>window.__timelines.main = makeTimeline()</script>
-</body></html>
-`)
-    const r = await p.runAsync('render-scene.mjs', ['scene-001'])
-    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
-    assert.equal(r.code, 0, r.stderr)
-    const out = p.path('scenes/001-hook/output/scene.mp4')
-    near(pixel(out, 0.1, 20, 340), [0, 0, 255], 'the composition fills the frame')
-    const box = whiteBox(out, 1.0)
-    assert.ok(Math.abs(box.left - 150) <= 3, `square at 1.0 s starts at x=${box.left}`)
-    assert.ok(Math.abs(box.right - box.left + 1 - 40) <= 3, 'the 80 px square is scaled to 40 px')
-  })
-
-  test('a HyperFrames composition fails with the install command when its CDN library is missing', async (t) => {
-    const scene = baseScene('scene-001', { durationSec: 0.5, visual: { type: 'motion-graphic', description: 'x', motion: { file: 'assets/block.html' } } })
-    p = makeProject({ project: smallProject(), scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene, script: '' }] })
-    cpSync(templateSrc, p.path('src'), { recursive: true })
-    p.write('scenes/001-hook/assets/block.html', `<!doctype html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script></head>
-<body><div data-composition-id="main"></div></body></html>
-`)
-    const r = await p.runAsync('render-scene.mjs', ['scene-001'])
-    if (/no usable browser/.test(r.stderr)) return t.skip('no browser available')
-    assert.equal(r.code, 1)
-    assert.match(r.stderr, /pnpm add gsap/)
+    near(pixel(p.path('scenes/001-hook/output/scene.mp4'), 0.2, 320, 180), [0, 255, 0], 'the module drew the frame')
   })
 
   test('duration follows the narration plus 0.5 s', async (t) => {

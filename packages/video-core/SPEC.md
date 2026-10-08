@@ -126,7 +126,6 @@ my-video-project/
 │   └── state.mjs               # 唯一的 JSON 寫入入口（§10.2）
 ├── src/                        # 渲染器程式碼（§7.6）
 │   ├── lib/motion.js           # 版面、動畫、配色（純函式）
-│   ├── lib/hyperframes.js      # HyperFrames 相容層（window.__timelines、data-start 片段、.html composition）
 │   ├── html/player.js          # scene 版面（純 DOM，`window.__seek(t)`）
 │   └── fonts/                  # 內附字型（Noto Sans TC Bold、JetBrains Mono，OFL）
 └── output/
@@ -629,7 +628,6 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 - scene 間轉場（`transitionIn`）、`final.srt`、BGM 不在 scene 渲染中處理，由 `assemble.mjs` 負責；`captions.mode: burn` 的字幕在 scene 渲染時燒入（§7.5）。
 - **關鍵幀**：編碼時在距頭尾各 0.5 秒（`TRANSITION_SEC`）處強制 IDR 關鍵幀，讓 assemble 只需重新編碼轉場片段。
 - **平行渲染**：`render:scene` 一次傳入多個 id 時，各 scene 在獨立程序中平行渲染（`--jobs N`，預設為 CPU 核心數的一半，且每個約保留 1 GB 可用記憶體）。單一 scene 失敗不影響其他 scene；最後列出成功與失敗的 id，有失敗時退出碼為 1。單一 scene 內也以多個瀏覽器分攤影格（`--pages N`，每個瀏覽器輪流負責第 k、k+N、… 幀，依序交給 FFmpeg）；預設為上述預算除以同時渲染的 scene 數，最多 4 個、每秒影片至多 1 個。因畫面只由 `t` 決定，結果與單一瀏覽器逐幀相同。
-- **HyperFrames 相容**（D24）：動畫模組可在 `window.__timelines` 登記 paused GSAP timeline，`visual.motion.file` 也可以是 HyperFrames composition（`.html`）。渲染器依 `t` 呼叫各 timeline 的 `totalTime`（觸發 callback，與 HyperFrames 相同），並依 `data-start` / `data-duration` 顯示或隱藏片段；巢狀 composition 從自己的 `data-start` 起算。`.html` 在 iframe 中載入、依 `data-width` / `data-height` 縮放到畫面大小；CDN 上的函式庫（jsDelivr、unpkg）改由專案 `node_modules` 提供，其他網路資源一律報錯。不支援 HyperFrames 的 `<video>` / `<audio>` 播放、變數與 Studio 功能。
 - `src/` 不納入 `inputHash`：修改外觀不會自動使既有 scene 過期，需由 Agent 經使用者同意後將受影響的 scene 設為 `stale`。
 
 實作要求：
@@ -909,4 +907,4 @@ Agent、Local MCP、UI 皆可能寫入專案 JSON，一律遵守（Agent 的檔�
 | D21 | Cloud MCP | §10 原規劃由網站提供 Cloud MCP | 不另設雲端 MCP；Guide 類 resources / prompts 併入本機 `video-agent mcp`，內容來自內附或網站的 `/api/*`；專案操作只呼叫專案自己的腳本 | 網站為 GitHub Pages 靜態部署，無法運行 MCP；本機伺服器已隨 Agent 啟動，多一個雲端端點沒有額外價值；呼叫專案腳本可確保與專案的協議版本一致 |
 | D22 | 故事影片 | 無 | 以 `project.kind` 區分，同一範本與渲染器（打包時各自去掉另一種影片專用的檔案，見 §8.2），另立 `story-video` Skill 與 `develop_story` / `design` 兩步；角色聲音以 script.md 行首【名字】指定；角色美術一次畫好、以 `rig.js` 擺姿勢 | 渲染、TTS、合成與工作台都與產品無關，分叉範本只會讓兩邊漂移；一個角色檔重複使用才能讓角色從頭到尾一致，也省 token；只把該段有說話的角色聲音算進 hash，換一個角色的聲音不必重做整部片 |
 | D23 | 生成配樂 | 原 D16 不做 AI 生成音樂 | Agent 寫樂譜（和弦、段落、能量），規則編曲後由本機合成器演奏；不用音樂模型。引擎優先 FluidSynth + SoundFont（分軌渲染，各聲部可用不同音色庫），未安裝時退回 WebAudio 合成；音色庫只收可商用者，整台機器共用一份 | 不需 GPU、結果可重現、長度可精準對齊 scene；聲音由合成器產生，沒有模型訓練資料的授權疑慮。FluidSynth 試聽明顯優於 WebAudio，但需要下載約 35 MB，故保留免安裝的 WebAudio 作為後備 |
-| D24 | HyperFrames | 無 | 吸收其 composition 合約（`window.__timelines`、`data-start` / `data-duration`），不改用其渲染器與 Skill | 兩者同為瀏覽器逐幀 seek + FFmpeg，換過去渲染不會更穩；它要 Puppeteer 自帶的 Chrome（我們擷取素材仍需 Playwright）、要改寫協議，且其 Skill 自帶製作流程，會繞過本專案的狀態機。相容合約讓其 Apache-2.0 區塊不改原始碼即可當動畫模組使用 |
+| D24 | HyperFrames | 無 | 不改用其渲染器、Skill 與 composition 格式（`window.__timelines`、`data-start`、`.html`），只把其 GSAP 動畫寫法吸收進 rendering-guide.md#motion（`tl.seek(t, false)` 讓 callback 觸發、先排版後動畫、有限次循環等） | 兩者同為瀏覽器逐幀 seek + FFmpeg，換過去渲染不會更穩；它要 Puppeteer 自帶的 Chrome（我們擷取素材仍需 Playwright）、要改寫協議，其 Skill 也會繞過本專案的狀態機。維持單一的 `setup(ctx)` → `seek(t)` 合約，Agent 只需學一種寫法 |

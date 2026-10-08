@@ -107,7 +107,7 @@ export default async function setup({ root, width, height, fps, durationSec, the
 |---|---|---|
 | SVG | 圖示、流程圖、線條描繪、圖表 | 在 `root` 建 `<svg>`；`seek` 依 `t` 設定屬性。線條描繪用 `stroke-dasharray` + `stroke-dashoffset` |
 | Canvas 2D | 粒子、大量圖形、數字跳動 | `seek` 每次清空重畫整張 |
-| GSAP | 多段編排的動畫（依序進場、彈性緩動） | `const tl = gsap.timeline({ paused: true })` 編排好，`seek` 裡 `tl.seek(t)` |
+| GSAP | 多段編排的動畫（依序進場、彈性緩動、數字跳動） | `const tl = gsap.timeline({ paused: true })` 編排好，`seek` 裡 `tl.seek(t, false)`，寫法見下方 |
 | Three.js | 3D 物件、產品展示、空間感 | `new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })`，`seek` 依 `t` 設定位置與相機後 `renderer.render(scene, camera)` |
 | GLSL shader | 光線流動、漸層波紋、背景質感 | Three.js 的 `ShaderMaterial` 或原生 WebGL，把 `t` 傳進 uniform（例如 `uTime`） |
 | Rough.js | 手繪、草圖風格的圖形、流程圖、白板說明 | `rough.svg(svg)` 或 `rough.canvas(canvas)` 畫圖形，**一定要給 `seed`**，寫法見下方 |
@@ -139,38 +139,40 @@ export default async function setup({ root, width, height, theme }) {
 - 產生的是一般 `<path>`，可以照常用 `stroke-dasharray` / `stroke-dashoffset` 做線條描繪。`fillStyle: 'hachure'`、`'cross-hatch'` 會產生很多條線，大面積填色改用 `'solid'`，或把 `hachureGap` 調大讓線條少一點。
 - 文字不要用 Rough.js 畫；搭配手繪風格的字仍用 `theme.fontFamily` 或 `elements` 的文字元素。
 
-寫完先渲染這一段確認畫面（短的 scene 可以先把 `durationSec` 設短測試，確認後改回）。`motion.js` 與 scene `assets/` 內的檔案都納入 `inputHash`，修改後該 scene 會自動變成需要重做；模組匯入的共用檔案（`@/assets/` 下）不在內，改了要自己把用到它的 scene 標為 `stale`。
-
-### <a id="hyperframes"></a>HyperFrames 寫法與區塊
-
-渲染器相容 [HyperFrames](https://github.com/heygen-com/hyperframes)（Apache-2.0）的 composition 合約，可以用它的寫法，也可以直接用它 catalog 裡的區塊（`registry/blocks/<名稱>/<名稱>.html`，例如字卡、程式碼高亮、圖表、數字跳動）。只用它的寫法與區塊，**不要安裝它的 CLI 或 Skill**：渲染、狀態一律照本專案的流程。
-
-**模組裡用 timeline**：不回傳 `seek`，改把 paused GSAP timeline 登記在 `window.__timelines`，渲染器每格呼叫 `totalTime(t)`（callback 照常觸發，`onUpdate` 可以用來寫數字）。兩種可以並用。
+GSAP 的寫法：
 
 ```js
 import { gsap } from 'gsap'
 
 export default function setup({ root, theme }) {
-  root.innerHTML = `<h1 id="title" style="font-family:${theme.fontFamily};color:${theme.text}">三步完成部署</h1>`
+  // 先用 HTML / CSS 排好「最後的樣子」，動畫再從別的狀態進場（tl.from）
+  Object.assign(root.style, { display: 'grid', placeItems: 'center' })
+  const amount = document.createElement('div')
+  // theme 的字型名稱含雙引號，用 style 屬性設定，不要拼進 HTML 字串
+  Object.assign(amount.style, { display: 'inline-block', font: `700 160px ${theme.fontFamily}`, color: theme.text })
+  amount.textContent = '$0'
+  root.append(amount)
+  const count = { value: 0 }
   const tl = gsap.timeline({ paused: true })
-  tl.from('#title', { y: 40, opacity: 0, duration: 0.6, ease: 'power3.out' }, 0.2)
-  window.__timelines.main = tl
+  tl.from(amount, { y: 30, opacity: 0, duration: 0.5, ease: 'power2.out' }, 0)
+  // 數字由 onUpdate 寫進畫面；seek 時要觸發 callback 才會更新
+  tl.to(count, { value: 10000, duration: 3, ease: 'none', onUpdate: () => (amount.textContent = '$' + Math.round(count.value).toLocaleString('en-US')) }, 0)
+  tl.to(amount, { scale: 1.06, color: theme.accent, duration: 0.2, ease: 'back.out(2)' }, 3)
+  return (t) => {
+    tl.seek(t, false)
+  }
 }
 ```
 
-`root` 內有 `data-start`（秒）的元素只在 `data-start` 到 `data-start + data-duration` 之間顯示（沒有 `data-duration` 就顯示到結尾）；包在 `data-composition-id` 元素裡的，從那個 composition 的 `data-start` 起算，登記在同名 key 的 timeline 也從那裡開始。
+- **`tl.seek(t, false)`**：第二個參數 `false` 讓 `onUpdate` 等 callback 照常觸發；寫成 `tl.seek(t)` 時 callback 不會執行，靠 callback 更新的數字、文字會停在初始值。
+- **先排版、後動畫**：最後要看到的畫面先用 HTML / CSS（flex、grid、padding）排好，動畫用 `tl.from` 從透明、位移的狀態進來；不要用寫死的 `top` / `left` 排主要內容。
+- **不用 `repeat: -1`**：循環動畫算出有限次數，`repeat: Math.max(0, Math.floor(durationSec / 每圈秒數) - 1)`（用 `floor`，不要 `ceil`，否則會超出 scene 長度）。
+- **同一元素的同一屬性**不要被兩段時間重疊的 tween 同時改，結果會依建立順序而不同。
+- **要變形的元素必須有尺寸**：`scale`、`x` 對 inline 的 `<span>` 無效，寬度為 0 的元素放大也看不到；給 `display: block` 或 `inline-block` 以及實際寬高。
+- **會彈出去的動畫要留空間**：`back.out`、來回放大的元素，以最大時的大小留邊界，不要壓在 `overflow: hidden` 的邊緣，否則會被裁掉或蓋到旁邊。
+- 退場用 `opacity` 淡出；要整個消失時在最後補一個 `tl.set(el, { visibility: 'hidden' }, 時間)`。
 
-**直接用 HyperFrames composition**：把整個 `.html` 放進 scene 的 `assets/`，指給 `visual.motion.file`：
-
-```json
-"visual": { "type": "motion-graphic", "description": "講者字卡", "motion": { "file": "assets/lt-color-block.html" } }
-```
-
-- 依 `data-width` / `data-height` 縮放到畫面大小；`durationSec` 設成區塊的 `data-duration`（或更長，最後停在結尾畫面）。
-- 從 jsDelivr、unpkg 載入的函式庫（例如 `gsap@3.14.2/dist/gsap.min.js`）改由專案的 `node_modules` 提供：先安裝同名套件（`pnpm add gsap`，依硬性規則 11 取得同意），缺少時渲染失敗並提示安裝指令。其他網路資源（Google Fonts、遠端圖片、cdnjs）會讓渲染失敗：下載到 scene 的 `assets/` 改用相對路徑，或刪掉。
-- 區塊用的字型（League Gothic、Inter 等）沒有內附時會退回系統字型，各平台畫面可能不同。把文字的 `font-family` 改成內附的 `"Noto Sans TC"` 或 `"JetBrains Mono"`，中文字才會正確。
-- 區塊裡的範例文字、數字、配色要改成這段的內容；`<audio>`、`<video>` 不會播放（scene 的聲音只有旁白，影片請用 `elements`）。
-- 不支援 HyperFrames 的 variables、`window.__hyperframes` 工具函式與 Studio 功能；用到的區塊改成直接寫值。
+寫完先渲染這一段確認畫面（短的 scene 可以先把 `durationSec` 設短測試，確認後改回）。`motion.js` 與 scene `assets/` 內的檔案都納入 `inputHash`，修改後該 scene 會自動變成需要重做；模組匯入的共用檔案（`@/assets/` 下）不在內，改了要自己把用到它的 scene 標為 `stale`。
 
 ### <a id="css-styling"></a>善用現代 CSS 讓畫面質感大幅升級（重要技巧）
 

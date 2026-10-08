@@ -7,8 +7,8 @@
   },
   "visual": {
     "type": "motion-graphic",
-    "description": "HyperFrames 區塊當動畫模組",
-    "motion": { "file": "assets/lt-color-block.html" }
+    "description": "motion.file 必須是 JavaScript 模組",
+    "motion": { "file": "assets/motion.html" }
   },
   "durationSec": 3,
   "status": "draft",
