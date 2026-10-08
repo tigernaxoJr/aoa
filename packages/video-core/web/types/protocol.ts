@@ -595,11 +595,11 @@ export interface SceneJson {
       fit?: "contain" | "cover";
     };
     /**
-     * motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL、Rough.js 等），取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。
+     * motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL、Rough.js 等）或 HyperFrames composition，取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。
      */
     motion?: {
       /**
-       * ES module，預設匯出 setup(ctx)，回傳 seek(t)。通常放在 assets/motion.js。
+       * ES module，預設匯出 setup(ctx)，回傳 seek(t) 或在 window.__timelines 登記 GSAP timeline，通常放在 assets/motion.js；或 HyperFrames composition（.html，見 rendering-guide.md#hyperframes）。
        */
       file: string;
       /**

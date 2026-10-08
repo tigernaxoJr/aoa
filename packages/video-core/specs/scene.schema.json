@@ -221,12 +221,12 @@
       "oneOf": [{ "required": ["file"] }, { "required": ["content"] }]
     },
     "motion": {
-      "description": "motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL、Rough.js 等），取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。",
+      "description": "motion-graphic 的自訂動畫：Agent 撰寫的 JavaScript 模組（SVG、Canvas、GSAP、Three.js、GLSL、Rough.js 等）或 HyperFrames composition，取代預設的漸層背景，elements 仍疊加在上面。模組要求見 Skill rendering-guide.md#motion。",
       "type": "object",
       "additionalProperties": false,
       "required": ["file"],
       "properties": {
-        "file": { "description": "ES module，預設匯出 setup(ctx)，回傳 seek(t)。通常放在 assets/motion.js。", "$ref": "common.schema.json#/$defs/relPath", "pattern": "\\.m?js$" },
+        "file": { "description": "ES module，預設匯出 setup(ctx)，回傳 seek(t) 或在 window.__timelines 登記 GSAP timeline，通常放在 assets/motion.js；或 HyperFrames composition（.html，見 rendering-guide.md#hyperframes）。", "$ref": "common.schema.json#/$defs/relPath", "pattern": "\\.(m?js|html)$" },
         "uses": {
           "description": "模組匯入的共用檔案或資料夾（例如 @/assets/cast/fox/），納入 inputHash：這些檔案一改，scene 就需要重做。資料夾以 / 結尾，包含底下所有檔案。",
           "type": "array",

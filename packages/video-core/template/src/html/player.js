@@ -13,6 +13,7 @@ import {
   THEME,
   visibleText,
 } from '../lib/motion.js'
+import { mountComposition, timelineSeeker } from '../lib/hyperframes.js'
 
 const plan = window.__PLAN__
 const { width, height, fps } = plan
@@ -125,6 +126,28 @@ window.__seek = async (t) => {
   while (pending.size) await Promise.all(pending)
 }
 
+/**
+ * seek(t) for the motion layer: a HyperFrames composition (.html), or a module whose setup(ctx)
+ * returns seek(t), registers GSAP timelines on window.__timelines, or both (rendering-guide.md#hyperframes).
+ */
+async function loadMotion() {
+  const { durationSec } = plan
+  if (/\.html$/i.test(new URL(bg.src).pathname)) {
+    const fonts = FONTS.map(([family, file, weight]) => [family, new URL(file, import.meta.url).href, weight])
+    return mountComposition({ root: bgNode, href: bg.src, width, height, durationSec, fonts })
+  }
+  window.__timelines = {}
+  const { default: setup } = await import(bg.src)
+  if (typeof setup !== 'function') throw new Error('motion module must export default setup(ctx)')
+  const own = await setup({ root: bgNode, width, height, fps, durationSec, theme: THEME, cues: plan.cues ?? [], cast: plan.cast ?? [] })
+  const timelines = timelineSeeker(window, bgNode, durationSec)
+  if (typeof own !== 'function' && !timelines) throw new Error('motion module setup(ctx) must return seek(t) or register a timeline on window.__timelines')
+  return async (t) => {
+    timelines?.(t)
+    if (typeof own === 'function') await own(t)
+  }
+}
+
 // Bundled fonts, loaded up front: text that first appears mid-scene must not render in a fallback.
 const FONTS = [
   ['Noto Sans TC', '../fonts/NotoSansTC-Bold.otf', '700'],
@@ -135,12 +158,7 @@ window.__ready = (async () => {
   for (const [family, file, weight] of FONTS) {
     document.fonts.add(await new FontFace(family, `url(${new URL(file, import.meta.url)})`, { weight }).load())
   }
-  if (bg.kind === 'module') {
-    const { default: setup } = await import(bg.src)
-    if (typeof setup !== 'function') throw new Error('motion module must export default setup(ctx)')
-    motionSeek = await setup({ root: bgNode, width, height, fps, durationSec: plan.durationSec, theme: THEME, cues: plan.cues ?? [], cast: plan.cast ?? [] })
-    if (typeof motionSeek !== 'function') throw new Error('motion module setup(ctx) must return seek(t)')
-  }
+  if (bg.kind === 'module') motionSeek = await loadMotion()
   for (const o of overlays) if (o.item.type === 'text') fitText(o)
   while (pending.size) await Promise.all(pending)
   return true
