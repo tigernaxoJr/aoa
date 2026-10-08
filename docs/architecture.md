@@ -146,6 +146,12 @@ AOA supports three progressive modes. Mode A is a frontend working with a local 
    - Enterprise users' proprietary source code, trade secrets, and large media assets stay on employees' machines, processed and rendered by the agent, never passing through the service's backend.
    - Inference goes to the enterprise's chosen LLM provider (possibly an enterprise plan with a signed data agreement) or an in-house model.
    - Only sanitized, schema-validated "final project metadata" or videos the user explicitly chooses to publish are uploaded to the cloud backend, greatly narrowing the enterprise's privacy-compliance scope.
+3. **The agent drives, the frontend shows it live**:
+   - The agent calls the backend API as the specification describes (or attaches the MCP server the service provides). The backend validates against the schema, stores the state, and pushes events to every open frontend over WebSocket, SSE, or gRPC streaming.
+   - The frontend subscribes to those events and redraws immediately, replacing Mode A's fingerprint polling. The user follows the agent's steps, intermediate results, and errors, and can correct any step directly in the UI; the correction goes back to the backend and becomes the agent's next input.
+   - While the agent stays connected (for example through the MCP server or by listening on a task queue), the frontend can queue tasks on the backend for the agent to pick up, so the user no longer copies and pastes commands. The agent still runs on the user's side, limited to what the user has authorized.
+   - Team members on the same project subscribe to the same event stream and see the agent's changes at the same time.
+   - The backend only validates, stores, and broadcasts; it runs no inference, so marginal compute cost stays near zero.
 
 ### Mode C: Backend-Only (Agent-Operated API)
 *For services with no user interface: the agent itself is the client.*
@@ -187,7 +193,7 @@ Video Studio in detail:
 - **Browser compatibility**: Relies on the File System Access API (`showDirectoryPicker`), which is currently supported only by desktop Chromium browsers such as Chrome and Edge; Brave disables it by default, and Firefox and Safari do not support it.
 - **Depends on the user's local environment**: Users need a basic runtime (e.g., Node.js, a Coding Agent) and must pay for their agent's subscription or API usage themselves.
 - **Agent output is non-deterministic**: Agent output may not fully conform to the schema; the frontend must validate it and provide retry or repair guidance.
-- **The page cannot wake the agent**: In Mode A, users start the agent and paste the command the page prepares; the page only reflects what the agent writes.
+- **The page cannot wake the agent**: In Mode A, users start the agent and paste the command the page prepares; the page only reflects what the agent writes. Mode B eases this with a backend task queue: a connected agent picks up tasks the page queues, though the user still has to start the agent first.
 - **Directory permission must be re-granted**: After a page reload, read/write permission for the directory handle usually has to be granted again.
 
 ---

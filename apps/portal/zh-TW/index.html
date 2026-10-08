@@ -268,8 +268,8 @@
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
                   <dt class="font-serif text-2xl font-bold text-accent">B</dt>
-                  <dt><span class="font-serif text-lg font-bold">前端＋輕量後端</span><span class="mt-1 block font-mono text-[11px] text-stone-500">團隊與商業化</span></dt>
-                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">雲端控制平面負責帳號、計費與團隊協同；推論、token 與資料仍留在使用者端（自備 Agent，BYOA）。</dd>
+                  <dt><span class="font-serif text-lg font-bold">前端＋輕量後端</span><span class="mt-1 block font-mono text-[11px] text-stone-500">團隊、商業化與即時協作</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">雲端控制平面負責帳號、計費與團隊協同。Agent 透過 API 或 MCP 操作後端，後端再以 WebSocket、SSE 或 gRPC 把變更即時推到網頁，使用者看著畫面隨 Agent 的每一步更新，也能隨時接手修改。推論、token 與私有資料仍留在使用者端（自備 Agent，BYOA）。</dd>
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
                   <dt class="font-serif text-2xl font-bold text-accent">C</dt>
@@ -277,6 +277,17 @@
                   <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">沒有網頁介面。服務只提供 API，Agent 讀取規格後直接呼叫；服務端保存資料與狀態，但不執行 Agent 的推論。也可以包成 MCP server 讓 Agent 掛上。</dd>
                 </div>
               </dl>
+              <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
+                <p class="font-mono text-[11px] uppercase tracking-wider text-accent">模式 B 的體驗優勢 · Agent 驅動，介面即時呈現</p>
+                <ul class="mt-3 grid gap-x-8 gap-y-3 text-sm leading-relaxed text-stone-600 sm:grid-cols-2 dark:text-stone-400">
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">即時重繪，不用輪詢</strong>：Agent 每呼叫一次 API，後端就推送事件，網頁立刻更新。</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">看得見 Agent 在做什麼</strong>：進度、中間產物與錯誤直接呈現在介面上，不只是終端機裡的輸出。</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">人與 Agent 共用同一份狀態</strong>：使用者在網頁上的修改寫回後端，成為 Agent 下一步的輸入，雙方可以來回接力。</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">網頁也能派工</strong>：Agent 保持連線時，網頁可以把任務放進後端佇列讓 Agent 領取，不必再複製貼上指令。</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">多人同步</strong>：同一專案的成員同時看到 Agent 的操作結果。</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">後端依然很薄</strong>：只負責驗證、保存狀態與廣播事件，推論與 token 仍由使用者的 Agent 負擔。</li>
+                </ul>
+              </div>
               <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
                 <p class="font-mono text-[11px] uppercase tracking-wider text-accent">共同前提 · 規格的入口</p>
                 <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
@@ -312,8 +323,8 @@
                 <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Agent 產出必須經過 Schema 驗證，並提供重試與修復流程。</p>
               </li>
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
-                <h3 class="font-semibold">網頁無法喚起 Agent</h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">使用者需自行啟動 Agent，並貼上網頁產生的指令；網頁只反映 Agent 寫入的結果。</p>
+                <h3 class="font-semibold">網頁無法喚起 Agent（模式 A）</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">使用者需自行啟動 Agent，並貼上網頁產生的指令；網頁只反映 Agent 寫入的結果。模式 B 中，連線中的 Agent 可以從後端領取網頁派出的任務。</p>
               </li>
             </ul>
           </div>

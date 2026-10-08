@@ -278,8 +278,8 @@
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
                   <dt class="font-serif text-2xl font-bold text-accent">B</dt>
-                  <dt><span class="font-serif text-lg font-bold">Frontend + backend</span><span class="mt-1 block font-mono text-[11px] text-stone-500">Teams and billing</span></dt>
-                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">A cloud control plane handles accounts, billing, and team sync; the agent's inference, tokens, and working files stay on the user's side (bring your own agent).</dd>
+                  <dt><span class="font-serif text-lg font-bold">Frontend + backend</span><span class="mt-1 block font-mono text-[11px] text-stone-500">Teams, billing, live collaboration</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">A cloud control plane handles accounts, billing, and team sync. The agent operates the backend through an API or MCP server, and the backend pushes each change to the page over WebSocket, SSE, or gRPC, so the user watches the UI update step by step and can take over at any point. Inference, tokens, and private data stay on the user's side (bring your own agent).</dd>
                 </div>
                 <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
                   <dt class="font-serif text-2xl font-bold text-accent">C</dt>
@@ -287,6 +287,17 @@
                   <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">No web UI. The service exposes an API; the agent reads its specification and calls it directly. The service keeps data and state but doesn't run the agent. It can also ship as an MCP server.</dd>
                 </div>
               </dl>
+              <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
+                <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Why Mode B · the agent drives, the UI shows it live</p>
+                <ul class="mt-3 grid gap-x-8 gap-y-3 text-sm leading-relaxed text-stone-600 sm:grid-cols-2 dark:text-stone-400">
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">Live updates, no polling</strong>: every API call the agent makes becomes an event the backend pushes, and the page redraws at once.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">See what the agent is doing</strong>: progress, intermediate results, and errors appear in the UI, not only in a terminal.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">One shared state for user and agent</strong>: edits made in the page go back to the backend and become the agent's next input, so the two can hand work back and forth.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">The page can assign work</strong>: while the agent stays connected, the page can queue tasks on the backend for the agent to pick up, with no command to copy and paste.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">Teams stay in sync</strong>: everyone on a project sees the agent's changes at the same time.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">The backend stays thin</strong>: it validates, stores state, and broadcasts events; inference and tokens remain with the user's agent.</li>
+                </ul>
+              </div>
               <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
                 <p class="font-mono text-[11px] uppercase tracking-wider text-accent">In every mode · a specification entry point</p>
                 <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
@@ -322,8 +333,8 @@
                 <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Agent output must be validated against the schema, with retry and repair paths.</p>
               </li>
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
-                <h3 class="font-semibold">The page can't wake the agent</h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">The user starts the agent and pastes the command the page prepares; the page only reflects what the agent writes.</p>
+                <h3 class="font-semibold">The page can't wake the agent (Mode A)</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">The user starts the agent and pastes the command the page prepares; the page only reflects what the agent writes. In Mode B, a connected agent can pick up tasks the page queues on the backend.</p>
               </li>
             </ul>
           </div>
