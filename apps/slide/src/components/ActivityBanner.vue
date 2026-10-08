@@ -1,27 +1,48 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useActivity } from '@aoa/web-shared/activity'
-import { activity } from '../lib/store'
+import { activity, project } from '../lib/store'
 
 const liveActivity = useActivity(activity)
 
 const steps = [
-  { id: 'init', label: '1. 初始化' },
-  { id: 'outline', label: '2. 大綱規劃' },
-  { id: 'draft', label: '3. 撰寫文案' },
-  { id: 'visual', label: '4. 視覺注入' },
-  { id: 'export', label: '5. 匯出 PDF' },
+  { id: 'init', label: '初始化' },
+  { id: 'outline', label: '大綱規劃' },
+  { id: 'draft', label: '撰寫文案' },
+  { id: 'visual', label: '視覺注入' },
+  { id: 'export', label: '匯出' },
 ]
+const order = steps.map((s) => s.id)
 
-const currentStepId = computed(() => liveActivity.value?.step || 'init')
+/** How many steps the project status says are finished; `failed` keeps whatever step the Agent was on. */
+const DONE: Record<string, number> = { initialized: 1, outlined: 2, drafted: 3, visualized: 4, exported: 5 }
+
+/**
+ * Progress comes from slide.project.json, not the activity: the Agent sets the activity to `idle` when it
+ * stops, which is not a step, and that used to blank the whole tracker after an export.
+ */
+const done = computed(() => {
+  const status = project.value?.status
+  if (status && status in DONE) return DONE[status]
+  const at = order.indexOf(liveActivity.value?.step ?? '')
+  return at === -1 ? 0 : at
+})
+/**
+ * The step being worked on: the activity's when it is not finished yet, or when the Agent went back to an
+ * earlier step within the last few minutes. The step it just finished (e.g. `export` after exporting)
+ * counts as done; past the last step nothing is active.
+ */
+const active = computed(() => {
+  const at = order.indexOf(liveActivity.value?.step ?? '')
+  if (at >= done.value) return at
+  if (at !== -1 && at < done.value - 1 && liveActivity.value?.current) return at
+  return done.value
+})
 
 function stepStatus(stepId: string) {
-  const order = ['init', 'outline', 'draft', 'visual', 'export']
-  const currIdx = order.indexOf(currentStepId.value)
-  const stepIdx = order.indexOf(stepId)
-
-  if (currIdx > stepIdx) return 'completed'
-  if (currIdx === stepIdx) return 'active'
+  const at = order.indexOf(stepId)
+  if (at < done.value && at !== active.value) return 'completed'
+  if (at === active.value) return 'active'
   return 'pending'
 }
 </script>
@@ -57,7 +78,7 @@ function stepStatus(stepId: string) {
                 : 'text-slate-400 dark:text-slate-500'
           ]"
         >
-          {{ s.label.slice(3) }}
+          {{ s.label }}
         </span>
         <span v-if="idx < steps.length - 1" class="text-slate-300 dark:text-slate-700 px-1">→</span>
       </div>
