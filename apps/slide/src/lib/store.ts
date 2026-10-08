@@ -343,6 +343,8 @@ export function stopPolling() {
 
 export interface SlideStartConfig {
   title: string
+  /** What the deck should say, in the user's words; empty means the Agent asks before outlining. */
+  content?: string
   description?: string
   audience?: string
   pagesCount?: number

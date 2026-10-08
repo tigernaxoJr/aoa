@@ -8,10 +8,10 @@
 
 | 檔案 | 說明 |
 |---|---|
-| `slides.md` | Slidev 主簡報，以單獨一行的 `---` 分頁；簡報內容的唯一來源 |
+| `slides.md` | Slidev 主簡報，以單獨一行的 `---` 分頁；簡報內容的唯一來源。範本附的是語法示範（介紹 AOA），撰寫時整份換成使用者要的內容 |
 | `slide.project.json` | 專案設定與狀態（格式見 `schemas/project.schema.json`） |
 | `slide.activity.json` | 即時進度，網頁工作台會顯示（格式見 `schemas/activity.schema.json`） |
-| `slide.start.json` | 網頁表單寫入的需求（只在網頁準備的資料夾中出現；唯讀） |
+| `slide.start.json` | 網頁表單寫入的需求（只在網頁準備的資料夾中出現；唯讀）：`content` 是使用者想講的內容，空的就先在對話中問清楚再規劃大綱 |
 | `components/*.vue` | 自訂 Vue / Three.js / SVG 組件，Slidev 自動註冊，不必 import；`RoughSketch.vue` 把 SVG 畫成手繪風格 |
 | `setup/mermaid.ts` | Mermaid 全域設定：配合簡報色系的 `themeVariables`（取代預設紫色）與固定的手繪線條種子 |
 | `uno.config.ts` | 讓 SVG 的 `font-size` 等屬性不被 UnoCSS 當成樣式；不要刪除 |
@@ -25,7 +25,7 @@
 
 ## 2. 工作流程
 
-1. **規劃大綱（`/slide-outline`）**：規劃分頁結構、頁數、每頁核心訊息與呈現方式（流程用 Mermaid `flowchart`、角色間呼叫用 `sequenceDiagram`），並和使用者決定**整體風格**：
+1. **規劃大綱（`/slide-outline`）**：只依使用者提供的內容（`slide.start.json` 的 `content` 或對話中的說明）規劃；不知道要講什麼就先問，不要沿用範本示範頁的主題。規劃分頁結構、頁數、每頁核心訊息與呈現方式（流程用 Mermaid `flowchart`、角色間呼叫用 `sequenceDiagram`），並和使用者決定**整體風格**：
    - `formal` 正式：簡潔排版、SVG、Mermaid、Iconify；不用手繪與 3D。
    - `tech` 科技：深色卡片、SVG 架構圖、Mermaid 流程圖與時序圖、程式碼；氛圍頁可用 `<ThreeGlobe />`。
    - `whiteboard` 白板手繪（工作坊、教學）：圖一律用 `<RoughSketch>`，Mermaid 區塊都加 `{look: 'handDrawn'}`；不用 3D。

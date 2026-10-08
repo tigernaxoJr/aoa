@@ -23,7 +23,7 @@
       "id": "outline",
       "title": "大綱與分頁規劃",
       "command": "/slide-outline",
-      "description": "根據簡報主題與受眾，規劃簡報結構、頁數、每頁核心資訊與視覺形式",
+      "description": "依使用者提供的內容（slide.start.json 的 content 或對話中的說明）與受眾，規劃簡報結構、頁數、每頁核心資訊與視覺形式；不知道要講什麼就先問使用者，不沿用範本示範頁的主題",
       "checkpoint": true,
       "guide": "SKILL.md#outline",
       "actions": [

@@ -30,12 +30,13 @@ description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML
    ```
    比對 manifest 的 `zip.sha256` 後解壓：macOS / Linux `unzip -q slidev-deck.zip`；Windows PowerShell `Expand-Archive slidev-deck.zip -DestinationPath .`。解壓後刪除 zip。範本不含 `slide.start.json` 與 `slide.activity.json`，不會覆蓋網頁寫的檔案。
 2. **安裝依賴**：`pnpm install`（匯出 PDF 需要 Chromium；第一次匯出若出現 `Executable doesn't exist`，執行 `pnpm exec playwright install chromium`）。
-3. **填寫專案檔**：範本的 `slide.project.json` 是佔位內容。有 `slide.start.json` 時以它為準（`title`、`description`、`audience`、`pagesCount`、`theme`、`aspectRatio`、`notes`），沒有就向使用者詢問主題、對象與頁數：
+3. **確認要講什麼**：`slide.start.json` 的 `content` 是使用者寫的簡報內容（重點、章節、資料，或要讀取的本機檔案路徑），`notes` 是視覺偏好。`content` 是空的、沒有 `slide.start.json`、或內容只有一個標題時，**先停下來問使用者**：這份簡報要傳達什麼、給誰看、有沒有現成資料可以參考。用 `pnpm run state activity --step init --message "請在對話中告訴我簡報要講什麼" --waiting` 讓網頁顯示正在等待。拿到內容前不規劃大綱、不改 `slides.md`。
+4. **填寫專案檔**：範本的 `slide.project.json` 是佔位內容。有 `slide.start.json` 時以它為準（`title`、`audience`、`pagesCount`、`theme`、`aspectRatio`），`--description` 用一句話概括 `content`；沒有就用上一步問到的答案：
    ```bash
    pnpm run state project --id <英文小寫-連字號> --title "<主題>" --description "<一句說明>" --pages <頁數> --theme <主題風格> --status initialized
    ```
    `theme` 不是 `default` 時安裝對應套件（例如 `pnpm add @slidev/theme-seriph`），並同步修改 `slides.md` 開頭的 `theme:`。
-4. 執行 `pnpm run validate`，通過後進入大綱階段。
+5. 執行 `pnpm run validate`，通過後進入大綱階段。
 
 ## 2. 製作流程
 
@@ -55,7 +56,7 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 - 打開有問題頁面的截圖親眼確認版面；檢查通過也要抽看幾頁，留意文字過小、對比不足、版面擁擠等腳本抓不到的問題。
 - 「這頁沒有渲染出來」通常是別頁的錯誤中斷了渲染，先修正其他頁的錯誤再重新檢查。
 
-1. <a id="outline"></a>**規劃大綱（`/slide-outline`）**：依主題、對象與資料擬定分頁大綱，決定每頁的核心訊息與呈現方式。
+1. <a id="outline"></a>**規劃大綱（`/slide-outline`）**：只依使用者給的主題、內容、對象與資料擬定分頁大綱；範本 `slides.md` 的示範頁（介紹 AOA 與 Slide Studio）不是內容來源，撰寫時整份換掉，決定每頁的核心訊息與呈現方式。
    - **整體風格**：和大綱一起向使用者提出一種（依場合推薦，使用者說了就照用），之後每頁都照這個風格選工具：
 
      | `style` | 適合 | 視覺工具 |
@@ -88,4 +89,5 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 3. **資料不離開本機**：不把使用者資料上傳到任何外部端點。
 4. **單一真理來源**：簡報內容只在 `slides.md`；狀態只透過 `pnpm run state` 修改，不手寫 `slide.project.json` / `slide.activity.json`。
 5. **先檢查再交付**：`pnpm run check` 沒通過，不請使用者確認、不匯出。
-6. **向量優先**：圖表與圖示優先使用 SVG、Mermaid 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。
+6. **內容來自使用者**：範本的 `slides.md` 只示範語法與組件用法，不要沿用它的主題或文字；使用者沒說要講什麼，就先問，不要自己挑主題。
+7. **向量優先**：圖表與圖示優先使用 SVG、Mermaid 或 Iconify；文字與 SVG 在 PDF 中是向量。WebGL（Three.js）畫面匯出後是點陣圖，只用在裝飾或氛圍頁，不要用來承載需要放大閱讀的資訊。

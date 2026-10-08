@@ -9,11 +9,12 @@ const loading = ref(false)
 
 // New project form state (shown while the open folder is not a project yet)
 const title = ref('')
-const description = ref('')
-const audience = ref('一般專業觀眾 / 開發團隊')
-const pagesCount = ref(5)
+// Empty unless the user writes something: a preset would steer every deck toward the same topic.
+const content = ref('')
+const audience = ref('')
+const pagesCount = ref(8)
 const theme = ref('default')
-const notes = ref('著重系統架構與技術解析，運用 SVG 流程圖與 3D 視覺組件提升質感')
+const notes = ref('')
 
 const when = (t: number) => new Date(t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
 
@@ -40,7 +41,7 @@ async function handleCreate() {
   try {
     await initializeProject({
       title: title.value.trim(),
-      description: description.value.trim(),
+      content: content.value.trim(),
       audience: audience.value.trim(),
       pagesCount: pagesCount.value,
       theme: theme.value,
@@ -183,6 +184,19 @@ async function handleCreate() {
         </div>
 
         <div>
+          <label for="slide-content" class="block text-sm font-medium text-slate-700 dark:text-slate-300">簡報內容</label>
+          <textarea
+            id="slide-content"
+            v-model="content"
+            rows="6"
+            data-testid="slide-content"
+            placeholder="想講的重點、章節順序、要放的數據或案例。可以直接貼上文章、會議紀錄，或寫下本機檔案的路徑讓 Agent 讀取。"
+            class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
+          ></textarea>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">留空也可以：Agent 會先在對話中問你要講什麼，再開始規劃大綱。</p>
+        </div>
+
+        <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">目標受眾與場合</label>
           <input
             v-model="audience"
@@ -217,11 +231,11 @@ async function handleCreate() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">內容重點與視覺指引</label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">視覺偏好（選填）</label>
           <textarea
             v-model="notes"
-            rows="3"
-            placeholder="例如：需包含架構對比圖、資料流程、時程表；首頁需有立體地球組件..."
+            rows="2"
+            placeholder="例如：正式簡潔、用公司藍色系；流程用圖表呈現；不要 3D 動畫"
             class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
           ></textarea>
         </div>

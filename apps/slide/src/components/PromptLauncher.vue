@@ -13,7 +13,7 @@ const agentPrompt = computed(() => {
   const skill = api('skills/slidev-deck/SKILL.md')
   const lead = project.value
     ? `你的工作資料夾是我在網頁上開啟的「${folderName.value}」。請確認工作目錄已在此資料夾，繼續製作 Slidev 簡報「${title}」。`
-    : `你的工作資料夾是我在網頁上準備好的「${folderName.value}」。請確認你的工作目錄已切換至「${folderName.value}」，為我製作一份 Slidev 簡報「${title}」。這個資料夾是網頁準備的，需求寫在 slide.start.json，不要在其他地方建立專案。`
+    : `你的工作資料夾是我在網頁上準備好的「${folderName.value}」。請確認你的工作目錄已切換至「${folderName.value}」，為我製作一份 Slidev 簡報「${title}」。這個資料夾是網頁準備的，需求寫在 slide.start.json，不要在其他地方建立專案。${start.value?.content ? '' : '我還沒寫簡報內容，請先問我要講什麼，再開始規劃大綱。'}`
   return `${lead}
 
 請先閱讀並遵循這份 Skill：${skill}`
