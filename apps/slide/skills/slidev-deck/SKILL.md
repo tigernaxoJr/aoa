@@ -74,6 +74,7 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。匯出前先確認 `pnpm run check` 通過。
    - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
    - **匯出網頁簡報**：`pnpm run build` 產出單檔網頁簡報 `dist/index.html`（雙擊即可離線放映；不要刪 `vite.config.ts` 或 `slides.md` 的 `routerMode: hash`）。
+   - **匯出 PowerPoint**（使用者要求時）：`pnpm run export:pptx` 產出 `output/slides.pptx`：文字可編輯，SVG / Mermaid / 3D 是圖片、字型不內嵌、不含 `v-click` 動畫，匯出後告訴使用者。
    成功後 `pnpm run state project --status exported`；失敗時 `--status failed` 並把錯誤用白話告訴使用者。
 
 完成後告訴使用者可在網頁工作台 {{SITE_URL}}/slide/ 開啟這個資料夾預覽每一頁、PDF 與網頁。

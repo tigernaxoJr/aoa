@@ -44,7 +44,32 @@ pnpm run export:png
 
 ---
 
-## 5. 排錯與注意事項
+## 5. 匯出 PowerPoint（PPTX）
+
+使用者需要 `.pptx`（例如要交給只用 PowerPoint 的人、或上傳到要求 Office 格式的系統）時：
+
+```bash
+pnpm run export:pptx
+```
+
+產出 `output/slides.pptx`，以 Slidev 的 `pptx-editable` 格式匯出：
+
+- **文字可以編輯**：標題、段落、清單、卡片與色塊會轉成 PowerPoint 原生的文字框與圖形。
+- **圖表是圖片**：SVG、Mermaid、`<RoughSketch>` 與 Three.js 畫面以圖片放在原位置，要改圖請改 `slides.md` 再重新匯出。無法轉換的頁面會整頁改用圖片，終端機會列出頁碼（`slide N: exported as an image`）。
+- **字型不內嵌**：終端機會列出用到的字型，對方電腦沒有安裝時 PowerPoint 會換字，版面可能稍微跑掉。
+- **不保留 `v-click` 動畫**：每頁匯出最終狀態，避免同一頁被拆成好幾張投影片；講者備忘錄會放進 PowerPoint 的備忘稿。
+
+匯出後告訴使用者上述限制。使用者要和網頁完全一致的畫面（不需要編輯）時，改匯出成每頁一張圖片：
+
+```bash
+pnpm exec slidev export --format pptx --no-with-clicks --output output/slides.pptx
+```
+
+需要 ODP（LibreOffice Impress）時，以 LibreOffice 轉檔：`soffice --headless --convert-to odp --outdir output output/slides.pptx`。
+
+---
+
+## 6. 排錯與注意事項
 
 - **Playwright 瀏覽器未安裝**：出現 `Executable doesn't exist at...` 時執行 `pnpm exec playwright install chromium`。
 - **Three.js 畫面在 PDF 中空白**：`WebGLRenderer` 必須設定 `preserveDrawingBuffer: true`（範本的 `ThreeGlobe.vue` 已設定），否則列印時畫布已被清空。

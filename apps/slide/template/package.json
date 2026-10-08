@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "slidev --port 3030",
     "build": "slidev build",
-    "export": "slidev export --output output/slides.pdf",
+    "export": "node -e \"require('fs').mkdirSync('output',{recursive:true})\" && slidev export --output output/slides.pdf",
     "export:png": "slidev export --format png --output output/slides-png",
+    "export:pptx": "node -e \"require('fs').mkdirSync('output',{recursive:true})\" && slidev export --format pptx-editable --no-with-clicks --output output/slides.pptx",
     "check": "node scripts/check.mjs",
     "validate": "node scripts/validate.mjs",
     "state": "node scripts/state.mjs"

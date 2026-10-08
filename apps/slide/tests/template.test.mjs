@@ -56,6 +56,7 @@ test('template: has all required files and components', () => {
   assert.ok(pkg.dependencies['three'], 'package.json must depend on three')
   assert.ok(pkg.dependencies['roughjs'], 'package.json must depend on roughjs (components/RoughSketch.vue)')
   assert.ok(pkg.scripts['export'], 'package.json must have export script')
+  assert.match(pkg.scripts['export:pptx'] ?? '', /--format pptx-editable/, 'package.json must have export:pptx script')
   assert.ok(pkg.scripts['check'], 'package.json must have check script')
 })
 

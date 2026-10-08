@@ -13,6 +13,9 @@ pnpm run dev
 
 # 匯出 PDF 到 output/slides.pdf
 pnpm run export
+
+# 匯出 PowerPoint 到 output/slides.pptx（文字可編輯，圖表為圖片）
+pnpm run export:pptx
 ```
 
 想看進度、逐頁預覽或檢視 PDF，可以打開網頁工作台 {{SITE_URL}}/slide/ ，選擇這個資料夾。
