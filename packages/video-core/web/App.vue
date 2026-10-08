@@ -2,6 +2,7 @@
 // The video workbench shared by apps/product and apps/story. Each app mounts it with its start form
 // (step 2 of the start page) and any extra tabs beside the scene board (the story's cast studio).
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Component } from 'vue'
+import { portalHome } from '@aoa/web-shared/lang'
 import FinalPanel from './components/FinalPanel.vue'
 import HomeView from './components/HomeView.vue'
 import Icon from './components/Icon.vue'
@@ -83,7 +84,7 @@ watch(state, (st) => {
   <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
     <div class="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
       <a
-        href="../"
+        :href="portalHome()"
         class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
         title="返回平台總覽"
       >

@@ -7,6 +7,7 @@
   "exports": {
     "./fsa": "./src/fsa.ts",
     "./activity": "./src/activity.ts",
-    "./recent": "./src/recent.ts"
+    "./recent": "./src/recent.ts",
+    "./lang": "./src/lang.ts"
   }
 }

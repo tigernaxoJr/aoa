@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { portalHome } from '@aoa/web-shared/lang'
 import ActivityBanner from './components/ActivityBanner.vue'
 import PdfViewer from './components/PdfViewer.vue'
 import ProjectPicker from './components/ProjectPicker.vue'
@@ -47,7 +48,7 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
       <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <div class="flex min-w-0 items-center gap-3">
           <a
-            href="../"
+            :href="portalHome()"
             class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
             title="返回平台總覽"
           >

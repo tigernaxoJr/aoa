@@ -1,9 +1,9 @@
 // Language switch shared by the home pages (vite.config.ts injects it at <!--lang-switch-->) and the
 // article reader (articles.ts). English is the default site language; 繁體中文 lives under zh-TW/.
-export type Lang = 'en' | 'zh-Hant'
+// Relative, not '@aoa/web-shared/lang': vite.config.ts also loads this file, without the app's aliases.
+import { type Lang, readLang, saveLang } from '../../../packages/web-shared/src/lang'
 
-/** localStorage key: the language the visitor picked, or that they dismissed the suggestion. */
-export const LANG_KEY = 'aoa-lang'
+export type { Lang }
 
 const base = 'rounded-[3px] px-2.5 py-1 transition-colors'
 const active = 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
@@ -21,38 +21,24 @@ export function langSwitch(current: Lang, enHref: string, zhHref: string): strin
           </div>`
 }
 
-const store = {
-  get: () => {
-    try {
-      return localStorage.getItem(LANG_KEY)
-    } catch {
-      return null
-    }
-  },
-  set: (value: string) => {
-    try {
-      localStorage.setItem(LANG_KEY, value)
-    } catch {
-      // private mode: the choice just isn't remembered
-    }
-  },
-}
-
 /**
- * Remembers explicit language choices, and on English pages offers 繁體中文 to visitors whose browser
- * prefers Chinese (shown until they pick a language or dismiss it). Never redirects on its own.
+ * Remembers the visitor's language: an explicit choice on the switch, or opening the 繁體中文 home page
+ * (the English one doesn't count, so the suggestion below can still appear; a translated article alone
+ * isn't a site-wide choice). The workbenches read it to link back to the same language. On English pages, offers 繁體中文 to visitors whose browser prefers Chinese
+ * (shown until they pick a language or dismiss it). Never redirects on its own.
  */
 export function initLanguage() {
+  if (/\/zh-TW\/(index\.html)?$/.test(location.pathname)) saveLang('zh-Hant')
   document.addEventListener('click', (e) => {
     const link = (e.target as Element).closest<HTMLElement>('[data-set-lang]')
-    if (link) store.set(link.dataset.setLang!)
+    if (link) saveLang(link.dataset.setLang!)
   })
   const hint = document.getElementById('lang-hint')
-  if (!hint || store.get()) return
+  if (!hint || readLang()) return
   if (!navigator.languages.some((l) => l.toLowerCase().startsWith('zh'))) return
   hint.hidden = false
   hint.querySelector('[data-dismiss]')?.addEventListener('click', () => {
-    store.set('en')
+    saveLang('en')
     hint.hidden = true
   })
 }
