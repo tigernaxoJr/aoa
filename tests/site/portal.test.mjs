@@ -8,7 +8,7 @@ import { after, before, test } from 'node:test'
 
 const repo = fileURLToPath(new URL('../../', import.meta.url))
 const SITE = 'https://example.test'
-const ARTICLES = ['docs/architecture', 'docs/architecture.zh-TW', 'posts/2026-10-introducing-aofa', 'paper/proposal']
+const ARTICLES = ['docs/architecture', 'docs/architecture.zh-TW', 'docs/setup', 'docs/setup.zh-TW', 'posts/2026-10-introducing-aofa', 'paper/proposal']
 let out
 
 before(async () => {
@@ -39,7 +39,8 @@ test('relative links and #anchors in the portal and articles resolve', () => {
   const broken = []
   for (const page of ['index.html', 'zh-TW/index.html', ...ARTICLES.map((p) => `${p}.html`)]) {
     const html = read(page)
-    for (const [, url, hash] of html.matchAll(/href="([^"#:]*)(#[^"]*)?"/g)) {
+    for (const [, url, rawHash] of html.matchAll(/href="([^"#:]*)(#[^"]*)?"/g)) {
+      const hash = rawHash && decodeURIComponent(rawHash) // browsers decode the fragment before matching ids
       if (!url) {
         if (hash?.length > 1 && !page.endsWith('index.html') && !html.includes(`id="${hash.slice(1)}"`)) broken.push(`${page} → ${hash}`)
         continue

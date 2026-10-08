@@ -16,6 +16,8 @@ export interface ArticleEntry {
 export const ARTICLES: ArticleEntry[] = [
   { path: 'docs/architecture.zh-TW', kind: '架構規格', lang: 'zh-Hant', translation: 'docs/architecture' },
   { path: 'docs/architecture', kind: 'Specification', lang: 'en', translation: 'docs/architecture.zh-TW' },
+  { path: 'docs/setup.zh-TW', kind: '設定說明', lang: 'zh-Hant', translation: 'docs/setup' },
+  { path: 'docs/setup', kind: 'Setup guide', lang: 'en', translation: 'docs/setup.zh-TW' },
   { path: 'posts/2026-10-introducing-aofa', kind: 'Blog', lang: 'en' },
   { path: 'paper/proposal', kind: 'Paper proposal', lang: 'en' },
 ]

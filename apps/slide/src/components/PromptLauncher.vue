@@ -26,7 +26,7 @@ const agentPrompt = computed(() => {
       <div>
         <h3 class="font-semibold text-slate-900 dark:text-white">Coding Agent 啟動指令</h3>
         <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          複製以下提示詞貼至本機 Claude Code、Cursor、Windsurf 等 Coding Agent
+          複製以下提示詞貼至本機 Claude Code、Cursor、Windsurf 等 Coding Agent。還沒有 Agent？看<a href="../docs/setup.zh-TW.html" target="_blank" rel="noopener" class="text-sky-700 underline underline-offset-2 hover:text-sky-900 dark:text-sky-300">準備你的 Agent</a>
         </p>
       </div>
       <CopyButton :text="agentPrompt" label="複製完整提示詞" />

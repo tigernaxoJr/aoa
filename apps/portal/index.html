@@ -75,6 +75,7 @@
               <p class="font-mono text-xs text-accent">01 / Tools</p>
               <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Reference tools</h2>
               <p class="mt-3 text-sm leading-relaxed text-stone-500">Each has its own workbench, agent skill, and project template. The two video studios share one protocol and render pipeline.</p>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">No coding agent yet? Start with <a href="./docs/setup.html" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Set up your agent</a>.</p>
             </div>
             <div class="grid gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 md:grid-cols-2 xl:grid-cols-3 dark:border-stone-700 dark:bg-stone-700">
               <a href="./slide/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900">
@@ -332,7 +333,7 @@
               </li>
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
                 <h3 class="font-semibold">Users bring their own agent</h3>
-                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Users need a working agent setup and pay for their agent plan or local model themselves.</p>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Users need a working agent setup and pay for their agent plan or local model themselves. <a href="./docs/setup.html" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Setup guide</a></p>
               </li>
               <li class="border-t border-stone-300 py-5 dark:border-stone-700">
                 <h3 class="font-semibold">Agents are non-deterministic</h3>
@@ -354,9 +355,19 @@
             <div>
               <p class="font-mono text-xs text-accent">07 / Read</p>
               <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Further reading</h2>
-              <p class="mt-3 text-sm leading-relaxed text-stone-500">The full specification, an introductory post, and a paper proposal.</p>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">The full specification, an agent setup guide, an introductory post, and a paper proposal.</p>
             </div>
             <ul class="divide-y divide-stone-200 border-y border-stone-300 dark:divide-stone-800 dark:border-stone-700">
+              <li>
+                <a href="./docs/setup.html" class="group grid gap-1 py-5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6">
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Setup guide</span>
+                  <span>
+                    <span class="font-serif text-lg font-bold group-hover:text-accent-ink">Set up your agent</span>
+                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">Install and set up Claude or another coding agent before using the workbenches.</span>
+                  </span>
+                  <span class="hidden text-stone-400 group-hover:text-accent sm:inline" aria-hidden="true">→</span>
+                </a>
+              </li>
               <li>
                 <a href="./docs/architecture.html" class="group grid gap-1 py-5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6">
                   <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Specification</span>

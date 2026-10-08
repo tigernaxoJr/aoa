@@ -187,7 +187,7 @@ const links = [
             <ol class="mt-3 space-y-2.5 text-sm">
               <li class="flex gap-2.5">
                 <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">a</span>
-                <span>打開 Agent。還沒有的話，到 <a href="https://claude.ai/download" target="_blank" rel="noopener" class="link">claude.ai/download</a> 下載 Claude 桌面版，安裝後登入，切到上方的「Code」。其他 Coding Agent 也可以，只要它能讀網址、在你的電腦上工作。</span>
+                <span>打開 Agent。還沒有的話，到 <a href="https://claude.ai/download" target="_blank" rel="noopener" class="link">claude.ai/download</a> 下載 Claude 桌面版，安裝後登入，切到上方的「Code」。其他 Coding Agent 也可以，只要它能讀網址、在你的電腦上工作。第一次使用請看<a href="../docs/setup.zh-TW.html" target="_blank" rel="noopener" class="link">準備你的 Agent</a>。</span>
               </li>
               <li class="flex gap-2.5">
                 <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">b</span>
