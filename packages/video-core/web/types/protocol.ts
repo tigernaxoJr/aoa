@@ -116,6 +116,237 @@ export interface VideoProjectJson {
       bgm?: string | null;
       bgmVolume?: number;
       ducking?: boolean;
+      /**
+       * 生成配樂的樂譜（SPEC §7.5）。`pnpm run music` 依此寫出 assets/music/bgm.wav；要當 BGM 使用，audio.bgm 設為該路徑。
+       */
+      music?: {
+        /**
+         * auto：有安裝 FluidSynth 與音色庫就用它（真實樂器取樣），否則用 webaudio（程式合成，免安裝）。
+         */
+        engine?: "auto" | "fluidsynth" | "webaudio";
+        bpm: number;
+        /**
+         * 調性，大調寫音名（C、F#、Bb），小調加 m（Am、C#m）。
+         */
+        key: string;
+        /**
+         * 旋律與力度的亂數種子；換一個數字就是另一版。
+         */
+        seed?: number;
+        drums?: boolean;
+        /**
+         * 各聲部的 General MIDI 音色編號（0–127，只影響 fluidsynth）；null 表示不演奏該聲部。
+         */
+        instruments?: {
+          lead?: number | null;
+          keys?: number | null;
+          pad?: number | null;
+          bass?: number | null;
+        };
+        /**
+         * fluidsynth 各聲部使用的音色庫（~/.aoa/soundfonts/ 內的檔名，由 pnpm run music:setup 安裝）；未指定的聲部用 default，default 未指定時用 GeneralUser-GS.sf2。指定的檔案不存在時改用預設並警告。
+         */
+        soundfonts?: {
+          default?: string;
+          lead?: string;
+          keys?: string;
+          pad?: string;
+          bass?: string;
+          drums?: string;
+        };
+        /**
+         * 各聲部音量增減（dB，0 為原始平衡）。兩種引擎都適用。
+         */
+        mix?: {
+          lead?: number;
+          keys?: number;
+          pad?: number;
+          bass?: number;
+          drums?: number;
+        };
+        /**
+         * 依序演奏的段落。長度用 bars（小節數）或 scenes（對齊這些 scene 在成片中的總長，需已渲染）擇一指定。
+         *
+         * @minItems 1
+         * @maxItems 32
+         */
+        sections: [
+          {
+            name?: string;
+            bars?: number;
+            /**
+             * @minItems 1
+             */
+            scenes?: [string, ...string[]];
+            /**
+             * 每小節一個和弦，不足時循環。例：C、Am、F#m、Bb、G7、Cmaj7、Dsus4。
+             *
+             * @minItems 1
+             * @maxItems 16
+             */
+            chords:
+              | [string]
+              | [string, string]
+              | [string, string, string]
+              | [string, string, string, string]
+              | [string, string, string, string, string]
+              | [string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+              | [
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string
+                ]
+              | [
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string
+                ]
+              | [
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string
+                ];
+            /**
+             * 0–1。<0.3 只有鋪底；0.3–0.6 加入輕鼓與貝斯；≥0.6 完整鼓組與旋律。
+             */
+            energy: number;
+            /**
+             * 最後一小節收尾：延長主和弦、鼓只敲一下。
+             */
+            ending?: boolean;
+          },
+          ...{
+            name?: string;
+            bars?: number;
+            /**
+             * @minItems 1
+             */
+            scenes?: [string, ...string[]];
+            /**
+             * 每小節一個和弦，不足時循環。例：C、Am、F#m、Bb、G7、Cmaj7、Dsus4。
+             *
+             * @minItems 1
+             * @maxItems 16
+             */
+            chords:
+              | [string]
+              | [string, string]
+              | [string, string, string]
+              | [string, string, string, string]
+              | [string, string, string, string, string]
+              | [string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string, string, string]
+              | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+              | [
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string
+                ]
+              | [
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string
+                ]
+              | [
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string,
+                  string
+                ];
+            /**
+             * 0–1。<0.3 只有鋪底；0.3–0.6 加入輕鼓與貝斯；≥0.6 完整鼓組與旋律。
+             */
+            energy: number;
+            /**
+             * 最後一小節收尾：延長主和弦、鼓只敲一下。
+             */
+            ending?: boolean;
+          }[]
+        ];
+      };
     };
     /**
      * 字幕設定，只在 assemble 階段使用，不納入 scene 的 inputHash（SPEC §7.5）。

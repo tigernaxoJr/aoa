@@ -15,6 +15,8 @@
     "login": "node scripts/login.mjs",
     "render:scene": "node scripts/render-scene.mjs",
     "assemble": "node scripts/assemble.mjs",
+    "music": "node scripts/music.mjs",
+    "music:setup": "node scripts/music-setup.mjs",
     "cosyvoice:setup": "python scripts/cosyvoice/setup.py",
     "cosyvoice:serve": "python scripts/cosyvoice/server.py"
   },

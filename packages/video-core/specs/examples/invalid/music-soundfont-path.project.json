@@ -31,7 +31,7 @@
         "seed": 7,
         "soundfonts": {
           "default": "GeneralUser-GS.sf2",
-          "keys": "UprightPianoKW.sf2"
+          "keys": "../piano.sf2"
         },
         "mix": {
           "lead": -3

@@ -113,7 +113,7 @@
    }
    ```
 
-   `pacing`：`slow`（平均鏡頭 > 4 秒）、`medium`（2.5–4 秒）、`fast`（< 2.5 秒）。只記錄從影格與音訊實際觀察到的特徵。
+   `pacing`：`slow`（平均鏡頭 > 4 秒）、`medium`（2.5–4 秒）、`fast`（< 2.5 秒）。只記錄從影格與音訊實際觀察到的特徵。`music` 也是之後生成配樂時選速度與樂器的依據（[rendering-guide.md#music](rendering-guide.md#music)）。
 
 ### <a id="confirm"></a>完成：和使用者確認對象、風格與長度（checkpoint）
 

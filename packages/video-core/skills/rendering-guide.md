@@ -271,7 +271,8 @@ pnpm run state project --status completed
 | BGM | `audio.bgm` | 循環播放到影片結束，音量 `bgmVolume`，頭尾各淡入淡出 1 秒；`ducking: true` 時旁白出現處自動壓低 |
 
 - `captions.mode: none` 不產生 `final.srt`。
-- `audio.bgm` 指定的檔案不存在時，略過 BGM 並警告，不算失敗。BGM 由使用者自備，不要替使用者下載音樂。
+- `audio.bgm` 指定的檔案不存在時，略過 BGM 並警告，不算失敗。BGM 可以由使用者自備，或以 `pnpm run music` 生成（第 9 節）；不要替使用者從網路下載音樂。
+- 有 `audio.music` 時，合成前先執行 `pnpm run music`：樂譜沒變就自動略過；段落對齊 scene 時，scene 長度變了它會重新生成。
 - BGM、scene 順序只影響合成：修改它們只需重新 `pnpm run assemble`，不需要重做 scene。字幕樣式在 `srt` 模式下也一樣；**`burn` 模式下修改 `captions`（含切換成或離開 `burn`）會使所有 scene 過期**，要重新渲染全部 scene，動手前先告訴使用者需要等待。
 - assemble 直接串接各 scene 的畫面，只重新編碼每個轉場那 0.5 秒，通常幾秒內完成，不必事先提醒使用者等待。
 - 轉場會讓成片比各 scene 加總短（每個轉場 0.5 秒）。旁白預設留有 0.5 秒尾音，轉場只會蓋到這段靜音；若 scene 用 `durationSec` 強制秒數且旁白講到最後一刻，轉場會蓋到旁白結尾，這時把該 scene 下一個的 `transitionIn` 改為 `none`。
@@ -280,3 +281,69 @@ pnpm run state project --status completed
 ### 完成
 
 回報 `output/final.mp4` 的路徑與總長度（`assemble` 最後一行會印出），以及有無字幕檔、BGM。`assemble` 印出的 `warning:`（例如缺少字幕、找不到 BGM）要一併告訴使用者。有保存登入資料（`sources.requiresLogin`）時，問使用者要不要清除（見 [workflow.md#login](workflow.md#login) 第 4 點）。
+
+---
+
+## <a id="music"></a>9. 配樂
+
+使用者沒有自備 BGM 時，可以生成配樂：你寫樂譜（`project.audio.music`），`pnpm run music` 依規則編曲並以本機合成器演奏，輸出 `assets/music/bgm.wav`。不使用 AI 音樂模型，聲音不會離開本機。
+
+### 何時做
+
+- 風格分析（product 的 `brief/style.json` 的 `music`）或故事定稿已談到音樂氣氛時，在分鏡審閱時一併提議：「要不要幫影片配一段背景音樂？」使用者同意後才寫樂譜。
+- 生成後請使用者試聽 `assets/music/bgm.wav`，確認後再把 `audio.bgm` 設為它並合成；不滿意就照下方「修改」調整。
+
+### 寫樂譜
+
+以 `pnpm run state project --patch-file` 寫入 `/project/audio/music`。格式見 `schemas/project.schema.json` 的 `$defs/music`。
+
+```json
+{
+  "bpm": 108,
+  "key": "C",
+  "seed": 1,
+  "instruments": { "lead": 11, "keys": 4, "pad": 89, "bass": 38 },
+  "mix": { "lead": -4 },
+  "sections": [
+    { "name": "開場", "scenes": ["scene-001"], "chords": ["C", "G", "Am", "F"], "energy": 0.3 },
+    { "name": "介紹", "scenes": ["scene-002", "scene-003", "scene-004"], "chords": ["F", "G", "Em", "Am"], "energy": 0.8 },
+    { "name": "收尾", "scenes": ["scene-005"], "chords": ["F", "G", "C"], "energy": 0.4, "ending": true }
+  ]
+}
+```
+
+- **段落對齊 scene**：所有 scene 都渲染後，用 `scenes` 讓每段音樂的起訖落在畫面切換點（自動取最接近的小節線），這樣情緒轉折會跟著畫面走。還沒渲染時先用 `bars` 試聽，渲染完再改成 `scenes`。
+- **energy**：`<0.3` 只有鋪底和弦（適合開場、沉靜處）；`0.3–0.6` 加入貝斯、輕鼓與鋼琴；`≥0.6` 完整鼓組與旋律（適合重點、高潮）。最後一段加 `ending: true` 收尾。
+- **旋律與旁白**：旋律只在 `energy ≥ 0.6` 出現，容易和旁白搶耳朵；旁白密集時把 `mix.lead` 調低（-4 到 -8），或設 `instruments.lead: null` 不要旋律。
+- **和弦**：每小節一個，不足時循環。大調常用 I–V–vi–IV（C G Am F）、vi–IV–I–V（Am F C G）；小調常用 i–VI–III–VII（Am F C G）。
+
+依氣氛挑起點（`instruments` 為 General MIDI 編號，只影響 fluidsynth）：
+
+| 氣氛 | bpm | key | 和弦 | instruments |
+|---|---|---|---|---|
+| 輕快科技、產品介紹 | 110–125 | C、G | C G Am F | lead 11 鐵琴、keys 4 電鋼琴、pad 89 暖墊、bass 38 合成貝斯 |
+| 溫馨、生活故事 | 72–90 | F、C | F C Dm Bb | lead 73 長笛、keys 0 鋼琴、pad 48 弦樂、bass 32 原聲貝斯 |
+| 童話、可愛 | 90–110 | F、G | F C Bb C | lead 9 鐘琴、keys 0 鋼琴、pad 49 弦樂、bass 32 原聲貝斯 |
+| 懸疑、科幻 | 70–90 | Am、Dm | Am F C G | lead null、keys 46 豎琴、pad 95 掃頻墊、bass 38；`drums: false` 或 energy 壓低 |
+| 激勵、片尾 | 120–135 | D、G | G D Em C | lead 61 銅管、keys 0 鋼琴、pad 48 弦樂、bass 33 電貝斯 |
+
+### 引擎與音色庫
+
+`engine` 預設 `auto`：電腦已安裝 FluidSynth 就用真實樂器取樣（音質明顯較好），否則用免安裝的 webaudio（偏電子音色）。`pnpm run music` 印出 `note: FluidSynth is not installed` 時，告訴使用者：「可以安裝一套真實樂器音色，約 35 MB，整台電腦只裝一次、所有專案共用，配樂會好聽很多。要安裝嗎？」同意後執行 `pnpm run music:setup`，再重新 `pnpm run music`（安裝後會自動改用 fluidsynth 重新生成）。
+
+- 其他音色庫：`pnpm run music:setup --list` 列出可裝的音色庫、大小與授權；經同意後以 `--with <名稱>` 加裝。
+- 各聲部可用不同音色庫（分軌渲染），例如鋼琴用專門的鋼琴音色：`"soundfonts": { "keys": "UprightPianoKW.sf2" }`。只有鋼琴的音色庫只能給 `keys`，且 `instruments.keys` 要是 0。
+- macOS／Linux 上 `music:setup` 不會自動安裝 FluidSynth，會印出指令（`brew install fluid-synth`、`sudo apt install fluidsynth`）；請使用者自己執行，你不使用系統管理員權限。
+
+### 修改
+
+| 使用者說 | 改什麼 |
+|---|---|
+| 換一首、旋律不喜歡 | `seed` 換一個數字 |
+| 太快、太慢 | `bpm` |
+| 太吵、太平淡 | 各段 `energy`；整體太大聲改 `audio.bgmVolume` |
+| 某個樂器太大聲 | `mix.<聲部>`（dB） |
+| 換樂器 | `instruments.<聲部>` |
+| 想自己編曲 | 告訴使用者 `assets/music/song.mid` 可以用 MuseScore 等軟體打開 |
+
+改完重新 `pnpm run music` 再 `pnpm run assemble`；配樂只影響合成，不需要重做 scene。`--stems` 會把各聲部另存到 `assets/music/stems/`，使用者想自己混音時才用。

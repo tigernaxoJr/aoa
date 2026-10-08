@@ -101,6 +101,7 @@
 - **畫面單純好調校**：保持每個 Scene 的視覺元素單純、動作聚焦（通常只有 1–2 個核心角色與 1 個主要動作），這樣產出的 SVG 向量精緻度高、動畫流暢不卡頓，而且極好調校與渲染！
 - **一個 scene 是一個畫面**：同一個地點、同一段連續的動作。換場景、時間跳躍、鏡頭大幅改變就換 scene。
 - `purpose` 依起承轉合：`opening`（開場，建立地點與氣氛）→ `setup`（認識角色與他想要的）→ `conflict`（遇到阻礙）→ `climax`（最緊張或最關鍵的一刻）→ `resolution`（問題解決）→ `ending`（收尾的一句話或一個畫面）。段數多時同一種可以有好幾段；不必每種都有。
+- 配樂（[rendering-guide.md#music](rendering-guide.md#music)）的段落跟著 `purpose` 走：`opening`、`ending` 的 energy 低（約 0.3），`conflict`、`climax` 高（約 0.8），以 `scenes` 對齊。
 - 第一段可以只有畫面和一句旁白；最後一段留 1–2 秒安靜的結尾畫面（`<!-- pause 1.5 -->` 放在最後）。
 
 ### <a id="dialogue"></a>寫旁白與對白（`script.md`）

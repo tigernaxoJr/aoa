@@ -79,7 +79,7 @@
 9. **不處理機密。** 不讀取 `.env`，不把 API key、密碼、token 寫進任何 JSON 或旁白稿，也不向使用者索取帳號密碼。
    不讀取 `.auth/`（保存的登入資料），`capture` 的 `type` 動作也不輸入密碼。需要登入的產品頁面，以 `pnpm run login` 打開視窗，由使用者自己登入（gate `productLogin`，§5）。 <!-- kind:product -->
 10. **失敗時保留現場。** 不刪除既有檔案；以 `pnpm run state <id> --failed …` 記錄錯誤。同一 scene 自動重試至多 2 次（看 `attempts`），之後停下並告訴使用者原因與重試方式。
-11. **未經同意不安裝工具。** 缺少 Node.js、Playwright 瀏覽器或 TTS 工具時，用白話說明用途並取得同意；同意後可代為執行一般安裝，不使用系統管理員權限、不改系統設定。需要使用者點擊確認時，給逐步說明。
+11. **未經同意不安裝工具。** 缺少 Node.js、Playwright 瀏覽器、TTS 工具或配樂音色（`pnpm run music:setup`）時，用白話說明用途並取得同意；同意後可代為執行一般安裝，不使用系統管理員權限、不改系統設定。需要使用者點擊確認時，給逐步說明。
 12. **太趕時依 `project.durationAdjust` 處理。** `auto` 時可自行在限度內拉長 scene 並事後回報，`ask` 時先問；刪改已確認的旁白、增減 scene 一律先問。做法見 Skill `rendering-guide.md#pacing`。
 13. **自訂動畫依 `project.customMotion` 處理。** 寫動畫模組（`visual.motion`：SVG、Canvas、GSAP、Three.js、GLSL、Rough.js）或畫新的 SVG 插圖會耗用較多 token：`allow` 可自行使用，`ask` 在分鏡審閱時逐段請使用者決定，`deny` 不使用。重複使用 `assets/svg/` 已存的 SVG 不受限。模組寫法見 Skill `rendering-guide.md#motion`。
    何時值得用自訂動畫，見 Skill `script-guide.md#custom-motion`。 <!-- kind:product -->
@@ -138,7 +138,7 @@ draft → assets_ready → rendering → rendered → approved
 ```
 
 - `render.inputHash` 與目前內容不符時，scene 視為過期，即使 `status` 仍是 `rendered`。`pnpm run status` 會標示出來。
-- BGM 只在合成時使用，改它不需要重做 scene，只要重新合成。字幕樣式也是，除非 `captions.mode` 是 `burn`（字幕畫在每個 scene 裡，改了要重新渲染所有 scene）。
+- BGM（含 `pnpm run music` 生成的配樂）只在合成時使用，改它不需要重做 scene，只要重新合成。字幕樣式也是，除非 `captions.mode` 是 `burn`（字幕畫在每個 scene 裡，改了要重新渲染所有 scene）。
 
 ## 7. 常用指令
 
@@ -152,5 +152,7 @@ draft → assets_ready → rendering → rendered → approved
 | `pnpm run login` | 打開瀏覽器視窗讓使用者自己登入產品；`--clear` 清除保存的登入 | <!-- kind:product -->
 | `pnpm run render:scene <id>…` | 渲染 scene；多個 id 時平行渲染（`--jobs N`）；單一 scene 也以多個瀏覽器分攤影格（`--pages N`） |
 | `pnpm run assemble` | 依順序合成 `output/final.mp4` |
+| `pnpm run music` | 依 `project.audio.music` 的樂譜生成配樂 `assets/music/bgm.wav`；有安裝 FluidSynth 時用真實樂器音色，否則用免安裝的合成音色。寫法見 Skill `rendering-guide.md#music` |
+| `pnpm run music:setup` | 安裝 FluidSynth 與樂器音色庫（約 35 MB，使用前需取得使用者同意）；裝在所有專案共用的 `~/.aoa/`，已裝過就沿用；`--list` 列出其他音色庫，`--with <名稱>` 加裝 |
 | `pnpm run cosyvoice:setup` | 安裝本機 CosyVoice 3 服務環境與依賴（使用前需取得使用者同意）；裝在所有專案共用的 `~/.aoa/cosyvoice/`，已裝過就沿用 |
 | `pnpm run cosyvoice:serve` | 在本機背景啟動 CosyVoice 3 HTTP 伺服器（監聽 127.0.0.1:50000）；服務由所有專案共用，已在執行就不必再啟動 |

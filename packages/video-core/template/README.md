@@ -34,7 +34,7 @@
 
 - `scenes/*/script.md`：各段旁白，純文字。改完執行 `/video-sync`。
 - `video.project.json` 的 `scenes` 順序：影片播放順序。改完執行 `/video-assemble`。
-- `assets/`：放 logo、BGM 等共用素材。BGM 檔名填在 `video.project.json` 的 `project.audio.bgm`。
+- `assets/`：放 logo、BGM 等共用素材。BGM 檔名填在 `video.project.json` 的 `project.audio.bgm`。沒有自備音樂時，可請 Agent 生成配樂（`assets/music/bgm.wav`；樂譜另存成 `assets/music/song.mid`，可用 MuseScore 打開修改）。
 
 其他 JSON 請透過 Agent 或 `pnpm run state` 修改，它會負責鎖定與驗證。
 

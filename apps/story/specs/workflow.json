@@ -220,14 +220,21 @@
       "reads": [
         { "path": "{dir}/output/scene.mp4" },
         { "path": "{dir}/assets/captions.json" },
-        { "path": "project.audio.bgm", "optional": true }
+        { "path": "project.audio.bgm", "optional": true },
+        { "path": "project.audio.music", "optional": true }
       ],
       "writes": [
         { "path": "output/final.mp4" },
-        { "path": "output/final.srt", "optional": true, "note": "captions.mode 為 none 時不產生" }
+        { "path": "output/final.srt", "optional": true, "note": "captions.mode 為 none 時不產生" },
+        { "path": "assets/music/bgm.wav", "optional": true, "note": "project.audio.music 有設定時由 pnpm run music 產生" }
       ],
       "actions": [
         { "id": "check", "do": "pnpm run status；有未完成或過期的 scene 時列出並停止。" },
+        {
+          "id": "music",
+          "do": "pnpm run music（樂譜、引擎與 scene 長度都沒變時自動略過）；它印出的 note 與 warning 一併回報。",
+          "when": "project.audio.music 有設定"
+        },
         { "id": "assemble", "do": "pnpm run assemble" },
         {
           "id": "done",

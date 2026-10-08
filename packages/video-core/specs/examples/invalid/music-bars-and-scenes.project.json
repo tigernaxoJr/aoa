@@ -48,7 +48,8 @@
               "Am",
               "F"
             ],
-            "energy": 0.35
+            "energy": 0.35,
+            "bars": 4
           },
           {
             "name": "main",

@@ -114,12 +114,15 @@ my-video-project/
 │   ├── 002-problem/
 │   └── ...
 ├── assets/                     # 全域共用素材（logo、字型、BGM）
+│   └── music/                  # pnpm run music 的產物：bgm.wav、song.mid、bgm.json（§7.5）
 ├── scripts/
 │   ├── validate.mjs
 │   ├── tts.mjs
 │   ├── capture.mjs
 │   ├── render-scene.mjs
 │   ├── assemble.mjs
+│   ├── music.mjs               # 生成配樂（§7.5）
+│   ├── music-setup.mjs         # 安裝 FluidSynth 與音色庫到 ~/.aoa/
 │   └── state.mjs               # 唯一的 JSON 寫入入口（§10.2）
 ├── src/                        # 渲染器程式碼（§7.6）
 │   ├── lib/motion.js           # 版面、動畫、配色（純函式）
@@ -494,6 +497,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | 網頁擷取 | Playwright | 截圖、錄製操作、抓取產品頁內容。瀏覽器依序使用：Playwright 內建 Chromium → 系統 Chrome → 系統 Edge（可用 `VIDEO_AGENT_BROWSER_CHANNEL` 指定），Windows 使用者無需另外下載 |
 | 語音合成 | 可替換 provider，預設 `edge-tts` | 見 §7.4 |
 | 影片合成 | Playwright 逐幀截圖 + FFmpeg | 不需額外授權；見 §7.6 |
+| 配樂生成 | FluidSynth + SoundFont（建議）或 WebAudio（免安裝） | 選用；FluidSynth 與音色庫由 `pnpm run music:setup` 裝在每台機器共用的 `~/.aoa/`；見 §7.5 |
 | 轉檔/合併 | FFmpeg / ffprobe | ffmpeg 依序使用：環境變數 `VIDEO_AGENT_FFMPEG` → 系統 PATH → 套件內建（`ffmpeg-static`）。ffprobe 依序使用：`VIDEO_AGENT_FFPROBE` → 套件內建（`ffprobe-static`）→ 系統 PATH，因為不同版本量出的 MP3 長度不同（新版扣除編碼器補白），固定版本才能讓各平台 scene 長度一致。使用者無需預先安裝 |
 
 ### 7.2 `package.json` scripts
@@ -510,6 +514,8 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
     "login":        "node scripts/login.mjs",
     "render:scene": "node scripts/render-scene.mjs",
     "assemble":     "node scripts/assemble.mjs",
+    "music":        "node scripts/music.mjs",
+    "music:setup":  "node scripts/music-setup.mjs",
     "state":        "node scripts/state.mjs",
     "status":       "node scripts/validate.mjs --report"
   },
@@ -530,6 +536,8 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 | `render-scene.mjs <id>` | scene 全部輸入 | `output/scene.mp4`（H.264 + AAC 48 kHz 立體聲、BT.709，無旁白時為靜音音軌）；失敗時保留既有輸出 | 否 |
 | `state.mjs <target> <patch>` | Agent 提供的修改 | 更新後的 JSON（鎖檔 + 原子寫入 + validate，§10.2） | **是**（唯一例外，由 Agent 呼叫） |
 | `assemble.mjs` | 所有 scene 輸出、`audio`、`captions` | `output/final.mp4`、`output/final.srt`（`captions.mode` 為 `none` 時不產生）。有 scene 未 `rendered`/`approved`、缺輸出或 `inputHash` 不符時列出並失敗；失敗時保留既有輸出。視訊直接複製，只重新編碼轉場片段；聲音（含 BGM）整條混音編碼。scene 編碼參數不一致時整支重新編碼 | 否 |
+| `music.mjs` | `project.audio.music`（段落對齊 scene 時另讀各 scene 輸出的長度） | `assets/music/bgm.wav`、`song.mid`、`bgm.json`（`--stems` 另存 `stems/*.wav`）。樂譜、引擎、音色庫與對齊結果都沒變時略過（`--force` 重做）。不改 `audio.bgm`，只印出設定它的 `state` 指令 | 否 |
+| `music-setup.mjs` | — | FluidSynth（Windows 下載官方版；macOS／Linux 請使用者以套件管理員安裝）與音色庫，裝在 `~/.aoa/`；`--with <名稱>` 加裝其他音色庫，`--list` 列出可裝的音色庫與授權 | 否 |
 
 `state.mjs` 介面（Agent 使用方式見範本 `AGENTS.md` §4）：
 
@@ -582,9 +590,30 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 **BGM**
 
-- 由使用者自備音檔放入 `assets/`，於 `audio.bgm` 指定；網站不提供音樂庫（避免音樂授權責任），不做 AI 生成音樂。
+- 來源二擇一：使用者自備音檔放入 `assets/`，或由 `pnpm run music` 生成（見下方「生成配樂」）；都以 `audio.bgm` 指定。網站不提供音樂庫，也不使用 AI 音樂模型（避免音樂授權責任）。
 - assemble 時混音：BGM 循環播放至成片長度，`bgmVolume` 為基準音量，`ducking: true` 時以旁白為 sidechain 經 `sidechaincompress` 自動壓低，影片頭尾 1 秒淡入淡出（成片短於 2 秒時縮短）。`audio.bgm` 檔案不存在時警告並略過。
 - BGM 同樣只在 assemble 處理，不影響 scene 的 `inputHash`。
+
+**生成配樂**（D23）
+
+不使用音樂模型：Agent 依影片風格寫一份樂譜（`project.audio.music`：速度、調性、段落的和弦與能量），腳本依規則編曲、再以本機合成器演奏，輸出 `assets/music/bgm.wav`，再把 `audio.bgm` 設為它。
+
+- **編曲**（`scripts/lib/music.mjs`，純函式）：每個段落依 `energy` 決定配器，`<0.3` 只有鋪底和弦，`0.3–0.6` 加入貝斯、輕鼓與稀疏的鋼琴，`≥0.6` 完整鼓組、鋼琴節奏與旋律；段落交界有過門；`ending` 段落在最後一小節延長主和弦收尾。旋律以固定的兩小節節奏型重複，強拍取最接近前一音的和弦內音、弱拍走音階；力度加入少量隨機。所有隨機都來自 `seed`，同一份樂譜每次輸出相同。
+- **長度**：段落以 `bars` 指定小節數，或以 `scenes` 對齊這些 scene 在成片中的範圍（需全部已渲染；以 assemble 相同的 timeline 計算）。對齊時各段落終點取「從影片開頭起最接近的小節線」，誤差不會累積。音樂比影片短時印出警告（assemble 仍會循環）。
+- **引擎**（`music.engine`，預設 `auto`）：
+  - `fluidsynth`（建議）：樂譜轉為 General MIDI（`assets/music/song.mid`，可用 MuseScore 等軟體打開修改），以 FluidSynth 加 SoundFont 演奏真實樂器取樣。**分軌渲染**：lead、keys、pad、bass、drums 各自轉成單軌 MIDI、各自用 `music.soundfonts` 指定的音色庫渲染，再依 `music.mix`（dB）混音；指定的音色庫未安裝時改用預設並警告。
+  - `webaudio`：在 headless Chromium 的 `OfflineAudioContext` 以振盪器、濾波器、噪音鼓與程式產生的殘響合成，不需安裝任何東西，音色偏電子。
+  - `auto`：已安裝 FluidSynth 與預設音色庫時用 `fluidsynth`，否則用 `webaudio` 並提示可執行 `pnpm run music:setup`。
+- **成品**：裁到樂譜長度、結尾 0.3 秒淡出，以 `loudnorm` 統一到 -18 LUFS，使兩種引擎在旁白下的音量相同，`bgmVolume` 意義一致。`bgm.json` 記錄引擎、各聲部實際使用的音色庫、小節數與長度。
+- **安裝**（`pnpm run music:setup`）：FluidSynth 與音色庫整台機器只裝一份，放在 `~/.aoa/fluidsynth/`、`~/.aoa/soundfonts/`（`AOA_HOME` 可改位置），所有專案共用；下載前 Agent 須取得使用者同意（範本 AGENTS.md 規則 11）。只收錄可用於商業作品的音色庫：
+
+  | 名稱 | 大小 | 授權 | 用途 |
+  |---|---|---|---|
+  | `GeneralUser-GS.sf2`（預設） | 32 MB | GeneralUser GS License v2.0 | 全部聲部 |
+  | `MuseScore_General.sf3` | 40 MB | MIT | 全部聲部 |
+  | `UprightPianoKW.sf2` | 29 MB | CC0 | 只有鋼琴（keys） |
+
+- 環境變數 `VIDEO_AGENT_FAKE_MUSIC=1` 以測試音取代實際演奏，供自動化測試使用。
 
 ### 7.6 渲染器
 
@@ -869,10 +898,11 @@ Agent、Local MCP、UI 皆可能寫入專案 JSON，一律遵守（Agent 的檔�
 | D13 | UI ↔ Agent 通訊 | 各稿僅提「UI 讀寫檔案」，未處理反向通知 | 採模式 A（檔案輪詢 + 使用者觸發）；不採檔案佇列 A'；本機 Companion（模式 B）曾於 Phase 5 加入，後移除（見 D18） | A' 閒置 token 成本高；B 的價值抵不過常駐程序、配對與安全面的成本 |
 | D14 | TTS 預設 | edge-tts(Gm) / 未指定 | 可替換 provider；預設 edge-tts，首次使用需同意；支援自帶 key、Piper、系統、手動錄音 | 繁中免費堪用者僅 edge-tts，但其為非官方介面，不能綁死 |
 | D15 | 渲染器授權 | 未處理 | 移除 Remotion，只保留逐幀截圖渲染器 | Remotion 對 >3 人公司需付費，使用者難以自行判斷級距；兩個渲染器畫面相同，維持兩套版面與授權詢問不划算。代價是渲染較慢 |
-| D16 | BGM 與字幕 | 可選(Q) / 未規範 | 兩者皆進 MVP：字幕預設輸出 SRT、可選燒入；BGM 自備音檔 + ducking；兩者只在 assemble 處理 | 旁白即字幕來源，成本低；集中在 assemble 使樣式調整不觸發 scene 重渲染 |
+| D16 | BGM 與字幕 | 可選(Q) / 未規範 | 兩者皆進 MVP：字幕預設輸出 SRT、可選燒入；BGM 自備音檔或生成（D23）+ ducking；兩者只在 assemble 處理 | 旁白即字幕來源，成本低；集中在 assemble 使樣式調整不觸發 scene 重渲染 |
 | D17 | 多語系 | 未提及 | MVP 一專案一語言；`/video-translate` 複製專案並翻譯；預留 `<locale>` 命名 | 語言影響時長→畫面時間軸→每 scene 重渲染，原生支援會使狀態機二維化，MVP 成本過高 |
 | D18 | Companion 與寫入協定 | 無 | 不提供本機 Companion（曾實作 `video-agent serve` / `pnpm run companion`，已移除）；所有寫入者遵守統一寫入協定（鎖檔 + 原子寫入） | 網頁按鈕省下的只是一句指令，卻要常駐程序、token 配對、Origin 檢查與 Local Network Access 授權；`sync` 在背景啟動 Agent 有安全與成本疑慮 |
 | D19 | 其他 Agent 相容性 | GPT 提及「未來支援其他 Agent」 | MVP 只測 Claude Code；AGENTS.md / Skill 中立寫法；指令檔單一來源產生各家格式，逐一驗收後才標示支援 | 協議層已通用，差異只在指令格式；支援宣告需有測試背書 |
 | D20 | 網站部署與指令來源 | 未規範（§9.4 僅提 Cloudflare / GitHub Pages） | GitHub Pages（`gh-pages` 分支），網址 `/index-url-director`，base path 從 repo 名稱推得（可用 `SITE_URL` 覆寫）；Guide API 一律絕對網址；指令檔與 prompts/rules 皆由既有單一來源（workflow.json、Skill）產生；init 以 Skill 或 agent-guide 為入口 | 子路徑部署下根相對路徑會失效；避免 YAML 與 workflow.json、prompts 與 Skill 雙重維護；init 時專案指令尚不存在 |
 | D21 | Cloud MCP | §10 原規劃由網站提供 Cloud MCP | 不另設雲端 MCP；Guide 類 resources / prompts 併入本機 `video-agent mcp`，內容來自內附或網站的 `/api/*`；專案操作只呼叫專案自己的腳本 | 網站為 GitHub Pages 靜態部署，無法運行 MCP；本機伺服器已隨 Agent 啟動，多一個雲端端點沒有額外價值；呼叫專案腳本可確保與專案的協議版本一致 |
 | D22 | 故事影片 | 無 | 以 `project.kind` 區分，同一範本與渲染器（打包時各自去掉另一種影片專用的檔案，見 §8.2），另立 `story-video` Skill 與 `develop_story` / `design` 兩步；角色聲音以 script.md 行首【名字】指定；角色美術一次畫好、以 `rig.js` 擺姿勢 | 渲染、TTS、合成與工作台都與產品無關，分叉範本只會讓兩邊漂移；一個角色檔重複使用才能讓角色從頭到尾一致，也省 token；只把該段有說話的角色聲音算進 hash，換一個角色的聲音不必重做整部片 |
+| D23 | 生成配樂 | 原 D16 不做 AI 生成音樂 | Agent 寫樂譜（和弦、段落、能量），規則編曲後由本機合成器演奏；不用音樂模型。引擎優先 FluidSynth + SoundFont（分軌渲染，各聲部可用不同音色庫），未安裝時退回 WebAudio 合成；音色庫只收可商用者，整台機器共用一份 | 不需 GPU、結果可重現、長度可精準對齊 scene；聲音由合成器產生，沒有模型訓練資料的授權疑慮。FluidSynth 試聽明顯優於 WebAudio，但需要下載約 35 MB，故保留免安裝的 WebAudio 作為後備 |
