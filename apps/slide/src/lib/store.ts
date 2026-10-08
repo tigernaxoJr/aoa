@@ -70,6 +70,9 @@ export const hasHtml = computed(() => !!htmlFile.value)
 export const needsSetup = computed(() => !!dirHandle.value && loaded.value && !project.value && !start.value)
 
 export async function setDirectory(handle: FileSystemDirectoryHandle) {
+  // Polls keep the last good value when a file is missing, so another folder starts from a clean slate:
+  // the previous project would otherwise hide the new folder's setup form.
+  if (dirHandle.value !== handle) resetDirectory()
   stopPolling()
   dirHandle.value = handle
   await pollFiles()
@@ -107,18 +110,21 @@ export function resetDirectory() {
 export async function pollFiles() {
   const root = dirHandle.value
   if (!root) return
+  /** False once the user has switched folders while this poll was reading. */
+  const live = () => dirHandle.value === root
 
   try {
     // 1. Read slide.project.json
     try {
       const text = await readText(root, 'slide.project.json')
-      project.value = JSON.parse(text) as SlideProject
+      if (live()) project.value = JSON.parse(text) as SlideProject
     } catch {
       // not yet created
     }
 
     try {
-      start.value = JSON.parse(await readText(root, 'slide.start.json')) as SlideStartConfig
+      const config = JSON.parse(await readText(root, 'slide.start.json')) as SlideStartConfig
+      if (live()) start.value = config
     } catch {
       // the folder was not prepared by this page
     }
@@ -126,7 +132,7 @@ export async function pollFiles() {
     // 2. Read slide.activity.json
     try {
       const text = await readText(root, 'slide.activity.json')
-      activity.value = JSON.parse(text) as SlideActivity
+      if (live()) activity.value = JSON.parse(text) as SlideActivity
     } catch {
       // not yet created
     }
@@ -134,6 +140,7 @@ export async function pollFiles() {
     // 3. Read slides.md
     try {
       const file = await tryFile(root, 'slides.md')
+      if (!live()) return
       slidesMarkdown.value = file ? await file.text() : null
       slidesModified.value = file?.lastModified ?? null
     } catch {
@@ -143,6 +150,7 @@ export async function pollFiles() {
     // 3b. Render check and per-slide screenshots
     try {
       const file = await tryFile(root, 'output/check.json')
+      if (!live()) return
       check.value = file ? (JSON.parse(await file.text()) as SlideCheck) : null
     } catch {
       // being rewritten; keep the last good report
@@ -156,6 +164,7 @@ export async function pollFiles() {
     // 4. Check output/slides.pdf
     try {
       const file = await tryFile(root, 'output/slides.pdf')
+      if (!live()) return
       if (file && (!pdfFile.value || file.lastModified !== pdfFile.value.lastModified)) {
         if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
         pdfFile.value = file
@@ -174,6 +183,7 @@ export async function pollFiles() {
       let hFile = await tryFile(root, 'dist/index.html')
       if (!hFile) hFile = await tryFile(root, 'output/dist/index.html')
       if (!hFile) hFile = await tryFile(root, 'output/index.html')
+      if (!live()) return
       if (hFile && (!htmlFile.value || hFile.lastModified !== htmlFile.value.lastModified)) {
         if (htmlUrl.value) URL.revokeObjectURL(htmlUrl.value)
         htmlFile.value = hFile
@@ -188,6 +198,7 @@ export async function pollFiles() {
       // Ignore HTML read error
     }
 
+    if (!live()) return
     lastSync.value = new Date()
     loaded.value = true
     syncError.value = null
@@ -222,7 +233,9 @@ async function pollImages(root: FileSystemDirectoryHandle) {
       changed = true
     }
   }
-  if (changed) slideImages.value = next
+  if (dirHandle.value !== root) {
+    for (const [no, image] of next) if (slideImages.value.get(no) !== image) URL.revokeObjectURL(image.url)
+  } else if (changed) slideImages.value = next
 }
 
 async function record(handle: FileSystemDirectoryHandle, title: string) {
@@ -240,11 +253,17 @@ async function refreshRecent() {
  * refused (the Agent unpacks the template there) and is not added to the recent list.
  */
 export async function openFolder(handle: FileSystemDirectoryHandle) {
+  const previous = dirHandle.value
   await setDirectory(handle)
   if (needsSetup.value) {
     const names = await folderEntries(handle)
     if (names.length) {
       resetDirectory()
+      // Picked from the header menu: keep working on the project that was open.
+      if (previous && previous !== handle) {
+        await setDirectory(previous)
+        recorded = project.value?.title || start.value?.title || ''
+      }
       throw new Error(`「${handle.name}」不是空的資料夾，也不是簡報專案（找到 ${names.slice(0, 3).join('、')}${names.length > 3 ? ' 等' : ''}）。請選擇空資料夾開始新專案，或選擇既有的簡報專案資料夾。`)
     }
   }
