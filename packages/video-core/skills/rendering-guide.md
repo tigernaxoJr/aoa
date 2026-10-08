@@ -305,7 +305,7 @@ pnpm run state project --status completed
   "style": "pop",
   "mix": { "lead": -4 },
   "sections": [
-    { "name": "開場", "scenes": ["scene-001"], "chords": ["C", "G", "Am", "F"], "energy": 0.3 },
+    { "name": "開場", "scenes": ["scene-001"], "chords": ["C", "G", "Am", "F"], "energy": 0.3, "texture": "piano" },
     { "name": "介紹", "scenes": ["scene-002", "scene-003", "scene-004"], "chords": ["F", "G", "Em", "Am"], "energy": 0.8 },
     { "name": "收尾", "scenes": ["scene-005"], "chords": ["F", "G", "C"], "energy": 0.4, "ending": true }
   ]
@@ -314,8 +314,23 @@ pnpm run state project --status completed
 
 - **段落對齊 scene**：所有 scene 都渲染後，用 `scenes` 讓每段音樂的起訖落在畫面切換點（自動取最接近的小節線），這樣情緒轉折會跟著畫面走。還沒渲染時先用 `bars` 試聽，渲染完再改成 `scenes`。
 - **energy**：`<0.3` 只有鋪底和弦（適合開場、沉靜處）；`0.3–0.6` 加入鋼琴、貝斯與輕鼓；`≥0.6` 完整鼓組與旋律（適合重點、高潮）；`≥0.85` 旋律再移高。進入能量較高的段落前會自動漸強、過門並加鈸；最後一段加 `ending: true` 漸弱收尾。
+- **texture**（可選）：決定這段由哪些樂器演奏，讓段落像不同的場景。`full` 全部（預設，依 energy）；`piano` 只有鋼琴，適合開場、獨白、回憶；`strings` 只有弦樂鋪底，適合抒情、空景；`breakdown` 抽掉鼓、貝斯只留長音，適合高潮前的停頓、轉折；`build` 從鋪底和鋼琴開始，逐漸加入貝斯、輕鼓，最後是全鼓組，適合從問題走向解決的段落。從沒有鼓的段落進到有鼓的段落時，會自動加一個小鼓過門和鈸。
 - **旋律與旁白**：旋律只在 `energy ≥ 0.6` 出現，容易和旁白搶耳朵；旁白密集時把 `mix.lead` 調低（-4 到 -8），或設 `instruments.lead: null` 不要旋律。
 - **和弦**：每小節一個，不足時循環。大調常用 I–V–vi–IV（C G Am F）、vi–IV–I–V（Am F C G）；小調常用 i–VI–III–VII（Am F C G）。
+
+### <a id="variety"></a>避免每支影片都一樣
+
+同一套樂譜骨架用在每個專案，配樂聽起來會一模一樣。每個專案都要從影片本身出發，至少在下面三點做出不同：
+
+1. **和弦進行**：不要每次都用 I–V–vi–IV（C G Am F）。依情緒輪換：
+   - 明亮：I–IV–V–IV（C F G F）、I–vi–IV–V（C Am F G）、IV–V–iii–vi（F G Em Am）
+   - 溫柔、懷舊：vi–IV–I–V（Am F C G）、I–iii–IV–iv（C Em F Fm）、Imaj7–vi7–ii7–V7（Cmaj7 Am7 Dm7 G7）
+   - 懸疑、陰暗：i–VI–III–VII（Am F C G）、i–iv–v–i（Am Dm Em Am）、i–VI–iv–V（Am F Dm E）
+   - 同一首裡，主段和收尾用不同的進行，收尾常用 IV–V–I。
+2. **段落結構**：依分鏡決定，不要固定「前奏 4、主段 8、收尾 4」。例如：鋼琴獨奏開場（`texture: piano`）→ 逐漸加入（`build`）→ 全樂團主題 → 停頓（`breakdown`）→ 最後一次主題 → 收尾。段落長度以 `scenes` 對齊畫面。
+3. **`style` 與 `seed`**：同一個使用者的多支影片，換不同的 `style` 或至少換 `seed`；同一曲風裡，每個段落也會自動選不同的鼓、鋼琴、貝斯型態。
+
+片頭、片尾或沒有旁白的段落，再自己寫一段 `melody` 當主題（見上節），配樂就會有記憶點。
 
 ### <a id="melody"></a>自己寫旋律
 
@@ -359,6 +374,7 @@ pnpm run state project --status completed
 |---|---|
 | 換一首、旋律不喜歡 | `seed` 換一個數字，或自己寫 `melody` |
 | 太快、太慢 | `bpm` |
+| 每段聽起來都一樣、太單調 | 段落換 `texture`、換和弦進行（見「避免每支影片都一樣」） |
 | 太吵、太平淡 | 各段 `energy`；整體太大聲改 `audio.bgmVolume` |
 | 某個樂器太大聲 | `mix.<聲部>`（dB） |
 | 換風格 | `style` |

@@ -20,10 +20,12 @@ const pitchClass = (letter, accidental) => (NOTE[letter] + (accidental === '#' ?
 
 // --- Styles ---
 //
-// A style is the arrangement: General MIDI programs, the piano (keys) pattern, the bass pattern,
-// drum grids for medium and high energy, the melody rhythms it draws from, and swing.
+// A style is the arrangement: General MIDI programs, the piano (keys) patterns, the bass patterns,
+// drum grids for medium and high energy, the melody rhythms it draws from, and swing. Each list
+// holds alternatives; every section picks its own (by seed, never the previous section's pick),
+// so sections differ and the same style varies between songs.
 // Drum grids are 16 sixteenth notes: X accent, x normal, o soft, . rest.
-// Bass patterns are [step, length in steps, note]: r root, 5 fifth, 8 octave, a approach to the next chord.
+// Bass patterns are [step, length in steps, note]: r root, 3 third, 5 fifth, 8 octave, a approach to the next chord.
 
 const MOTIFS = [
   [[0, 2], [2, 1], [3, 1], [4, 3], [8, 1], [9, 1], [10, 2], [12, 4]],
@@ -40,71 +42,126 @@ const BASS = {
   root5: { mid: [[0, 8, 'r'], [8, 8, '5']], high: [[0, 6, 'r'], [6, 2, 'r'], [8, 6, '5'], [14, 2, 'a']] },
   pulse8: { mid: [[0, 4, 'r'], [4, 4, 'r'], [8, 4, 'r'], [12, 4, 'r']], high: [[0, 2, 'r'], [2, 2, 'r'], [4, 2, 'r'], [6, 2, 'r'], [8, 2, 'r'], [10, 2, 'r'], [12, 2, '5'], [14, 2, 'a']] },
   lofi: { mid: [[0, 7, 'r'], [10, 4, '5']], high: [[0, 6, 'r'], [7, 3, '5'], [10, 4, 'r'], [14, 2, 'a']] },
+  walk: { mid: [[0, 8, 'r'], [8, 8, '5']], high: [[0, 4, 'r'], [4, 4, '3'], [8, 4, '5'], [12, 4, 'a']] },
+  sync: { mid: [[0, 6, 'r'], [6, 10, 'r']], high: [[0, 3, 'r'], [3, 3, 'r'], [6, 2, '5'], [8, 3, 'r'], [11, 3, '8'], [14, 2, 'a']] },
 }
 
 export const STYLES = {
   pop: {
     instruments: { lead: 11, keys: 4, pad: 89, bass: 38 },
-    keys: 'pulse',
-    bass: 'drive',
+    keys: ['pulse', 'offbeat', 'block'],
+    bass: ['drive', 'sync'],
     drums: {
-      mid: { kick: 'x.......x.......', hat: 'o...o...o...o...' },
-      high: { kick: 'X......xX.x.....', snare: '....X.......X...', hat: 'x.o.x.o.x.o.x.o.' },
+      mid: [
+        { kick: 'x.......x.......', hat: 'o...o...o...o...' },
+        { kick: 'x.....x.x.......', hat: '..o...o...o...o.' },
+      ],
+      high: [
+        { kick: 'X......xX.x.....', snare: '....X.......X...', hat: 'x.o.x.o.x.o.x.o.' },
+        { kick: 'X..x..x.X.......', snare: '....X.......X...', hat: 'xoxoxoxoxoxoxoxo' },
+        { kick: 'X.......X.......', snare: '....X..x....X...', hat: 'x.x.x.x.x.x.x.x.' },
+      ],
     },
     motifs: [0, 1, 4, 5],
   },
   warm: {
     instruments: { lead: 73, keys: 0, pad: 48, bass: 32 },
-    keys: 'broken',
-    bass: 'root5',
+    keys: ['broken', 'block', 'arp'],
+    bass: ['root5', 'walk'],
     drums: {
-      mid: { kick: 'x.......x.......', hat: '....o.......o...' },
-      high: { kick: 'x.......x..x....', snare: '....x.......x...', hat: 'o.o.o.o.o.o.o.o.' },
+      mid: [
+        { kick: 'x.......x.......', hat: '....o.......o...' },
+        { kick: 'x.........x.....', hat: 'o.o.o.o.o.o.o.o.' },
+      ],
+      high: [
+        { kick: 'x.......x..x....', snare: '....x.......x...', hat: 'o.o.o.o.o.o.o.o.' },
+        { kick: 'x.....x.x.......', snare: '....x.......x...', hat: 'o...o...o...o...' },
+      ],
     },
     motifs: [2, 3, 6],
   },
   fairytale: {
     instruments: { lead: 9, keys: 0, pad: 49, bass: 32 },
-    keys: 'arp',
-    bass: 'root5',
+    keys: ['arp', 'broken', 'offbeat'],
+    bass: ['root5', 'walk'],
     drums: {
-      mid: { hat: 'o...o...o...o...' },
-      high: { kick: 'x.......x.......', snare: '........x.......', hat: 'o.o.o.o.o.o.o.o.' },
+      mid: [{ hat: 'o...o...o...o...' }, { kick: 'x.......x.......', hat: '..o...o...o...o.' }],
+      high: [
+        { kick: 'x.......x.......', snare: '........x.......', hat: 'o.o.o.o.o.o.o.o.' },
+        { kick: 'x...x...x...x...', snare: '....x.......x...', hat: 'oooooooooooooooo' },
+      ],
     },
     motifs: [0, 4],
   },
   suspense: {
     instruments: { lead: null, keys: 46, pad: 95, bass: 38 },
-    keys: 'arp',
-    bass: 'pulse8',
+    keys: ['arp', 'block'],
+    bass: ['pulse8', 'drive'],
     drums: {
-      mid: { kick: 'x...x...x...x...' },
-      high: { kick: 'x...x...x...x.x.', snare: '............x...', hat: '..o...o...o...o.' },
+      mid: [{ kick: 'x...x...x...x...' }, { kick: 'x..x....x..x....' }],
+      high: [
+        { kick: 'x...x...x...x.x.', snare: '............x...', hat: '..o...o...o...o.' },
+        { kick: 'X..x..x.X..x..x.', snare: '....x.......x...', hat: 'oooooooooooooooo' },
+      ],
     },
     motifs: [3, 2],
   },
   anthem: {
     instruments: { lead: 60, keys: 0, pad: 48, bass: 33 },
-    keys: 'stabs',
-    bass: 'pulse8',
+    keys: ['stabs', 'pulse', 'block'],
+    bass: ['pulse8', 'drive'],
     drums: {
-      mid: { kick: 'x...x...x...x...', hat: '..o...o...o...o.' },
-      high: { kick: 'X...x...X...x...', snare: '....X.......X...', hat: 'x.x.x.x.x.x.x.x.' },
+      mid: [
+        { kick: 'x...x...x...x...', hat: '..o...o...o...o.' },
+        { kick: 'x.......x.......', snare: '............x...', hat: 'o.o.o.o.o.o.o.o.' },
+      ],
+      high: [
+        { kick: 'X...x...X...x...', snare: '....X.......X...', hat: 'x.x.x.x.x.x.x.x.' },
+        { kick: 'X..xX...X..xX...', snare: '....X.......X...', hat: 'x.x.x.x.x.x.x.x.' },
+      ],
     },
     motifs: [6, 0],
   },
   lofi: {
     instruments: { lead: 11, keys: 4, pad: 89, bass: 32 },
-    keys: 'pulse',
-    bass: 'lofi',
+    keys: ['pulse', 'block', 'offbeat'],
+    bass: ['lofi', 'sync'],
     drums: {
-      mid: { kick: 'x.........x.....', snare: '....x.......x...', hat: 'o.o.o.o.o.o.o.o.' },
-      high: { kick: 'x.....x...x.....', snare: '....X.......X...', hat: 'x.o.x.o.x.o.x.o.' },
+      mid: [
+        { kick: 'x.........x.....', snare: '....x.......x...', hat: 'o.o.o.o.o.o.o.o.' },
+        { kick: 'x......x..x.....', snare: '....x.......x...', hat: 'o.o.o.o.o.o.o.o.' },
+      ],
+      high: [
+        { kick: 'x.....x...x.....', snare: '....X.......X...', hat: 'x.o.x.o.x.o.x.o.' },
+        { kick: 'x..x......x..x..', snare: '....X.......X...', hat: 'x.ox.ox.x.ox.ox.' },
+      ],
     },
     motifs: [5, 3],
     swing: 0.62,
     soft: 0.85,
   },
+}
+
+/**
+ * Which parts a section's texture plays in bar `b` of `bars`: pad, keys, bass ('hold' = one long
+ * note), drums (false, or the level to play). `build` brings the parts in over the section.
+ */
+export const TEXTURES = ['full', 'piano', 'strings', 'breakdown', 'build']
+function layers(texture, b, bars, level) {
+  switch (texture) {
+    case 'piano':
+      return { pad: false, keys: true, bass: false, drums: false }
+    case 'strings':
+      return { pad: true, keys: false, bass: false, drums: false }
+    case 'breakdown':
+      return { pad: true, keys: true, bass: 'hold', drums: false }
+    case 'build': {
+      const p = b / bars
+      return { pad: true, keys: true, bass: p >= 1 / 3, drums: p >= 2 / 3 ? level : p >= 1 / 3 ? 'mid' : false }
+    }
+    default:
+      return { pad: true, keys: true, bass: true, drums: level }
+  }
 }
 export const DEFAULT_STYLE = 'pop'
 
@@ -305,6 +362,12 @@ export function compose(music, sections) {
   let prevVoicing = null
   let prevMel = 69
   let ended = false
+  /** A random item of `list`, other than `avoid` when there is a choice. */
+  const pick = (list, avoid) => {
+    const choices = list.length > 1 ? list.filter((x) => x !== avoid) : list
+    return choices[Math.floor(r() * choices.length)]
+  }
+  let chosen = {}
 
   sections.forEach((sec, si) => {
     const prev = sections[si - 1]
@@ -312,6 +375,18 @@ export function compose(music, sections) {
     const e = sec.energy
     const level = e >= 0.6 ? 'high' : e >= 0.3 ? 'mid' : null
     const lift = e >= 0.85 ? 5 : 0
+    const texture = sec.texture ?? 'full'
+    // This section's patterns, different from the previous section's where the style has a choice
+    const keysKind = pick(style.keys, chosen.keys)
+    const keysAlt = pick(style.keys, keysKind)
+    chosen = {
+      keys: keysKind,
+      bass: pick(style.bass, chosen.bass),
+      mid: pick(style.drums.mid, chosen.mid),
+      high: pick(style.drums.high, chosen.high),
+    }
+    const grids = { mid: chosen.mid, high: chosen.high }
+    const nextDrums = next && !next.ending && layers(next.texture ?? 'full', 0, next.bars, next.energy >= 0.6 ? 'high' : next.energy >= 0.3 ? 'mid' : null).drums
 
     for (let b = 0; b < sec.bars; b++, barIdx++) {
       const t0 = barIdx * bar
@@ -327,7 +402,9 @@ export function compose(music, sections) {
       const fade = sec.ending ? 1 - (0.25 * b) / Math.max(1, sec.bars - 1) : 1
       ended = ending
 
-      for (const n of voicing) add('pad', t0, 0, ending ? bar * 1.5 : bar, n, (48 + e * 30) * fade)
+      const play = layers(texture, b, sec.bars, level)
+      // The pad carries a strings-only section, so it plays louder there
+      if (play.pad || ending) for (const n of voicing) add('pad', t0, 0, ending ? bar * 1.5 : bar, n, (48 + e * 30) * fade * (texture === 'strings' ? 1.25 : 1))
 
       if (written[si]) {
         // The agent's melody plays whatever the energy, cycling when shorter than the section
@@ -345,33 +422,49 @@ export function compose(music, sections) {
         if (prev && prev.energy >= 0.6) add('crash', t0, 0, 1.5, GM_DRUMS.crash, 70)
         continue
       }
-      if (!level) continue
+      // Below 0.3 energy only the pad plays, unless the texture asks for the piano or a build
+      if (!level && texture === 'full') continue
+      const partLevel = level ?? 'mid'
 
-      // Crash where a section lifts into high energy
-      if (level === 'high' && b === 0 && (!prev || prev.energy < e)) add('crash', t0, 0, 1.5, GM_DRUMS.crash, 92)
-
-      keysPattern(style.keys, level, voicing, (s, d, n, v) => add('keys', t0, s, d * step, n, v * fade))
-
-      for (const [s, len, what] of BASS[style.bass][level]) {
-        let n = bassRoot
-        if (what === '5') n = bassRoot + 7
-        else if (what === '8') n = bassRoot + 12
-        else if (what === 'a') n = nextChord.root === chord.root ? bassRoot + 7 : approach(nextChord.root, scale, bassRoot)
-        add('bass', t0, s, len * step * 0.95, n, (level === 'high' ? 92 : 80) * fade)
+      if (play.keys) {
+        // Every fourth bar turns the piano pattern around, except where the section ends
+        const kind = b % 4 === 3 && !lastBar ? keysAlt : keysKind
+        keysPattern(kind, partLevel, voicing, (s, d, n, v) => add('keys', t0, s, d * step, n, v * fade))
       }
 
-      const grid = style.drums[level]
-      const fill = lastBar && next && !next.ending && next.energy >= e && next.energy >= 0.6
-      const variation = level === 'high' && b % 4 === 3 && !lastBar
-      for (const [track, pattern] of Object.entries(grid)) {
-        for (let s = 0; s < 16; s++) {
-          if (fill && s >= 12 && track !== 'kick') continue
-          const c = pattern[s]
-          if (HIT[c]) add(track, t0, s, track === 'hat' ? 0.05 : 0.25, GM_DRUMS[track], HIT[c] * fade)
+      if (play.bass === 'hold') add('bass', t0, 0, bar * 0.95, bassRoot, 72 * fade)
+      else if (play.bass) {
+        const third = place(chord.pcs[1], bassRoot)
+        for (const [s, len, what] of BASS[chosen.bass][partLevel]) {
+          let n = bassRoot
+          if (what === '3') n = third
+          else if (what === '5') n = bassRoot + 7
+          else if (what === '8') n = bassRoot + 12
+          else if (what === 'a') n = nextChord.root === chord.root ? bassRoot + 7 : approach(nextChord.root, scale, bassRoot)
+          add('bass', t0, s, len * step * 0.95, n, (partLevel === 'high' ? 92 : 80) * fade)
         }
       }
-      if (variation && grid.kick) add('kick', t0, 14, 0.25, GM_DRUMS.kick, 78)
-      if (fill) for (const [k, s] of [12, 13, 14, 15].entries()) add('snare', t0, s, 0.1, GM_DRUMS.snare, 64 + k * 14)
+
+      if (play.drums) {
+        // Crash where the drums lift into high energy
+        const lifted = play.drums === 'high' && (b === 0 ? !prev || prev.energy < e || prev.texture === 'breakdown' : layers(texture, b - 1, sec.bars, level).drums !== 'high')
+        if (lifted) add('crash', t0, 0, 1.5, GM_DRUMS.crash, 92)
+        const grid = grids[play.drums]
+        const fill = lastBar && nextDrums && next.energy >= 0.6 && (next.energy >= e || texture !== 'full')
+        const variation = play.drums === 'high' && b % 4 === 3 && !lastBar
+        for (const [track, pattern] of Object.entries(grid)) {
+          for (let s = 0; s < 16; s++) {
+            if (fill && s >= 12 && track !== 'kick') continue
+            const c = pattern[s]
+            if (HIT[c]) add(track, t0, s, track === 'hat' ? 0.05 : 0.25, GM_DRUMS[track], HIT[c] * fade)
+          }
+        }
+        if (variation && grid.kick) add('kick', t0, 14, 0.25, GM_DRUMS.kick, 78)
+        if (fill) for (const [k, s] of [12, 13, 14, 15].entries()) add('snare', t0, s, 0.1, GM_DRUMS.snare, 64 + k * 14)
+      } else if (lastBar && nextDrums === 'high' && texture !== 'piano' && texture !== 'strings') {
+        // A drumless section hands over to the drums with a short snare pickup
+        for (const [k, s] of [12, 14, 15].entries()) add('snare', t0, s, 0.1, GM_DRUMS.snare, 60 + k * 18)
+      }
 
       if (level === 'high' && !written[si]) {
         prevMel = melody(b, sec, chord, scale, prevMel, lift, b % 4 < 2 ? motifA : motifB, (s, d, n, v) => add('lead', t0, s, d * step, n, v), r)
@@ -404,6 +497,14 @@ function keysPattern(kind, level, voicing, play) {
     const order = [0, 1, 2, 3, 2, 1, 2, 3]
     const every = level === 'high' ? 2 : 4
     for (let s = 0; s < 16; s += every) play(s, every * 1.5, top[order[(s / every) % order.length] % top.length] + 12, s === 0 ? 72 : 58)
+  } else if (kind === 'block') {
+    // Held chords: one per bar, two at high energy, the top doubled an octave up
+    const hits = level === 'high' ? [[0, 8], [8, 8]] : [[0, 16]]
+    for (const [s, d] of hits) for (const n of top) play(s, d * 0.95, n, s === 0 ? 70 : 62)
+  } else if (kind === 'offbeat') {
+    // Short chords on the off-beats ("and"), the bass and kick keep the downbeats
+    const hits = level === 'high' ? [2, 6, 10, 14] : [6, 14]
+    for (const s of hits) for (const n of voicing) play(s, 1.5, n, 66)
   } else if (kind === 'stabs') {
     const hits = level === 'high' ? [0, 4, 8, 12] : [0, 8]
     for (const s of hits) for (const n of voicing) play(s, level === 'high' ? 2.5 : 7, n, s === 0 ? 84 : 72)

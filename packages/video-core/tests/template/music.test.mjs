@@ -86,6 +86,43 @@ describe('composer', () => {
     assert.ok(tracks(compose({ ...MUSIC, style: 'suspense', instruments: { lead: 73 } }, MUSIC.sections)).has('lead'))
   })
 
+  test('sections and seeds vary the patterns', () => {
+    const bar = barSec(120)
+    const music = { ...MUSIC, sections: [1, 2, 3, 4].map(() => ({ bars: 2, chords: ['C', 'G'], energy: 0.8 })) }
+    const song = compose(music, music.sections)
+    const groove = (k) => song.events.filter((e) => e.track === 'kick' && e.t >= k * 2 * bar && e.t < (k * 2 + 1) * bar).map((e) => ((e.t / bar) % 1).toFixed(2)).join()
+    for (const k of [1, 2, 3]) assert.notEqual(groove(k), groove(k - 1), `section ${k + 1} drums differ from section ${k}`)
+    const kicks = (seed) => compose({ ...MUSIC, seed }, MUSIC.sections).events.filter((e) => e.track === 'kick').map((e) => e.t.toFixed(2)).join()
+    assert.ok(new Set([1, 2, 3, 4, 5, 6].map(kicks)).size >= 3, 'different seeds give different grooves')
+  })
+
+  test('textures choose the instruments', () => {
+    const only = (texture, energy = 0.8) => {
+      const sections = [{ bars: 3, chords: ['C', 'F', 'G'], energy, texture }]
+      return tracks(compose({ ...MUSIC, instruments: { lead: null } }, sections))
+    }
+    assert.deepEqual(only('piano'), new Set(['keys']))
+    assert.deepEqual(only('piano', 0.1), new Set(['keys']), 'the piano plays even at low energy')
+    assert.deepEqual(only('strings'), new Set(['pad']))
+    assert.deepEqual(only('breakdown'), new Set(['pad', 'keys', 'bass']))
+    // build: pad and keys, then bass and a light beat, then the full kit with a crash
+    const bar = barSec(120)
+    const sections = [{ bars: 3, chords: ['C'], energy: 0.8, texture: 'build' }]
+    const ev = compose({ ...MUSIC, instruments: { lead: null } }, sections).events
+    const inBar = (k) => new Set(ev.filter((e) => e.t >= k * bar - 0.02 && e.t < (k + 1) * bar - 0.02).map((e) => e.track))
+    assert.deepEqual(inBar(0), new Set(['pad', 'keys']))
+    assert.ok(inBar(1).has('bass') && inBar(1).has('kick') && !inBar(1).has('snare'))
+    assert.ok(inBar(2).has('snare') && inBar(2).has('crash'))
+  })
+
+  test('a drumless section hands over with a snare pickup', () => {
+    const bar = barSec(120)
+    const sections = [{ bars: 2, chords: ['C'], energy: 0.5, texture: 'breakdown' }, { bars: 2, chords: ['F'], energy: 0.8 }]
+    const ev = compose(MUSIC, sections).events
+    assert.ok(ev.some((e) => e.track === 'snare' && e.t > 1.7 * bar && e.t < 2 * bar), 'pickup at the end of the breakdown')
+    assert.ok(ev.some((e) => e.track === 'crash' && Math.abs(e.t - 2 * bar) < 0.02), 'crash when the drums come back')
+  })
+
   test('lofi swings the off-beat eighths', () => {
     const beat = 0.5
     const hats = compose({ ...MUSIC, style: 'lofi' }, MUSIC.sections).events.filter((e) => e.track === 'hat')

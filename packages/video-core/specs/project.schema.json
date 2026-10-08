@@ -123,6 +123,11 @@
                 "minimum": 0,
                 "maximum": 1
               },
+              "texture": {
+                "description": "這段由哪些樂器演奏：full 全部（依 energy，預設）；piano 只有鋼琴；strings 只有弦樂鋪底；breakdown 抽掉鼓、貝斯只留長音；build 從鋪底與鋼琴開始，三分之一處加入貝斯與輕鼓，三分之二處全鼓組。旋律另計。",
+                "enum": ["full", "piano", "strings", "breakdown", "build"],
+                "default": "full"
+              },
               "ending": { "description": "最後一小節收尾：延長主和弦、鼓只敲一下。", "type": "boolean" },
               "melody": {
                 "description": "Agent 自己寫的旋律，取代自動旋律（不論 energy 都演奏）。每個音寫成 音名八度/時值：C5/4 四分音符、F#4/8 八分、Bb4/2. 附點二分、r/4 四分休止；| 分隔小節，每小節要剛好 4 拍；C4 為中央 C，音域 G3–G6。比段落短時循環。",

@@ -258,6 +258,10 @@ export interface VideoProjectJson {
              */
             energy: number;
             /**
+             * 這段由哪些樂器演奏：full 全部（依 energy，預設）；piano 只有鋼琴；strings 只有弦樂鋪底；breakdown 抽掉鼓、貝斯只留長音；build 從鋪底與鋼琴開始，三分之一處加入貝斯與輕鼓，三分之二處全鼓組。旋律另計。
+             */
+            texture?: "full" | "piano" | "strings" | "breakdown" | "build";
+            /**
              * 最後一小節收尾：延長主和弦、鼓只敲一下。
              */
             ending?: boolean;
@@ -348,6 +352,10 @@ export interface VideoProjectJson {
              * 0–1。<0.3 只有鋪底；0.3–0.6 加入鋼琴、貝斯與輕鼓；≥0.6 完整鼓組與旋律；≥0.85 旋律移高。進入能量較高的段落前會漸強、過門並加鈸。
              */
             energy: number;
+            /**
+             * 這段由哪些樂器演奏：full 全部（依 energy，預設）；piano 只有鋼琴；strings 只有弦樂鋪底；breakdown 抽掉鼓、貝斯只留長音；build 從鋪底與鋼琴開始，三分之一處加入貝斯與輕鼓，三分之二處全鼓組。旋律另計。
+             */
+            texture?: "full" | "piano" | "strings" | "breakdown" | "build";
             /**
              * 最後一小節收尾：延長主和弦、鼓只敲一下。
              */
