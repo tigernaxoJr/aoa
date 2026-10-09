@@ -1,4 +1,5 @@
 // Site-level facts for the UI: where the Guide API lives and how to start an agent (SPEC §8.3, §9.2).
+import { referencesLine } from '@aoa/web-shared/references'
 
 export const SITE_URL: string = __SITE_URL__
 
@@ -101,8 +102,9 @@ export function startJson(src: SourceInput, id: string) {
  * `projectFolder` names the folder the page prepared and the id in its start file, so the agent can
  * find it from whatever folder it was opened in and build the project right there.
  */
-export function launchMessage(src: SourceInput, projectFolder: { name: string; id: string } | null = null) {
+export function launchMessage(src: SourceInput, projectFolder: { name: string; id: string } | null = null, references = 0) {
   const parts = sources(src)
+  if (projectFolder && references) parts.push(referencesLine(references))
   const story = src.kind === 'story'
   return [
     story

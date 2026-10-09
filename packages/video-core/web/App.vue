@@ -12,6 +12,7 @@ import ProjectSwitcher from './components/ProjectSwitcher.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import AgentSay from './components/AgentSay.vue'
+import ReferencesTab from './components/ReferencesTab.vue'
 import { VIDEO_KIND, workbenchUrl } from './lib/site'
 import type { WorkbenchTab } from './lib/workbench'
 import { close, outdated, pickFolder, restore, root, state, switchTo, syncTemplate, ui } from './lib/store'
@@ -30,7 +31,9 @@ const current = ref<string | null>(null)
 const dirty = ref(false)
 const detail = ref<HTMLElement | null>(null)
 const activeTab = ref('scenes')
-const extraTab = computed(() => props.tabs.find((t) => t.id === activeTab.value) ?? null)
+/** The app's own tabs, then the references every project has. */
+const allTabs = computed<WorkbenchTab[]>(() => [...props.tabs, { id: 'references', icon: 'paperclip', label: () => '📎 參考資料', component: ReferencesTab }])
+const extraTab = computed(() => allTabs.value.find((t) => t.id === activeTab.value) ?? null)
 
 /** The scene in the detail pane (null: the full video). Leaving unsaved edits asks first. */
 const selected = computed<string | null>({
@@ -156,7 +159,7 @@ watch(state, (st) => {
       <WorkflowBar />
 
       <!-- Tabs: the scene board, plus the app's own (e.g. the story's cast studio) -->
-      <div v-if="tabs.length" class="flex items-center gap-2 border-b border-slate-200 pb-1 dark:border-slate-800" role="tablist">
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-1 dark:border-slate-800" role="tablist">
         <button
           type="button"
           role="tab"
@@ -169,7 +172,7 @@ watch(state, (st) => {
           <span>🎬 分鏡故事板 ({{ state.scenes.length }} 幕)</span>
         </button>
         <button
-          v-for="tab in tabs"
+          v-for="tab in allTabs"
           :key="tab.id"
           type="button"
           role="tab"

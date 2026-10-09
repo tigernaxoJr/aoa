@@ -17,7 +17,7 @@ description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML
 先看目前資料夾：
 
 1. **有 `slide.project.json`** → 既有專案，跳到 §2 對應的階段（依 `status`：`initialized` → 大綱、`outlined` → 文案、`drafted` → 視覺、`visualized` → 匯出；`exported` → 已完成，問使用者要改哪裡，從對應階段重做後重新匯出；`failed` → 讀 `slide.activity.json` 的訊息找出匯出失敗的原因，修正後重新匯出）。
-2. **只有 `slide.start.json`**（網頁準備的空資料夾）→ 專案就建在這裡，不要另建子資料夾；網頁一直在看這個資料夾。
+2. **只有 `slide.start.json`**（網頁準備的空資料夾，可能另有使用者上傳的 `references/`）→ 專案就建在這裡，不要另建子資料夾；網頁一直在看這個資料夾。
 3. **都沒有** → 在目前工作資料夾建立 `<主題英文小寫>-slides`，先用白話向使用者確認位置。資料夾必須是空的或不存在。
 
 初始化步驟：
@@ -28,9 +28,9 @@ description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML
    curl -fsSL {{SITE_URL}}/api/slide/templates/slidev-deck/manifest.json
    node -e "console.log(require('crypto').createHash('sha256').update(require('fs').readFileSync('slidev-deck.zip')).digest('hex'))"
    ```
-   比對 manifest 的 `zip.sha256` 後解壓：macOS / Linux `unzip -q slidev-deck.zip`；Windows PowerShell `Expand-Archive slidev-deck.zip -DestinationPath .`。解壓後刪除 zip。範本不含 `slide.start.json` 與 `slide.activity.json`，不會覆蓋網頁寫的檔案。
+   比對 manifest 的 `zip.sha256` 後解壓：macOS / Linux `unzip -q slidev-deck.zip`；Windows PowerShell `Expand-Archive slidev-deck.zip -DestinationPath .`。解壓後刪除 zip。範本不含 `slide.start.json`、`slide.activity.json` 與 `references/`，不會覆蓋網頁寫的檔案。
 2. **安裝依賴**：`pnpm install`。`pnpm run state` 要裝好依賴才能執行，所以在這之前網頁顯示的是它寫的「等待 Agent」；裝好後立刻 `pnpm run state activity --step init --message "範本已解壓，正在建立專案"`（匯出 PDF 需要 Chromium；第一次匯出若出現 `Executable doesn't exist`，執行 `pnpm exec playwright install chromium`）。
-3. **確認要講什麼**：`slide.start.json` 的 `content` 是使用者寫的簡報內容（重點、章節、資料，或要讀取的本機檔案路徑），`notes` 是視覺偏好。`content` 是空的、沒有 `slide.start.json`、或內容只有一個標題時，**先停下來問使用者**：這份簡報要傳達什麼、給誰看、有沒有現成資料可以參考。用 `pnpm run state activity --step init --message "請在對話中告訴我簡報要講什麼" --waiting` 讓網頁顯示正在等待。拿到內容前不規劃大綱。
+3. **確認要講什麼**：`slide.start.json` 的 `content` 是使用者寫的簡報內容（重點、章節、資料，或要讀取的本機檔案路徑），`notes` 是視覺偏好。`references/` 有檔案時全部讀過（用途見 `references/index.json`，讀法與規則見專案 `AGENTS.md`「參考資料」），它們和 `content` 一樣是簡報內容的來源。`content` 是空的、沒有 `slide.start.json`、或內容只有一個標題（且沒有參考資料）時，**先停下來問使用者**：這份簡報要傳達什麼、給誰看、有沒有現成資料可以參考。用 `pnpm run state activity --step init --message "請在對話中告訴我簡報要講什麼" --waiting` 讓網頁顯示正在等待。拿到內容前不規劃大綱。
 4. **填寫專案檔**：範本的 `slide.project.json` 是佔位內容。有 `slide.start.json` 時以它為準（`title`、`audience`、`pagesCount`、`theme`、`aspectRatio`），`--description` 用一句話概括 `content`；沒有就用上一步問到的答案。`pagesCount` 沒填代表交給你評估：先省略 `--pages`，到大綱階段再依內容決定：
    ```bash
    pnpm run state project --id <英文小寫-連字號> --title "<主題>" --description "<一句說明>" --pages <頁數> --theme <主題風格> --status initialized

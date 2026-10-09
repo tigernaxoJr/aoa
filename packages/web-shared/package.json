@@ -8,6 +8,8 @@
     "./fsa": "./src/fsa.ts",
     "./activity": "./src/activity.ts",
     "./recent": "./src/recent.ts",
-    "./lang": "./src/lang.ts"
+    "./lang": "./src/lang.ts",
+    "./references": "./src/references.ts",
+    "./ReferencesPanel.vue": "./src/ReferencesPanel.vue"
   }
 }

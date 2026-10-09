@@ -731,13 +731,15 @@ UI 的目的 **不是執行 AI**，而是將本機專案與 Agent 工作狀態�
 ### 9.2 畫面
 
 1. **首頁導引**（目標使用者只會開 Agent 與網頁，沒有其他 IT 知識；不出現終端機操作）。先選資料夾，網頁從一開始就以 File System Access API 掌握專案資料夾：
-   1. 準備資料夾：以 `showDirectoryPicker({ mode: "readwrite" })` 選擇或在對話框中新建一個空資料夾（只允許空資料夾，或只含 `video.start.json`、`video.activity.json` 與系統隱藏檔；已有 `video.project.json` 則直接開啟工作台）。Handle 存入 IndexedDB。
+   1. 準備資料夾：以 `showDirectoryPicker({ mode: "readwrite" })` 選擇或在對話框中新建一個空資料夾（只允許空資料夾，或只含 `video.start.json`、`video.activity.json`、`references/` 與系統隱藏檔；已有 `video.project.json` 則直接開啟工作台）。Handle 存入 IndexedDB。
    2. 產品資訊：產品網址、原始碼資料夾、產品說明，至少一項；填了網址時可勾「這個網站要登入才看得到」（不提供帳密欄位，勾選後說明 Agent 會開視窗讓使用者自己登入、建議用展示帳號）；輸入內容保存在 `localStorage`，並同步寫入專案資料夾的 `video.start.json`。原始碼資料夾以**完整路徑**為主：瀏覽器無法取得選取資料夾的完整路徑，因此由使用者貼上（頁面依作業系統說明如何複製路徑）；資料夾選擇器只用來讀取 `package.json` / README 帶入說明與網址，並記下 `sourceFolder`（名稱、`packageName`、`gitRemote`（去除帳密）、最上層 `entries`），沒填路徑時供 Agent 依名稱尋找並比對。
    3. 打開 Agent（沒有的話下載 Claude 桌面版並登入），開新對話（不必再選步驟 1 的資料夾，Agent 預設或任意資料夾都可以），貼上白話訊息：「請讀取 <SITE_URL>/api/agent-guide.md，依照裡面的步驟幫我製作產品介紹影片」＋「你的工作資料夾是我準備好的『X』，裡面的 video.start.json 記有產品資訊與識別碼 <id>；請找到它、把工作目錄切換過去，所有檔案都放在那裡」＋來源＋「我不熟悉電腦操作，指令請直接替我執行，需要我動手時請一步一步說明」。瀏覽器無法取得資料夾的完整路徑，所以由 Agent 從目前目錄往下、再到常見位置尋找 `id` 相符的 `video.start.json`，切換過去後 init（SKILL §1–2）。終端機指令（`claude "…"`）只收在「習慣使用終端機？」之下。
    4. 網頁輪詢該資料夾，顯示 `video.activity.json`（Agent 正在做什麼），`video.project.json` 一出現就自動切換到工作台。
    - 不支援 File System Access API 的瀏覽器跳過步驟 1：訊息不含資料夾，Agent 在工作資料夾中自建 `<產品>-video`，網頁不提供工作台。
 
    `video.start.json`（網頁寫、Agent 讀，init 後保留不再更新）：`id`（8 碼隨機識別碼，資料夾第一次準備時產生，之後沿用）、`productUrl`、`requiresLogin`、`sourceCodePath`、`sourceFolder`（`{ name, packageName, gitRemote, entries }` 或 `null`）、`description`、`updatedAt`。
+
+   **參考資料 `references/`**（網頁寫、Agent 唯讀）：首頁步驟 2 與工作台的「參考資料」分頁可上傳文件、圖片或貼上文字（存成 `.md`），檔案複製到專案的 `references/`（檔名保留使用者的文字，衝突時加 `-2`），每份的用途寫在 `references/index.json`：`{ "files": [{ "name", "note", "addedAt" }] }`。資料夾中有參考資料時，啟動訊息加一行請 Agent 先讀；工作台新增後顯示一句「我在 references/ 新增了參考資料…」讓使用者交給 Agent。實作在 `packages/web-shared`（`references.ts`、`ReferencesPanel.vue`），三個工作台共用。
 
    `video.activity.json`（Agent 寫、網頁讀，格式見 `activity.schema.json`，不納入版本控制，不經過鎖）：`message`（一句白話）、`waitingForUser`、`step`、`scene`、`updatedAt`。Agent 在每個步驟或 scene 開始時、每次停下來等使用者回覆前覆寫它，專案建立前就開始寫。網頁不能叫醒 Agent，所以這是使用者在網頁上得知「該回對話了」的唯一管道；讀不到或不合格式時不顯示。
 2. **Activity**：首頁步驟 4 與工作台頂端顯示 Agent 動態。`waitingForUser` 時醒目提示回到對話；工作中的訊息超過 10 分鐘未更新視為 Agent 已停下，只以灰字顯示為「最後的動態」。

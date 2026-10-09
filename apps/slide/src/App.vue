@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { portalHome } from '@aoa/web-shared/lang'
+import ReferencesPanel from '@aoa/web-shared/ReferencesPanel.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import PdfViewer from './components/PdfViewer.vue'
 import ProjectPicker from './components/ProjectPicker.vue'
@@ -17,12 +18,13 @@ import {
   needsSetup,
   pollFiles,
   project,
+  referenceCount,
   restore,
   slidesMarkdown,
   start,
 } from './lib/store'
 
-const activeTab = ref<'slides' | 'pdf'>('slides')
+const activeTab = ref<'slides' | 'pdf' | 'references'>('slides')
 
 const folderName = computed(() => dirHandle.value?.name || '')
 const projectTitle = computed(() => project.value?.title || start.value?.title || folderName.value || '未命名簡報')
@@ -139,6 +141,10 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
         <!-- Awaiting Agent setup: show PromptLauncher prominently -->
         <div v-if="!project && !slidesMarkdown" class="space-y-4">
           <PromptLauncher />
+          <details class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="pending-references">
+            <summary class="cursor-pointer text-sm font-semibold select-none">參考資料{{ referenceCount ? `（${referenceCount} 份）` : '（選填）' }}</summary>
+            <ReferencesPanel class="mt-3" :root="dirHandle" intro="還可以補充文件、圖片或文字；上方的提示詞會告訴 Agent 去讀 references/。" />
+          </details>
         </div>
 
         <!-- Agent has initialized project or generated slides: show workbench tabs -->
@@ -175,6 +181,20 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
                   class="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500"
                 ></span>
               </button>
+
+              <button
+                type="button"
+                @click="activeTab = 'references'"
+                class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
+                :class="[
+                  activeTab === 'references'
+                    ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                ]"
+                data-testid="tab-references"
+              >
+                參考資料<span v-if="referenceCount" class="ml-1 text-xs text-slate-400">({{ referenceCount }})</span>
+              </button>
             </nav>
           </div>
 
@@ -182,6 +202,13 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
           <div>
             <SlideDeckView v-if="activeTab === 'slides'" />
             <PdfViewer v-else-if="activeTab === 'pdf'" />
+            <div v-else class="max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <ReferencesPanel
+                :root="dirHandle"
+                ask="簡報"
+                intro="想讓 Agent 參考的文件、圖片或文字放在這裡（存進專案資料夾的 references/）。加入後把下方那句話交給 Agent，它會讀過、說明打算怎麼用，再修改簡報。"
+              />
+            </div>
           </div>
         </div>
       </div>

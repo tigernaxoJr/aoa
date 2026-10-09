@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { isSupported } from '@aoa/web-shared/fsa'
+import ReferencesPanel from '@aoa/web-shared/ReferencesPanel.vue'
 import { abandonFolder, dirHandle, folderError, forgetRecent, initializeProject, needsSetup, pickFolder, recentList, reopen } from '../lib/store'
 
 const supported = isSupported()
@@ -196,6 +197,15 @@ async function handleCreate() {
             class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
           ></textarea>
           <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">留空也可以：Agent 會先在對話中問你要講什麼，再開始規劃大綱。</p>
+        </div>
+
+        <div data-testid="setup-references">
+          <span class="block text-sm font-medium text-slate-700 dark:text-slate-300">參考資料（選填）</span>
+          <ReferencesPanel
+            class="mt-1.5"
+            :root="dirHandle"
+            intro="報告、規格、會議紀錄、數據表、logo、照片……放進來讓 Agent 參考；檔案會複製到這個資料夾的 references/。"
+          />
         </div>
 
         <div>

@@ -10,6 +10,7 @@ import activitySchema from '@specs/activity.schema.json'
 import workflowJson from '@workflow'
 import type { SceneJson, VideoActivityJson, VideoProjectJson } from '../types/protocol'
 import { listFiles, readText, tryFile } from '@aoa/web-shared/fsa'
+import { isReferencesEntry } from '@aoa/web-shared/references'
 import { START_FILE } from './site'
 
 export const PROJECT_FILE = 'video.project.json'
@@ -189,9 +190,12 @@ async function loadScene(root: FileSystemDirectoryHandle, project: VideoProjectJ
 /** Files an OS drops into any folder; they don't make a folder unusable for a new project. */
 const IGNORABLE = /^(\..*|desktop\.ini|Thumbs\.db)$/i
 
-/** True when a folder without a project holds only the start and activity files (or nothing), so a project can be built in it. */
+/**
+ * True when a folder without a project holds only what the page writes before the agent starts (the
+ * start and activity files, the user's references/) or nothing, so a project can be built in it.
+ */
 export async function readyForNewProject(root: FileSystemDirectoryHandle) {
-  for await (const [name] of root.entries()) if (name !== START_FILE && name !== ACTIVITY_FILE && !IGNORABLE.test(name)) return false
+  for await (const [name] of root.entries()) if (name !== START_FILE && name !== ACTIVITY_FILE && !isReferencesEntry(name) && !IGNORABLE.test(name)) return false
   return true
 }
 

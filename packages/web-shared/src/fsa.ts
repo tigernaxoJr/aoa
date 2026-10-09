@@ -71,6 +71,16 @@ export async function writeText(root: FileSystemDirectoryHandle, path: string, t
   return writeFile(root, path, text)
 }
 
+/** Deletes one file; a file that is already gone is not an error. */
+export async function removeFile(root: FileSystemDirectoryHandle, path: string) {
+  const { dirs, name } = split(path)
+  try {
+    await (await dirAt(root, dirs)).removeEntry(name)
+  } catch (err) {
+    if (!(err instanceof DOMException && err.name === 'NotFoundError')) throw err
+  }
+}
+
 /**
  * Project-relative paths of every file under `path` (the whole project when empty), sorted.
  * Empty when the directory is missing.

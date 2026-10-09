@@ -1,3 +1,4 @@
 @import "tailwindcss";
 @import "../../../packages/video-core/web/style.css";
 @source "../../../packages/video-core/web";
+@source "../../../packages/web-shared/src";

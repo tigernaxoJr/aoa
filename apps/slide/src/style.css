@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../packages/web-shared/src";
 
 @theme {
   --font-sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;

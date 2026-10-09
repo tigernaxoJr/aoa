@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, type Component } from 'vue'
 import { tryFile, writeText } from '@aoa/web-shared/fsa'
+import ReferencesPanel from '@aoa/web-shared/ReferencesPanel.vue'
 import { SKILL, START_FILE, TEMPLATE, VIDEO_KIND, api, launchMessage, newFolderId, startJson, type SourceInput } from '../lib/site'
 import { platform } from '../lib/source'
 import { activity, forgetRecent, pickFolder, reconnect, root, ui } from '../lib/store'
@@ -61,8 +62,12 @@ watch(
 )
 
 const isStory = VIDEO_KIND === 'story'
-const hasSource = computed(() =>
-  isStory ? Boolean(form.story.trim()) : Boolean(form.productUrl.trim() || form.sourceFolder.trim() || form.sourceCodePath.trim() || form.description.trim()),
+/** How many references the user put in the prepared folder; they count as a source, and the message tells the agent to read them. */
+const references = ref(0)
+const hasSource = computed(
+  () =>
+    references.value > 0 ||
+    (isStory ? Boolean(form.story.trim()) : Boolean(form.productUrl.trim() || form.sourceFolder.trim() || form.sourceCodePath.trim() || form.description.trim())),
 )
 const INTRO = isStory
   ? {
@@ -75,7 +80,8 @@ const INTRO = isStory
     }
 /** The step the user should do now: 1 folder, 2 product or story, 3 paste the message. */
 const current = computed(() => (needsFolder.value ? 1 : !hasSource.value ? 2 : 3))
-const message = computed(() => launchMessage(form, prepared.value))
+watch(folder, () => (references.value = 0))
+const message = computed(() => launchMessage(form, prepared.value, references.value))
 
 const when = (t: number) => new Date(t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
 
@@ -172,6 +178,15 @@ const links = [
         </span>
         <div class="card p-5" :class="current === 2 ? 'ring-2 ring-sky-500/40' : ''">
           <component :is="sourceForm" :form="form" />
+          <details v-if="folder" class="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800" :open="references > 0" data-testid="start-references">
+            <summary class="cursor-pointer text-sm font-medium select-none">參考資料（選填）{{ references ? `：${references} 份` : '' }}</summary>
+            <ReferencesPanel
+              class="mt-3"
+              :root="root"
+              :intro="isStory ? '角色設定、草圖、喜歡的畫風、故事原稿……放進來讓 Agent 參考。' : '產品簡介、規格書、簡報、截圖、logo、品牌規範……放進來讓 Agent 參考。'"
+              @change="(list) => (references = list.length)"
+            />
+          </details>
         </div>
       </li>
 
@@ -182,7 +197,7 @@ const links = [
         <div class="card p-5" :class="current === 3 ? 'ring-2 ring-sky-500/40' : 'opacity-80'">
           <h2 class="font-semibold">打開 Agent，貼上這段話</h2>
           <p v-if="needsFolder" class="mt-2 text-sm text-slate-500 dark:text-slate-400">請先在步驟 1 準備放影片的資料夾。</p>
-          <p v-else-if="!hasSource" class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ isStory ? '請先在步驟 2 寫下你的故事或點子。' : '請先在步驟 2 填入產品網址、原始碼資料夾或一句說明。' }}</p>
+          <p v-else-if="!hasSource" class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ isStory ? '請先在步驟 2 寫下你的故事或點子，或放入參考資料。' : '請先在步驟 2 填入產品網址、原始碼資料夾或一句說明，或放入參考資料。' }}</p>
           <template v-else>
             <ol class="mt-3 space-y-2.5 text-sm">
               <li class="flex gap-2.5">

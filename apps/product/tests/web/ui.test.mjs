@@ -415,3 +415,64 @@ test('a story project opened here points to the story workbench', async (t) => {
   assert.equal(await page.getByTestId('open-other-kind').getAttribute('href'), `${web.origin}${BASE}/story/`)
   assert.equal(await page.getByTestId('scene-scene-001').count(), 0, 'the scene board stays in the story workbench')
 })
+
+test('references: files and pasted text go to references/ with their notes; the message tells the agent to read them', async (t) => {
+  const page = await web.newPage(t)
+  if (!page) return
+  await prepareFolder(page, 'acme-video')
+  await page.getByPlaceholder('https://example.com').fill('https://acme.test')
+  await page.getByTestId('start-references').locator('summary').click()
+
+  await page.getByTestId('references-note').fill('產品規格，數據照抄')
+  await page.getByTestId('references-input').setInputFiles([
+    { name: 'spec.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 x') },
+    { name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('png') },
+  ])
+  await page.getByTestId('reference-item').nth(1).waitFor()
+  await page.getByTestId('references-text-toggle').click()
+  await page.getByTestId('references-text-title').fill('會議/紀錄')
+  await page.getByTestId('references-text-body').fill('重點：速度快兩倍')
+  await page.getByTestId('references-text-save').click()
+  await page.getByTestId('reference-item').nth(2).waitFor()
+
+  assert.equal(await readOpfs(page, 'acme-video/references/spec.pdf'), '%PDF-1.4 x')
+  assert.equal(await readOpfs(page, 'acme-video/references/會議-紀錄.md'), '重點：速度快兩倍\n', 'a slash never makes a sub-folder')
+  const index = JSON.parse(await readOpfs(page, 'acme-video/references/index.json'))
+  assert.deepEqual(
+    index.files.map((f) => [f.name, f.note]),
+    [['spec.pdf', '產品規格，數據照抄'], ['logo.png', '產品規格，數據照抄'], ['會議-紀錄.md', null]],
+  )
+  await page.getByTestId('launch-message').getByText('放了 3 份參考資料').waitFor()
+
+  // A same-named file keeps both; notes can be edited and a reference removed.
+  await page.getByTestId('references-input').setInputFiles([{ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('png2') }])
+  await page.getByTestId('reference-item').nth(3).waitFor()
+  assert.equal(await readOpfs(page, 'acme-video/references/logo-2.png'), 'png2')
+  await page.getByTestId('reference-item').nth(1).getByTestId('reference-note').click()
+  await page.getByTestId('reference-note-input').fill('片尾 logo')
+  await page.getByTestId('reference-note-save').click()
+  await page.getByTestId('reference-item').nth(1).getByText('片尾 logo').waitFor()
+  page.once('dialog', (d) => d.accept())
+  await page.getByTestId('reference-item').nth(3).getByTestId('reference-remove').click()
+  await page.getByTestId('launch-message').getByText('放了 3 份參考資料').waitFor()
+  assert.equal(JSON.parse(await readOpfs(page, 'acme-video/references/index.json')).files.find((f) => f.name === 'logo.png').note, '片尾 logo')
+
+  // The folder holds only what the page wrote, so reopening it is still a new project, not "other files".
+  await page.evaluate(async () => window.__avp.open(await (await navigator.storage.getDirectory()).getDirectoryHandle('acme-video')))
+  await page.getByTestId('project-folder').getByText('acme-video').waitFor()
+  assert.equal(await page.getByTestId('step-folder').getByRole('alert').count(), 0)
+})
+
+test('references: the workbench tab adds material and gives the sentence to hand the agent', async (t) => {
+  const p = fixture()
+  t.after(() => p.cleanup())
+  const app = await openApp(t, p)
+  if (!app) return
+  const { page, read } = app
+  await page.getByTestId('tab-references').click()
+  assert.equal(await page.getByTestId('references-ask').count(), 0, 'nothing to say before anything is added')
+  await page.getByTestId('references-input').setInputFiles([{ name: '競品比較.xlsx', mimeType: 'application/octet-stream', buffer: Buffer.from('xlsx') }])
+  await page.getByTestId('references-ask').waitFor()
+  assert.equal(await read('references/競品比較.xlsx'), 'xlsx')
+  assert.match(await page.getByTestId('references-ask').textContent(), /我在 references\/ 新增了參考資料：競品比較\.xlsx。請讀取它們.*再更新影片內容。/)
+})

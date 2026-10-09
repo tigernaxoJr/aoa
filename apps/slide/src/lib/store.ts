@@ -2,6 +2,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { SlideActivity, SlideCheck, SlideProject } from '../types/protocol'
 import { ensurePermission, isSupported, listFiles, readText, tryFile, writeText } from '@aoa/web-shared/fsa'
 import { type RecentFolder, recentFolders } from '@aoa/web-shared/recent'
+import { isReferencesEntry, listReferences } from '@aoa/web-shared/references'
 import { parseSlides, type ParsedDeck } from './slide-parser'
 
 export const dirHandle = shallowRef<FileSystemDirectoryHandle | null>(null)
@@ -16,6 +17,8 @@ export const check = ref<SlideCheck | null>(null)
 export const slideImages = shallowRef<Map<number, SlideImage>>(new Map())
 /** slide.start.json: what the user asked for, written by the web page before the Agent builds the project. */
 export const start = ref<SlideStartConfig | null>(null)
+/** How many files the user put in references/ (counted on each poll), for the Agent prompt. */
+export const referenceCount = ref(0)
 export const pdfFile = shallowRef<File | null>(null)
 export const pdfUrl = ref<string | null>(null)
 export const htmlFile = shallowRef<File | null>(null)
@@ -98,6 +101,7 @@ export function resetDirectory() {
   loaded.value = false
   project.value = null
   start.value = null
+  referenceCount.value = 0
   activity.value = null
   slidesMarkdown.value = null
   pdfFile.value = null
@@ -127,6 +131,13 @@ export async function pollFiles() {
       if (live()) start.value = config
     } catch {
       // the folder was not prepared by this page
+    }
+
+    try {
+      const count = (await listReferences(root)).length
+      if (live()) referenceCount.value = count
+    } catch {
+      // keep the last count
     }
 
     // 2. Read slide.activity.json
@@ -256,7 +267,8 @@ export async function openFolder(handle: FileSystemDirectoryHandle) {
   const previous = dirHandle.value
   await setDirectory(handle)
   if (needsSetup.value) {
-    const names = await folderEntries(handle)
+    // references/ is the user's material, added on the setup form before the start file exists.
+    const names = (await folderEntries(handle)).filter((n) => !isReferencesEntry(n))
     if (names.length) {
       resetDirectory()
       // Picked from the header menu: keep working on the project that was open.

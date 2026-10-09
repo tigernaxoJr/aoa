@@ -19,8 +19,18 @@
 | `video.project.json` | 專案設定與 scene 播放順序 |
 | `brief/product-brief.md` | 產品分析結果（product，analyze 之後才存在） | <!-- kind:product -->
 | `brief/story.md`、`brief/design.md` | 故事定稿、美術設定（story） | <!-- kind:story -->
+| `references/`、`references/index.json` | 使用者在網頁上傳的參考資料與每份的用途（唯讀，見下方） |
 
 詳細做法（文案寫法、渲染實作）在上述 Skill 中；`workflow.json` 每個步驟的 `guide` 欄位指出對應章節；每種影片的範本只含該類型的步驟。
+
+### 參考資料（`references/`）
+
+使用者在網頁上傳的參考資料放在 `references/`：文件（PDF、Word、PowerPoint、Excel）、圖片、貼上的文字（存成 `.md`）。`references/index.json` 的 `files[].note` 是使用者寫的用途（例如「logo，放在片尾」「照這張圖的配色」），沒寫的就自行判斷、拿不準時問一句。
+
+- **什麼時候讀**：分析／整理故事之前一定先讀過全部；使用者說「新增了參考資料」時，讀新的檔案、用白話說明打算怎麼用（例如改哪幾段），確認後再改。
+- **怎麼讀**：圖片直接看；PDF 用你的檔案讀取工具；Word、PowerPoint、Excel 等讀不到時，用 Python（`python-docx`、`python-pptx`、`openpyxl`）或其他工具轉成文字到 `.tmp/`，不要要求使用者自己轉檔。
+- **唯讀**：不要修改、改名或刪除 `references/` 裡的檔案。要在影片中使用某張圖片時，**複製**到 scene 或 `assets/` 底下再引用。
+- 參考資料的重點（數據、用詞、品牌顏色）寫進 brief，並註明出處檔名，之後的步驟以 brief 為準。
 
 ## 2. 工作流程
 

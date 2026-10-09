@@ -13,6 +13,7 @@
 | `slide.project.json` | 專案設定與狀態（格式見 `schemas/project.schema.json`） |
 | `slide.activity.json` | 即時進度，網頁工作台會顯示（格式見 `schemas/activity.schema.json`） |
 | `slide.start.json` | 網頁表單寫入的需求（只在網頁準備的資料夾中出現；唯讀）：`content` 是使用者想講的內容，空的就先在對話中問清楚再規劃大綱 |
+| `references/`、`references/index.json` | 使用者在網頁上傳的參考資料與每份的用途（唯讀，見下方） |
 | `components/*.vue` | 自訂 Vue / Three.js / SVG 組件，Slidev 自動註冊，不必 import；`RoughSketch.vue` 把 SVG 畫成手繪風格 |
 | `setup/mermaid.ts` | Mermaid 全域設定：配合簡報色系的 `themeVariables`（取代預設紫色）與固定的手繪線條種子 |
 | `uno.config.ts` | 讓 SVG 的 `font-size` 等屬性不被 UnoCSS 當成樣式；不要刪除 |
@@ -22,11 +23,21 @@
 | `output/slides.pptx` | 匯出的 PowerPoint（文字可編輯，圖表為圖片） |
 | `dist/index.html` | 匯出的單檔網頁簡報，雙擊即可離線放映（由 `vite.config.ts` 內嵌所有資源；需保留 `slides.md` 的 `routerMode: hash`） |
 
+
+### 參考資料（`references/`）
+
+使用者在網頁上傳的參考資料放在 `references/`：文件（PDF、Word、PowerPoint、Excel）、圖片、貼上的文字（存成 `.md`）。`references/index.json` 的 `files[].note` 是使用者寫的用途（例如「logo，放在封面」「這份報告的數據做成圖表」），沒寫的就自行判斷、拿不準時問一句。
+
+- **什麼時候讀**：規劃大綱之前一定先讀過全部，內容以它們和 `slide.start.json` 為準；使用者說「新增了參考資料」時，讀新的檔案、用白話說明打算怎麼用（改哪幾頁），確認後再改。
+- **怎麼讀**：圖片直接看；PDF 用你的檔案讀取工具；Word、PowerPoint、Excel 等讀不到時，用 Python（`python-docx`、`python-pptx`、`openpyxl`）或其他工具轉成文字到 `.tmp/`，不要要求使用者自己轉檔。
+- **唯讀**：不要修改、改名或刪除 `references/` 裡的檔案。要在簡報中放某張圖片時，**複製**到 `public/`，在 `slides.md` 以 `/檔名` 引用（Slidev 只提供 `public/` 的檔案）。
+- 數據、引文要照原文，不要自行改數字；在講者備忘錄註明出處檔名。
+
 ---
 
 ## 2. 工作流程
 
-1. **規劃大綱（`/slide-outline`）**：只依使用者提供的內容（`slide.start.json` 的 `content` 或對話中的說明）規劃；不知道要講什麼就先問，不要沿用範本示範頁的主題。規劃分頁結構、頁數（`slide.start.json` 有 `pagesCount` 就照做，沒有就依內容份量評估並說明理由）、每頁核心訊息與呈現方式（流程用 Mermaid `flowchart`、角色間呼叫用 `sequenceDiagram`），並和使用者決定**整體風格**：
+1. **規劃大綱（`/slide-outline`）**：只依使用者提供的內容（`slide.start.json` 的 `content`、`references/` 的參考資料或對話中的說明）規劃；不知道要講什麼就先問，不要沿用範本示範頁的主題。規劃分頁結構、頁數（`slide.start.json` 有 `pagesCount` 就照做，沒有就依內容份量評估並說明理由）、每頁核心訊息與呈現方式（流程用 Mermaid `flowchart`、角色間呼叫用 `sequenceDiagram`），並和使用者決定**整體風格**：
    - `formal` 正式：簡潔排版、SVG、Mermaid、Iconify；不用手繪與 3D。
    - `tech` 科技：深色卡片、SVG 架構圖、Mermaid 流程圖與時序圖、程式碼；氛圍頁可用 `<ThreeGlobe />`。
    - `whiteboard` 白板手繪（工作坊、教學）：圖一律用 `<RoughSketch>`，Mermaid 區塊都加 `{look: 'handDrawn'}`；不用 3D。

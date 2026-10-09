@@ -20,11 +20,12 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
 
 ## 2. <a id="init"></a>初始化新專案（init）
 
-1. **確認位置**：有 `video.start.json` 時專案就建在目前目錄。否則在目前的工作資料夾裡建立 `<故事名英文小寫>-video`（例如 `moon-fox-video`），用白話確認：「我會在『文件』資料夾裡建立 moon-fox-video 來放這部影片，可以嗎？」不要要求使用者提供路徑。
+1. **確認位置**：有 `video.start.json` 時專案就建在目前目錄（使用者上傳的 `references/` 也在這裡，範本解壓不會覆蓋它）。否則在目前的工作資料夾裡建立 `<故事名英文小寫>-video`（例如 `moon-fox-video`），用白話確認：「我會在『文件』資料夾裡建立 moon-fox-video 來放這部影片，可以嗎？」不要要求使用者提供路徑。
 2. **取得範本**：做法同 [product-video SKILL.md §2 第 2 點](../product-video/SKILL.md#init)，但改用故事影片的範本：下載 {{TEMPLATE_URL}}.zip，以 {{TEMPLATE_URL}}/manifest.json 的 SHA-256 驗證、解壓、刪除 zip。
 3. **收集故事與語音設定**：有 `video.start.json` 時先讀它（`kind` 為 `story`；`story` 是使用者在網頁填的故事或點子，`audience` 是觀看對象，`ttsProvider` 是偏好的語音引擎，預設為 `cosyvoice3`）。已填的不要再問。沒有時問一句：「想做成影片的故事是什麼？可以貼整篇故事，也可以只說一個點子，例如『一隻怕黑的小貓學會看星星』。」
    - 故事不論長短，原文寫入 `sources.story`；這一步**不改寫**，整理是下一步的事。
    - 使用者給的是檔案（Word、PDF、文字檔）時，讀出文字放進 `sources.story`，告訴他「我讀到了，共約 N 字」。
+   - `references/` 有檔案時全部讀過（用途見 `references/index.json`，讀法與規則見專案 `AGENTS.md`「參考資料」）：故事原稿同樣讀進 `sources.story`；角色草圖、喜歡的畫風等圖片留到美術步驟當作設定依據，用途沒寫的問一句。`video.start.json` 的 `story` 是空的但參考資料裡有故事時，不必再問故事是什麼。
 4. **確認對象、畫風與格式**：一次問一件事並附建議：
    - **觀看對象**（`video.start.json` 有 `audience` 時只要確認一句）：例如「學齡前小朋友」「國小學生」「大人（社群短片）」「家人朋友（紀念用）」。對象決定用詞、長度與節奏。
    - **畫風**：給 2–3 個選項並標出建議，例如「溫暖繪本風（柔和色塊、圓潤線條）」「扁平可愛風（高彩度、粗外框）」「剪紙風（紙張質感、分層）」「簡筆線條風（黑白線條加一個重點色）」「蠟筆／草圖風（手繪抖動線條、斜線上色）」。寫入 `project.style`，細節在美術步驟再定。畫風決定用什麼工具畫（對照表見 [design-guide.md#style](design-guide.md#style)）：**簡筆線條風、蠟筆／草圖風的場景與道具用 Rough.js 畫成手繪線條**，需要在專案安裝 `roughjs`，選定時就依專案 `AGENTS.md` 硬性規則 11 用白話取得同意（「這個畫風要裝一個畫手繪線條的小工具 roughjs，可以嗎？」），同意後 `pnpm add roughjs`。
