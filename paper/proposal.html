@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AOA: Decoupling Presentation and Inference for Local-First Generative Workflows via Agent-Offloaded Architecture · AOA</title>
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="description" content="Target Venues:" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="canonical" href="https://aoa.tigernaxo.com/paper/proposal.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="AOA" />
+    <meta property="og:title" content="AOA: Decoupling Presentation and Inference for Local-First Generative Workflows via Agent-Offloaded Architecture" />
+    <meta property="og:description" content="Target Venues:" />
+    <meta property="og:url" content="https://aoa.tigernaxo.com/paper/proposal.html" />
+    <meta name="twitter:card" content="summary" />
+    <script type="module" crossorigin src="/assets/article-DIBbuzMx.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/i18n-JAbOdSLi.js">
+    <link rel="stylesheet" crossorigin href="/assets/i18n-BeZAC68x.css">
+  </head>
+  <body class="bg-paper text-stone-900 antialiased selection:bg-accent selection:text-white dark:text-stone-100">
+    <div id="reading-progress" class="fixed inset-x-0 top-0 z-40 h-0.5 origin-left scale-x-0 bg-accent"></div>
+    <!-- Header in the article's language (src/articles.ts readerHeader). -->
+    <div id="reader-header"><header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="/" class="flex items-baseline gap-3">
+          <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+          <span class="hidden font-mono text-[11px] text-stone-500 md:inline">Agent-Offloaded Architecture</span>
+        </a>
+        <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
+          <a href="/#workbenches" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Tools</a>
+          <a href="/#architecture" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Architecture</a>
+          <a href="/#docs" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Read</a>
+          <a href="https://github.com/tigernaxojr/aoa" target="_blank" rel="noopener noreferrer" class="hidden font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent sm:inline dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
+          <div class="flex items-center gap-2" role="group" aria-label="Language / 語言">
+            <svg class="h-4 w-4 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
+            <div class="flex rounded-md border border-stone-300 bg-white/60 p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-900/60"><span class="rounded-[3px] px-2.5 py-1 transition-colors bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900" aria-current="true" lang="en">EN</span><a href="/zh-TW/" hreflang="zh-Hant" lang="zh-Hant" data-set-lang="zh-Hant" class="rounded-[3px] px-2.5 py-1 transition-colors text-stone-600 hover:bg-stone-200 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white">中文</a></div>
+          </div>
+        </nav>
+      </div>
+    </header></div>
+
+    <!-- Pre-rendered at build time (vite.config.ts); filled in the browser during development. -->
+    <main id="article-root">
+<div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-14">
+  <article class="min-w-0">
+    <nav class="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400" aria-label="breadcrumb">
+      <a href="/" class="hover:text-stone-900 dark:hover:text-white">AOA</a><span aria-hidden="true">/</span>
+      <a href="/#docs" class="hover:text-stone-900 dark:hover:text-white">Read</a><span aria-hidden="true">/</span>
+      <span class="text-stone-700 dark:text-stone-300">Paper proposal</span>
+    </nav>
+
+    <header class="mt-6 border-b border-stone-200 pb-8 dark:border-stone-800">
+      <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Paper proposal</p>
+      <h1 class="mt-4 font-serif text-3xl font-bold leading-tight tracking-tight text-stone-900 sm:text-[2.6rem] dark:text-white">AOA: Decoupling Presentation and Inference for Local-First Generative Workflows via Agent-Offloaded Architecture</h1>
+      
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-stone-500 dark:text-stone-400">9 min read</span>
+        <span class="text-stone-300 dark:text-stone-700" aria-hidden="true">·</span>
+        
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="proposal.md">Markdown</a>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="https://github.com/tigernaxojr/aoa/blob/main/paper/proposal.md" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </header>
+
+    <details class="mt-6 rounded-md border border-stone-200 bg-white p-4 lg:hidden dark:border-stone-800 dark:bg-stone-900"><summary class="cursor-pointer text-sm font-semibold">Contents</summary><ul class="mt-3 text-sm"><li><a href="#abstract" data-toc="abstract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Abstract</a></li><li><a href="#1-introduction" data-toc="1-introduction" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">1. Introduction</a></li><li><a href="#2-architecture--design-principles" data-toc="2-architecture--design-principles" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2. Architecture &amp; Design Principles</a></li><li><a href="#21-compute-asymmetric-decoupling-control-plane-vs-compute-plane" data-toc="21-compute-asymmetric-decoupling-control-plane-vs-compute-plane" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.1 Compute-Asymmetric Decoupling (Control Plane vs. Compute Plane)</a></li><li><a href="#22-schema-as-the-boundary-contract" data-toc="22-schema-as-the-boundary-contract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.2 Schema as the Boundary Contract</a></li><li><a href="#23-filesystem-centric-ssot--coordination-bus" data-toc="23-filesystem-centric-ssot--coordination-bus" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.3 Filesystem-Centric SSOT &amp; Coordination Bus</a></li><li><a href="#24-lock-aware-concurrency--data-sovereignty" data-toc="24-lock-aware-concurrency--data-sovereignty" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.4 Lock-Aware Concurrency &amp; Data Sovereignty</a></li><li><a href="#3-reference-implementation-autonomous-video-production" data-toc="3-reference-implementation-autonomous-video-production" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3. Reference Implementation: Autonomous Video Production</a></li><li><a href="#31-system-composition" data-toc="31-system-composition" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3.1 System Composition</a></li><li><a href="#32-workflow-lifecycle" data-toc="32-workflow-lifecycle" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3.2 Workflow Lifecycle</a></li><li><a href="#4-evaluation--discussion" data-toc="4-evaluation--discussion" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4. Evaluation &amp; Discussion</a></li><li><a href="#41-cost-and-infrastructure-sustainability" data-toc="41-cost-and-infrastructure-sustainability" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4.1 Cost and Infrastructure Sustainability</a></li><li><a href="#42-privacy--security-model" data-toc="42-privacy--security-model" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4.2 Privacy &amp; Security Model</a></li><li><a href="#43-limitations--future-horizons" data-toc="43-limitations--future-horizons" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4.3 Limitations &amp; Future Horizons</a></li><li><a href="#5-conclusion" data-toc="5-conclusion" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">5. Conclusion</a></li><li><a href="#references-key-directions" data-toc="references-key-directions" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">References (Key Directions)</a></li></ul></details>
+
+    <div class="article-body mt-8"><p><strong>Target Venues</strong>: </p>
+<ul>
+<li>ACM CHI (Late-Breaking Work / Case Studies)</li>
+<li>ACM UIST (User Interface Software and Technology)</li>
+<li>ICSE (Software Engineering in Practice / Tool Demonstrations)</li>
+<li>IEEE Software / ACM Queue</li>
+</ul>
+<hr>
+<h2 id="abstract"><a class="heading-anchor" href="#abstract" aria-hidden="true" tabindex="-1">#</a>Abstract</h2>
+<p>Recent advances in Large Language Model (LLM) agents have enabled autonomous software engineering and multi-modal generation directly within local developer environments. Concurrently, commercial Generative AI platforms remain predominantly cloud-hosted, imposing substantial recurring inference costs (&quot;compute tax&quot;) on providers, locking user data within centralized servers, and offering rigid, non-inspectable outputs. </p>
+<p>We present <strong>AOA (Agent-Offloaded Architecture)</strong>, an architectural paradigm that decouples human-facing presentation from underlying AI inference and media rendering. Under AOA, web applications are deployed as zero-backend, zero-inference &quot;static protocol workbenches&quot;, while the two resources a generative product consumes are supplied by the user: the <em>brain</em> (LLM inference that plans, writes files, and drives host CLI toolchains) and the <em>engine</em> (the tokens that inference consumes). LLM inference is performed by the user&#39;s chosen agent backend—by default a commercial cloud provider billed to the user&#39;s existing plan, or optionally self-hosted local models for fully offline operation. By utilizing modern browser capabilities (File System Access API) and strict JSON Schema contracts, AOA establishes the local filesystem as a shared, lock-aware Single Source of Truth (SSOT). We demonstrate AOA through an end-to-end multi-modal video production system, showing how complex multi-stage generative pipelines can operate with zero application-side infrastructure overhead, user-controlled data boundaries, and granular user agency over generated artifacts.</p>
+<hr>
+<h2 id="1-introduction"><a class="heading-anchor" href="#1-introduction" aria-hidden="true" tabindex="-1">#</a>1. Introduction</h2>
+<p>Generative Artificial Intelligence (GenAI) interfaces currently face an architectural trilemma among <strong>operational cost</strong>, <strong>privacy/data sovereignty</strong>, and <strong>user steering capability</strong>:</p>
+<ol>
+<li><strong>The Cloud SaaS Paradigm</strong>: Centralized platforms host web frontends, orchestration backends, and GPU clusters. To sustain infrastructure costs, services charge steep recurring subscriptions. Proprietary code, brand assets, and user data are continuously ingested and retained by remote servers. Furthermore, users interact through opaque text boxes with limited ability to inspect or deterministically adjust intermediate generation steps.</li>
+<li><strong>The Autonomous Local Agent Paradigm</strong>: Terminal-based autonomous agents (e.g., Claude Code, Codex CLI, Aider, Pi) operate directly on host filesystems with native tool access (e.g., compilers, FFmpeg, headless browsers). However, command-line interfaces lack rich visual affordances (timelines, storyboards, audio waveforms) essential for multi-modal creative tasks.</li>
+<li><strong>The Local-First Web Challenge</strong>: Web-based Local-First applications traditionally rely on in-browser WebAssembly (WASM) or WebGPU. However, running multi-billion-parameter foundation models and intensive multi-media rendering pipelines within browser sandboxes exhausts client memory and battery, while lacking access to mature native system utilities.</li>
+</ol>
+<p>To bridge this gap, we introduce <strong>AOA (Agent-Offloaded Architecture)</strong>. AOA starts from the observation that every generative product needs a <em>brain</em> (LLM inference) and an <em>engine</em> (the tokens that inference consumes), and that cloud SaaS makes the vendor supply both. AOA assigns both to the user&#39;s agent and splits generative systems into:</p>
+<ul>
+<li>A <strong>Zero-Inference Presentation Layer</strong> delivered as a static Single-Page Application (SPA).</li>
+<li>A <strong>Rigorous Protocol Contract</strong> enforced via declarative JSON Schemas.</li>
+<li>An <strong>Agentic Execution Layer</strong> on the user&#39;s host machine: the brain is the user&#39;s agent and chosen model, and the engine is the token budget of the user&#39;s plan or local hardware.</li>
+</ul>
+<pre><code>┌────────────────────────────────────────────────────────┐
+│             Presentation Layer (Static Web)            │
+│  - Zero backend / Zero inference                       │
+│  - Protocol visualizer &amp; direct artifact editor        │
+└───────────────────────────┬────────────────────────────┘
+                            │ File System Access API
+                            │ (Local Directory Handle)
+┌───────────────────────────┼────────────────────────────┐
+│             Filesystem as Message Bus (SSOT)           │
+│  - JSON Schemas, state files, intermediate media       │
+│  - Advisory lock files &amp; metadata fingerprinting       │
+└───────────────────────────▲────────────────────────────┘
+                            │ Native File I/O
+┌───────────────────────────┴────────────────────────────┐
+│             Execution Layer (Host Environment)         │
+│  - Coding Agent (e.g., Claude Code, CLI Agents)        │
+│  - Native Toolchains (FFmpeg, Playwright, TTS)         │
+└───────────────────────────┬────────────────────────────┘
+                            │ LLM inference
+                            ▼
+      Cloud LLM provider (default) / Local model (optional)
+Figure 1: High-level topology of AOA in its static-frontend form.
+</code></pre>
+<hr>
+<h2 id="2-architecture--design-principles"><a class="heading-anchor" href="#2-architecture--design-principles" aria-hidden="true" tabindex="-1">#</a>2. Architecture &amp; Design Principles</h2>
+<p>AOA is governed by four core design principles:</p>
+<h3 id="21-compute-asymmetric-decoupling-control-plane-vs-compute-plane"><a class="heading-anchor" href="#21-compute-asymmetric-decoupling-control-plane-vs-compute-plane" aria-hidden="true" tabindex="-1">#</a>2.1 Compute-Asymmetric Decoupling (Control Plane vs. Compute Plane)</h3>
+<p>Under AOA, the system strictly separates the <strong>Interactive Control Plane</strong> from the <strong>Agentic Compute Plane</strong>. The control plane—whether deployed as a serverless static web application or as a multi-tenant cloud backend—performs <strong>zero AI inference, generative rendering, or private file processing</strong>. Inference is delegated to the user&#39;s agent, which may call a commercial cloud LLM (the common case) or a self-hosted local model. AOA accommodates three primary architectural topologies:</p>
+<ol>
+<li><strong>Topology I: Serverless / Pure Static AOA (Fully Decentralized)</strong>
+The presentation layer is deployed entirely on static file hosting services (e.g., GitHub Pages, Cloudflare Pages). The web application serves as a zero-cost, stateless protocol lens directly bound to local storage via the browser&#39;s File System Access API.</li>
+<li><strong>Topology II: Backend-Enabled / Hybrid AOA (Enterprise &amp; Team Collaboration)</strong>
+For multi-tenant platforms requiring team collaboration, single sign-on (SSO), and billing, the cloud backend acts purely as a thin coordination layer (managing user seats, telemetry, and shared prompt/schema registries). Proprietary source code and compute-heavy pipelines remain anchored to the user&#39;s host machine, with inference routed to the organization&#39;s chosen provider (Bring Your Own Agent, BYOA), ensuring near-zero marginal compute costs for the application provider.</li>
+<li><strong>Topology III: Backend-Only / Agent-Operated API (No Presentation Layer)</strong>
+The service exposes only an HTTP API (or an MCP server) whose specification is published at a URL (OpenAPI, guide, or skill documents with JSON Schemas). The user&#39;s agent is the client: it reads the specification and calls the API directly, while the service stores data and validates requests but runs no inference.</li>
+</ol>
+<h3 id="22-schema-as-the-boundary-contract"><a class="heading-anchor" href="#22-schema-as-the-boundary-contract" aria-hidden="true" tabindex="-1">#</a>2.2 Schema as the Boundary Contract</h3>
+<p>Communication between the decoupled control plane and the local execution agent eschews proprietary, opaque network APIs. Instead, the interface contract is formalized as static <strong>JSON Schemas</strong>. The schema specifies state machines, valid transitions, and metadata invariants. Both the client-side validators and the autonomous agent are expected to conform to the schema; because LLM agents are non-deterministic, the UI validates every agent-produced artifact before consuming it.</p>
+<h3 id="23-filesystem-centric-ssot--coordination-bus"><a class="heading-anchor" href="#23-filesystem-centric-ssot--coordination-bus" aria-hidden="true" tabindex="-1">#</a>2.3 Filesystem-Centric SSOT &amp; Coordination Bus</h3>
+<p>The host filesystem serves as the Single Source of Truth (SSOT) for execution states, private codebases, and generated media artifacts. In cloud-enabled topologies, the cloud maintains an index of high-level project metadata (Metadata Plane), while concrete artifacts remain local (Data Plane):</p>
+<ul>
+<li><strong>Downstream Signaling (Agent -&gt; UI)</strong>: The agent records operational milestones into ephemeral telemetry files (e.g., <code>activity.json</code>). The web UI observes updates via lightweight file metadata fingerprinting (evaluating <code>lastModified</code> and byte-length tuples on key project manifests) without polling full asset blobs.</li>
+<li><strong>Upstream Steering (UI -&gt; Agent)</strong>: When a user modifies an intermediate asset (e.g., editing a voiceover transcript or reordering a timeline), the UI updates the corresponding file and transitions the entity state to <code>stale</code>. The UI outputs an idempotent, natural language directive or CLI trigger (e.g., <code>/sync</code>) for the user to hand to their agent.</li>
+</ul>
+<h3 id="24-lock-aware-concurrency--data-sovereignty"><a class="heading-anchor" href="#24-lock-aware-concurrency--data-sovereignty" aria-hidden="true" tabindex="-1">#</a>2.4 Lock-Aware Concurrency &amp; Data Sovereignty</h3>
+<p>To reduce race conditions between asynchronous interface writes and host agent mutations, AOA specifies an advisory, lease-based locking convention (<code>.lock</code> files with process IDs and TTLs) combined with write-to-temp-then-rename updates. Because the File System Access API provides no cross-process locking and agent compliance cannot be guaranteed, readers additionally validate content against the schema. Regarding data sovereignty: sensitive tokens, login sessions for recorded apps, and raw assets remain on the client machine and are omitted from version control. Context the agent sends for inference is governed by the user&#39;s chosen LLM provider; users requiring strict confidentiality can substitute local models.</p>
+<hr>
+<h2 id="3-reference-implementation-autonomous-video-production"><a class="heading-anchor" href="#3-reference-implementation-autonomous-video-production" aria-hidden="true" tabindex="-1">#</a>3. Reference Implementation: Autonomous Video Production</h2>
+<p>To validate the feasibility of AOA, we implemented <strong>Index URL Director (Agent Video Producer)</strong>, a fully-featured, open-source multi-modal video creation platform.</p>
+<h3 id="31-system-composition"><a class="heading-anchor" href="#31-system-composition" aria-hidden="true" tabindex="-1">#</a>3.1 System Composition</h3>
+<ul>
+<li><strong>Frontend Workbench</strong>: Vue 3 + Tailwind SPA. Provides project onboarding, scene board management, transcript audio preview, and interactive video playback.</li>
+<li><strong>Protocol Definition</strong>: Specifications defining <code>project.schema.json</code>, <code>scene.schema.json</code>, and <code>workflow.json</code>.</li>
+<li><strong>Host Pipeline</strong>:<ul>
+<li>LLM Orchestrator: Claude Code executing standardized agent skills (inference via Anthropic&#39;s cloud API).</li>
+<li>Web Scraper / Recorder: Headless Chromium via Playwright.</li>
+<li>Audio Engine: Edge-TTS (Microsoft&#39;s online speech service) and offline phoneme synthesis; swappable for fully local engines such as Piper or Kokoro.</li>
+<li>Video Compositor: FFmpeg with custom libass subtitle rendering.</li>
+</ul>
+</li>
+</ul>
+<h3 id="32-workflow-lifecycle"><a class="heading-anchor" href="#32-workflow-lifecycle" aria-hidden="true" tabindex="-1">#</a>3.2 Workflow Lifecycle</h3>
+<ol>
+<li><strong>Bootstrap</strong>: The user selects an empty directory in the web workbench and inputs a target product URL. The UI generates a minimal <code>start.json</code> and a natural language invocation snippet.</li>
+<li><strong>Analysis &amp; Scripting</strong>: The user pastes the snippet into their terminal agent. The agent reads the web guidance, ingests <code>start.json</code>, activates browser automation to inspect the target product, and populates the project structure with modular scene scripts (<code>scene.json</code> and <code>script.md</code>).</li>
+<li><strong>Reactive Observation</strong>: The web UI automatically detects the created files via fingerprint polling and renders visual cards on the Scene Board.</li>
+<li><strong>Steering &amp; Re-synthesis</strong>: The user notices an awkward sentence in Scene 3&#39;s narration, modifies the script in the web workbench, and saves. The UI marks Scene 3 as <code>stale</code>. The agent is instructed to synchronize, selectively re-generating only the affected scene&#39;s audio and video without re-rendering the untouched timeline.</li>
+</ol>
+<hr>
+<h2 id="4-evaluation--discussion"><a class="heading-anchor" href="#4-evaluation--discussion" aria-hidden="true" tabindex="-1">#</a>4. Evaluation &amp; Discussion</h2>
+<h3 id="41-cost-and-infrastructure-sustainability"><a class="heading-anchor" href="#41-cost-and-infrastructure-sustainability" aria-hidden="true" tabindex="-1">#</a>4.1 Cost and Infrastructure Sustainability</h3>
+<div class="table-wrap"><table><thead><tr><th style="text-align:left">Dimension</th><th style="text-align:left">Traditional Cloud GenAI SaaS</th><th style="text-align:left">AOA Model</th></tr></thead><tbody><tr><td style="text-align:left"><strong>Hosting Cost</strong></td><td style="text-align:left">High (GPU instances, ingress/egress, DBs)</td><td style="text-align:left">Near-zero (Static edge CDN)</td></tr><tr><td style="text-align:left"><strong>Inference Cost</strong></td><td style="text-align:left">Borne by the provider, recouped via subscriptions</td><td style="text-align:left">Borne by the user&#39;s existing agent plan, or local hardware</td></tr><tr><td style="text-align:left"><strong>Scaling Limit</strong></td><td style="text-align:left">Bound by GPU quotas and cloud budgets</td><td style="text-align:left">Not bound by provider infrastructure; execution scales with users&#39; own machines</td></tr><tr><td style="text-align:left"><strong>Maintenance</strong></td><td style="text-align:left">24/7 backend monitoring, SLA management</td><td style="text-align:left">Zero backend services to maintain</td></tr></tbody></table></div>
+<h3 id="42-privacy--security-model"><a class="heading-anchor" href="#42-privacy--security-model" aria-hidden="true" tabindex="-1">#</a>4.2 Privacy &amp; Security Model</h3>
+<p>Under AOA, proprietary source repositories, internal web credentials, and scratch videos are stored within the user&#39;s local operating system and never pass through the application provider&#39;s servers. No proprietary code is uploaded to a shared multi-tenant database. Authentication states (cookies/sessions required to record authenticated SaaS interfaces) are stored in local, permission-restricted directories ignored by version control. The remaining trust boundary is the user&#39;s inference provider: context the agent sends for reasoning (and text sent to online TTS services) is subject to that provider&#39;s data policy. Deployments requiring strict confidentiality can route inference to self-hosted models, making the pipeline fully offline.</p>
+<h3 id="43-limitations--future-horizons"><a class="heading-anchor" href="#43-limitations--future-horizons" aria-hidden="true" tabindex="-1">#</a>4.3 Limitations &amp; Future Horizons</h3>
+<ul>
+<li><strong>Browser API Support</strong>: Directory access via the File System Access API (<code>showDirectoryPicker</code>) is currently available only in desktop Chromium-based browsers such as Chrome and Edge; Brave disables it by default, and Firefox and Safari do not support it. Fallback mechanisms for these and mobile environments remain an active area of exploration.</li>
+<li><strong>Cognitive Load of Hybrid Execution</strong>: Users must coordinate between two windows (the visual browser workbench and the terminal agent). We prototyped a local WebSocket bridge that let the page trigger deterministic re-runs, but removed it: the extra daemon, pairing, and browsers&#39; local-network-access prompts cost more than the clicks it saved, and the user&#39;s agent can run the same commands. Pure file-mediated, zero-setup interaction is the baseline we keep.</li>
+<li><strong>Agent Non-Determinism</strong>: Agent outputs may violate the schema or diverge across runs, requiring validation, retries, and repair guidance in the UI.</li>
+<li><strong>Cost Shifting</strong>: AOA eliminates provider-side inference cost by shifting it to users, which presumes users already hold (and pay for) a capable agent setup or local hardware.</li>
+</ul>
+<hr>
+<h2 id="5-conclusion"><a class="heading-anchor" href="#5-conclusion" aria-hidden="true" tabindex="-1">#</a>5. Conclusion</h2>
+<p>AOA provides a blueprint for a post-SaaS landscape where user interfaces are thin, declarative protocol shells and computation is delegated to user-owned agentic environments. By reframing web browsers as lenses into local agent workflows rather than portals to remote cloud computers, developers can build scalable, privacy-respecting, and highly inspectable generative software with zero application-side infrastructure overhead, while users retain the choice of where inference happens.</p>
+<hr>
+<h2 id="references-key-directions"><a class="heading-anchor" href="#references-key-directions" aria-hidden="true" tabindex="-1">#</a>References (Key Directions)</h2>
+<ol>
+<li>File System Access API (WICG Draft Community Group Report) and File System Standard (WHATWG).</li>
+<li>Local-First Software: You own your data, in spite of the cloud (Kleppmann et al., Onward! 2019).</li>
+<li>Mixed-Initiative User Interfaces (Horvitz, CHI 1999).</li>
+<li>Autonomous Coding Agents in the Terminal (Anthropic Claude Code, OpenAI Codex CLI, Pi).</li>
+</ol>
+</div>
+
+    <footer class="mt-16 border-t border-stone-200 pt-8 dark:border-stone-800">
+      <p class="text-xs text-stone-500 dark:text-stone-400">© 2026 tigernaxo · Licensed under <a class="underline hover:text-stone-900" href="/LICENSE-docs.txt">CC BY 4.0</a></p>
+      <h2 class="mt-10 text-sm font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Read more</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2"><a href="/docs/architecture.zh-TW.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">架構規格</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Agent-Offloaded Architecture</span></a><a href="/docs/architecture.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Specification</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Agent-Offloaded Architecture</span></a><a href="/docs/setup.zh-TW.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">設定說明</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >準備你的 Agent</span></a><a href="/docs/setup.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Setup guide</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >Set Up Your Agent</span></a><a href="/posts/2026-10-introducing-aofa.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Blog</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >Beyond SaaS: Introducing AOA (Agent-Offloaded Architecture)</span></a></div>
+    </footer>
+  </article>
+
+  <aside class="hidden lg:block"><div class="sticky top-24"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">On this page</p><ul class="mt-3 max-h-[calc(100vh-8rem)] overflow-y-auto text-sm"><li><a href="#abstract" data-toc="abstract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Abstract</a></li><li><a href="#1-introduction" data-toc="1-introduction" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">1. Introduction</a></li><li><a href="#2-architecture--design-principles" data-toc="2-architecture--design-principles" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2. Architecture &amp; Design Principles</a></li><li><a href="#21-compute-asymmetric-decoupling-control-plane-vs-compute-plane" data-toc="21-compute-asymmetric-decoupling-control-plane-vs-compute-plane" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.1 Compute-Asymmetric Decoupling (Control Plane vs. Compute Plane)</a></li><li><a href="#22-schema-as-the-boundary-contract" data-toc="22-schema-as-the-boundary-contract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.2 Schema as the Boundary Contract</a></li><li><a href="#23-filesystem-centric-ssot--coordination-bus" data-toc="23-filesystem-centric-ssot--coordination-bus" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.3 Filesystem-Centric SSOT &amp; Coordination Bus</a></li><li><a href="#24-lock-aware-concurrency--data-sovereignty" data-toc="24-lock-aware-concurrency--data-sovereignty" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.4 Lock-Aware Concurrency &amp; Data Sovereignty</a></li><li><a href="#3-reference-implementation-autonomous-video-production" data-toc="3-reference-implementation-autonomous-video-production" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3. Reference Implementation: Autonomous Video Production</a></li><li><a href="#31-system-composition" data-toc="31-system-composition" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3.1 System Composition</a></li><li><a href="#32-workflow-lifecycle" data-toc="32-workflow-lifecycle" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3.2 Workflow Lifecycle</a></li><li><a href="#4-evaluation--discussion" data-toc="4-evaluation--discussion" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4. Evaluation &amp; Discussion</a></li><li><a href="#41-cost-and-infrastructure-sustainability" data-toc="41-cost-and-infrastructure-sustainability" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4.1 Cost and Infrastructure Sustainability</a></li><li><a href="#42-privacy--security-model" data-toc="42-privacy--security-model" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4.2 Privacy &amp; Security Model</a></li><li><a href="#43-limitations--future-horizons" data-toc="43-limitations--future-horizons" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4.3 Limitations &amp; Future Horizons</a></li><li><a href="#5-conclusion" data-toc="5-conclusion" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">5. Conclusion</a></li><li><a href="#references-key-directions" data-toc="references-key-directions" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">References (Key Directions)</a></li></ul></div></aside>
+</div></main>
+
+  </body>
+</html>

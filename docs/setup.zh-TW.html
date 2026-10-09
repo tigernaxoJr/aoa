@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>準備你的 Agent · AOA</title>
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="description" content="本站的三個工作台都不在雲端跑 AI：真正動手的是你電腦上的 Coding Agent。這頁說明怎麼準備一個。" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="canonical" href="https://aoa.tigernaxo.com/docs/setup.zh-TW.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="AOA" />
+    <meta property="og:title" content="準備你的 Agent" />
+    <meta property="og:description" content="本站的三個工作台都不在雲端跑 AI：真正動手的是你電腦上的 Coding Agent。這頁說明怎麼準備一個。" />
+    <meta property="og:url" content="https://aoa.tigernaxo.com/docs/setup.zh-TW.html" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="alternate" hreflang="zh-Hant" href="https://aoa.tigernaxo.com/docs/setup.zh-TW.html" />
+    <link rel="alternate" hreflang="en" href="https://aoa.tigernaxo.com/docs/setup.html" />
+    <script type="module" crossorigin src="/assets/article-DIBbuzMx.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/i18n-JAbOdSLi.js">
+    <link rel="stylesheet" crossorigin href="/assets/i18n-BeZAC68x.css">
+  </head>
+  <body class="bg-paper text-stone-900 antialiased selection:bg-accent selection:text-white dark:text-stone-100">
+    <div id="reading-progress" class="fixed inset-x-0 top-0 z-40 h-0.5 origin-left scale-x-0 bg-accent"></div>
+    <!-- Header in the article's language (src/articles.ts readerHeader). -->
+    <div id="reader-header"><header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="/zh-TW/" class="flex items-baseline gap-3">
+          <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+          <span class="hidden font-mono text-[11px] text-stone-500 md:inline">Agent-Offloaded Architecture</span>
+        </a>
+        <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
+          <a href="/zh-TW/#workbenches" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">範例工具</a>
+          <a href="/zh-TW/#architecture" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">架構</a>
+          <a href="/zh-TW/#docs" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">文獻</a>
+          <a href="https://github.com/tigernaxojr/aoa" target="_blank" rel="noopener noreferrer" class="hidden font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent sm:inline dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
+          <div class="flex items-center gap-2" role="group" aria-label="Language / 語言">
+            <svg class="h-4 w-4 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
+            <div class="flex rounded-md border border-stone-300 bg-white/60 p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-900/60"><a href="/docs/setup.html" hreflang="en" lang="en" data-set-lang="en" class="rounded-[3px] px-2.5 py-1 transition-colors text-stone-600 hover:bg-stone-200 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white">EN</a><span class="rounded-[3px] px-2.5 py-1 transition-colors bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900" aria-current="true" lang="zh-Hant">中文</span></div>
+          </div>
+        </nav>
+      </div>
+    </header></div>
+
+    <!-- Pre-rendered at build time (vite.config.ts); filled in the browser during development. -->
+    <main id="article-root">
+<div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-14">
+  <article class="min-w-0">
+    <nav class="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400" aria-label="breadcrumb">
+      <a href="/zh-TW/" class="hover:text-stone-900 dark:hover:text-white">AOA</a><span aria-hidden="true">/</span>
+      <a href="/zh-TW/#docs" class="hover:text-stone-900 dark:hover:text-white">文獻</a><span aria-hidden="true">/</span>
+      <span class="text-stone-700 dark:text-stone-300">設定說明</span>
+    </nav>
+
+    <header class="mt-6 border-b border-stone-200 pb-8 dark:border-stone-800">
+      <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">設定說明</p>
+      <h1 class="mt-4 font-serif text-3xl font-bold leading-tight tracking-tight text-stone-900 sm:text-[2.6rem] dark:text-white">準備你的 Agent</h1>
+      <p class="mt-4 text-lg leading-relaxed text-stone-600 dark:text-stone-300">本站的三個工作台都不在雲端跑 AI：真正動手的是你電腦上的 Coding Agent。這頁說明怎麼準備一個。</p>
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-stone-500 dark:text-stone-400">約 3 分鐘閱讀</span>
+        <span class="text-stone-300 dark:text-stone-700" aria-hidden="true">·</span>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="/docs/setup.html" hreflang="en">English</a>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="setup.zh-TW.md">Markdown</a>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="https://github.com/tigernaxojr/aoa/blob/main/docs/setup.zh-TW.md" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </header>
+
+    <details class="mt-6 rounded-md border border-stone-200 bg-white p-4 lg:hidden dark:border-stone-800 dark:bg-stone-900"><summary class="cursor-pointer text-sm font-semibold">目錄</summary><ul class="mt-3 text-sm"><li><a href="#你需要什麼" data-toc="你需要什麼" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">你需要什麼</a></li><li><a href="#推薦claude" data-toc="推薦claude" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">推薦：Claude</a></li><li><a href="#不熟悉終端機claude-桌面版" data-toc="不熟悉終端機claude-桌面版" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">不熟悉終端機：Claude 桌面版</a></li><li><a href="#工程師claude-code-cli" data-toc="工程師claude-code-cli" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">工程師：Claude Code CLI</a></li><li><a href="#其他-coding-agent" data-toc="其他-coding-agent" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">其他 Coding Agent</a></li><li><a href="#選讀改用地端模型" data-toc="選讀改用地端模型" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">選讀：改用地端模型</a></li><li><a href="#常見問題" data-toc="常見問題" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">常見問題</a></li></ul></details>
+
+    <div class="article-body mt-8"><hr>
+<h2 id="你需要什麼"><a class="heading-anchor" href="#你需要什麼" aria-hidden="true" tabindex="-1">#</a>你需要什麼</h2>
+<ul>
+<li><strong>一個 Coding Agent</strong>：能讀網址、讀寫你電腦上的資料夾、執行指令的 AI 助手，例如 Claude Code、Codex、Cursor、Gemini CLI 或 Pi。</li>
+<li><strong>它的方案或 API 額度</strong>：工作台本身免費，Agent 的推論費用由你自己的方案支付。</li>
+<li><strong>桌面版 Chrome 或 Edge</strong>（建議）：工作台透過瀏覽器的資料夾存取功能，即時顯示 Agent 的進度。</li>
+</ul>
+<p>其他工具（Node.js、FFmpeg、Playwright、語音合成等）不用先裝：Agent 開工時會檢查，缺什麼就替你安裝，或告訴你要執行哪一行指令。</p>
+<h2 id="推薦claude"><a class="heading-anchor" href="#推薦claude" aria-hidden="true" tabindex="-1">#</a>推薦：Claude</h2>
+<p>如果你還沒有任何 Coding Agent，建議從 Claude 開始。使用 Claude Code 需要 Pro、Max、Team 或 Enterprise 方案，或 Anthropic Console 的 API 帳號；免費方案不包含 Claude Code。</p>
+<h3 id="不熟悉終端機claude-桌面版"><a class="heading-anchor" href="#不熟悉終端機claude-桌面版" aria-hidden="true" tabindex="-1">#</a>不熟悉終端機：Claude 桌面版</h3>
+<ol>
+<li>到 <a href="https://claude.ai/download">claude.ai/download</a> 下載 Claude 桌面版（macOS、Windows），安裝後登入。</li>
+<li>切到視窗上方的 <strong>Code</strong> 分頁。</li>
+<li>開一個新的對話，選擇資料夾：選你在工作台上準備的那個資料夾。</li>
+<li>回到工作台按「複製」，把那段話貼進對話框送出。</li>
+</ol>
+<p>接下來 Agent 會在那個資料夾裡工作，工作台會自動顯示進度。Agent 要執行指令或修改檔案前可能會先詢問你，看清楚內容再允許即可。</p>
+<h3 id="工程師claude-code-cli"><a class="heading-anchor" href="#工程師claude-code-cli" aria-hidden="true" tabindex="-1">#</a>工程師：Claude Code CLI</h3>
+<p>在終端機執行安裝指令：</p>
+<pre><code class="language-bash"># macOS、Linux、WSL
+curl -fsSL https://claude.ai/install.sh | bash
+</code></pre>
+<pre><code class="language-powershell"># Windows PowerShell
+irm https://claude.ai/install.ps1 | iex
+</code></pre>
+<p>也可以用 Homebrew（<code>brew install --cask claude-code</code>）或 WinGet（<code>winget install Anthropic.ClaudeCode</code>）安裝。裝好後，切到工作台準備的資料夾再啟動：</p>
+<pre><code class="language-bash">cd 你的專案資料夾
+claude
+</code></pre>
+<p>第一次啟動會開瀏覽器請你登入。之後把工作台產生的那段話貼進去即可。完整說明見 <a href="https://code.claude.com/docs/en/setup">Claude Code 安裝文件</a>。</p>
+<h2 id="其他-coding-agent"><a class="heading-anchor" href="#其他-coding-agent" aria-hidden="true" tabindex="-1">#</a>其他 Coding Agent</h2>
+<p>工作台不綁定特定 Agent。只要它能讀網址、在你的電腦上讀寫檔案並執行指令，就能使用：</p>
+<div class="table-wrap"><table><thead><tr><th>Agent</th><th>取得方式</th></tr></thead><tbody><tr><td>Codex（OpenAI）</td><td><a href="https://developers.openai.com/codex">developers.openai.com/codex</a></td></tr><tr><td>Cursor</td><td><a href="https://cursor.com">cursor.com</a></td></tr><tr><td>Gemini CLI（Google）</td><td><a href="https://github.com/google-gemini/gemini-cli">github.com/google-gemini/gemini-cli</a></td></tr><tr><td>Pi</td><td><a href="https://pi.dev">pi.dev</a></td></tr></tbody></table></div>
+<p>使用方式都一樣：在 Agent 裡開啟工作台準備的資料夾，貼上工作台產生的那段話。</p>
+<h2 id="選讀改用地端模型"><a class="heading-anchor" href="#選讀改用地端模型" aria-hidden="true" tabindex="-1">#</a>選讀：改用地端模型</h2>
+<p>推論接在哪裡是 Agent 的設定，工作台不需要改。如果資料不能離開內網，可以讓支援自訂模型的 Agent 改接以 <a href="https://ollama.com">Ollama</a> 或 <a href="https://docs.vllm.ai">vLLM</a> 架設的地端模型，或透過 AWS Bedrock、Google Vertex AI、Azure 等 CSP 託管服務使用雲端模型。地端模型處理複雜任務的能力可能較弱，產出品質會因模型而異。背後的設計見架構規格的<a href="architecture.zh-TW.html#%E5%8E%9F%E5%89%87%E5%9B%9Blocal-first--data-sovereignty%E6%9C%AC%E5%9C%B0%E5%84%AA%E5%85%88%E8%88%87%E8%B3%87%E6%96%99%E4%B8%BB%E6%AC%8A">原則四</a>。</p>
+<h2 id="常見問題"><a class="heading-anchor" href="#常見問題" aria-hidden="true" tabindex="-1">#</a>常見問題</h2>
+<p><strong>網頁說這個瀏覽器不能存取資料夾。</strong>
+資料夾存取需要桌面版 Chrome 或 Edge；Brave 預設停用，Firefox 與 Safari 不支援。換用其他瀏覽器時，影片工作台仍可略過準備資料夾這一步，Agent 會自己建立專案，只是網頁無法即時顯示進度。</p>
+<p><strong>重新整理網頁後，資料夾要重新授權。</strong>
+這是瀏覽器的安全限制。按網頁上的提示重新選取同一個資料夾即可，專案內容不會遺失。</p>
+<p><strong>Agent 說找不到資料夾，或在別的地方建立了專案。</strong>
+確認 Agent 開啟的資料夾就是工作台準備的那一個。Claude 桌面版可以在對話中重新選擇資料夾；CLI 則先 <code>cd</code> 到該資料夾再啟動 <code>claude</code>。</p>
+<p><strong>網頁能不能直接叫醒 Agent？</strong>
+不行。網頁只負責準備資料夾和那段話，Agent 需要由你啟動並貼上。這是本站採用的<a href="architecture.zh-TW.html#%E6%A8%A1%E5%BC%8F-a%E7%B4%94%E5%B7%A5%E4%BD%9C%E5%8F%B0%E6%A8%A1%E5%BC%8Fpure-workbench--file-driven">模式 A</a> 的限制。</p>
+</div>
+
+    <footer class="mt-16 border-t border-stone-200 pt-8 dark:border-stone-800">
+      <p class="text-xs text-stone-500 dark:text-stone-400">© 2026 tigernaxo · 本文採用 <a class="underline hover:text-stone-900" href="/LICENSE-docs.txt">CC BY 4.0</a></p>
+      <h2 class="mt-10 text-sm font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">延伸閱讀</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2"><a href="/docs/architecture.zh-TW.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">架構規格</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Agent-Offloaded Architecture</span></a><a href="/docs/architecture.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Specification</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Agent-Offloaded Architecture</span></a><a href="/posts/2026-10-introducing-aofa.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Blog</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >Beyond SaaS: Introducing AOA (Agent-Offloaded Architecture)</span></a><a href="/paper/proposal.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Paper proposal</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Decoupling Presentation and Inference for Local-First Generative Workflows via Agent-Offloaded Architecture</span></a></div>
+    </footer>
+  </article>
+
+  <aside class="hidden lg:block"><div class="sticky top-24"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">目錄</p><ul class="mt-3 max-h-[calc(100vh-8rem)] overflow-y-auto text-sm"><li><a href="#你需要什麼" data-toc="你需要什麼" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">你需要什麼</a></li><li><a href="#推薦claude" data-toc="推薦claude" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">推薦：Claude</a></li><li><a href="#不熟悉終端機claude-桌面版" data-toc="不熟悉終端機claude-桌面版" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">不熟悉終端機：Claude 桌面版</a></li><li><a href="#工程師claude-code-cli" data-toc="工程師claude-code-cli" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">工程師：Claude Code CLI</a></li><li><a href="#其他-coding-agent" data-toc="其他-coding-agent" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">其他 Coding Agent</a></li><li><a href="#選讀改用地端模型" data-toc="選讀改用地端模型" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">選讀：改用地端模型</a></li><li><a href="#常見問題" data-toc="常見問題" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">常見問題</a></li></ul></div></aside>
+</div></main>
+
+  </body>
+</html>

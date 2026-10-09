@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AOA: Agent-Offloaded Architecture · AOA</title>
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="description" content="An AI product architecture whose service runs no inference: reasoning and execution are offloaded to the agent the user already has" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="canonical" href="https://aoa.tigernaxo.com/docs/architecture.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="AOA" />
+    <meta property="og:title" content="AOA: Agent-Offloaded Architecture" />
+    <meta property="og:description" content="An AI product architecture whose service runs no inference: reasoning and execution are offloaded to the agent the user already has" />
+    <meta property="og:url" content="https://aoa.tigernaxo.com/docs/architecture.html" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="alternate" hreflang="en" href="https://aoa.tigernaxo.com/docs/architecture.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="https://aoa.tigernaxo.com/docs/architecture.zh-TW.html" />
+    <script type="module" crossorigin src="/assets/article-DIBbuzMx.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/i18n-JAbOdSLi.js">
+    <link rel="stylesheet" crossorigin href="/assets/i18n-BeZAC68x.css">
+  </head>
+  <body class="bg-paper text-stone-900 antialiased selection:bg-accent selection:text-white dark:text-stone-100">
+    <div id="reading-progress" class="fixed inset-x-0 top-0 z-40 h-0.5 origin-left scale-x-0 bg-accent"></div>
+    <!-- Header in the article's language (src/articles.ts readerHeader). -->
+    <div id="reader-header"><header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="/" class="flex items-baseline gap-3">
+          <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+          <span class="hidden font-mono text-[11px] text-stone-500 md:inline">Agent-Offloaded Architecture</span>
+        </a>
+        <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
+          <a href="/#workbenches" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Tools</a>
+          <a href="/#architecture" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Architecture</a>
+          <a href="/#docs" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Read</a>
+          <a href="https://github.com/tigernaxojr/aoa" target="_blank" rel="noopener noreferrer" class="hidden font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent sm:inline dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
+          <div class="flex items-center gap-2" role="group" aria-label="Language / 語言">
+            <svg class="h-4 w-4 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
+            <div class="flex rounded-md border border-stone-300 bg-white/60 p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-900/60"><span class="rounded-[3px] px-2.5 py-1 transition-colors bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900" aria-current="true" lang="en">EN</span><a href="/docs/architecture.zh-TW.html" hreflang="zh-Hant" lang="zh-Hant" data-set-lang="zh-Hant" class="rounded-[3px] px-2.5 py-1 transition-colors text-stone-600 hover:bg-stone-200 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white">中文</a></div>
+          </div>
+        </nav>
+      </div>
+    </header></div>
+
+    <!-- Pre-rendered at build time (vite.config.ts); filled in the browser during development. -->
+    <main id="article-root">
+<div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-14">
+  <article class="min-w-0">
+    <nav class="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400" aria-label="breadcrumb">
+      <a href="/" class="hover:text-stone-900 dark:hover:text-white">AOA</a><span aria-hidden="true">/</span>
+      <a href="/#docs" class="hover:text-stone-900 dark:hover:text-white">Read</a><span aria-hidden="true">/</span>
+      <span class="text-stone-700 dark:text-stone-300">Specification</span>
+    </nav>
+
+    <header class="mt-6 border-b border-stone-200 pb-8 dark:border-stone-800">
+      <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Specification</p>
+      <h1 class="mt-4 font-serif text-3xl font-bold leading-tight tracking-tight text-stone-900 sm:text-[2.6rem] dark:text-white">AOA: Agent-Offloaded Architecture</h1>
+      <p class="mt-4 text-lg leading-relaxed text-stone-600 dark:text-stone-300">An AI product architecture whose service runs no inference: reasoning and execution are offloaded to the agent the user already has</p>
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-stone-500 dark:text-stone-400">12 min read</span>
+        <span class="text-stone-300 dark:text-stone-700" aria-hidden="true">·</span>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="/docs/architecture.zh-TW.html" hreflang="zh-Hant">繁體中文</a>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="architecture.md">Markdown</a>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="https://github.com/tigernaxojr/aoa/blob/main/docs/architecture.md" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </header>
+
+    <details class="mt-6 rounded-md border border-stone-200 bg-white p-4 lg:hidden dark:border-stone-800 dark:bg-stone-900"><summary class="cursor-pointer text-sm font-semibold">Contents</summary><ul class="mt-3 text-sm"><li><a href="#1-executive-summary" data-toc="1-executive-summary" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">1. Executive Summary</a></li><li><a href="#2-background-the-problems-with-traditional-ai-systems" data-toc="2-background-the-problems-with-traditional-ai-systems" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2. Background: The Problems with Traditional AI Systems</a></li><li><a href="#21-the-three-costs-of-cloud-ai-saas" data-toc="21-the-three-costs-of-cloud-ai-saas" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.1 The Three Costs of Cloud AI SaaS</a></li><li><a href="#22-the-rise-of-local-compute-and-coding-agents" data-toc="22-the-rise-of-local-compute-and-coding-agents" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.2 The Rise of Local Compute and Coding Agents</a></li><li><a href="#3-core-metaphor-brain--engine" data-toc="3-core-metaphor-brain--engine" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3. Core Metaphor: Brain &amp; Engine</a></li><li><a href="#4-four-core-principles" data-toc="4-four-core-principles" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4. Four Core Principles</a></li><li><a href="#principle-1-offloaded-agent-work" data-toc="principle-1-offloaded-agent-work" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 1: Offloaded Agent Work</a></li><li><a href="#principle-2-schema-as-the-contract" data-toc="principle-2-schema-as-the-contract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 2: Schema as the Contract</a></li><li><a href="#principle-3-filesystem-centric-ssot--bus" data-toc="principle-3-filesystem-centric-ssot--bus" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 3: Filesystem-Centric SSOT &amp; Bus</a></li><li><a href="#principle-4-local-first--data-sovereignty" data-toc="principle-4-local-first--data-sovereignty" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 4: Local-First &amp; Data Sovereignty</a></li><li><a href="#5-collaboration-modes" data-toc="5-collaboration-modes" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">5. Collaboration Modes</a></li><li><a href="#mode-a-pure-workbench-file-driven" data-toc="mode-a-pure-workbench-file-driven" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Mode A: Pure Workbench (File-Driven)</a></li><li><a href="#mode-b-backend-enabled-hybrid-aoa" data-toc="mode-b-backend-enabled-hybrid-aoa" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Mode B: Backend-Enabled (Hybrid AOA)</a></li><li><a href="#mode-c-backend-only-agent-operated-api" data-toc="mode-c-backend-only-agent-operated-api" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Mode C: Backend-Only (Agent-Operated API)</a></li><li><a href="#the-specification-entry-point" data-toc="the-specification-entry-point" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The specification entry point</a></li><li><a href="#6-reference-implementations" data-toc="6-reference-implementations" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">6. Reference Implementations</a></li><li><a href="#7-when-to-use--limitations" data-toc="7-when-to-use--limitations" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">7. When to Use &amp; Limitations</a></li><li><a href="#good-fits" data-toc="good-fits" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Good fits</a></li><li><a href="#limitations" data-toc="limitations" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Limitations</a></li><li><a href="#8-conclusion" data-toc="8-conclusion" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">8. Conclusion</a></li></ul></details>
+
+    <div class="article-body mt-8"><hr>
+<h2 id="1-executive-summary"><a class="heading-anchor" href="#1-executive-summary" aria-hidden="true" tabindex="-1">#</a>1. Executive Summary</h2>
+<p><strong>AOA (Agent-Offloaded Architecture)</strong> is a software architecture pattern for the AI agent era: a product offloads its agent work — LLM reasoning, tool use, and the tokens they consume — to the coding agent the user already has. The service keeps whatever else it needs, including a backend, databases, or lightweight models; what it does not run is the agent.</p>
+<p>On the frontend, AOA takes the form of a static web app that works with the user&#39;s agent through a local folder (this frontend form is sometimes called AOFA, Agent-Offloaded Frontend Architecture). Most of this document describes that form, the most direct way to apply AOA; Modes B and C (§5) show AOA with a backend and with no frontend at all.</p>
+<p>In the traditional generative AI product (SaaS) model, the vendor bears the heavy cost of cloud inference, media transcoding, and storage, while users bear the risk of privacy leaks and cloud lock-in of their data.</p>
+<p>AOA inverts and redraws these responsibility boundaries:</p>
+<ul>
+<li><strong>The frontend (Presentation Layer)</strong> does not depend on a backend for inference or computation. It is reduced to a purely static <strong>protocol workbench</strong> that can be hosted at zero cost on static platforms such as GitHub Pages.</li>
+<li><strong>Inference and execution (Execution &amp; Inference Layer)</strong> are offloaded to the <strong>Coding Agent</strong> the user already has (e.g., Claude Code, Cursor, Codex, Gemini CLI, Pi) and to local open-source toolchains (e.g., FFmpeg, Playwright).<ul>
+<li><strong>Inference</strong>: By default it runs on the user&#39;s existing agent plan in that provider&#39;s cloud, so the cost is covered by the user&#39;s agent subscription / API quota rather than by the app vendor. When needed, the agent can instead be pointed at self-hosted local models, as Pi Agent does (e.g., LLMs on Ollama / llama.cpp, local TTS such as Piper / Kokoro), enabling fully offline operation.</li>
+<li><strong>Execution</strong>: File I/O, scraping, transcoding, compositing, and other heavy work run on the user&#39;s machine.</li>
+</ul>
+</li>
+<li><strong>The communication and storage bus (Bus &amp; SSOT)</strong> uses the browser&#39;s <strong>File System Access API</strong> together with structured specifications (JSON Schema), making the local filesystem the Single Source of Truth.</li>
+</ul>
+<hr>
+<h2 id="2-background-the-problems-with-traditional-ai-systems"><a class="heading-anchor" href="#2-background-the-problems-with-traditional-ai-systems" aria-hidden="true" tabindex="-1">#</a>2. Background: The Problems with Traditional AI Systems</h2>
+<h3 id="21-the-three-costs-of-cloud-ai-saas"><a class="heading-anchor" href="#21-the-three-costs-of-cloud-ai-saas" aria-hidden="true" tabindex="-1">#</a>2.1 The Three Costs of Cloud AI SaaS</h3>
+<ol>
+<li><strong>Compute Tax</strong>: Every model inference, image generation, speech synthesis, or video render burns the vendor&#39;s server budget, pushing products toward expensive subscriptions or credit-based pricing.</li>
+<li><strong>Privacy Black Box</strong>: Users&#39; source code, confidential data, voice, and custom assets must be uploaded to and stored in the vendor&#39;s cloud, which makes enterprises and individuals hesitant.</li>
+<li><strong>Rigid Outputs</strong>: Videos or assets produced by SaaS tools cannot be precisely fine-tuned; if the result is unsatisfying, the only option is to spend more credits regenerating it.</li>
+</ol>
+<h3 id="22-the-rise-of-local-compute-and-coding-agents"><a class="heading-anchor" href="#22-the-rise-of-local-compute-and-coding-agents" aria-hidden="true" tabindex="-1">#</a>2.2 The Rise of Local Compute and Coding Agents</h3>
+<p>The user&#39;s local development environment has changed dramatically in recent years:</p>
+<ul>
+<li>A typical development machine easily handles execution-layer work such as scraping, transcoding, and compositing; some high-end machines can even run local LLM / TTS models.</li>
+<li>Local open-source pipelines (FFmpeg for audio/video compositing, Playwright for browser rendering) are extremely mature and completely free.</li>
+<li><strong>Coding Agents</strong> have become widespread, with strong abilities in file I/O, command orchestration, reasoning, and self-repair — and most users are already paying for one.</li>
+</ul>
+<p><strong>The core question</strong>: If the user already has an agent that can reason and operate local tools, why should the frontend stand up a cloud backend and pay for inference and compute a second time?</p>
+<hr>
+<h2 id="3-core-metaphor-brain--engine"><a class="heading-anchor" href="#3-core-metaphor-brain--engine" aria-hidden="true" tabindex="-1">#</a>3. Core Metaphor: Brain &amp; Engine</h2>
+<blockquote>
+<p><em>An AI product needs a <strong>brain</strong> (LLM inference) and an <strong>engine</strong> (the tokens that inference consumes). In traditional SaaS the vendor provides both and recovers the cost through subscriptions. In AOA both belong to the user&#39;s agent; the service provides only the interface and the specification.</em></p>
+</blockquote>
+<div class="table-wrap"><table><thead><tr><th>Role</th><th>What it does</th><th>Who provides it</th></tr></thead><tbody><tr><td><strong>Service</strong></td><td>Interface (web workbench or API), specifications published at URLs, validation of the agent&#39;s results</td><td>The vendor, at near-zero marginal cost</td></tr><tr><td><strong>Brain</strong></td><td>LLM inference: understanding requests, planning, writing files, calling local tools</td><td>The user&#39;s agent and the model the user chose</td></tr><tr><td><strong>Engine</strong></td><td>Tokens consumed by inference</td><td>The user&#39;s agent plan, or local hardware running a self-hosted model</td></tr></tbody></table></div>
+<pre><code>┌────────────────────────────────────────────────────────┐
+│                   Web Browser                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │     AOA Frontend (Static Workbench / Protocol)   │  │
+│  │     - Zero-Inference                             │  │
+│  │     - Schema Validator                           │  │
+│  │     - Visualizer &amp; Editor                        │  │
+│  └────────────────────────┬─────────────────────────┘  │
+└───────────────────────────┼────────────────────────────┘
+                            │ File System Access API
+                            │ (Local Directory Handle)
+┌───────────────────────────┼────────────────────────────┐
+│ User Local Machine        │                            │
+│                           ▼                            │
+│    ┌──────────────────────────────────────────────┐    │
+│    │ Local Filesystem (Shared SSOT)               │    │
+│    │ ├── specs / schemas                          │    │
+│    │ ├── project.json / scene.json                │    │
+│    │ ├── activity.json (progress signal)          │    │
+│    │ └── assets / output                          │    │
+│    └──────────────────────▲───────────────────────┘    │
+│                           │                            │
+│    ┌──────────────────────┴───────────────────────┐    │
+│    │ Local Coding Agent                           │    │
+│    │ - Brain: LLM reasoning                       │    │
+│    │ - Engine: tokens from the user&#39;s plan        │    │
+│    │   cloud LLM (default) / local model (opt.)   │    │
+│    │ - Local tools (FFmpeg, Playwright, TTS)      │    │
+│    │ - Protocol Conformant                        │    │
+│    └──────────────────────────────────────────────┘    │
+└────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2 id="4-four-core-principles"><a class="heading-anchor" href="#4-four-core-principles" aria-hidden="true" tabindex="-1">#</a>4. Four Core Principles</h2>
+<h3 id="principle-1-offloaded-agent-work"><a class="heading-anchor" href="#principle-1-offloaded-agent-work" aria-hidden="true" tabindex="-1">#</a>Principle 1: Offloaded Agent Work</h3>
+<ul>
+<li><strong>A clear agent boundary</strong>: Work that needs an agent&#39;s reasoning and tools — and the tokens it consumes — runs in the user&#39;s agent. The application layer, whether a purely static frontend or a backend with accounts and billing, <strong>does not run that agent work</strong>; it may still run its own services, including lightweight models.</li>
+<li><strong>Near-zero marginal agent cost for the vendor</strong>: The service focuses on human-computer interaction (HCI), workflow guidance, collaboration metadata, and protocol validation; the agent&#39;s inference and the heavy execution it drives are handled by the user&#39;s agent (inference may use the user&#39;s own cloud plan or local models).</li>
+</ul>
+<h3 id="principle-2-schema-as-the-contract"><a class="heading-anchor" href="#principle-2-schema-as-the-contract" aria-hidden="true" tabindex="-1">#</a>Principle 2: Schema as the Contract</h3>
+<ul>
+<li>The presentation/control layer and the executing agent are <strong>not coupled through opaque proprietary commands or black-box APIs</strong>.</li>
+<li>Their sole contract for communication and state transitions is a strictly defined, openly published set of <strong>JSON Schemas / specifications</strong>.</li>
+<li>The interface structures human intent into schema-conformant specs; the agent reads the environment, produces files, and updates the state machine according to the schema.</li>
+</ul>
+<h3 id="principle-3-filesystem-centric-ssot--bus"><a class="heading-anchor" href="#principle-3-filesystem-centric-ssot--bus" aria-hidden="true" tabindex="-1">#</a>Principle 3: Filesystem-Centric SSOT &amp; Bus</h3>
+<ul>
+<li><strong>Local SSOT</strong>: All concrete source code, intermediate assets, temporary files, and generated outputs use the local filesystem as the single source of truth.</li>
+<li><strong>Files as signals</strong>:<ul>
+<li>In the pure-frontend scenario, the frontend reads and writes files via the File System Access API and detects the agent&#39;s output through metadata fingerprint polling; the agent side is triggered by the user, who pastes the command the page prepares (see Mode A).</li>
+<li>In the backend-collaboration scenario, the cloud only syncs sanitized project metadata (Metadata Plane), while the core data (Data Plane) always stays local.</li>
+<li>Both sides follow a locking convention for writes (e.g., lock files and write-temp-then-rename) to reduce the risk of races. The File System Access API itself provides no cross-process file locking, and agent compliance with the convention must be verified, so the frontend should still validate against the schema and tolerate errors when reading.</li>
+</ul>
+</li>
+</ul>
+<h3 id="principle-4-local-first--data-sovereignty"><a class="heading-anchor" href="#principle-4-local-first--data-sovereignty" aria-hidden="true" tabindex="-1">#</a>Principle 4: Local-First &amp; Data Sovereignty</h3>
+<ul>
+<li><strong>Assets never pass through the service</strong>: Proprietary code, private assets, internal site credentials, and original drafts stay in the user&#39;s controlled environment; the service&#39;s servers (if any) never handle them.</li>
+<li><strong>The privacy boundary is the user&#39;s choice</strong>: During inference, the agent sends the necessary context to the LLM provider the user chose, so the privacy boundary equals that provider&#39;s data policy. If data must never leave the machine, local LLM / TTS models can be used instead.</li>
+<li><strong>Inference can migrate step by step</strong>: Where inference runs is part of the agent&#39;s configuration, not the service. An organization can adopt AOA on a cloud LLM or a CSP-hosted plan (such as AWS Bedrock, Google Vertex AI, or Azure OpenAI), then move to a self-hosted model served with tools such as Ollama or vLLM as privacy and compliance needs grow. The migration touches no part of the service, frontend, protocol, or existing projects; only the agent&#39;s model setting changes. Self-hosted models may handle complex tasks less well, but agent output is already validated against the schema with retry and repair paths, which absorbs that gap.</li>
+<li><strong>Self-Sustaining</strong>: Even if the cloud backend goes offline or the service shuts down, local projects and generated assets remain fully readable and can be built and run independently with local toolchains.</li>
+</ul>
+<hr>
+<h2 id="5-collaboration-modes"><a class="heading-anchor" href="#5-collaboration-modes" aria-hidden="true" tabindex="-1">#</a>5. Collaboration Modes</h2>
+<p>AOA supports three progressive modes. Mode A is a frontend working with a local folder; Mode B adds a thin backend; Mode C has no frontend at all.</p>
+<h3 id="mode-a-pure-workbench-file-driven"><a class="heading-anchor" href="#mode-a-pure-workbench-file-driven" aria-hidden="true" tabindex="-1">#</a>Mode A: Pure Workbench (File-Driven)</h3>
+<p><em>The simplest frontend form; no extra local server is required.</em></p>
+<ol>
+<li>The frontend obtains a directory handle via the File System Access API.</li>
+<li>Every N seconds, the frontend compares metadata of key files (a fingerprint computed from <code>lastModified</code> and file size).</li>
+<li>When the agent finishes a storyboard or generates audio, the fingerprint changes and the frontend updates automatically.</li>
+<li>When the frontend needs the agent to act (e.g., after the user edits the script), it marks the state file as <code>stale</code> and provides a standard command (e.g., <code>/video-sync</code>) for the user to paste into their terminal.</li>
+</ol>
+<h3 id="mode-b-backend-enabled-hybrid-aoa"><a class="heading-anchor" href="#mode-b-backend-enabled-hybrid-aoa" aria-hidden="true" tabindex="-1">#</a>Mode B: Backend-Enabled (Hybrid AOA)</h3>
+<p><em>For multi-tenant systems that need team collaboration, account permissions, or enterprise management.</em></p>
+<p><strong>Key idea</strong>: AOA does not reject backend servers! In systems with a backend, AOA achieves <strong>a full decoupling of the Control Plane from the Compute Plane</strong>:</p>
+<pre><code>[ Cloud Backend (Control Plane) ]
+  ├── Auth &amp; Billing
+  ├── Team Sync &amp; Project Metadata
+  └── Shared Protocol / Prompt Registry
+         ▲
+         │ (lightweight JSON / Schema Sync)
+         ▼
+[ Web UI / Native App ] &lt;──(local protocol bus)──&gt; [ Local SSOT ] &lt;──&gt; [ Local Agent ]
+                                                 └── private code, assets, heavy execution
+</code></pre>
+<ol>
+<li><strong>The cloud backend is only a thin control layer</strong>:<ul>
+<li>It focuses on user permissions, collaboration notifications, billing and plan management, and publishing standardized schemas and prompt modules.</li>
+<li><strong>The backend runs no energy-hungry model inference or media rendering, so the vendor&#39;s marginal compute cost approaches zero (Near-Zero Marginal Compute Cost)</strong>.</li>
+</ul>
+</li>
+<li><strong>Compute and data stay on the user side (BYOA - Bring Your Own Agent)</strong>:<ul>
+<li>Enterprise users&#39; proprietary source code, trade secrets, and large media assets stay on employees&#39; machines, processed and rendered by the agent, never passing through the service&#39;s backend.</li>
+<li>Inference goes to the enterprise&#39;s chosen LLM provider (possibly an enterprise plan with a signed data agreement) or an in-house model.</li>
+<li>Only sanitized, schema-validated &quot;final project metadata&quot; or videos the user explicitly chooses to publish are uploaded to the cloud backend, greatly narrowing the enterprise&#39;s privacy-compliance scope.</li>
+</ul>
+</li>
+<li><strong>The agent drives, the frontend shows it live</strong>:<ul>
+<li>The agent calls the backend API as the specification describes (or attaches the MCP server the service provides). The backend validates against the schema, stores the state, and pushes events to every open frontend over WebSocket, SSE, or gRPC streaming.</li>
+<li>The frontend subscribes to those events and redraws immediately, replacing Mode A&#39;s fingerprint polling. The user follows the agent&#39;s steps, intermediate results, and errors, and can correct any step directly in the UI; the correction goes back to the backend and becomes the agent&#39;s next input.</li>
+<li>While the agent stays connected (for example through the MCP server or by listening on a task queue), the frontend can queue tasks on the backend for the agent to pick up, so the user no longer copies and pastes commands. The agent still runs on the user&#39;s side, limited to what the user has authorized.</li>
+<li>Team members on the same project subscribe to the same event stream and see the agent&#39;s changes at the same time.</li>
+<li>The backend only validates, stores, and broadcasts; it runs no inference, so marginal compute cost stays near zero.</li>
+</ul>
+</li>
+</ol>
+<h3 id="mode-c-backend-only-agent-operated-api"><a class="heading-anchor" href="#mode-c-backend-only-agent-operated-api" aria-hidden="true" tabindex="-1">#</a>Mode C: Backend-Only (Agent-Operated API)</h3>
+<p><em>For services with no user interface: the agent itself is the client.</em></p>
+<ol>
+<li>The service exposes an HTTP API (or wraps it as an MCP server) and publishes its specification at a URL: an OpenAPI document, a guide or skill, and JSON Schemas.</li>
+<li>The agent reads the specification, plans, and calls the API directly. The service stores data and state and validates every request against the schema.</li>
+<li>The service still runs no inference: the brain (LLM reasoning) and the engine (tokens) stay with the user&#39;s agent.</li>
+<li>The API authenticates the agent with user-scoped credentials and treats every agent request as untrusted input.</li>
+</ol>
+<h3 id="the-specification-entry-point"><a class="heading-anchor" href="#the-specification-entry-point" aria-hidden="true" tabindex="-1">#</a>The specification entry point</h3>
+<p>Whatever the mode, the agent must first obtain the specification, and the entry point is usually a URL: a guide page, an OpenAPI document, or an index such as <code>/api/index.json</code>. A good entry point lists every schema, template, and command with absolute URLs and checksums, so the agent can verify what it downloads. This platform provides dedicated indexes at <code>/api/video/index.json</code> and <code>/api/slide/index.json</code>.</p>
+<hr>
+<h2 id="6-reference-implementations"><a class="heading-anchor" href="#6-reference-implementations" aria-hidden="true" tabindex="-1">#</a>6. Reference Implementations</h2>
+<p>The AOA site ships two workbenches, each with its own static UI, protocol schemas, agent skill, and project template:</p>
+<ul>
+<li><strong>Slide Studio (Mode A)</strong>: the agent builds a Slidev deck with HTML, SVG diagrams, and Three.js components and exports a PDF locally; the page only reads and writes the folder.</li>
+<li><strong>Video Studio (Mode A)</strong>: the agent turns a product URL or a story into a narrated video, described below.</li>
+</ul>
+<p>Video Studio in detail:</p>
+<ul>
+<li><strong>Frontend workbench</strong>: A Vue 3 + Tailwind static site hosted on GitHub Pages, providing product spec input, a storyboard, narration editing, and video preview.</li>
+<li><strong>Protocol library</strong>: <code>packages/video-core/specs/*.schema.json</code> (shared by the story and product video apps) defines the <code>project</code>, <code>scene</code>, <code>workflow</code>, and <code>activity</code> formats.</li>
+<li><strong>Local agent</strong>: Claude Code reads an online guide and local skills, then uses local Playwright to capture web pages, Edge-TTS (Microsoft&#39;s online speech service, replaceable with local TTS such as Piper / Kokoro) to generate speech, and FFmpeg to compose 60fps video.</li>
+<li><strong>Benefits</strong>:<ul>
+<li>Developers: $0 server rent, $0 GPU bills, no database to maintain.</li>
+<li>Users: the service itself is free of charge (inference cost is covered by the user&#39;s existing agent plan); assets never pass through the service&#39;s servers, and source code and audio assets stay fully under the user&#39;s control.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="7-when-to-use--limitations"><a class="heading-anchor" href="#7-when-to-use--limitations" aria-hidden="true" tabindex="-1">#</a>7. When to Use &amp; Limitations</h2>
+<h3 id="good-fits"><a class="heading-anchor" href="#good-fits" aria-hidden="true" tabindex="-1">#</a>Good fits</h3>
+<ul>
+<li><strong>Generation tasks that rely heavily on local toolchains</strong>: code generation, local testing, audio/video post-production, document layout.</li>
+<li><strong>Privacy-sensitive products</strong>: internal enterprise system analysis, private storybooks/animations, personal data processing (best paired with an enterprise LLM plan or local models).</li>
+<li><strong>Developer tools and productivity suites</strong>: tools designed for engineers or professionals who already use a Coding Agent.</li>
+</ul>
+<h3 id="limitations"><a class="heading-anchor" href="#limitations" aria-hidden="true" tabindex="-1">#</a>Limitations</h3>
+<ul>
+<li><strong>Browser compatibility</strong>: Relies on the File System Access API (<code>showDirectoryPicker</code>), which is currently supported only by desktop Chromium browsers such as Chrome and Edge; Brave disables it by default, and Firefox and Safari do not support it.</li>
+<li><strong>Depends on the user&#39;s local environment</strong>: Users need a basic runtime (e.g., Node.js, a Coding Agent) and must pay for their agent&#39;s subscription or API usage themselves.</li>
+<li><strong>Agent output is non-deterministic</strong>: Agent output may not fully conform to the schema; the frontend must validate it and provide retry or repair guidance.</li>
+<li><strong>The page cannot wake the agent</strong>: In Mode A, users start the agent and paste the command the page prepares; the page only reflects what the agent writes. Mode B eases this with a backend task queue: a connected agent picks up tasks the page queues, though the user still has to start the agent first.</li>
+<li><strong>Directory permission must be re-granted</strong>: After a page reload, read/write permission for the directory handle usually has to be granted again.</li>
+</ul>
+<hr>
+<h2 id="8-conclusion"><a class="heading-anchor" href="#8-conclusion" aria-hidden="true" tabindex="-1">#</a>8. Conclusion</h2>
+<p>AOA breaks the assumption that &quot;an AI product must be a cloud SaaS.&quot; It restores the frontend to a pure interaction interface and protocol standard, and hands inference cost, execution, and data sovereignty back to the user&#39;s own agent — including the choice of whether inference runs in the cloud or on a local model.</p>
+<p>It is a new architectural path that combines <strong>zero maintenance cost for the vendor</strong>, <strong>user-controlled data privacy</strong>, and <strong>flexible extensibility</strong>.</p>
+</div>
+
+    <footer class="mt-16 border-t border-stone-200 pt-8 dark:border-stone-800">
+      <p class="text-xs text-stone-500 dark:text-stone-400">© 2026 tigernaxo · Licensed under <a class="underline hover:text-stone-900" href="/LICENSE-docs.txt">CC BY 4.0</a></p>
+      <h2 class="mt-10 text-sm font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Read more</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2"><a href="/docs/setup.zh-TW.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">設定說明</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >準備你的 Agent</span></a><a href="/docs/setup.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Setup guide</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >Set Up Your Agent</span></a><a href="/posts/2026-10-introducing-aofa.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Blog</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >Beyond SaaS: Introducing AOA (Agent-Offloaded Architecture)</span></a><a href="/paper/proposal.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Paper proposal</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Decoupling Presentation and Inference for Local-First Generative Workflows via Agent-Offloaded Architecture</span></a></div>
+    </footer>
+  </article>
+
+  <aside class="hidden lg:block"><div class="sticky top-24"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">On this page</p><ul class="mt-3 max-h-[calc(100vh-8rem)] overflow-y-auto text-sm"><li><a href="#1-executive-summary" data-toc="1-executive-summary" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">1. Executive Summary</a></li><li><a href="#2-background-the-problems-with-traditional-ai-systems" data-toc="2-background-the-problems-with-traditional-ai-systems" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2. Background: The Problems with Traditional AI Systems</a></li><li><a href="#21-the-three-costs-of-cloud-ai-saas" data-toc="21-the-three-costs-of-cloud-ai-saas" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.1 The Three Costs of Cloud AI SaaS</a></li><li><a href="#22-the-rise-of-local-compute-and-coding-agents" data-toc="22-the-rise-of-local-compute-and-coding-agents" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2.2 The Rise of Local Compute and Coding Agents</a></li><li><a href="#3-core-metaphor-brain--engine" data-toc="3-core-metaphor-brain--engine" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3. Core Metaphor: Brain &amp; Engine</a></li><li><a href="#4-four-core-principles" data-toc="4-four-core-principles" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4. Four Core Principles</a></li><li><a href="#principle-1-offloaded-agent-work" data-toc="principle-1-offloaded-agent-work" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 1: Offloaded Agent Work</a></li><li><a href="#principle-2-schema-as-the-contract" data-toc="principle-2-schema-as-the-contract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 2: Schema as the Contract</a></li><li><a href="#principle-3-filesystem-centric-ssot--bus" data-toc="principle-3-filesystem-centric-ssot--bus" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 3: Filesystem-Centric SSOT &amp; Bus</a></li><li><a href="#principle-4-local-first--data-sovereignty" data-toc="principle-4-local-first--data-sovereignty" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Principle 4: Local-First &amp; Data Sovereignty</a></li><li><a href="#5-collaboration-modes" data-toc="5-collaboration-modes" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">5. Collaboration Modes</a></li><li><a href="#mode-a-pure-workbench-file-driven" data-toc="mode-a-pure-workbench-file-driven" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Mode A: Pure Workbench (File-Driven)</a></li><li><a href="#mode-b-backend-enabled-hybrid-aoa" data-toc="mode-b-backend-enabled-hybrid-aoa" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Mode B: Backend-Enabled (Hybrid AOA)</a></li><li><a href="#mode-c-backend-only-agent-operated-api" data-toc="mode-c-backend-only-agent-operated-api" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Mode C: Backend-Only (Agent-Operated API)</a></li><li><a href="#the-specification-entry-point" data-toc="the-specification-entry-point" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The specification entry point</a></li><li><a href="#6-reference-implementations" data-toc="6-reference-implementations" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">6. Reference Implementations</a></li><li><a href="#7-when-to-use--limitations" data-toc="7-when-to-use--limitations" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">7. When to Use &amp; Limitations</a></li><li><a href="#good-fits" data-toc="good-fits" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Good fits</a></li><li><a href="#limitations" data-toc="limitations" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Limitations</a></li><li><a href="#8-conclusion" data-toc="8-conclusion" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">8. Conclusion</a></li></ul></div></aside>
+</div></main>
+
+  </body>
+</html>

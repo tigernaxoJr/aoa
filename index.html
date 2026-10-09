@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AOA — Agent-Offloaded Architecture</title>
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="description" content="AOA is an architecture pattern in which a product offloads its agent work — LLM reasoning, tool use, and the tokens they consume — to the coding agent the user already has." />
+    <link rel="alternate" hreflang="en" href="https://aoa.tigernaxo.com/" />
+    <link rel="alternate" hreflang="zh-Hant" href="https://aoa.tigernaxo.com/zh-TW/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/i18n-JAbOdSLi.js"></script>
+    <script type="module" crossorigin src="/assets/main-DZdSUSvJ.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/i18n-BeZAC68x.css">
+  </head>
+  <body class="bg-paper text-stone-900 antialiased selection:bg-accent selection:text-white dark:text-stone-100">
+    <!-- Offered to visitors whose browser prefers Chinese (src/i18n.ts). -->
+    <div id="lang-hint" hidden class="border-b border-stone-300 bg-stone-100 dark:border-stone-700 dark:bg-stone-900" lang="zh-Hant">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 text-sm sm:px-6">
+        <p>這個網站有<strong class="font-semibold">繁體中文</strong>版本。</p>
+        <div class="flex items-center gap-4">
+          <a href="./zh-TW/" data-set-lang="zh-Hant" class="rounded-md bg-stone-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900">切換到中文 →</a>
+          <button type="button" data-dismiss class="text-xs text-stone-500 underline underline-offset-4 hover:text-stone-900 dark:hover:text-white" lang="en">Stay in English</button>
+        </div>
+      </div>
+    </div>
+
+    <header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="#" class="flex items-baseline gap-3">
+          <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+          <span class="hidden font-mono text-[11px] text-stone-500 md:inline">Agent-Offloaded Architecture</span>
+        </a>
+        <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
+          <a href="#workbenches" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Tools</a>
+          <a href="#architecture" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Architecture</a>
+          <a href="#modes" class="hidden hover:text-stone-900 lg:inline dark:hover:text-white">Modes</a>
+          <a href="#docs" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Read</a>
+          <a href="https://github.com/tigernaxojr/aoa" target="_blank" rel="noopener noreferrer" class="hidden font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent sm:inline dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
+          <div class="flex items-center gap-2" role="group" aria-label="Language / 語言">
+            <svg class="h-4 w-4 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
+            <div class="flex rounded-md border border-stone-300 bg-white/60 p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-900/60"><span class="rounded-[3px] px-2.5 py-1 transition-colors bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900" aria-current="true" lang="en">EN</span><a href="./zh-TW/" hreflang="zh-Hant" lang="zh-Hant" data-set-lang="zh-Hant" class="rounded-[3px] px-2.5 py-1 transition-colors text-stone-600 hover:bg-stone-200 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white">中文</a></div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero -->
+      <section class="border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-stone-500"><span class="text-accent">AOA</span> · Agent-Offloaded Architecture</p>
+          <h1 class="mt-6 max-w-4xl font-serif text-4xl font-bold leading-[1.15] tracking-tight sm:text-6xl">
+            Run your product's agent<br />on the user's side
+          </h1>
+          <p class="mt-8 max-w-2xl text-lg leading-relaxed text-stone-600 dark:text-stone-300">
+            <strong class="font-semibold text-stone-900 dark:text-white">AOA</strong> offloads a product's agent work — LLM reasoning, tool use, and the tokens they consume — to the
+            <strong class="font-semibold text-stone-900 dark:text-white">coding agent the user already has</strong> (Claude Code, Codex, Cursor, Gemini CLI, Pi…).
+            The service keeps whatever else it needs, including a backend or lightweight models.
+          </p>
+          <div class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
+            <a href="./docs/architecture.html" class="inline-flex items-center gap-2 rounded-md bg-stone-900 px-5 py-3 text-sm font-medium text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white">
+              Read the specification <span aria-hidden="true">→</span>
+            </a>
+            <a href="#workbenches" class="text-sm font-medium text-stone-900 underline decoration-stone-300 underline-offset-[6px] hover:decoration-accent dark:text-stone-100 dark:decoration-stone-600">
+              Try the three tools
+            </a>
+            <a href="./posts/2026-10-introducing-aofa.html" class="text-sm font-medium text-stone-900 underline decoration-stone-300 underline-offset-[6px] hover:decoration-accent dark:text-stone-100 dark:decoration-stone-600">
+              Introducing AOA
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 01 Tools -->
+      <section id="workbenches" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">01 / Tools</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Reference tools</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">Each has its own workbench, agent skill, and project template. The two video studios share one protocol and render pipeline.</p>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">No coding agent yet? Start with <a href="./docs/setup.html" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Set up your agent</a>.</p>
+            </div>
+            <div class="grid gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 md:grid-cols-2 xl:grid-cols-3 dark:border-stone-700 dark:bg-stone-700">
+              <a href="./slide/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900">
+                <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
+                  <span>Mode A · Pure workbench</span>
+                  <span>/slide/</span>
+                </div>
+                <h3 class="mt-6 font-serif text-2xl font-bold">Slide Studio</h3>
+                <p class="mt-3 flex-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                  Your coding agent lays out a Slidev deck with HTML, SVG diagrams, and Three.js components, and exports a PDF locally. The page only reads and writes a folder; nothing else to install.
+                </p>
+                <p class="mt-6 font-mono text-[11px] text-stone-500">Slidev · SVG · Three.js · Playwright PDF</p>
+                <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">Open the workbench →</span>
+              </a>
+              <a href="./story/" class="group flex flex-col bg-paper p-7 hover:bg-white dark:hover:bg-stone-900" data-testid="tool-story">
+                <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
+                  <span>Mode A · Pure workbench</span>
+                  <span>/story/</span>
+                </div>
+                <h3 class="mt-6 font-serif text-2xl font-bold">Story Video Studio</h3>
+                <p class="mt-3 flex-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                  Turns a story — or just an idea — into an animated video: your agent helps finish the story, draws the cast as SVG rigs, gives every character a voice, and renders the animation.
+                </p>
+                <p class="mt-6 font-mono text-[11px] text-stone-500">SVG rigs · CosyVoice / Edge TTS · FFmpeg</p>
+                <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">Open the workbench →</span>
+              </a>
+              <a href="./product/" class="group flex flex-col bg-paper p-7 hover:bg-white md:col-span-2 xl:col-span-1 dark:hover:bg-stone-900" data-testid="tool-product">
+                <div class="flex items-baseline justify-between font-mono text-xs text-stone-500">
+                  <span>Mode A · Pure workbench</span>
+                  <span>/product/</span>
+                </div>
+                <h3 class="mt-6 font-serif text-2xl font-bold">Product Video Studio</h3>
+                <p class="mt-3 flex-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                  Turns a product URL or its source code into a narrated product video: Playwright captures the screen, TTS voices it, FFmpeg assembles it.
+                </p>
+                <p class="mt-6 font-mono text-[11px] text-stone-500">Playwright · Edge TTS · FFmpeg</p>
+                <span class="mt-6 text-sm font-medium text-stone-900 group-hover:text-accent-ink dark:text-stone-100">Open the workbench →</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 Brain & engine -->
+      <section id="architecture" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">02 / Architecture</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Brain &amp; engine</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">Who runs the agent's inference, and who pays for its tokens.</p>
+            </div>
+            <div>
+              <p class="max-w-2xl leading-relaxed text-stone-600 dark:text-stone-300">
+                The agent part of a product needs a <strong class="font-semibold text-stone-900 dark:text-white">brain</strong> (LLM inference) and an <strong class="font-semibold text-stone-900 dark:text-white">engine</strong> (the tokens that inference consumes).
+                In cloud SaaS the vendor supplies both and bills them back as subscriptions. AOA hands both to the agent the user already has; the service provides the interface and the specification, and keeps the rest of its stack.
+              </p>
+
+              <div class="mt-10 grid border-y border-stone-300 md:grid-cols-3 dark:border-stone-700">
+                <div class="py-6 md:pr-6">
+                  <p class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Service</p>
+                  <h3 class="mt-2 font-serif text-lg font-bold">Interface &amp; spec</h3>
+                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
+                    <li>A web workbench, an API, or both</li>
+                    <li>Specifications at URLs: guide, schemas, skill</li>
+                    <li>Validates what the agent returns</li>
+                  </ul>
+                  <p class="mt-4 font-mono text-[11px] text-stone-500">Doesn't run or pay for the agent</p>
+                </div>
+                <div class="border-t border-stone-200 py-6 md:border-t-0 md:border-l md:px-6 dark:border-stone-800">
+                  <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Brain</p>
+                  <h3 class="mt-2 font-serif text-lg font-bold">LLM inference</h3>
+                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
+                    <li>Understands the request, plans the steps</li>
+                    <li>Writes files, calls local tools (FFmpeg, Playwright, TTS)</li>
+                    <li>Runs in the user's agent: Claude Code, Codex, Cursor, Pi…</li>
+                  </ul>
+                  <p class="mt-4 font-mono text-[11px] text-stone-500">The model the user chose</p>
+                </div>
+                <div class="border-t border-stone-200 py-6 md:border-t-0 md:border-l md:pl-6 dark:border-stone-800">
+                  <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Engine</p>
+                  <h3 class="mt-2 font-serif text-lg font-bold">Tokens</h3>
+                  <ul class="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-400">
+                    <li>Supplied by the user</li>
+                    <li>Their agent plan's quota, or local hardware</li>
+                    <li>Near-zero marginal cost for the service</li>
+                  </ul>
+                  <p class="mt-4 font-mono text-[11px] text-stone-500">The user's plan · or local</p>
+                </div>
+              </div>
+
+              <p class="mt-6 max-w-2xl text-sm leading-relaxed text-stone-500">
+                There is no private channel between the two: the agent reads the specification from a URL and returns results through files or the API. The frontend tools here treat a folder the user grants as the single source of truth.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 Principles -->
+      <section id="principles" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">03 / Principles</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Four principles</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">What makes an architecture AOA.</p>
+            </div>
+            <div>
+            <ol class="grid gap-x-12 sm:grid-cols-2">
+              <li class="border-t border-stone-300 py-6 dark:border-stone-700">
+                <span class="font-mono text-sm text-accent">01</span>
+                <h3 class="mt-2 font-serif text-lg font-bold">Offloaded agent work</h3>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Work that needs an agent's reasoning and tools runs in the user's agent, on the user's tokens. The service may still run a backend, databases, or lightweight models.</p>
+              </li>
+              <li class="border-t border-stone-300 py-6 dark:border-stone-700">
+                <span class="font-mono text-sm text-accent">02</span>
+                <h3 class="mt-2 font-serif text-lg font-bold">Schema as the contract</h3>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">The service and the agent coordinate through published JSON Schemas, not private APIs; everything the agent writes is validated.</p>
+              </li>
+              <li class="border-t border-stone-300 py-6 dark:border-stone-700">
+                <span class="font-mono text-sm text-accent">03</span>
+                <h3 class="mt-2 font-serif text-lg font-bold">Files or API as the bus</h3>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Frontends use a local folder as the single source of truth and detect changes by file-metadata fingerprints; backend-only services expose the same contract over an API.</p>
+              </li>
+              <li class="border-t border-stone-300 py-6 dark:border-stone-700">
+                <span class="font-mono text-sm text-accent">04</span>
+                <h3 class="mt-2 font-serif text-lg font-bold">Local-first, user-chosen boundary</h3>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Files the agent works on stay with the user. The only third party that sees that context is the LLM provider the user chose — none, with a local model.</p>
+              </li>
+            </ol>
+            <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
+              <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Move inference at your own pace · cloud to on-prem, same product</p>
+              <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Where inference runs is a setting in the user's agent; the service only knows the protocol. Teams can start on a mainstream cloud plan (Anthropic, OpenAI, or a CSP-hosted service such as AWS Bedrock, Google Vertex AI, or Azure OpenAI) to prove the workflow quickly, then point the same agent at a self-hosted model served with Ollama or vLLM once the data gets more sensitive, so nothing leaves the network. The service, the frontend, and the project format don't change along the way.</p>
+            </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 Comparison -->
+      <section id="comparison" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">04 / Comparison</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Cloud SaaS vs. AOA</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">AOA doesn't make inference free. It moves the agent's inference to a plan the user already pays for, or to their own hardware.</p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[560px] text-left text-sm">
+                <thead>
+                  <tr class="border-b border-stone-900 font-mono text-[11px] uppercase tracking-wider dark:border-stone-100">
+                    <th class="py-3 pr-4 font-medium text-stone-500"></th>
+                    <th class="py-3 pr-4 font-medium text-stone-500">Cloud GenAI SaaS</th>
+                    <th class="py-3 font-medium text-accent">AOA</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-200 dark:divide-stone-800">
+                  <tr>
+                    <td class="py-4 pr-4 font-medium">Hosting</td>
+                    <td class="py-4 pr-4 text-stone-500">GPU servers, databases, bandwidth</td>
+                    <td class="py-4 text-stone-900 dark:text-stone-100">Static files on a CDN, or a backend without the agent's load</td>
+                  </tr>
+                  <tr>
+                    <td class="py-4 pr-4 font-medium">Agent inference</td>
+                    <td class="py-4 pr-4 text-stone-500">Paid by the vendor, recovered through subscriptions</td>
+                    <td class="py-4 text-stone-900 dark:text-stone-100">The user's existing agent plan, or a local model</td>
+                  </tr>
+                  <tr>
+                    <td class="py-4 pr-4 font-medium">User files</td>
+                    <td class="py-4 pr-4 text-stone-500">Uploaded to and stored in the vendor's cloud</td>
+                    <td class="py-4 text-stone-900 dark:text-stone-100">Stay on the user's machine</td>
+                  </tr>
+                  <tr>
+                    <td class="py-4 pr-4 font-medium">Output</td>
+                    <td class="py-4 pr-4 text-stone-500">A black box; regenerate if unhappy</td>
+                    <td class="py-4 text-stone-900 dark:text-stone-100">Plain files (MD, SVG, Vue, PDF) editable at any step</td>
+                  </tr>
+                  <tr>
+                    <td class="py-4 pr-4 font-medium">Operations</td>
+                    <td class="py-4 pr-4 text-stone-500">24/7 backend monitoring</td>
+                    <td class="py-4 text-stone-900 dark:text-stone-100">Only what the service itself keeps; none for a static site</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 Modes -->
+      <section id="modes" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">05 / Modes</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Three collaboration modes</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">From a zero-setup frontend to a pure API with no frontend at all. Adopt them progressively.</p>
+            </div>
+            <div>
+              <dl class="divide-y divide-stone-200 border-y border-stone-300 dark:divide-stone-800 dark:border-stone-700">
+                <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
+                  <dt class="font-serif text-2xl font-bold text-accent">A</dt>
+                  <dt><span class="font-serif text-lg font-bold">Pure workbench</span><span class="mt-1 block font-mono text-[11px] text-stone-500">e.g. all three tools here</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">A static page reads and writes a folder the user grants, polls it for changes, and hands the user commands to paste into their agent. Nothing to install.</dd>
+                </div>
+                <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
+                  <dt class="font-serif text-2xl font-bold text-accent">B</dt>
+                  <dt><span class="font-serif text-lg font-bold">Frontend + backend</span><span class="mt-1 block font-mono text-[11px] text-stone-500">Teams, billing, live collaboration</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">A cloud control plane handles accounts, billing, and team sync. The agent operates the backend through an API or MCP server, and the backend pushes each change to the page over WebSocket, SSE, or gRPC, so the user watches the UI update step by step and can take over at any point. Inference, tokens, and private data stay on the user's side (bring your own agent).</dd>
+                </div>
+                <div class="grid gap-2 py-6 sm:grid-cols-[48px_200px_minmax(0,1fr)] sm:gap-6">
+                  <dt class="font-serif text-2xl font-bold text-accent">C</dt>
+                  <dt><span class="font-serif text-lg font-bold">Backend only</span><span class="mt-1 block font-mono text-[11px] text-stone-500">The agent operates an API</span></dt>
+                  <dd class="text-sm leading-relaxed text-stone-600 dark:text-stone-400">No web UI. The service exposes an API; the agent reads its specification and calls it directly. The service keeps data and state but doesn't run the agent. It can also ship as an MCP server.</dd>
+                </div>
+              </dl>
+              <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
+                <p class="font-mono text-[11px] uppercase tracking-wider text-accent">Why Mode B · the agent drives, the UI shows it live</p>
+                <ul class="mt-3 grid gap-x-8 gap-y-3 text-sm leading-relaxed text-stone-600 sm:grid-cols-2 dark:text-stone-400">
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">Live updates, no polling</strong>: every API call the agent makes becomes an event the backend pushes, and the page redraws at once.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">See what the agent is doing</strong>: progress, intermediate results, and errors appear in the UI, not only in a terminal.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">One shared state for user and agent</strong>: edits made in the page go back to the backend and become the agent's next input, so the two can hand work back and forth.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">The page can assign work</strong>: while the agent stays connected, the page can queue tasks on the backend for the agent to pick up, with no command to copy and paste.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">Teams stay in sync</strong>: everyone on a project sees the agent's changes at the same time.</li>
+                  <li><strong class="font-semibold text-stone-900 dark:text-white">The backend stays thin</strong>: it validates, stores state, and broadcasts events; inference and tokens remain with the user's agent.</li>
+                </ul>
+              </div>
+              <div class="mt-6 rounded-md border border-stone-300 p-5 dark:border-stone-700">
+                <p class="font-mono text-[11px] uppercase tracking-wider text-accent">In every mode · a specification entry point</p>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+                  The agent first needs the specification, and the entry point is usually a URL: a guide page, an OpenAPI document, or an index.
+                  This platform publishes a central index at <a href="./api/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">/api/index.json</a>, with dedicated endpoints for <a href="./api/story/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Story Video Studio</a>, <a href="./api/product/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Product Video Studio</a> and <a href="./api/slide/index.json" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Slide Studio</a>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 Limitations -->
+      <section id="tradeoffs" class="scroll-mt-14 border-b border-stone-200 dark:border-stone-800">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">06 / Limitations</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Limitations &amp; trade-offs</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">What to evaluate before adopting AOA. The first two depend on the user's environment; the last two must be handled in product design.</p>
+            </div>
+            <ul class="grid gap-x-12 sm:grid-cols-2">
+              <li class="border-t border-stone-300 py-5 dark:border-stone-700">
+                <h3 class="font-semibold">Browser support (frontend modes)</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Folder access needs the File System Access API: desktop Chrome and Edge today. Brave disables it by default; Firefox and Safari don't support it.</p>
+              </li>
+              <li class="border-t border-stone-300 py-5 dark:border-stone-700">
+                <h3 class="font-semibold">Users bring their own agent</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Users need a working agent setup and pay for their agent plan or local model themselves. <a href="./docs/setup.html" class="text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent dark:text-stone-100">Setup guide</a></p>
+              </li>
+              <li class="border-t border-stone-300 py-5 dark:border-stone-700">
+                <h3 class="font-semibold">Agents are non-deterministic</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">Agent output must be validated against the schema, with retry and repair paths.</p>
+              </li>
+              <li class="border-t border-stone-300 py-5 dark:border-stone-700">
+                <h3 class="font-semibold">The page can't wake the agent (Mode A)</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">The user starts the agent and pastes the command the page prepares; the page only reflects what the agent writes. In Mode B, a connected agent can pick up tasks the page queues on the backend.</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 07 Read -->
+      <section id="docs" class="scroll-mt-14">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div class="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <p class="font-mono text-xs text-accent">07 / Read</p>
+              <h2 class="mt-3 font-serif text-2xl font-bold sm:text-3xl">Further reading</h2>
+              <p class="mt-3 text-sm leading-relaxed text-stone-500">The full specification, an agent setup guide, an introductory post, and a paper proposal.</p>
+            </div>
+            <ul class="divide-y divide-stone-200 border-y border-stone-300 dark:divide-stone-800 dark:border-stone-700">
+              <li>
+                <a href="./docs/setup.html" class="group grid gap-1 py-5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6">
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Setup guide</span>
+                  <span>
+                    <span class="font-serif text-lg font-bold group-hover:text-accent-ink">Set up your agent</span>
+                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">Install and set up Claude or another coding agent before using the workbenches.</span>
+                  </span>
+                  <span class="hidden text-stone-400 group-hover:text-accent sm:inline" aria-hidden="true">→</span>
+                </a>
+              </li>
+              <li>
+                <a href="./docs/architecture.html" class="group grid gap-1 py-5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6">
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Specification</span>
+                  <span>
+                    <span class="font-serif text-lg font-bold group-hover:text-accent-ink">Architecture specification</span>
+                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">Principles, collaboration modes, security, and limitations.</span>
+                  </span>
+                  <span class="hidden text-stone-400 group-hover:text-accent sm:inline" aria-hidden="true">→</span>
+                </a>
+              </li>
+              <li>
+                <a href="./docs/architecture.zh-TW.html" class="group grid gap-1 py-5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6" hreflang="zh-Hant">
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">規格 · 繁體中文</span>
+                  <span lang="zh-Hant">
+                    <span class="font-serif text-lg font-bold group-hover:text-accent-ink">架構規格</span>
+                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">規格的繁體中文版。</span>
+                  </span>
+                  <span class="hidden text-stone-400 group-hover:text-accent sm:inline" aria-hidden="true">→</span>
+                </a>
+              </li>
+              <li>
+                <a href="./posts/2026-10-introducing-aofa.html" class="group grid gap-1 py-5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6">
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Post</span>
+                  <span>
+                    <span class="font-serif text-lg font-bold group-hover:text-accent-ink">Beyond SaaS: Introducing AOA</span>
+                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">Why offloading the agent works, and the business and technical trade-offs.</span>
+                  </span>
+                  <span class="hidden text-stone-400 group-hover:text-accent sm:inline" aria-hidden="true">→</span>
+                </a>
+              </li>
+              <li>
+                <a href="./paper/proposal.html" class="group grid gap-1 py-5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6">
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Paper</span>
+                  <span>
+                    <span class="font-serif text-lg font-bold group-hover:text-accent-ink">Paper proposal (draft)</span>
+                    <span class="mt-1 block text-sm text-stone-600 dark:text-stone-400">A formal definition of AOA and its evaluation plan.</span>
+                  </span>
+                  <span class="hidden text-stone-400 group-hover:text-accent sm:inline" aria-hidden="true">→</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-stone-300 dark:border-stone-700">
+      <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 text-xs text-stone-500 sm:flex-row sm:items-baseline sm:justify-between sm:px-6">
+        <div class="space-y-1">
+          <p>
+            © 2026 tigernaxo · Code under <a href="./LICENSE.txt" class="underline underline-offset-4 hover:text-stone-900 dark:hover:text-white">MIT</a>, articles and specifications under
+            <a href="./LICENSE-docs.txt" class="underline underline-offset-4 hover:text-stone-900 dark:hover:text-white">CC BY 4.0</a>
+          </p>
+          <p class="font-mono">This site: static · no backend · local-first</p>
+        </div>
+        <nav class="flex gap-5">
+          <a href="./slide/" class="hover:text-stone-900 dark:hover:text-white">Slide Studio</a>
+          <a href="./story/" class="hover:text-stone-900 dark:hover:text-white">Story Video Studio</a>
+          <a href="./product/" class="hover:text-stone-900 dark:hover:text-white">Product Video Studio</a>
+          <a href="./zh-TW/" hreflang="zh-Hant" lang="zh-Hant" data-set-lang="zh-Hant" class="hover:text-stone-900 dark:hover:text-white">繁體中文</a>
+          <a href="https://github.com/tigernaxojr/aoa" class="hover:text-stone-900 dark:hover:text-white">GitHub</a>
+        </nav>
+      </div>
+    </footer>
+
+  </body>
+</html>

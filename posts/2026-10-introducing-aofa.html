@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Beyond SaaS: Introducing AOA (Agent-Offloaded Architecture) · AOA</title>
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="description" content="How to build zero-backend, privacy-first AI production platforms with static frontends and the coding agents your users already have." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="canonical" href="https://aoa.tigernaxo.com/posts/2026-10-introducing-aofa.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="AOA" />
+    <meta property="og:title" content="Beyond SaaS: Introducing AOA (Agent-Offloaded Architecture)" />
+    <meta property="og:description" content="How to build zero-backend, privacy-first AI production platforms with static frontends and the coding agents your users already have." />
+    <meta property="og:url" content="https://aoa.tigernaxo.com/posts/2026-10-introducing-aofa.html" />
+    <meta name="twitter:card" content="summary" />
+    <script type="module" crossorigin src="/assets/article-DIBbuzMx.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/i18n-JAbOdSLi.js">
+    <link rel="stylesheet" crossorigin href="/assets/i18n-BeZAC68x.css">
+  </head>
+  <body class="bg-paper text-stone-900 antialiased selection:bg-accent selection:text-white dark:text-stone-100">
+    <div id="reading-progress" class="fixed inset-x-0 top-0 z-40 h-0.5 origin-left scale-x-0 bg-accent"></div>
+    <!-- Header in the article's language (src/articles.ts readerHeader). -->
+    <div id="reader-header"><header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="/" class="flex items-baseline gap-3">
+          <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+          <span class="hidden font-mono text-[11px] text-stone-500 md:inline">Agent-Offloaded Architecture</span>
+        </a>
+        <nav class="flex items-center gap-5 text-[13px] text-stone-600 dark:text-stone-400">
+          <a href="/#workbenches" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Tools</a>
+          <a href="/#architecture" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Architecture</a>
+          <a href="/#docs" class="hidden hover:text-stone-900 sm:inline dark:hover:text-white">Read</a>
+          <a href="https://github.com/tigernaxojr/aoa" target="_blank" rel="noopener noreferrer" class="hidden font-mono text-xs text-stone-900 underline decoration-stone-300 underline-offset-4 hover:decoration-accent sm:inline dark:text-stone-100 dark:decoration-stone-600">GitHub ↗</a>
+          <div class="flex items-center gap-2" role="group" aria-label="Language / 語言">
+            <svg class="h-4 w-4 text-stone-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
+            <div class="flex rounded-md border border-stone-300 bg-white/60 p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-900/60"><span class="rounded-[3px] px-2.5 py-1 transition-colors bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900" aria-current="true" lang="en">EN</span><a href="/zh-TW/" hreflang="zh-Hant" lang="zh-Hant" data-set-lang="zh-Hant" class="rounded-[3px] px-2.5 py-1 transition-colors text-stone-600 hover:bg-stone-200 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white">中文</a></div>
+          </div>
+        </nav>
+      </div>
+    </header></div>
+
+    <!-- Pre-rendered at build time (vite.config.ts); filled in the browser during development. -->
+    <main id="article-root">
+<div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-14">
+  <article class="min-w-0">
+    <nav class="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400" aria-label="breadcrumb">
+      <a href="/" class="hover:text-stone-900 dark:hover:text-white">AOA</a><span aria-hidden="true">/</span>
+      <a href="/#docs" class="hover:text-stone-900 dark:hover:text-white">Read</a><span aria-hidden="true">/</span>
+      <span class="text-stone-700 dark:text-stone-300">Blog</span>
+    </nav>
+
+    <header class="mt-6 border-b border-stone-200 pb-8 dark:border-stone-800">
+      <p class="font-mono text-xs uppercase tracking-[0.2em] text-accent">Blog</p>
+      <h1 class="mt-4 font-serif text-3xl font-bold leading-tight tracking-tight text-stone-900 sm:text-[2.6rem] dark:text-white">Beyond SaaS: Introducing AOA (Agent-Offloaded Architecture)</h1>
+      <p class="mt-4 text-lg leading-relaxed text-stone-600 dark:text-stone-300">How to build zero-backend, privacy-first AI production platforms with static frontends and the coding agents your users already have.</p>
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-stone-500 dark:text-stone-400">5 min read</span>
+        <span class="text-stone-300 dark:text-stone-700" aria-hidden="true">·</span>
+        
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="2026-10-introducing-aofa.md">Markdown</a>
+        <a class="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-transparent px-2.5 py-1 font-mono text-xs font-medium text-stone-600 hover:border-stone-500 hover:text-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:text-white transition-colors" href="https://github.com/tigernaxojr/aoa/blob/main/posts/2026-10-introducing-aofa.md" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </header>
+
+    <details class="mt-6 rounded-md border border-stone-200 bg-white p-4 lg:hidden dark:border-stone-800 dark:bg-stone-900"><summary class="cursor-pointer text-sm font-semibold">Contents</summary><ul class="mt-3 text-sm"><li><a href="#the-ai-compute-tax-problem" data-toc="the-ai-compute-tax-problem" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The AI Compute Tax Problem</a></li><li><a href="#enter-aoa-the-brain-and-the-engine" data-toc="enter-aoa-the-brain-and-the-engine" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Enter AOA: The Brain and the Engine</a></li><li><a href="#how-it-works-in-practice" data-toc="how-it-works-in-practice" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">How It Works in Practice</a></li><li><a href="#1-zero-backend-presentation" data-toc="1-zero-backend-presentation" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">1. Zero-Backend Presentation</a></li><li><a href="#2-file-system-access-as-the-bus" data-toc="2-file-system-access-as-the-bus" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2. File System Access as the Bus</a></li><li><a href="#3-lightweight-fingerprint-polling" data-toc="3-lightweight-fingerprint-polling" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3. Lightweight Fingerprint Polling</a></li><li><a href="#4-schema-as-the-contract" data-toc="4-schema-as-the-contract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4. Schema as the Contract</a></li><li><a href="#does-aoa-require-a-pure-static-frontend-not-at-all" data-toc="does-aoa-require-a-pure-static-frontend-not-at-all" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Does AOA Require a Pure Static Frontend? Not At All!</a></li><li><a href="#the-decoupled-control-plane-paradigm" data-toc="the-decoupled-control-plane-paradigm" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The &quot;Decoupled Control Plane&quot; Paradigm</a></li><li><a href="#why-aoa-matters" data-toc="why-aoa-matters" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Why AOA Matters</a></li><li><a href="#the-honest-trade-offs" data-toc="the-honest-trade-offs" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The Honest Trade-offs</a></li><li><a href="#read-the-full-specification" data-toc="read-the-full-specification" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Read the Full Specification</a></li></ul></details>
+
+    <div class="article-body mt-8"><hr>
+<h2 id="the-ai-compute-tax-problem"><a class="heading-anchor" href="#the-ai-compute-tax-problem" aria-hidden="true" tabindex="-1">#</a>The AI Compute Tax Problem</h2>
+<p>If you&#39;ve built or used generative AI applications recently, you know the formula:</p>
+<ol>
+<li>User types a prompt into a slick web interface.</li>
+<li>A cloud server spins up expensive GPUs to generate media/code.</li>
+<li>The platform charges the user a recurring $20–$50/month subscription (or token fees) to subsidize massive cloud bills.</li>
+<li>The user&#39;s code, voice, or sensitive assets live in someone else&#39;s cloud.</li>
+</ol>
+<p>We call this the <strong>&quot;AI Compute Tax&quot;</strong>. But look around your development machine:</p>
+<ul>
+<li>You have a machine that easily handles scraping, transcoding, and rendering — and if it&#39;s beefy enough, even local LLM / TTS models.</li>
+<li>You have battle-tested CLI tools: <code>ffmpeg</code>, <code>playwright</code>, local TTS engines.</li>
+<li>And increasingly, you have an AI <strong>Coding Agent</strong> (Claude Code, Codex, Cursor, Cline, Aider, Pi) with direct filesystem access — one you&#39;re already paying for.</li>
+</ul>
+<p><strong>Why are we still running cloud backends for generative tasks when the user already has a world-class agent wired into their own machine?</strong></p>
+<hr>
+<h2 id="enter-aoa-the-brain-and-the-engine"><a class="heading-anchor" href="#enter-aoa-the-brain-and-the-engine" aria-hidden="true" tabindex="-1">#</a>Enter AOA: The Brain and the Engine</h2>
+<p>Today, we want to formalize a new architectural paradigm: <strong>AOA (Agent-Offloaded Architecture)</strong>.</p>
+<p>The core idea is simple. Every AI product needs two things:</p>
+<blockquote>
+<p><strong>A brain — LLM inference. And an engine — the tokens that inference consumes.</strong></p>
+</blockquote>
+<p>Cloud SaaS makes the vendor supply both and bill them back as subscriptions. In AOA, both belong to the agent the user already has. The application doesn&#39;t provide compute, API keys, or databases. It provides:</p>
+<ol>
+<li><strong>A Living Protocol</strong>: Strict JSON Schemas and workflow definitions.</li>
+<li><strong>A Zero-Backend Workbench</strong>: A purely static web UI (hosted for pennies or completely free on GitHub Pages).</li>
+<li><strong>A State Visualizer</strong>: A visual lens that looks directly into the local directory via the browser&#39;s <strong>File System Access API</strong>.</li>
+</ol>
+<p>The heavy lifting—reasoning, web analysis, prompt iteration, narration generation, asset synthesis, and video rendering—is <strong>offloaded to the user&#39;s own Coding Agent</strong>:</p>
+<ul>
+<li><strong>Execution</strong> (scraping, transcoding, compositing, rendering) runs on the user&#39;s machine.</li>
+<li><strong>Inference</strong> runs wherever the user&#39;s agent runs it: by default on their agent provider&#39;s cloud, billed to the plan they already have — or, if they choose, fully offline on self-hosted models (Pi-style agents pointed at Ollama / llama.cpp, Piper / Kokoro for TTS).</li>
+</ul>
+<p>Either way, the app developer pays nothing for inference, and the user&#39;s files never pass through the app developer&#39;s servers.</p>
+<p>The application doesn&#39;t even need a frontend. A service can expose only an API, publish its specification at a URL (OpenAPI, a guide, or a skill), and let the user&#39;s agent call it directly. Whatever the shape, the agent&#39;s first step is the same: fetch the specification from a URL.</p>
+<hr>
+<h2 id="how-it-works-in-practice"><a class="heading-anchor" href="#how-it-works-in-practice" aria-hidden="true" tabindex="-1">#</a>How It Works in Practice</h2>
+<p>Here is the life of an AOA application:</p>
+<pre><code>[ Static Web UI (GitHub Pages) ]
+      │
+      │ 1. Pick Folder (File System Access API)
+      │ 2. Write initial parameters (video.start.json)
+      │
+      ▼
+[ Local Filesystem Directory (SSOT) ]
+      ▲
+      │ 3. Agent reads task instructions &amp; protocol schemas
+      │ 4. Agent runs the pipeline (e.g., Playwright + TTS + FFmpeg)
+      │ 5. Agent updates activity status (video.activity.json)
+      │
+[ Coding Agent on the user&#39;s machine (e.g. Claude Code) ]
+      │
+      └── LLM inference: agent provider&#39;s cloud (default) or local model (optional)
+</code></pre>
+<h3 id="1-zero-backend-presentation"><a class="heading-anchor" href="#1-zero-backend-presentation" aria-hidden="true" tabindex="-1">#</a>1. Zero-Backend Presentation</h3>
+<p>The frontend is pure HTML/CSS/Vue/React. It contains zero LLM weights, zero WebGPU bloat, and zero backend servers. It&#39;s served straight from a CDN — no server cold starts.</p>
+<h3 id="2-file-system-access-as-the-bus"><a class="heading-anchor" href="#2-file-system-access-as-the-bus" aria-hidden="true" tabindex="-1">#</a>2. File System Access as the Bus</h3>
+<p>Using <code>window.showDirectoryPicker()</code>, the user grants the static web app access to an empty working directory. From that point forward, the browser communicates with the agent <strong>not through cloud HTTP requests, but through the local filesystem</strong>.</p>
+<h3 id="3-lightweight-fingerprint-polling"><a class="heading-anchor" href="#3-lightweight-fingerprint-polling" aria-hidden="true" tabindex="-1">#</a>3. Lightweight Fingerprint Polling</h3>
+<p>How does the static frontend know when the agent finishes generating a scene or compiling a video?
+Every 2 seconds, the UI computes a cheap fingerprint from key files&#39; timestamps (<code>lastModified</code>) and sizes — no file contents are read. When the agent produces an asset or writes an updated <code>scene.json</code>, the fingerprint changes and the UI reloads reactively.</p>
+<h3 id="4-schema-as-the-contract"><a class="heading-anchor" href="#4-schema-as-the-contract" aria-hidden="true" tabindex="-1">#</a>4. Schema as the Contract</h3>
+<p>There is no ambiguity between the UI and the Agent. A strict <code>protocol.schema.json</code> dictates valid state transitions, mandatory fields, and asset formats. Both the frontend validator and the Agent conform to the same contract — and since agents are not deterministic, the frontend validates everything it reads back.</p>
+<hr>
+<h2 id="does-aoa-require-a-pure-static-frontend-not-at-all"><a class="heading-anchor" href="#does-aoa-require-a-pure-static-frontend-not-at-all" aria-hidden="true" tabindex="-1">#</a>Does AOA Require a Pure Static Frontend? Not At All!</h2>
+<p>While our reference implementation is a zero-backend static SPA, <strong>AOA applies just as powerfully to applications with real backends</strong>:</p>
+<h3 id="the-decoupled-control-plane-paradigm"><a class="heading-anchor" href="#the-decoupled-control-plane-paradigm" aria-hidden="true" tabindex="-1">#</a>The &quot;Decoupled Control Plane&quot; Paradigm</h3>
+<p>In traditional enterprise SaaS, the backend handles both <strong>Control</strong> (Auth, Billing, Team Sync) and <strong>Compute</strong> (Inference, Rendering, Heavy ETL). This is why scaling AI apps is financially exhausting.</p>
+<p>Under <strong>Backend-Enabled AOA</strong>:</p>
+<ul>
+<li><strong>The Cloud Backend</strong> serves as a thin Control Plane: authentication, team permissions, organization templates, and billing.</li>
+<li><strong>The User&#39;s Agent</strong> handles the Compute Plane: private source code, internal databases, and heavy media processing stay on the employee&#39;s machine, and inference goes to the enterprise&#39;s chosen LLM provider (e.g., under an enterprise data agreement) or an in-house model.</li>
+<li>Only lightweight metadata, template definitions, and final sanitized exports flow to the cloud backend.</li>
+</ul>
+<p>This gives SaaS builders <strong>near-zero marginal compute costs</strong> and gives enterprises <strong>control over their own data boundary (BYOA - Bring Your Own Agent)</strong>.</p>
+<hr>
+<h2 id="why-aoa-matters"><a class="heading-anchor" href="#why-aoa-matters" aria-hidden="true" tabindex="-1">#</a>Why AOA Matters</h2>
+<ol>
+<li><strong>For Indie Hackers &amp; Creators</strong>:<ul>
+<li>Zero infrastructure overhead. You can launch complex generative AI tools that scale to 100,000 users without paying a single dollar in cloud GPU bills — each user brings their own agent plan.</li>
+</ul>
+</li>
+<li><strong>For Enterprises &amp; Privacy-Conscious Users</strong>:<ul>
+<li>Data sovereignty by choice. Proprietary source code, company secrets, and unreleased designs never pass through the app vendor&#39;s servers. The only third party that sees context is the LLM provider <em>you</em> chose — and with local models, there is none.</li>
+</ul>
+</li>
+<li><strong>For Developers</strong>:<ul>
+<li>Inspectable and hackable. Because all intermediate assets (scripts, JSON states, partial audio files) sit in the user&#39;s project folder, anyone can modify or debug any frame with standard tools.</li>
+</ul>
+</li>
+</ol>
+<h3 id="the-honest-trade-offs"><a class="heading-anchor" href="#the-honest-trade-offs" aria-hidden="true" tabindex="-1">#</a>The Honest Trade-offs</h3>
+<ul>
+<li>File System Access API (<code>showDirectoryPicker</code>) currently works only in desktop Chrome / Edge and other Chromium browsers; Brave disables it by default, and Firefox and Safari don&#39;t support it.</li>
+<li>Users need a working agent setup — and pay for it themselves.</li>
+<li>In pure static mode, the user still triggers the agent by pasting a command into their agent session; the page can&#39;t wake the agent on its own.</li>
+</ul>
+<hr>
+<h2 id="read-the-full-specification"><a class="heading-anchor" href="#read-the-full-specification" aria-hidden="true" tabindex="-1">#</a>Read the Full Specification</h2>
+<p>We have detailed the complete architectural blueprints, communication patterns, and security considerations.</p>
+<p>Check out the full documentation at:</p>
+<ul>
+<li>Architecture Whitepaper: <a href="../docs/architecture.html">docs/architecture.md</a></li>
+<li>Reference Implementation: <a href="https://github.com/tigernaxojr/index-url-director">Agent Video Producer</a></li>
+</ul>
+<p>We invite the community to explore, implement, and challenge the AOA pattern. The future of AI software is not in centralizing compute—it is in unleashing the agent your users already have.</p>
+</div>
+
+    <footer class="mt-16 border-t border-stone-200 pt-8 dark:border-stone-800">
+      <p class="text-xs text-stone-500 dark:text-stone-400">© 2026 tigernaxo · Licensed under <a class="underline hover:text-stone-900" href="/LICENSE-docs.txt">CC BY 4.0</a></p>
+      <h2 class="mt-10 text-sm font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Read more</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2"><a href="/docs/architecture.zh-TW.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">架構規格</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Agent-Offloaded Architecture</span></a><a href="/docs/architecture.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Specification</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Agent-Offloaded Architecture</span></a><a href="/docs/setup.zh-TW.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">設定說明</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >準備你的 Agent</span></a><a href="/docs/setup.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Setup guide</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >Set Up Your Agent</span></a><a href="/paper/proposal.html" class="rounded-md border border-stone-300 p-5 hover:border-stone-500 transition-colors dark:border-stone-700 dark:hover:border-stone-500"><span class="font-mono text-[11px] uppercase tracking-wider text-stone-500">Paper proposal</span><span class="mt-2 block font-serif text-base font-bold text-stone-900 dark:text-white" >AOA: Decoupling Presentation and Inference for Local-First Generative Workflows via Agent-Offloaded Architecture</span></a></div>
+    </footer>
+  </article>
+
+  <aside class="hidden lg:block"><div class="sticky top-24"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">On this page</p><ul class="mt-3 max-h-[calc(100vh-8rem)] overflow-y-auto text-sm"><li><a href="#the-ai-compute-tax-problem" data-toc="the-ai-compute-tax-problem" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The AI Compute Tax Problem</a></li><li><a href="#enter-aoa-the-brain-and-the-engine" data-toc="enter-aoa-the-brain-and-the-engine" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Enter AOA: The Brain and the Engine</a></li><li><a href="#how-it-works-in-practice" data-toc="how-it-works-in-practice" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">How It Works in Practice</a></li><li><a href="#1-zero-backend-presentation" data-toc="1-zero-backend-presentation" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">1. Zero-Backend Presentation</a></li><li><a href="#2-file-system-access-as-the-bus" data-toc="2-file-system-access-as-the-bus" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">2. File System Access as the Bus</a></li><li><a href="#3-lightweight-fingerprint-polling" data-toc="3-lightweight-fingerprint-polling" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">3. Lightweight Fingerprint Polling</a></li><li><a href="#4-schema-as-the-contract" data-toc="4-schema-as-the-contract" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">4. Schema as the Contract</a></li><li><a href="#does-aoa-require-a-pure-static-frontend-not-at-all" data-toc="does-aoa-require-a-pure-static-frontend-not-at-all" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Does AOA Require a Pure Static Frontend? Not At All!</a></li><li><a href="#the-decoupled-control-plane-paradigm" data-toc="the-decoupled-control-plane-paradigm" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The &quot;Decoupled Control Plane&quot; Paradigm</a></li><li><a href="#why-aoa-matters" data-toc="why-aoa-matters" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Why AOA Matters</a></li><li><a href="#the-honest-trade-offs" data-toc="the-honest-trade-offs" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-6 text-[13px] text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">The Honest Trade-offs</a></li><li><a href="#read-the-full-specification" data-toc="read-the-full-specification" class="block border-l border-stone-200 dark:border-stone-800 py-1 pl-3 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors">Read the Full Specification</a></li></ul></div></aside>
+</div></main>
+
+  </body>
+</html>

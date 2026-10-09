@@ -1,0 +1,146 @@
+{
+  "name": "slidev-deck",
+  "specVersion": "1.0.0",
+  "zip": {
+    "url": "https://aoa.tigernaxo.com/api/slide/templates/slidev-deck.zip",
+    "sha256": "920a9069719e31a29ebd6ad2dba7ff2f12d648c154ceb0e898349bd10b789b22",
+    "size": 30079
+  },
+  "files": [
+    {
+      "path": ".claude/commands/slide-draft.md",
+      "sha256": "b0e55e7f0dfb73257e7ba69877c76ebbd415dff9420612c1fef9f0a27a0288fe",
+      "size": 558
+    },
+    {
+      "path": ".claude/commands/slide-export.md",
+      "sha256": "3ad4810999099df2957c1181247afec71a29fad04c4e727341874a5c800140ef",
+      "size": 591
+    },
+    {
+      "path": ".claude/commands/slide-outline.md",
+      "sha256": "86f9a99de6e75d2bbf386e9daf417cf090fc73991d4f120931cc61a9ce9085fa",
+      "size": 742
+    },
+    {
+      "path": ".claude/commands/slide-visual.md",
+      "sha256": "f38dfb6ff96ddb91b2bcf9f4f8219a1d80067451b77c25b018d052c3456afe1e",
+      "size": 594
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "657d88550c12778469a94bc97308849afe56dec29dad8d7f0227635bc5738213",
+      "size": 72
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "eb848a46dbab25c4ba308fb23f5373892bdd570cb5fb66e5043102d3cb0f58e9",
+      "size": 6827
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
+      "size": 11
+    },
+    {
+      "path": "README.md",
+      "sha256": "c84992cbae02534f1a74517e5eed20ddfd005cba5afd19cd2543574d293ad459",
+      "size": 1226
+    },
+    {
+      "path": "components/RoughSketch.vue",
+      "sha256": "a3941e276f6a91796348980e3646b9b5afe8eba3289e12d0f58e202ea3d7fef2",
+      "size": 4170
+    },
+    {
+      "path": "components/SvgDiagram.vue",
+      "sha256": "6a4ca9f2cec765c6d4f7f763e7a771eb798de9013602b8df5b9a0e52f511b220",
+      "size": 1747
+    },
+    {
+      "path": "components/ThreeGlobe.vue",
+      "sha256": "87b3e8b1a0e089b171c3b57440265428d0f0fb77b9c7200969e337dde0e4d4df",
+      "size": 1670
+    },
+    {
+      "path": "examples/showcase.md",
+      "sha256": "bad54db94bb7c9bb4a6f12475beb043bd97c1cfb83c062e22194187cf942179c",
+      "size": 3713
+    },
+    {
+      "path": "package.json",
+      "sha256": "99c71e27f638c3cde98cdb14036e9f7dee3f9d02f3c157e25548be67421371ed",
+      "size": 1006
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "11e9c34562f7f7b43a0101907304e31a96ad1e15c407cbefaf77850d8546b19b",
+      "size": 522
+    },
+    {
+      "path": "schemas/activity.schema.json",
+      "sha256": "5dec2f058c3ade73b2474a7eaf624cc612a91e2231294436e6f3023134a07aca",
+      "size": 647
+    },
+    {
+      "path": "schemas/check.schema.json",
+      "sha256": "20a7148d45705ecd7c2645a086f34ffbfa9a2d0ded31c3fa20c0fcdb79618768",
+      "size": 1714
+    },
+    {
+      "path": "schemas/project.schema.json",
+      "sha256": "9cffd24eea75fe992f01fe9886c9f6e9bcaea8625c53b6a8a7c87c1f36562ecb",
+      "size": 1528
+    },
+    {
+      "path": "schemas/workflow.json",
+      "sha256": "9b2a1d27762ec092e75a19f0b79d7b3fc9ae574142102b7043687d85d9086f16",
+      "size": 2955
+    },
+    {
+      "path": "scripts/check.mjs",
+      "sha256": "b1b510570b78a1b06bac08a1dc98af72e27b9b96fa68a9b18123de638238b5fe",
+      "size": 14452
+    },
+    {
+      "path": "scripts/lib/schema.mjs",
+      "sha256": "395313421086b4fa4b21e8222e5f0880dbcab011b8a2ae09396d6d3b6a29df19",
+      "size": 1513
+    },
+    {
+      "path": "scripts/state.mjs",
+      "sha256": "4a33e0b079881ad5598a0a3eebfef7e3f64eb1a0b50e9448783f713d268293f2",
+      "size": 3294
+    },
+    {
+      "path": "scripts/validate.mjs",
+      "sha256": "f8157ec53ad34f082795f291596d28b04f527885356f0de848c8d41ad83cfe41",
+      "size": 1197
+    },
+    {
+      "path": "setup/mermaid.ts",
+      "sha256": "fe593b69afda2d602b987a88e91fc36d5a1822e4cfaaeb9ed7bf466d532cde74",
+      "size": 3789
+    },
+    {
+      "path": "slide.project.json",
+      "sha256": "c5051e7746f7d5bd83f806cba4d86640685591f1cb8155d60dc926f5e9b1f439",
+      "size": 293
+    },
+    {
+      "path": "slides.md",
+      "sha256": "b88b19c3b8603f65cf045282854695711f7aba708d808a4f8ceca5139bef3a84",
+      "size": 505
+    },
+    {
+      "path": "uno.config.ts",
+      "sha256": "59bb56d53a74dda8e942bc7f5965074af363690dc3a30d45981ce612cad8853f",
+      "size": 491
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "e39564750a763eced2cab4af2120afcc65aa52e13f409a6a8c9a49e9b36df955",
+      "size": 1085
+    }
+  ]
+}

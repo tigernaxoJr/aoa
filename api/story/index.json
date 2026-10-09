@@ -1,0 +1,24 @@
+{
+  "specVersion": "1.0.0",
+  "siteUrl": "https://aoa.tigernaxo.com",
+  "workbench": "https://aoa.tigernaxo.com/story/",
+  "entry": "https://aoa.tigernaxo.com/api/story/agent-guide.md",
+  "workflow": "https://aoa.tigernaxo.com/api/story/workflow.json",
+  "schemas": {
+    "common": "https://aoa.tigernaxo.com/api/story/schemas/common.schema.json",
+    "project": "https://aoa.tigernaxo.com/api/story/schemas/project.schema.json",
+    "scene": "https://aoa.tigernaxo.com/api/story/schemas/scene.schema.json",
+    "activity": "https://aoa.tigernaxo.com/api/story/schemas/activity.schema.json",
+    "workflow": "https://aoa.tigernaxo.com/api/story/schemas/workflow.schema.json"
+  },
+  "prompts": {},
+  "rules": {},
+  "skill": "https://aoa.tigernaxo.com/api/story/skills/story-video.zip",
+  "skillDocs": "https://aoa.tigernaxo.com/api/story/skills/story-video/SKILL.md",
+  "template": "https://aoa.tigernaxo.com/api/story/templates/story-video.zip",
+  "templateManifest": "https://aoa.tigernaxo.com/api/story/templates/story-video/manifest.json",
+  "checksums": {
+    "skill": "1b41433f1b390c01a822655e2be8dc579a92e6b30a6d157519550cc218221e4f",
+    "template": "cdc1f371696948eed625bfccd28eb889c9edb693c3801143f7327bf3d693fa35"
+  }
+}
