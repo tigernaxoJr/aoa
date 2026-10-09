@@ -8,7 +8,8 @@
 
 | 檔案 | 說明 |
 |---|---|
-| `slides.md` | Slidev 主簡報，以單獨一行的 `---` 分頁；簡報內容的唯一來源。範本附的是語法示範（介紹 AOA），撰寫時整份換成使用者要的內容 |
+| `slides.md` | Slidev 主簡報，以單獨一行的 `---` 分頁；簡報內容的唯一來源。範本只附一頁佔位封面，初始化時換成使用者的主題，大綱確認後整份改寫 |
+| `examples/showcase.md` | 語法示範（版型、v-click、SVG、Mermaid、Three.js、手繪風組件），只供參考，不會被放映或匯出；不要沿用它的主題（介紹 AOA）或文字 |
 | `slide.project.json` | 專案設定與狀態（格式見 `schemas/project.schema.json`） |
 | `slide.activity.json` | 即時進度，網頁工作台會顯示（格式見 `schemas/activity.schema.json`） |
 | `slide.start.json` | 網頁表單寫入的需求（只在網頁準備的資料夾中出現；唯讀）：`content` 是使用者想講的內容，空的就先在對話中問清楚再規劃大綱 |

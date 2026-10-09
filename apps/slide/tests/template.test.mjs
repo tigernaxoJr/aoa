@@ -33,6 +33,7 @@ test('template: has all required files and components', () => {
   const required = [
     'package.json',
     'slides.md',
+    'examples/showcase.md',
     'slide.project.json',
     'AGENTS.md',
     'README.md',
@@ -60,17 +61,20 @@ test('template: has all required files and components', () => {
   assert.ok(pkg.scripts['check'], 'package.json must have check script')
 })
 
-test('template: slides.md parses cleanly and includes 3D and SVG', () => {
-  const content = readFileSync(join(templateDir, 'slides.md'), 'utf8')
-  const deck = parseSlides(content)
+test('template: slides.md is a placeholder cover, not the AOA showcase', () => {
+  const deck = parseSlides(readFileSync(join(templateDir, 'slides.md'), 'utf8'))
+  assert.equal(deck.slides.length, 1, 'the Agent writes the deck from the request; the template only has a cover')
+  assert.equal(deck.slides[0].title, '新簡報專案')
+  assert.equal(deck.frontmatter.routerMode, 'hash')
+})
+
+test('template: examples/showcase.md parses cleanly and includes 3D, SVG and Mermaid', () => {
+  const deck = parseSlides(readFileSync(join(templateDir, 'examples/showcase.md'), 'utf8'))
 
   assert.ok(deck.slides.length >= 4, `Expected at least 4 slides, got ${deck.slides.length}`)
-  const hasSvg = deck.slides.some((s) => s.visualTypes.includes('SVG'))
-  const hasThree = deck.slides.some((s) => s.visualTypes.includes('Three.js / 3D'))
-
-  assert.ok(hasSvg, 'Template slides.md should include an SVG diagram')
-  assert.ok(hasThree, 'Template slides.md should include Three.js globe')
-  assert.ok(deck.slides.some((s) => s.visualTypes.includes('Mermaid')), 'Template slides.md should include a Mermaid diagram')
+  assert.ok(deck.slides.some((s) => s.visualTypes.includes('SVG')), 'showcase should include an SVG diagram')
+  assert.ok(deck.slides.some((s) => s.visualTypes.includes('Three.js / 3D')), 'showcase should include Three.js globe')
+  assert.ok(deck.slides.some((s) => s.visualTypes.includes('Mermaid')), 'showcase should include a Mermaid diagram')
 })
 
 test('published API: absolute URLs, no {{SITE_URL}} left, schemas and commands in the template', () => {
@@ -84,7 +88,7 @@ test('published API: absolute URLs, no {{SITE_URL}} left, schemas and commands i
     assert.ok(paths.includes(p), `template zip must include ${p}`)
   }
   assert.ok(!paths.includes('.claude/commands/slide-init.md'), 'init runs before the project exists')
-  for (const file of ['README.md', 'AGENTS.md', 'slides.md']) {
+  for (const file of ['README.md', 'AGENTS.md', 'slides.md', 'examples/showcase.md']) {
     assert.ok(!readFileSync(join(project, file), 'utf8').includes('{{SITE_URL}}'), `${file} still has {{SITE_URL}}`)
   }
   const skill = readFileSync(join(out, 'api/slide/skills/slidev-deck/SKILL.md'), 'utf8')

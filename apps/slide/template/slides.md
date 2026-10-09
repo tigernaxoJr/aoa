@@ -1,6 +1,6 @@
 ---
 theme: default
-title: Agent-Offloaded Architecture
+title: 新簡報專案
 class: text-center
 transition: slide-left
 aspectRatio: '16/9'
@@ -8,116 +8,9 @@ aspectRatio: '16/9'
 routerMode: hash
 ---
 
-# Agent Studio Slidev
-
-基於 **AOA** 架構的新一代簡報生成平台
-
-<div class="pt-8">
-  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">
-    Slidev + Three.js + SVG + Coding Agent
-  </span>
-</div>
+# 新簡報專案
 
 <!--
-講者備忘：歡迎大家參加本次簡報，今天將展示如何透過 Coding Agent 結合 Slidev 與前端視覺能力快速生成簡報。
+佔位封面：初始化時把上方 title 與標題換成使用者的簡報主題；大綱確認後整份改寫。
+語法、版型與組件（SVG、Mermaid、Three.js、手繪風）的寫法見 examples/showcase.md，它不會被放映或匯出。
 -->
-
----
-layout: two-cols
----
-
-# 核心優勢
-
-運用 Coding Agent 的前端視覺三劍客
-
-- 🎨 **HTML + Tailwind CSS**
-  - 不受傳統模板束縛，自由排版 Bento Grid
-- 📐 **原生向量 SVG**
-  - 複雜架構圖直接以向量繪製，放大不失真
-- 🌐 **Three.js 3D 視覺**
-  - 封裝為 Vue 組件，一行標籤嵌入立體動效
-- 📄 **無損向量 PDF 輸出**
-  - 結合 Playwright Headless 引擎直接輸出標準 PDF
-
-::right::
-
-<div class="p-6 rounded-xl border border-slate-700 bg-slate-900/40 mt-12">
-  <h3 class="text-sky-400 font-semibold mb-2">逐步揭示動畫 (v-click)</h3>
-  <div v-click class="p-3 my-2 bg-slate-800/80 rounded border-l-4 border-emerald-500 text-sm">
-    1. 透過 FSA API 授權本機目錄
-  </div>
-  <div v-click class="p-3 my-2 bg-slate-800/80 rounded border-l-4 border-sky-500 text-sm">
-    2. Coding Agent 在本機自動撰寫 slides.md
-  </div>
-  <div v-click class="p-3 my-2 bg-slate-800/80 rounded border-l-4 border-amber-500 text-sm">
-    3. 本機執行匯出腳本產出 output/slides.pdf
-  </div>
-</div>
-
----
-
-# 系統架構
-
-前後端純靜態檔案通訊模式 (AOA)
-
-<div class="mt-8">
-  <SvgDiagram title="零後端通訊管線" />
-</div>
-
-<div class="mt-8 text-sm text-slate-400 text-center">
-  前端透過 File System Access API 輪詢 <code>slide.activity.json</code>，全程通訊不出本機。
-</div>
-
----
-
-# 工作流程
-
-Mermaid 以文字描述流程，`<RoughSketch>` 把一般 SVG 畫成手繪風格，兩者在 PDF 中都是向量
-
-```mermaid {look: 'handDrawn', scale: 0.7}
-flowchart LR
-  A[填寫需求] --> B[規劃大綱]
-  B --> C{確認?}
-  C -- 否 --> B
-  C -- 是 --> D[匯出 PDF]
-```
-
-<div class="mx-auto w-80 text-sky-500">
-  <RoughSketch viewBox="0 0 360 200">
-    <defs>
-      <marker id="tip" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1 L 8 5 L 0 9 z" fill="currentColor" />
-      </marker>
-    </defs>
-    <rect x="20" y="65" width="120" height="70" fill="#bae6fd" />
-    <text x="80" y="106" font-size="18" text-anchor="middle" fill="currentColor">草稿</text>
-    <line x1="145" y1="100" x2="210" y2="100" marker-end="url(#tip)" />
-    <circle cx="275" cy="100" r="55" fill="#bbf7d0" data-fill-style="cross-hatch" />
-    <text x="275" y="106" font-size="18" text-anchor="middle" fill="currentColor">定稿</text>
-  </RoughSketch>
-</div>
-
----
-
-# 3D 互動視覺展示
-
-封裝 Three.js 組件，直接在簡報內渲染 3D 場景
-
-<div class="mt-4">
-  <ThreeGlobe />
-</div>
-
-<p class="text-center text-xs text-slate-400 mt-2">
-  使用 <code>&lt;ThreeGlobe /&gt;</code> 自動註冊組件，支援動態旋轉與自適應縮放
-</p>
-
----
-layout: center
-class: text-center
----
-
-# 立即開始
-
-以 Coding Agent 釋放前所未有的簡報表現力
-
-[前往工作台]({{SITE_URL}}/slide/) · [Slidev 文件](https://sli.dev/)
