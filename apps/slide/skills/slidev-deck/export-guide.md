@@ -31,6 +31,7 @@ pnpm run build
 - 不要刪除 `vite.config.ts`，也不要移除 `slides.md` 開頭的 `routerMode: hash`：瀏覽器不允許 `file://` 或工作台的 blob 頁面載入外部模組腳本，拆檔的 build 或 history 路由開起來會是白畫面。
 - 圖片放在 `public/` 或以相對路徑引用時會被內嵌；檔案很大時 `index.html` 也會跟著變大。
 - 字型（Google Fonts）需要網路，離線時會改用系統字型。
+- `dist/` 裡另有 `404.html`（`index.html` 的複本）與 `_redirects`，是 Slidev 為網站託管產生的；交給使用者時只需要 `index.html`。
 
 ### 講者模式
 
@@ -89,4 +90,5 @@ pnpm exec slidev export --format pptx --no-with-clicks --output output/slides.pp
 - **Playwright 瀏覽器未安裝**：出現 `Executable doesn't exist at...` 時執行 `pnpm exec playwright install chromium`。
 - **Three.js 畫面在 PDF 中空白**：`WebGLRenderer` 必須設定 `preserveDrawingBuffer: true`（範本的 `ThreeGlobe.vue` 已設定），否則列印時畫布已被清空。
 - **匯出逾時或缺頁**：先 `pnpm run dev` 在瀏覽器確認每頁都能正常顯示，再匯出；組件不要依賴滑鼠互動才完成渲染。
-- 匯出成功後執行 `pnpm run state project --status exported`，網頁工作台會自動偵測並預覽 `output/slides.pdf`。
+- **終端機印出 `Failed to patch FloatingVue` 與一段堆疊**：Slidev 自己的雜訊，不影響匯出；以 `output/slides.pdf` 是否產生為準（`pnpm run check` 也會忽略它）。
+- 匯出成功後執行 `pnpm run state project --status exported --pdf output/slides.pdf`，網頁工作台會自動偵測並預覽 `output/slides.pdf`。

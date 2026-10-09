@@ -129,6 +129,16 @@ test('template: state validates before writing and never clobbers a broken proje
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).style, 'whiteboard')
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).status, 'outlined', 'setting the style keeps the status')
 
+  assert.equal(run('state', 'project', '--status', 'exported', '--pdf', 'output/none.pdf').status, 1, 'a missing PDF is refused')
+  mkdirSync(join(project, 'output'), { recursive: true })
+  writeFileSync(join(project, 'output/slides.pdf'), '%PDF-1.7 test')
+  const exported = run('state', 'project', '--status', 'exported', '--pdf', 'output/slides.pdf')
+  assert.equal(exported.status, 0, exported.stderr)
+  const record = JSON.parse(readFileSync(file, 'utf8')).export
+  assert.equal(record.pdfPath, 'output/slides.pdf')
+  assert.equal(record.sizeBytes, 13)
+  assert.ok(Date.parse(record.exportedAt), 'the export time is recorded')
+
   writeFileSync(file, '{"broken')
   assert.equal(run('state', 'project', '--status', 'drafted').status, 1)
   assert.equal(readFileSync(file, 'utf8'), '{"broken', 'a broken file is left for the user to fix')

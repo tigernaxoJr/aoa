@@ -16,7 +16,7 @@ description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML
 
 先看目前資料夾：
 
-1. **有 `slide.project.json`** → 既有專案，跳到 §2 對應的階段（依 `status`：`initialized` → 大綱、`outlined` → 文案、`drafted` → 視覺、`visualized` → 匯出）。
+1. **有 `slide.project.json`** → 既有專案，跳到 §2 對應的階段（依 `status`：`initialized` → 大綱、`outlined` → 文案、`drafted` → 視覺、`visualized` → 匯出；`exported` → 已完成，問使用者要改哪裡，從對應階段重做後重新匯出；`failed` → 讀 `slide.activity.json` 的訊息找出匯出失敗的原因，修正後重新匯出）。
 2. **只有 `slide.start.json`**（網頁準備的空資料夾）→ 專案就建在這裡，不要另建子資料夾；網頁一直在看這個資料夾。
 3. **都沒有** → 在目前工作資料夾建立 `<主題英文小寫>-slides`，先用白話向使用者確認位置。資料夾必須是空的或不存在。
 
@@ -29,7 +29,7 @@ description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML
    node -e "console.log(require('crypto').createHash('sha256').update(require('fs').readFileSync('slidev-deck.zip')).digest('hex'))"
    ```
    比對 manifest 的 `zip.sha256` 後解壓：macOS / Linux `unzip -q slidev-deck.zip`；Windows PowerShell `Expand-Archive slidev-deck.zip -DestinationPath .`。解壓後刪除 zip。範本不含 `slide.start.json` 與 `slide.activity.json`，不會覆蓋網頁寫的檔案。
-2. **安裝依賴**：`pnpm install`（匯出 PDF 需要 Chromium；第一次匯出若出現 `Executable doesn't exist`，執行 `pnpm exec playwright install chromium`）。
+2. **安裝依賴**：`pnpm install`。`pnpm run state` 要裝好依賴才能執行，所以在這之前網頁顯示的是它寫的「等待 Agent」；裝好後立刻 `pnpm run state activity --step init --message "範本已解壓，正在建立專案"`（匯出 PDF 需要 Chromium；第一次匯出若出現 `Executable doesn't exist`，執行 `pnpm exec playwright install chromium`）。
 3. **確認要講什麼**：`slide.start.json` 的 `content` 是使用者寫的簡報內容（重點、章節、資料，或要讀取的本機檔案路徑），`notes` 是視覺偏好。`content` 是空的、沒有 `slide.start.json`、或內容只有一個標題時，**先停下來問使用者**：這份簡報要傳達什麼、給誰看、有沒有現成資料可以參考。用 `pnpm run state activity --step init --message "請在對話中告訴我簡報要講什麼" --waiting` 讓網頁顯示正在等待。拿到內容前不規劃大綱。
 4. **填寫專案檔**：範本的 `slide.project.json` 是佔位內容。有 `slide.start.json` 時以它為準（`title`、`audience`、`pagesCount`、`theme`、`aspectRatio`），`--description` 用一句話概括 `content`；沒有就用上一步問到的答案。`pagesCount` 沒填代表交給你評估：先省略 `--pages`，到大綱階段再依內容決定：
    ```bash
@@ -49,7 +49,7 @@ pnpm run state activity --step outline --message "大綱完成，請在對話中
 pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫第 3 頁的架構圖"
 ```
 
-`--step` 只能是 `init`、`outline`、`draft`、`visual`、`export`、`idle`；`--status` 只能是 schema 列出的值。腳本會先依 `schemas/` 驗證、驗證失敗不寫檔，並以原子寫入（暫存檔改名）避免留下損壞的 JSON。
+`--waiting` 只對那一次寫入有效：使用者回覆後，下一次不加 `--waiting` 的 `state activity` 就會清掉等待狀態，不必另外處理。`--step` 只能是 `init`、`outline`、`draft`、`visual`、`export`、`idle`；`--status` 只能是 schema 列出的值。腳本會先依 `schemas/` 驗證、驗證失敗不寫檔，並以原子寫入（暫存檔改名）避免留下損壞的 JSON。
 
 <a id="check"></a>**渲染檢查（`pnpm run check`）**：以 `slidev export` 相同的方式逐頁渲染，檢查內容超出版面、區塊文字被截斷、找不到的組件或 Iconify 圖示、無法編譯的頁面與畫不出來的 Mermaid 圖、載入失敗的圖片、空白畫布（WebGL 匯出會是空的）與執行錯誤。每頁截圖存到 `output/slides-png/<頁碼>.png`，結果寫入 `output/check.json`（網頁工作台會顯示每頁的截圖與問題）。有問題時結束碼為 1，並列出頁碼、`slides.md` 行號與原因。
 
@@ -73,12 +73,12 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
    - `cover`：首頁與大標題；`two-cols`：左右雙欄（右欄以 `::right::` 開始）；`center`：聚焦單一重點；`quote`：引言。
    - **講者備忘錄**：寫在該頁**最後一個** HTML 註解裡（Slidev 的規則），例如 `<!-- 這裡先停頓，問聽眾是否用過 Agent -->`。不要寫成 `<!-- notes -->` 這種標籤；頁中其他註解不會被當成備忘錄。
    `pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status drafted`。
-3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。先看 `slide.project.json` 的 `style`，照上表選工具：內嵌 SVG 架構圖、以 Mermaid 畫流程圖與時序圖、`whiteboard` 風格用 `<RoughSketch>` 手繪並在 Mermaid 加 `{look: 'handDrawn'}`、`tech` 風格可在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後 `pnpm run state project --status visualized`。
-4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。匯出前先確認 `pnpm run check` 通過。
+3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。先看 `slide.project.json` 的 `style`，照上表選工具：內嵌 SVG 架構圖、以 Mermaid 畫流程圖與時序圖、`whiteboard` 風格用 `<RoughSketch>` 手繪並在 Mermaid 加 `{look: 'handDrawn'}`、`tech` 風格可在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status visualized`。
+4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。通常在 `visualized` 之後；使用者不要視覺升級時也可以從 `drafted` 直接匯出。匯出前先確認 `pnpm run check` 通過。
    - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
    - **匯出網頁簡報**：`pnpm run build` 產出單檔網頁簡報 `dist/index.html`（雙擊即可離線放映；不要刪 `vite.config.ts` 或 `slides.md` 的 `routerMode: hash`）。
    - **匯出 PowerPoint**（使用者要求時）：`pnpm run export:pptx` 產出 `output/slides.pptx`：文字可編輯，SVG / Mermaid / 3D 是圖片、字型不內嵌、不含 `v-click` 動畫，匯出後告訴使用者。
-   成功後 `pnpm run state project --status exported`；失敗時 `--status failed` 並把錯誤用白話告訴使用者。
+   成功後 `pnpm run state project --status exported --pdf output/slides.pdf`（記下 PDF 路徑、時間與大小），再 `pnpm run state activity --step idle --message "匯出完成"`；失敗時 `--status failed` 並把錯誤用白話告訴使用者。
 
 完成後告訴使用者可在網頁工作台 {{SITE_URL}}/slide/ 開啟這個資料夾預覽每一頁、PDF 與網頁。
 
@@ -86,7 +86,7 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
 
 ## 3. 嚴格規則
 
-1. **語言與溝通**：全程使用繁體中文（正體中文），每個階段結束時必須停下來讓使用者確認。
+1. **語言與溝通**：全程使用繁體中文（正體中文），大綱、撰寫、視覺三個階段結束時必須停下來讓使用者確認（初始化與匯出不必）。
 2. **專案目錄規範**：新專案依 §1 下載範本、以 manifest SHA-256 驗證後解壓至目前目錄，依 slide.start.json 填寫 slide.project.json；嚴禁另建子資料夾。
 3. **資料不離開本機**：不把使用者資料上傳到任何外部端點。
 4. **單一真理來源**：簡報內容只在 `slides.md`；狀態只透過 `pnpm run state` 修改，不手寫 `slide.project.json` / `slide.activity.json`。

@@ -33,8 +33,8 @@
 
    **停下確認**，確認後 `pnpm run state project --status outlined --pages <頁數> --style <風格>`。
 2. **撰寫內文（`/slide-draft`）**：編寫 `slides.md`，善用 Slidev 版型（`cover`、`two-cols`、`center`、`quote`）。講者備忘錄寫在每頁**最後一個** HTML 註解裡，例如 `<!-- 這裡停頓，先問聽眾 -->`。`pnpm run check` 通過後**停下確認**，確認後狀態改為 `drafted`。
-3. **注入視覺（`/slide-visual`）**：先讀 `slide.project.json` 的 `style`，依上面的對應選工具。SVG 架構圖、Mermaid 流程圖與時序圖、`<RoughSketch>` 手繪風格、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、`v-click` 動畫。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。`pnpm run check` 通過後狀態改為 `visualized`。
-4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run build` 打包為單檔網頁簡報（`dist/index.html`）；使用者要 PowerPoint 時 `pnpm run export:pptx` 產生 `output/slides.pptx`（文字可編輯、圖表是圖片，匯出後說明）。成功後狀態改為 `exported`，失敗改為 `failed` 並告知使用者原因。
+3. **注入視覺（`/slide-visual`）**：先讀 `slide.project.json` 的 `style`，依上面的對應選工具。SVG 架構圖、Mermaid 流程圖與時序圖、`<RoughSketch>` 手繪風格、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、`v-click` 動畫。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。`pnpm run check` 通過後**停下確認**，確認後狀態改為 `visualized`。
+4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run build` 打包為單檔網頁簡報（`dist/index.html`）；使用者要 PowerPoint 時 `pnpm run export:pptx` 產生 `output/slides.pptx`（文字可編輯、圖表是圖片，匯出後說明）。成功後 `pnpm run state project --status exported --pdf output/slides.pdf`，失敗改為 `failed` 並告知使用者原因。
 
 ---
 

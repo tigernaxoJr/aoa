@@ -24,7 +24,8 @@ const TIMEOUT = num('timeout', 30000)
 const PNG_DIR = 'output/slides-png'
 // Slidev's own setup logs these on every page; they are not the deck's fault. Failed requests are
 // reported through the image check and the compile-error pairing below instead.
-const NOISE = [/Failed to patch FloatingVue/, /^Failed to load resource/, /^\[vite\] (connect|hot updated)/]
+// Headless Chromium refuses the screen wake lock Slidev asks for while presenting; a real browser grants it.
+const NOISE = [/Wake Lock permission request denied/, /Failed to patch FloatingVue/, /^Failed to load resource/, /^\[vite\] (connect|hot updated)/]
 
 const options = await resolveOptions({ entry: 'slides.md' }, 'export')
 const { config, slides } = options.data
@@ -74,6 +75,10 @@ try {
       const slide = page.locator(`[data-slidev-no="${no}"]`)
       await slide.waitFor({ timeout: TIMEOUT })
       await slide.locator('.slidev-slide-loading').waitFor({ state: 'detached', timeout: TIMEOUT }).catch(() => {})
+      // Mermaid draws into a shadow root after the slide mounts; measuring an empty one would miss a diagram running off the page.
+      await page
+        .waitForFunction((n) => [...document.querySelectorAll(`[data-slidev-no="${n}"] .mermaid`)].every((el) => el.childElementCount || el.shadowRoot?.childElementCount), no, { timeout: TIMEOUT })
+        .catch(() => {})
       await page.waitForTimeout(WAIT)
       for (const issue of await page.evaluate(inspect, no)) add(no, issue)
       await page.locator('#slide-content').screenshot({ path: join(root, PNG_DIR, `${no}.png`) })
@@ -183,8 +188,10 @@ function inspect(no) {
   const px = (v) => Math.round(v / scale)
   const TOLERANCE = 4
   const label = (el) => {
-    const text = (el.textContent || '').trim().replace(/\s+/g, ' ')
     const tag = el.tagName.toLowerCase()
+    // An SVG's textContent starts with its <style> rules; name it by the words it draws.
+    const words = tag === 'svg' ? [...el.querySelectorAll('text, foreignObject')].map((n) => n.textContent).join(' ') : el.textContent
+    const text = (words || '').trim().replace(/\s+/g, ' ')
     return text ? `<${tag}>「${text.slice(0, 24)}${text.length > 24 ? '…' : ''}」` : `<${tag}>`
   }
   const visible = (el) => {
@@ -195,7 +202,9 @@ function inspect(no) {
   // 1. Content running past the slide edge. Report the outermost offender only, not every descendant.
   const sides = { top: 0, right: 0, bottom: 0, left: 0 }
   const offenders = []
-  for (const el of slide.querySelectorAll('*')) {
+  // Slidev draws Mermaid inside a shadow root, which querySelectorAll does not enter.
+  const mermaid = [...slide.querySelectorAll('.mermaid')].flatMap((host) => [...(host.shadowRoot?.children ?? [])])
+  for (const el of [...slide.querySelectorAll('*'), ...mermaid]) {
     if (el.closest('svg') && el.tagName.toLowerCase() !== 'svg') continue
     if (!visible(el)) continue
     const r = el.getBoundingClientRect()

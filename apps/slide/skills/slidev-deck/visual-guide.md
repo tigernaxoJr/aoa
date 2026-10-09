@@ -7,7 +7,7 @@
 ## 1. 原生向量 SVG 繪製守則
 
 - **內嵌 SVG 代碼**：直接在 `slides.md` 內嵌 `<svg viewBox="0 0 800 400">...</svg>`，利用 Tailwind 樣式自適應容器。
-- **統一色彩基調**：
+- **統一色彩基調**（範本預設；使用者在 `slide.start.json` 的 `notes` 或對話中指定配色時以使用者為準：改 `setup/mermaid.ts` 的 `themeVariables`，頁面底色與文字色寫在 `styles/index.css`（Slidev 自動載入），SVG 與 `<RoughSketch>` 也改用同一組顏色）：
   - 邊框：`#38bdf8`（Sky 400）、`#34d399`（Emerald 400）、`#f59e0b`（Amber 500）。
   - 文字：`#f8fafc`（Slate 50）、`#94a3b8`（Slate 400）。
   - 背景：`#1e293b`（Slate 800 半透明）。

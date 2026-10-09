@@ -87,9 +87,9 @@
     },
     {
       "id": "export",
-      "title": "匯出向量 PDF",
+      "title": "匯出簡報",
       "command": "/slide-export",
-      "description": "調用 Slidev CLI 匯出高解析向量 PDF (output/slides.pdf)",
+      "description": "調用 Slidev CLI 匯出向量 PDF (output/slides.pdf) 與單檔網頁簡報 (dist/index.html)；使用者要求時另匯出 PowerPoint",
       "guide": "export-guide.md",
       "actions": [
         {
