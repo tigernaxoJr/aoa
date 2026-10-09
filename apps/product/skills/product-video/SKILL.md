@@ -60,11 +60,11 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
    - **影片風格**：給 2–3 個選項並標出建議，例如「專業簡報（沉穩、資訊清楚）」「活潑社群短片（節奏快、字大）」「產品操作教學（步驟清楚）」。
    - 語言、畫面比例（16:9 橫式 / 9:16 直式 / 1:1 / 4:5）：沒有偏好時沿用範本預設（zh-TW、16:9、1920×1080、30fps）。
    - **字幕要不要直接印在畫面上**：「印在畫面上（社群播放常靜音，比較保險）」或「另附字幕檔（YouTube 等平台可開關，畫面乾淨）」；兩種都會產生字幕檔。前者寫入 `project.captions.mode: burn`，後者為預設 `srt`。要在渲染 scene 前決定：印在畫面上的字幕是在每個 scene 渲染時畫進去的，之後改字幕樣式或改選項都要重新渲染所有 scene。
-   - **目標長度先不定案**：使用者已有明確要求就照用；否則先填預設 45 秒，告訴他「看完產品內容後我會建議適合的長度再跟你確認」，在 analyze 結束時決定（見 [workflow.md#confirm](workflow.md#confirm)）。
+   - **目標長度先不定案**：使用者已有明確要求就照用（給的是範圍時，先填範圍的中間值，analyze 後依 [workflow.md#confirm](workflow.md#confirm) 決定）；否則先填預設 45 秒，告訴他「看完產品內容後我會建議適合的長度再跟你確認」，在 analyze 結束時決定（見 [workflow.md#confirm](workflow.md#confirm)）。
    使用者不確定對象或風格時，可以先填暫定值，分析完再一起確認。
 5. **填寫專案檔**：範本的 `video.project.json` 是可通過驗證的佔位內容，必須替換：
    - `project.id`：產生新的 UUID v4（範本為全 0，`pnpm run validate` 會視為未初始化）
-   - `project.name`、`project.sources`、`project.language`、`project.targetAudience`、`project.style`、`project.format`、`project.captions`（選擇印在畫面上時）
+   - `project.name`、`project.sources`、`project.language`、`project.targetAudience`、`project.style`（範本為空字串，填入第 4 點確認的風格）、`project.format`、`project.captions`（選擇印在畫面上時）
    - `project.tts.voice`：依語言選擇（見 §4）
    - `updatedAt`：目前時間
    新專案沒有其他寫入者，這一次可以直接編輯 `video.project.json`；之後一律依 `AGENTS.md` 透過 `pnpm run state` 修改。
@@ -112,10 +112,10 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
 ## <a id="interaction"></a>5. 與使用者互動的原則
 
 - **使用者不需要知道任何指令**：他用白話說「繼續」「第三段文案改成…」「重做開場」即可，你對應到工作流程的步驟（`/video-…` 指令只是有經驗的人的捷徑）。所有 `pnpm run …` 都由你執行。
-- **說白話**：避免 JSON、pnpm、scene、render、commit 等術語；必須提到時順便解釋（例如「scene，也就是影片的一段」）。一次只問一件事，給選項時附上建議。
+- **說白話**：避免 JSON、pnpm、scene、render、commit 等術語；必須提到時順便解釋（例如「scene，也就是影片的一段」）。一次只問一件事，給選項時附上建議。要確認好幾件事時（例如分析完的 checkpoint），先給摘要，再一題一題問；使用者已經表態或沿用預設的項目，只用一句話確認。
 - **需要使用者動手時**（安裝軟體、允許權限、在網頁上按按鈕）：寫成編號步驟，說明會看到什麼、按哪裡、完成後回覆什麼。
 
-- **checkpoint 一定停下**：分析完成後（確認對象、風格與長度）、分鏡與旁白完成後、每個 scene 渲染後，列出結果並等使用者確認或提出修改。使用者沒有明確說「可以」「繼續」之前，不產生語音、不渲染。
+- **checkpoint 一定停下**：分析完成後（摘要後逐題確認對象、風格與長度等，見 [workflow.md#confirm](workflow.md#confirm)）、分鏡與旁白完成後、每個 scene 渲染後，列出結果並等使用者確認或提出修改。使用者沒有明確說「可以」「繼續」之前，不產生語音、不渲染。
 - **讓網頁知道你在做什麼**：專案資料夾裡的 `video.activity.json`（格式見 {{API_URL}}/schemas/activity.schema.json）會顯示在網頁工作台上。每開始一個步驟或一個 scene、每次停下來等使用者回覆（checkpoint、gate、任何提問）之前，都直接覆寫這個檔案：`{ "message": "正在錄第 3 段的畫面", "waitingForUser": false, "step": "build_scene", "scene": "scene-003", "updatedAt": "<現在時間，含時區>" }`。`message` 是給使用者看的一句白話；等使用者時 `waitingForUser` 為 `true`，`message` 說明要他回答什麼（例如「分鏡寫好了，請在對話中確認或告訴我要改哪裡」）。專案建立前（§1、§2）也要寫，網頁從使用者準備資料夾時就在看。工作全部完成時寫一句結果，`waitingForUser` 為 `false`。這個檔案不需要鎖、不經過 `pnpm run state`。
 - **修改只重做受影響的部分**：使用者說「第三段文案改成…」，只改該 scene 的 `script.md`，只重做該 scene，再重新合成。
 - **告訴使用者怎麼看成果**：用「文件 > acme-video > scenes > 003-solution > output > scene.mp4」這種資料夾順序描述位置，並建議打開網頁工作台 {{APP_URL}}/ 預覽每一段、直接修改旁白。專案是網頁準備的（有 `video.start.json`）時，網頁已經開著這個資料夾，會自動顯示；否則請他在網頁步驟 1 選擇這個專案資料夾。

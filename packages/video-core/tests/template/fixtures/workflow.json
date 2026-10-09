@@ -100,7 +100,7 @@
           "transitions": [{ "target": "project", "from": ["initialized", "analyzed"], "to": "analyzed" }]
         }
       ],
-      "checkpoint": "摘要產品重點，確認觀看對象與影片風格，並依內容提出 2–3 個長度選項（附估算理由與建議）。使用者確認後以 pnpm run state 寫入 project.targetAudience、project.style、project.format.targetDurationSec，才可進入 storyboard。",
+      "checkpoint": "先摘要產品重點，再一次一題確認觀看對象與影片風格、長度（依內容提出 2–3 個選項，附估算理由與建議；使用者給範圍時取範圍內一個建議值，原話記在 brief）、durationAdjust、customMotion；已表態或沿用預設的項目只需一句話確認。使用者確認後以 pnpm run state 寫入 project.targetAudience、project.style、project.format.targetDurationSec，才可進入 storyboard。",
       "guide": "skills/product-video/workflow.md#analyze"
     },
     {
@@ -130,7 +130,7 @@
           "transitions": [{ "target": "project", "from": ["initialized", "analyzed"], "to": "analyzed" }]
         }
       ],
-      "checkpoint": "用白話把故事從頭講一次（含角色表），確認情節與結局，並依故事長度提出 2–3 個影片長度選項。使用者確認後以 pnpm run state 寫入 project.targetAudience、project.style、project.format.targetDurationSec，才可進入 design。",
+      "checkpoint": "用白話把故事從頭講一次（含角色表），再一次一題確認情節與結局、影片長度（依故事長度提出 2–3 個選項；使用者給範圍時取範圍內一個建議值，原話記在 brief）。使用者確認後以 pnpm run state 寫入 project.targetAudience、project.style、project.format.targetDurationSec，才可進入 design。",
       "guide": "skills/story-video/story-guide.md#develop"
     },
     {

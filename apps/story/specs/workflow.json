@@ -79,7 +79,7 @@
           "transitions": [{ "target": "project", "from": ["initialized", "analyzed"], "to": "analyzed" }]
         }
       ],
-      "checkpoint": "用白話把故事從頭講一次（含角色表），確認情節與結局，並依故事長度提出 2–3 個影片長度選項。使用者確認後以 pnpm run state 寫入 project.targetAudience、project.style、project.format.targetDurationSec，才可進入 design。",
+      "checkpoint": "用白話把故事從頭講一次（含角色表），再一次一題確認情節與結局、影片長度（依故事長度提出 2–3 個選項；使用者給範圍時取範圍內一個建議值，原話記在 brief）。使用者確認後以 pnpm run state 寫入 project.targetAudience、project.style、project.format.targetDurationSec，才可進入 design。",
       "guide": "skills/story-video/story-guide.md#develop"
     },
     {

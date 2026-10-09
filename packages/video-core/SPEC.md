@@ -160,6 +160,7 @@ my-video-project/
       "referenceVideoUrl": null
     },
     "targetAudience": "開發者",
+    "style": "產品操作教學",
     "language": "zh-TW",
     "format": {
       "aspectRatio": "16:9",
@@ -442,7 +443,7 @@ GET /api/video/templates/product-video/manifest.json  # 範本 zip 與每個檔�
 1. 讀取產品網址（Playwright 擷取頁面文字與主要截圖）、本機原始碼（README、package.json、路由/頁面）、使用者描述。
 2. 產出 `brief/product-brief.md`：產品一句話、目標受眾、痛點、核心功能（≤5）、USP、品牌色與字型、CTA。
 3. （可選）若有 `referenceVideoUrl` 或使用者提供的參考影片檔：以 FFmpeg 抽取關鍵影格，分析節奏、色調、字幕樣式、轉場，寫入 `brief/style.json`。無法取得影片時跳過並註明，不臆測。
-4. **Checkpoint**：摘要產品重點，與使用者確認觀看對象、影片風格（`project.style`），並依內容提出 2–3 個長度選項與理由；確認後寫入 `targetAudience`、`style`、`format.targetDurationSec`。
+4. **Checkpoint**：先摘要產品重點，再一次一題與使用者確認觀看對象、影片風格（`project.style`）、長度（依內容提出 2–3 個選項與理由；使用者給範圍時取範圍內一個建議值寫入 `targetDurationSec`，原話記在 brief，schema 不另設範圍欄位以維持相容），已表態或沿用預設的項目只需一句話確認；確認後寫入 `targetAudience`、`style`、`format.targetDurationSec`。
 
 **Step 3 — storyboard**
 1. 依 brief 規劃 **3–8 個 scene**，建議骨架：Hook → Problem → Solution → Feature(s) → Benefit → CTA。

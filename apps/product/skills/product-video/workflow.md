@@ -121,10 +121,10 @@
 pnpm run state project --status analyzed
 ```
 
-寫分鏡前**必須停下**，用白話向使用者呈現：
+寫分鏡前**必須停下**。這個 checkpoint 要確認好幾件事，但仍遵守「一次只問一件事」（[SKILL.md §5](SKILL.md#interaction)）：先給摘要，再依下面的順序**一題一題問**，等使用者回答一題再問下一題，不要把所有問題塞進同一則訊息。使用者已經表態、或有預設值且分析後沒有理由改變的項目，只用一句話確認（例如「對象維持『中小企業老闆』，可以嗎？」）；使用者一次回答了好幾題，就跳過已回答的。
 
-1. **產品摘要**：一句話定位、核心功能、不確定處。
-2. **對象與風格**：init 時的設定是否仍合適；分析後有更好的建議就提出（例如「產品偏技術，建議對象改成開發者、風格用操作教學」）。
+1. **產品摘要**（先說，不必等回答）：一句話定位、核心功能、不確定處，最後問「我理解得對嗎？」。
+2. **對象與風格**：init 時的設定是否仍合適；分析後有更好的建議就提出（例如「產品偏技術，建議對象改成開發者、風格用操作教學」）。init 已確認且沒有新建議時，一句話確認即可。
 3. **建議長度**：依內容估算，並說明理由，給 2–3 個選項：
 
    ```text
@@ -135,15 +135,19 @@ pnpm run state project --status analyzed
    ```
 
    估算方式：每個要講的重點約 6–10 秒，hook 與 CTA 各約 4 秒；以 [script-guide.md](script-guide.md#structure) 的 scene 數對照表為準。對象越不懂技術、風格越活潑，越偏向短版。
+
+   **使用者給的是範圍**（例如「30–45 秒」）：`format.targetDurationSec` 只放一個數字。依內容在範圍內選一個建議值（重點多偏上限、對象越不懂技術越偏下限），告訴他「我會以 40 秒為目標，落在你說的 30–45 秒之間」；寫入這個數字，並把使用者的原話記在 `brief/product-brief.md` 的「來源與不確定處」（例如「使用者要求長度 30–45 秒，取 40 秒」）。之後調整分鏡或節奏時，總長度不要超出這個範圍。
 4. **太趕時怎麼處理**：「製作時如果某一段太趕（例如操作還沒做完就換下一段），要讓我自己把那段稍微拉長、事後告訴你，還是每次先問你？」寫入 `project.durationAdjust`（`auto` / `ask`；沒回答就是 `ask`）。規則見 [rendering-guide.md#pacing](rendering-guide.md#pacing)。
 5. **自訂動畫**：「有些段落我可以自己寫程式畫動畫（例如資料流動、3D 產品展示、粒子特效），比單純的文字和圖片生動，但每段要花比較多的 AI 用量，也比較慢。要全部放行、都不要，還是規劃分鏡時一段一段問你？」寫入 `project.customMotion`（`allow` / `deny` / `ask`；沒回答就是 `ask`）。規則見 [script-guide.md#custom-motion](script-guide.md#custom-motion)。
 
-使用者確認後，把結果寫入專案（`project.targetAudience`、`project.style`、`project.format.targetDurationSec`、`project.durationAdjust`、`project.customMotion`），用 `pnpm run state project --patch-file <檔案>`：
+每次停下來等回答前都更新 `video.activity.json`，`message` 寫目前在問哪一題（例如「請在對話中回答：影片要多長？」）。
+
+全部確認後，把結果一次寫入專案（`project.targetAudience`、`project.style`、`project.format.targetDurationSec`、`project.durationAdjust`、`project.customMotion`），用 `pnpm run state project --patch-file <檔案>`。範本已有 `targetAudience`、`style`、`format.targetDurationSec`（init 時已填），用 `replace`；`durationAdjust`、`customMotion` 範本沒有，用 `add`（欄位已存在時 `add` 也會直接覆蓋）：
 
 ```json
 [
   { "op": "replace", "path": "/project/targetAudience", "value": "中小企業老闆，不懂技術" },
-  { "op": "add", "path": "/project/style", "value": "活潑社群短片：節奏快、字大" },
+  { "op": "replace", "path": "/project/style", "value": "活潑社群短片：節奏快、字大" },
   { "op": "replace", "path": "/project/format/targetDurationSec", "value": 30 },
   { "op": "add", "path": "/project/durationAdjust", "value": "auto" },
   { "op": "add", "path": "/project/customMotion", "value": "ask" }
