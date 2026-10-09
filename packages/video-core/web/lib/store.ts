@@ -46,19 +46,24 @@ export function notify(kind: 'ok' | 'warn' | 'error', text: string) {
 export async function reload() {
   if (!root.value) return
   try {
+    // Taken before reading: a file written while this reload runs still differs on the next poll.
+    // (It covers the files known so far; a changed scene list makes the next poll reload once more.)
+    const before = await fingerprint(root.value, state.value)
     const next = await loadProject(root.value)
+    // The agent may create or rename the project while the folder is open: keep the recent list in step.
+    // Saved before the page shows the project, so a reload from then on reopens this one.
+    const info = { projectName: next?.project.project.name ?? null, kind: next?.project.project.kind ?? null }
+    const changed = JSON.stringify(info) !== recorded
+    if (changed) {
+      recorded = JSON.stringify(info)
+      await recent.remember(root.value, info)
+    }
     state.value = next
     activity.value = await loadActivity(root.value)
     ui.waiting = !next
-    print = await fingerprint(root.value, next)
+    print = before
     ui.error = null
-    // The agent may create or rename the project while the folder is open: keep the recent list in step.
-    const info = { projectName: next?.project.project.name ?? null, kind: next?.project.project.kind ?? null }
-    if (JSON.stringify(info) !== recorded) {
-      recorded = JSON.stringify(info)
-      await recent.remember(root.value, info)
-      await refreshRecent()
-    }
+    if (changed) await refreshRecent()
   } catch (err) {
     ui.error = (err as Error).message
   }
@@ -155,6 +160,8 @@ export async function forgetRecent(handle: FileSystemDirectoryHandle) {
 }
 
 export async function close() {
+  // Saved before the page leaves the project, so a reload from then on does not reopen it.
+  await recent.forgetLast()
   root.value = null
   state.value = null
   activity.value = null
@@ -163,7 +170,6 @@ export async function close() {
   ui.needsInstall = false
   if (timer) clearInterval(timer)
   timer = null
-  await recent.forgetLast()
   await refreshRecent()
 }
 

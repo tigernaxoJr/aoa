@@ -4,7 +4,7 @@
 //                                                         <slug>.elements.txt (for analyze; selectors to highlight)
 // Both open the page signed in when the user has signed in with `pnpm run login` (gate productLogin).
 // Writes files only; the agent records status via `pnpm run state` (SPEC §7.3).
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
@@ -17,8 +17,8 @@ const SETTLE_MS = 400
 const NAV_TIMEOUT_MS = 30_000
 /** After a page load, wait at most this long for the network to go quiet. */
 const IDLE_TIMEOUT_MS = 5_000
-/** Extra time cut after each page load; the recording can start slightly before our clock. */
-const CUT_PAD_SEC = 0.1
+/** Extra time cut after each page load; frame timestamps and our clock differ by a few ms. */
+const CUT_PAD_MS = 100
 /** A highlight whose element does not show up within this time is skipped, not fatal. */
 const HIGHLIGHT_TIMEOUT_MS = 5_000
 const HIGHLIGHT_HOLD_MS = 1_200
@@ -100,20 +100,22 @@ async function captureScene(root, id) {
   const browser = await launch()
   const videoDir = mkdtempSync(join(tmpdir(), 'avp-capture-'))
   try {
-    const context = await browser.newContext({
-      viewport,
-      deviceScaleFactor: 1,
-      ...signIn,
-      ...(type === 'web-capture' ? { recordVideo: { dir: videoDir, size: viewport } } : {}),
-    })
-    const started = Date.now()
+    const context = await browser.newContext({ viewport, deviceScaleFactor: 1, ...signIn })
     const page = await context.newPage()
-    const now = () => (Date.now() - started) / 1000
+    // The recording starts at the first frame the browser paints, which on a busy machine can come
+    // seconds after the page opens. Times are kept as wall-clock ms and measured from that frame at the end,
+    // or the cuts land beside what they meant to drop (and can drop everything).
+    const webm = join(videoDir, 'capture.webm')
+    let firstFrameAt = null
+    if (type === 'web-capture') {
+      await page.screencast.start({ path: webm, size: viewport, onFrame: ({ timestamp }) => (firstFrameAt ??= timestamp) })
+    }
+    const now = () => Date.now()
     // Page loads (the first one, `navigate`, a click on a link) show blank or half-drawn frames;
     // each is cut from request to settled page (SPEC §7.6). Same-document (SPA) routes send no request,
     // so the agent marks those (or any span not worth showing) with `cut: true`.
     let navStart = null
-    let lastLoad = -1
+    let lastLoad = -Infinity
     page.on('request', (r) => {
       if (navStart == null && r.isNavigationRequest() && r.frame() === page.mainFrame()) navStart = now()
     })
@@ -124,19 +126,18 @@ async function captureScene(root, id) {
       if (lastLoad < navStart) await page.waitForEvent('load', { timeout: NAV_TIMEOUT_MS })
       await page.waitForLoadState('networkidle', { timeout: IDLE_TIMEOUT_MS }).catch(() => {})
       await page.waitForTimeout(SETTLE_MS)
-      cuts.push([navStart, now() + CUT_PAD_SEC])
+      cuts.push([navStart, now() + CUT_PAD_MS])
       navStart = null
     }
     await goto(page, capture.url)
     checkSignedIn(capture.url, page.url(), Boolean(signIn.storageState))
     await cutNavigation()
-    cuts[0][0] = 0
     for (const [i, action] of (capture.actions ?? []).entries()) {
       try {
         const actionStart = now()
         await perform(page, action, scripts)
         await cutNavigation()
-        if (action.cut) cuts.push([actionStart, now() + CUT_PAD_SEC])
+        if (action.cut) cuts.push([actionStart, now() + CUT_PAD_MS])
       } catch (err) {
         throw new Error(`action ${i + 1} (${action.do}${action.selector ? ` ${action.selector}` : ''}) failed: ${err.message.split('\n')[0]}`)
       }
@@ -152,12 +153,15 @@ async function captureScene(root, id) {
 
     // Playwright pads the end with ≥ 1 s of the last frame; keep only what we recorded.
     const endAt = now()
-    await context.close() // finalizes the recording
-    const webm = readdirSync(videoDir).find((f) => f.endsWith('.webm'))
-    if (!webm) throw new Error('browser produced no recording')
+    await page.screencast.stop() // finalizes the recording
+    await context.close()
+    if (!existsSync(webm) || firstFrameAt == null) throw new Error('browser produced no recording')
+    const sec = (ms) => Math.max(0, (ms - firstFrameAt) / 1000)
+    // The first page load is cut from the start of the recording.
+    const cutSec = cuts.map(([a, b], i) => [i === 0 ? 0 : sec(a), sec(b)])
     // Drop the page-load frames and convert to constant frame rate (SPEC §7.6).
     const out = join(assets, 'capture.mp4')
-    ffmpeg(['-t', endAt.toFixed(3), '-i', join(videoDir, webm), '-an', '-vf', `${cutFilter(cuts, format.fps)},scale=${format.width}:${format.height}:force_original_aspect_ratio=decrease,pad=${format.width}:${format.height}:(ow-iw)/2:(oh-ih)/2`, ...VIDEO_ENCODE, out])
+    ffmpeg(['-t', sec(endAt).toFixed(3), '-i', webm, '-an', '-vf', `${cutFilter(cutSec, format.fps)},scale=${format.width}:${format.height}:force_original_aspect_ratio=decrease,pad=${format.width}:${format.height}:(ow-iw)/2:(oh-ih)/2`, ...VIDEO_ENCODE, out])
     console.log(`${id}: recording → ${ref.dir}/assets/capture.mp4`)
     return 0
   } finally {

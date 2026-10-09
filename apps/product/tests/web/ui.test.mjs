@@ -86,7 +86,7 @@ test('guided start: the source folder is a full path; picking a folder prefills 
     await dir.getDirectoryHandle('src', { create: true })
     await window.__avp.pickSource(dir)
   })
-  assert.equal(await page.getByTestId('source-folder').getByText('acme-app').count(), 1)
+  await page.getByTestId('source-folder').getByText('acme-app').waitFor()
   assert.match(await page.getByTestId('source-filled').textContent(), /說明與網址/)
   assert.match(await page.getByTestId('source-path-missing').textContent(), /不會給完整路徑/, 'explains why the path must be pasted')
   let message = await page.getByTestId('launch-message').textContent()
@@ -229,13 +229,16 @@ test('project switcher: the header menu switches between recent projects without
   assert.match(await items.first().textContent(), /第二個專案.*開啟中/)
   await items.filter({ hasText: '網頁測試專案' }).click()
   await page.getByTestId('project-name').getByText('網頁測試專案').waitFor()
-  assert.equal(await page.getByRole('menu').count(), 0, 'the menu closes after switching')
+  await page.getByRole('menu').waitFor({ state: 'detached' }) // the menu closes after switching
+
+  // The list marks the project that the next visit reopens.
+  await page.getByTestId('project-name').click()
+  await items.first().and(page.locator('[aria-current="true"]')).filter({ hasText: '網頁測試專案' }).waitFor()
+  await page.keyboard.press('Escape')
+  await page.getByRole('menu').waitFor({ state: 'detached' }) // Escape closes the menu
 
   await page.reload()
   await page.getByTestId('project-name').getByText('網頁測試專案').waitFor({ timeout: 10_000 })
-  await page.getByTestId('project-name').click()
-  await page.keyboard.press('Escape')
-  assert.equal(await page.getByRole('menu').count(), 0, 'Escape closes the menu')
 })
 
 test('feedback: point at the frame, write a line; the scene goes stale and the agent reply shows up', async (t) => {
@@ -265,8 +268,8 @@ test('feedback: point at the frame, write a line; the scene goes stale and the a
   assert.equal(note.text, '這裡太暗了')
   assert.equal(note.atSec, 0)
   assert.ok(Math.abs(note.point.x - 0.25) < 0.02 && Math.abs(note.point.y - 0.5) < 0.02, JSON.stringify(note.point))
-  assert.equal(await page.getByTestId('next-command').getAttribute('data-command'), '/video-sync')
-  assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-feedback-count').textContent(), '1')
+  await page.getByTestId('next-command').and(page.locator('[data-command="/video-sync"]')).waitFor()
+  await page.getByTestId('scene-scene-001').getByTestId('scene-feedback-count').filter({ hasText: /^1$/ }).waitFor()
 
   // A note without pointing, then taken back before the agent saw it.
   await page.getByTestId('feedback-text').fill('先不用改')
@@ -328,7 +331,8 @@ test('activity: before the project exists, the page shows what the agent is wait
   await prepareFolder(page, 'acme-video', { 'video.activity.json': activityJson({ message: '要不要使用線上語音？請在對話中回答', waitingForUser: true, step: 'init' }) })
   await page.getByTestId('project-folder').getByText('acme-video').waitFor()
   const banner = page.getByTestId('step-review').getByTestId('activity')
-  assert.equal(await banner.getAttribute('data-state'), 'waiting', 'a folder holding only the start and activity files is accepted')
+  // A folder holding only the start and activity files is accepted.
+  await banner.and(page.locator('[data-state="waiting"]')).waitFor()
   assert.match(await banner.textContent(), /Agent 在等你回覆：要不要使用線上語音？請在對話中回答/)
   assert.match(await banner.textContent(), /回到 Agent 的對話/)
 })
@@ -400,8 +404,9 @@ test('a project from an older template: one click updates its tools and drops re
   assert.equal(updated.updatedBy, 'user')
   assert.equal(updated.project.name, '網頁測試專案', 'video content is kept')
   assert.match(await read('scripts/validate.mjs'), /validate/, 'template files are written')
-  assert.equal(await page.getByRole('alert').count(), 0, 'the project is valid again')
-  assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-status').textContent(), '已渲染')
+  // The banner goes once the files are written; the page re-reads the project just after.
+  await page.getByRole('alert').waitFor({ state: 'detached' }) // the project is valid again
+  await page.getByTestId('scene-scene-001').getByTestId('scene-status').filter({ hasText: /^已渲染$/ }).waitFor()
 })
 
 test('a story project opened here points to the story workbench', async (t) => {
