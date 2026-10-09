@@ -47,14 +47,17 @@ export interface SourceInput {
 /** Escapes double quotes so the text can sit inside a double-quoted shell argument. */
 const quote = (s: string) => s.replace(/"/g, '\\"')
 
+/** The story form shows CosyVoice 3 as chosen until the user picks another engine, so that is what it asks for. */
+const storyTts = (src: SourceInput) => src.ttsProvider ?? 'cosyvoice3'
+
 function sources(src: SourceInput) {
   const parts: string[] = []
   if (src.kind === 'story') {
     if (src.story.trim()) parts.push(`故事：${src.story.trim()}`)
     if (src.audience.trim()) parts.push(`觀看對象：${src.audience.trim()}`)
-    if (src.ttsProvider === 'cosyvoice3') {
+    if (storyTts(src) === 'cosyvoice3') {
       parts.push('語音引擎：CosyVoice 3（請在設計角色時，自動根據角色身分與性格配置適當的自然語言語氣指令）')
-    } else if (src.ttsProvider === 'edge-tts') {
+    } else if (storyTts(src) === 'edge-tts') {
       parts.push('語音引擎：微軟 Edge-TTS（使用標準神經網路語音庫）')
     }
     return parts
@@ -73,9 +76,8 @@ export const newFolderId = () => crypto.randomUUID().slice(0, 8)
 /** The start file's contents: the folder's id, the same sources, and the hints for finding the source folder. */
 export function startJson(src: SourceInput, id: string) {
   const value = (s: string) => s.trim() || null
-  const extra = src.ttsProvider ? { ttsProvider: src.ttsProvider } : {}
   if (src.kind === 'story') {
-    return `${JSON.stringify({ id, kind: 'story', story: value(src.story), audience: value(src.audience), ...extra, updatedAt: new Date().toISOString() }, null, 2)}\n`
+    return `${JSON.stringify({ id, kind: 'story', story: value(src.story), audience: value(src.audience), ttsProvider: storyTts(src), updatedAt: new Date().toISOString() }, null, 2)}\n`
   }
   const folder = value(src.sourceFolder)
   return `${JSON.stringify(

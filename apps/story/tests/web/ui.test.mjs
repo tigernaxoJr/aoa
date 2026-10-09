@@ -25,12 +25,16 @@ test('home page: write the story, and the message points the agent at the story 
   await page.getByTestId('story-audience').fill('4–7 歲的小朋友')
   await waitForStart(page, '4–7 歲的小朋友')
   const start = JSON.parse(await readOpfs(page, 'acme-video/video.start.json'))
-  assert.deepEqual({ ...start, updatedAt: undefined }, { id: start.id, kind: 'story', story: '一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。', audience: '4–7 歲的小朋友', updatedAt: undefined })
+  assert.deepEqual(
+    { ...start, updatedAt: undefined },
+    { id: start.id, kind: 'story', story: '一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。', audience: '4–7 歲的小朋友', ttsProvider: 'cosyvoice3', updatedAt: undefined },
+    'the engine shown as chosen is the one recorded',
+  )
 
   const message = await page.getByTestId('launch-message').textContent()
   assert.match(message, new RegExp(`^請讀取 ${web.origin}${BASE}/api/story/agent-guide\\.md，依照裡面的步驟幫我把故事做成動畫影片。\n`))
   assert.match(message, /記有故事內容與識別碼/)
-  assert.match(message, /・故事：一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。\n・觀看對象：4–7 歲的小朋友\n/)
+  assert.match(message, /・故事：一隻小狐狸以為月亮掉進了池塘。\n牠想把月亮撈起來。\n・觀看對象：4–7 歲的小朋友\n・語音引擎：CosyVoice 3/)
 
   // The story is remembered across a reload.
   await page.reload()
