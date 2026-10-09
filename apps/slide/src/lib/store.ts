@@ -293,14 +293,39 @@ export async function reopen(handle: FileSystemDirectoryHandle) {
   }
 }
 
+/** Opens a folder the way the picker does: a folder that cannot be used is reported, not thrown. */
+async function openPicked(handle: FileSystemDirectoryHandle) {
+  try {
+    await openFolder(handle)
+  } catch (err) {
+    folderError.value = (err as Error).message || '無法開啟目錄'
+  }
+}
+
 /** Lets the user pick a folder and opens it; cancelling the picker changes nothing. */
 export async function pickFolder() {
   folderError.value = null
+  let handle: FileSystemDirectoryHandle
   try {
-    await openFolder(await window.showDirectoryPicker!({ mode: 'readwrite', id: 'slide-project' }))
+    handle = await window.showDirectoryPicker!({ mode: 'readwrite', id: 'slide-project' })
   } catch (err) {
     if ((err as DOMException).name !== 'AbortError') folderError.value = (err as Error).message || '無法開啟目錄'
+    return
   }
+  await openPicked(handle)
+}
+
+// Test hook: lets automated tests open an OPFS directory without the native folder picker.
+declare global {
+  interface Window {
+    __slide?: { open(handle: FileSystemDirectoryHandle): Promise<void> }
+  }
+}
+window.__slide = {
+  open: (handle) => {
+    folderError.value = null
+    return openPicked(handle)
+  },
 }
 
 /** The empty folder picked for a new project is not wanted after all: drop it from the list too. */

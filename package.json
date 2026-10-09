@@ -21,7 +21,7 @@
     "build:web": "vite build --config apps/portal/vite.config.ts && vite build --config apps/story/vite.config.ts && vite build --config apps/product/vite.config.ts && vite build --config apps/slide/vite.config.ts",
     "typecheck": "vue-tsc --noEmit -p apps/portal/tsconfig.json && vue-tsc --noEmit -p apps/story/tsconfig.json && vue-tsc --noEmit -p apps/product/tsconfig.json && vue-tsc --noEmit -p apps/slide/tsconfig.json",
     "gen:types": "node packages/video-core/tools/gen-types.mjs && node apps/slide/tools/gen-types.mjs",
-    "test:web": "node --test \"apps/product/tests/web/*.test.mjs\" \"apps/story/tests/web/*.test.mjs\" \"tests/site/*.test.mjs\""
+    "test:web": "node --test \"apps/product/tests/web/*.test.mjs\" \"apps/story/tests/web/*.test.mjs\" \"apps/slide/tests/web/*.test.mjs\" \"tests/site/*.test.mjs\""
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.31.0",

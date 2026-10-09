@@ -104,7 +104,7 @@ async function handleCreate() {
           <span class="text-xs text-slate-400">所有檔案直接讀寫本機，全程零後端無雲端傳輸</span>
         </div>
 
-        <p v-if="folderError" class="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400" role="alert">
+        <p v-if="folderError" data-testid="folder-error" class="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400" role="alert">
           {{ folderError }}
         </p>
 
@@ -181,6 +181,7 @@ async function handleCreate() {
             v-model="title"
             type="text"
             required
+            data-testid="setup-title"
             placeholder="例如：雲端微服務架構遷移策略"
             class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
           />
@@ -213,6 +214,7 @@ async function handleCreate() {
           <input
             v-model="audience"
             type="text"
+            data-testid="setup-audience"
             placeholder="例如：技術長、資深工程師、投資人"
             class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
           />
@@ -281,6 +283,7 @@ async function handleCreate() {
           <button
             type="submit"
             :disabled="loading"
+            data-testid="setup-create"
             class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-slate-800 active:bg-slate-950 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:active:bg-slate-200 cursor-pointer disabled:opacity-50 transition-colors"
           >
             建立專案並生成 Agent 指令

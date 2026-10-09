@@ -77,6 +77,7 @@ function requestLines() {
         <textarea
           readonly
           rows="10"
+          data-testid="agent-prompt"
           :value="agentPrompt"
           class="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-relaxed text-slate-800 focus:outline-hidden dark:border-slate-700/60 dark:bg-slate-950/50 dark:text-slate-200"
         ></textarea>

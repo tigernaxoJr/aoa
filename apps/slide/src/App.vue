@@ -154,6 +154,7 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
             <nav class="flex gap-6">
               <button
                 type="button"
+                data-testid="tab-slides"
                 @click="activeTab = 'slides'"
                 class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
                 :class="[
