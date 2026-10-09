@@ -31,7 +31,7 @@ description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML
    比對 manifest 的 `zip.sha256` 後解壓：macOS / Linux `unzip -q slidev-deck.zip`；Windows PowerShell `Expand-Archive slidev-deck.zip -DestinationPath .`。解壓後刪除 zip。範本不含 `slide.start.json` 與 `slide.activity.json`，不會覆蓋網頁寫的檔案。
 2. **安裝依賴**：`pnpm install`（匯出 PDF 需要 Chromium；第一次匯出若出現 `Executable doesn't exist`，執行 `pnpm exec playwright install chromium`）。
 3. **確認要講什麼**：`slide.start.json` 的 `content` 是使用者寫的簡報內容（重點、章節、資料，或要讀取的本機檔案路徑），`notes` 是視覺偏好。`content` 是空的、沒有 `slide.start.json`、或內容只有一個標題時，**先停下來問使用者**：這份簡報要傳達什麼、給誰看、有沒有現成資料可以參考。用 `pnpm run state activity --step init --message "請在對話中告訴我簡報要講什麼" --waiting` 讓網頁顯示正在等待。拿到內容前不規劃大綱。
-4. **填寫專案檔**：範本的 `slide.project.json` 是佔位內容。有 `slide.start.json` 時以它為準（`title`、`audience`、`pagesCount`、`theme`、`aspectRatio`），`--description` 用一句話概括 `content`；沒有就用上一步問到的答案：
+4. **填寫專案檔**：範本的 `slide.project.json` 是佔位內容。有 `slide.start.json` 時以它為準（`title`、`audience`、`pagesCount`、`theme`、`aspectRatio`），`--description` 用一句話概括 `content`；沒有就用上一步問到的答案。`pagesCount` 沒填代表交給你評估：先省略 `--pages`，到大綱階段再依內容決定：
    ```bash
    pnpm run state project --id <英文小寫-連字號> --title "<主題>" --description "<一句說明>" --pages <頁數> --theme <主題風格> --status initialized
    ```
@@ -67,6 +67,7 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
      | `whiteboard` 白板手繪 | 工作坊、腦力激盪、教學、輕鬆分享 | 圖一律用 `<RoughSketch>` 手繪，Mermaid 區塊都加 `{look: 'handDrawn'}`；不用 3D 與漸層卡片 |
 
    - **每頁的呈現方式**：在大綱中逐頁寫出（文字、SVG 圖、Mermaid 圖表類型、手繪圖、3D、引言）。有步驟、流程、先後順序的內容用 Mermaid `flowchart`；有角色之間來回呼叫（服務、API、人與系統）的用 `sequenceDiagram`；時程用 `gantt` / `timeline`（見 [visual-guide.md](visual-guide.md)）。
+   **頁數**：使用者指定了 `pagesCount` 就照做（內容放不下時提出來討論，不要自行增減）；沒指定就依內容份量、受眾與場合評估，在大綱中寫明建議頁數與理由。
    向使用者展示大綱與風格並等待確認，確認後 `pnpm run state project --status outlined --pages <頁數> --style <formal|tech|whiteboard>`。之後的階段（可能在新的對話中）先讀 `slide.project.json` 的 `style` 再動手。
 2. <a id="draft"></a>**撰寫簡報（`/slide-draft`）**：編輯 `slides.md`，以單獨一行的 `---` 分頁；每頁可在開頭用 frontmatter 指定版型：
    - `cover`：首頁與大標題；`two-cols`：左右雙欄（右欄以 `::right::` 開始）；`center`：聚焦單一重點；`quote`：引言。

@@ -26,7 +26,7 @@
 
 ## 2. 工作流程
 
-1. **規劃大綱（`/slide-outline`）**：只依使用者提供的內容（`slide.start.json` 的 `content` 或對話中的說明）規劃；不知道要講什麼就先問，不要沿用範本示範頁的主題。規劃分頁結構、頁數、每頁核心訊息與呈現方式（流程用 Mermaid `flowchart`、角色間呼叫用 `sequenceDiagram`），並和使用者決定**整體風格**：
+1. **規劃大綱（`/slide-outline`）**：只依使用者提供的內容（`slide.start.json` 的 `content` 或對話中的說明）規劃；不知道要講什麼就先問，不要沿用範本示範頁的主題。規劃分頁結構、頁數（`slide.start.json` 有 `pagesCount` 就照做，沒有就依內容份量評估並說明理由）、每頁核心訊息與呈現方式（流程用 Mermaid `flowchart`、角色間呼叫用 `sequenceDiagram`），並和使用者決定**整體風格**：
    - `formal` 正式：簡潔排版、SVG、Mermaid、Iconify；不用手繪與 3D。
    - `tech` 科技：深色卡片、SVG 架構圖、Mermaid 流程圖與時序圖、程式碼；氛圍頁可用 `<ThreeGlobe />`。
    - `whiteboard` 白板手繪（工作坊、教學）：圖一律用 `<RoughSketch>`，Mermaid 區塊都加 `{look: 'handDrawn'}`；不用 3D。

@@ -7,17 +7,39 @@ import CopyButton from './CopyButton.vue'
 const folderName = computed(() => dirHandle.value?.name || '專案資料夾')
 
 // Existing projects only need the Skill; a prepared (empty) folder also needs the template steps,
-// which live in the Skill so the prompt stays short and the Agent verifies the zip's checksum.
+// which live in the Skill so the prompt stays short and the Agent verifies the zip's checksum. A prepared
+// folder's prompt also repeats the form's answers, so the request does not hinge on the Agent reading the file.
 const agentPrompt = computed(() => {
   const title = project.value?.title || start.value?.title || '新簡報'
   const skill = api('skills/slidev-deck/SKILL.md')
   const lead = project.value
     ? `你的工作資料夾是我在網頁上開啟的「${folderName.value}」。請確認工作目錄已在此資料夾，繼續製作 Slidev 簡報「${title}」。`
     : `你的工作資料夾是我在網頁上準備好的「${folderName.value}」。請確認你的工作目錄已切換至「${folderName.value}」，為我製作一份 Slidev 簡報「${title}」。這個資料夾是網頁準備的，需求寫在 slide.start.json，不要在其他地方建立專案。${start.value?.content ? '' : '我還沒寫簡報內容，請先問我要講什麼，再開始規劃大綱。'}`
+  const request = project.value ? '' : requestLines()
   return `${lead}
-
+${request ? `\n${request}\n` : ''}
 請先閱讀並遵循這份 Skill：${skill}`
 })
+
+// Long pasted material stays in slide.start.json; the prompt quotes its start so the request is visible either way.
+const CONTENT_LIMIT = 600
+
+/** The form's answers, spelled out so they reach the Agent even before it opens slide.start.json. */
+function requestLines() {
+  const s = start.value
+  if (!s) return ''
+  const lines = ['我的需求：']
+  const content = s.content?.trim()
+  if (content) {
+    const cut = content.length > CONTENT_LIMIT
+    lines.push(`- 簡報內容：${cut ? `${content.slice(0, CONTENT_LIMIT)}…（全文見 slide.start.json 的 content）` : content}`)
+  }
+  if (s.audience?.trim()) lines.push(`- 目標受眾與場合：${s.audience.trim()}`)
+  lines.push(`- 頁數：${s.pagesCount ? `${s.pagesCount} 頁` : '請依內容評估，在大綱中提出建議頁數'}`)
+  if (s.theme) lines.push(`- 主題風格：${s.theme}`)
+  if (s.notes?.trim()) lines.push(`- 視覺偏好：${s.notes.trim()}`)
+  return lines.length > 1 ? lines.join('\n') : ''
+}
 </script>
 
 <template>
@@ -45,7 +67,7 @@ const agentPrompt = computed(() => {
       <div class="relative">
         <textarea
           readonly
-          rows="7"
+          rows="10"
           :value="agentPrompt"
           class="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-relaxed text-slate-800 focus:outline-hidden dark:border-slate-700/60 dark:bg-slate-950/50 dark:text-slate-200"
         ></textarea>

@@ -347,6 +347,7 @@ export interface SlideStartConfig {
   content?: string
   description?: string
   audience?: string
+  /** A count the user asked for; absent means the Agent sizes the deck to the content. */
   pagesCount?: number
   theme?: string
   aspectRatio?: string

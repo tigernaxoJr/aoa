@@ -12,6 +12,8 @@ const title = ref('')
 // Empty unless the user writes something: a preset would steer every deck toward the same topic.
 const content = ref('')
 const audience = ref('')
+// The AI sizes the deck to the content unless the user asks for a fixed count.
+const pagesMode = ref<'auto' | 'fixed'>('auto')
 const pagesCount = ref(8)
 const theme = ref('default')
 const notes = ref('')
@@ -43,7 +45,7 @@ async function handleCreate() {
       title: title.value.trim(),
       content: content.value.trim(),
       audience: audience.value.trim(),
-      pagesCount: pagesCount.value,
+      pagesCount: pagesMode.value === 'fixed' ? pagesCount.value : undefined,
       theme: theme.value,
       notes: notes.value.trim(),
     })
@@ -208,14 +210,28 @@ async function handleCreate() {
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">預估頁數</label>
-            <input
-              v-model.number="pagesCount"
-              type="number"
-              min="1"
-              max="50"
-              class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
-            />
+            <label for="slide-pages-mode" class="block text-sm font-medium text-slate-700 dark:text-slate-300">頁數</label>
+            <div class="flex gap-2">
+              <select
+                id="slide-pages-mode"
+                v-model="pagesMode"
+                data-testid="pages-mode"
+                class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
+              >
+                <option value="auto">由 AI 依內容評估</option>
+                <option value="fixed">指定頁數</option>
+              </select>
+              <input
+                v-if="pagesMode === 'fixed'"
+                v-model.number="pagesCount"
+                type="number"
+                min="1"
+                max="50"
+                aria-label="指定頁數"
+                data-testid="pages-count"
+                class="mt-1.5 block w-20 shrink-0 rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
+              />
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">簡報主題風格</label>
