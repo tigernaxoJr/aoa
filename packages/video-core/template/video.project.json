@@ -3,11 +3,11 @@
   "specVersion": "1.0.0",
   "project": {
     "id": "00000000-0000-0000-0000-000000000000",
-    "name": "Untitled Product Video",
+    "name": "Untitled Video",
     "sources": {
       "productUrl": null,
       "sourceCodePath": null,
-      "description": "（init 時由 Agent 填入產品來源）",
+      "description": "（init 時由 Agent 依 video.start.json 或使用者的回答填入）",
       "referenceVideoUrl": null
     },
     "targetAudience": "",

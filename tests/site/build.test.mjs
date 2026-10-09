@@ -136,7 +136,8 @@ test('each template ships its own workflow and a command file for every project-
   }
   const story = unzip('api/story/templates/story-video.zip')
   assert.ok(story['.claude/commands/video-story.md'] && !story['.claude/commands/video-analyze.md'], 'story commands only')
-  assert.match(strFromU8(story['.claude/commands/video-storyboard.md']), new RegExp(`${SITE}/api/product/skills/product-video/`), 'guides in the product Skill link there')
+  assert.match(strFromU8(story['.claude/commands/video-sync.md']), new RegExp(`${SITE}/api/product/skills/product-video/`), 'guides in the product Skill link there')
+  assert.match(strFromU8(story['.claude/commands/video-storyboard.md']), new RegExp(`${SITE}/api/story/skills/story-video/story-guide\.md#storyboard`), 'the story storyboard has its own guide')
   const product = unzip('api/product/templates/product-video.zip')
   assert.ok(product['.claude/commands/video-analyze.md'] && !product['.claude/commands/video-story.md'], 'product commands only')
 })

@@ -20,6 +20,15 @@ test('splitCaption balances pieces and prefers punctuation', () => {
   assert.deepEqual(splitCaption('Short one.'), ['Short one.'])
 })
 
+test('splitCaption keeps a product name in one piece', () => {
+  // The space inside "Slide Studio" is nearest the ideal cut; a CJK caption keeps the name together.
+  const pieces = splitCaption('現在就打開 Slide Studio，做出你的第一份簡報。')
+  assert.ok(pieces.some((p) => p.includes('Slide Studio')), pieces.join(' / '))
+  // A hard cut steps back to the start of the word instead of splitting it.
+  assert.deepEqual(splitCaption('一二三四五六七八九十一二Kubernetes部署設定'), ['一二三四五六七八九十一二', 'Kubernetes部署設定'])
+  for (const piece of splitCaption('Deploying a website should not take half a day.')) assert.ok(!/\w-|^\w{1,2}$/.test(piece), piece)
+})
+
 test('blockCues distributes time proportionally without word timings', () => {
   const cues = blockCues(['一二三四。', '五六。'], 3)
   assert.equal(cues.length, 2)

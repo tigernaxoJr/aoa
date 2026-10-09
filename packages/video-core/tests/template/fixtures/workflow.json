@@ -27,12 +27,12 @@
       "onDecline": "不擷取需要登入的頁面：改用使用者提供的截圖或錄影（user-asset），或只擷取不需登入的公開頁面。"
     },
     "asrConsent": {
-      "appliesWhen": "欲啟用 ASR 自動檢查發音與校正時",
+      "appliesWhen": "project.asr.provider 不是 none（要用 ASR 自動檢查發音）時；使用者拒絕後 provider 為 none，tts 照常執行",
       "check": "project.asr.consent.installAsr == true",
       "blocks": ["tts"],
       "ask": "告知使用者：系統具備「AI 自動檢查與校正 TTS 發音」功能，需要使用本機語音辨識模型。我們會自動偵測您的電腦硬體配備：具備獨立顯卡且 VRAM 充裕時預設推薦 Qwen/Qwen3-ASR-1.7B（辨識能力最高）；無獨立顯卡或 CPU 輕量環境則預設推薦 Qwen/Qwen3-ASR-0.6B（佔用小於 1.5GB、推論極快）。模型完全在本地執行、零雲端隱私疑慮、無需任何 API key。請問是否同意安裝並啟用？",
       "record": "project.asr = { provider: 'qwen-asr', model: '<依硬體推薦的模型>', consent: { installAsr: true, grantedAt } }",
-      "onDecline": "設定 project.asr = { provider: 'none' }，不進行 ASR 自動檢驗，僅依賴腳本內的發音標記 [字幕](tts: 發音) 與發音字典。"
+      "onDecline": "以 pnpm run state 把 project.asr.provider 設為 'none'（其他欄位保留），不進行 ASR 自動檢驗，僅依賴腳本內的發音標記 [字幕](tts: 發音) 與發音字典。"
     }
   },
   "steps": [
@@ -59,7 +59,7 @@
         { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、kind（產品介紹為 product，故事影片為 story）、sources、language、format。product 至少需要一種產品來源；story 需要 sources.story 或 sources.description。向使用者確認 targetAudience 與 style；targetDurationSec 未指定時先用預設，analyze 後再確認。" },
         { "id": "install", "do": "pnpm install" },
         { "id": "check_tools", "do": "檢查 ffmpeg / ffprobe、Playwright 瀏覽器、所選 TTS 是否可用；缺少時告知安裝方式，不自行以系統權限安裝。" },
-        { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 並記錄；sources.requiresLogin 為 true 時接著處理 productLogin（pnpm run login，使用者自行登入）。" },
+        { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 與 asrConsent 並記錄；sources.requiresLogin 為 true 時接著處理 productLogin（pnpm run login，使用者自行登入）。" },
         {
           "id": "validate",
           "do": "pnpm run validate",

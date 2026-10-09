@@ -89,7 +89,7 @@
 
 ## 4. 寫入狀態：`pnpm run state`
 
-`state` 會取得鎖檔、重新讀取目標檔、套用修改、原子寫入、執行驗證，並自動更新 `updatedAt` 與 `updatedBy: "agent"`。寫入 scene 後，或以 patch 修改 `video.project.json` 的 `scenes`（新增、移除、調整順序）時，會依 `workflow.json` 的 `derivedProjectStatus` 重算 `project.status`；scene 清單變了就不會是 `completed`，需要重新合成。
+`state` 會取得鎖檔、重新讀取目標檔、套用修改、原子寫入、執行驗證，並自動更新 `updatedAt` 與 `updatedBy: "agent"`。寫入 scene 後，或以 patch 修改 `video.project.json` 的 `scenes`（新增、移除、調整順序）時，會依 `workflow.json` 的 `derivedProjectStatus` 重算 `project.status`；scene 清單變了就不會是 `completed`，需要重新合成。重算只在分鏡之後：專案還在 `analyzed` 或 `designed`（第一次寫分鏡）時登記 scene，狀態不會自動前進，分鏡確認後以 `--status script_generated` 標記。之後狀態由 scene 推導：每個 scene 都還是 `draft` 時是 `script_generated`，手動設的 `producing` 會在下一次寫入 scene 時被改回，等有 scene 進入 `assets_ready` 才會維持。
 
 ```bash
 # 改狀態

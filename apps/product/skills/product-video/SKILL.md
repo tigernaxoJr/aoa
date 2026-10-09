@@ -81,7 +81,7 @@ description: 在使用者本機製作產品介紹影片：分析產品網址或�
      使用者同意時，以 `pnpm run state` 記錄 `project.asr = { provider: "qwen-asr", model: "<依硬體推薦的模型>", consent: { installAsr: true, grantedAt: "<時間>" } }`；不同意時記錄 `project.asr.provider = "none"`。
    以 `pnpm run state` 寫入結果。
    - `productLogin`（`sources.requiresLogin` 為 true 時）：在這裡就請使用者登入，不要等到分析時才發現，做法見 [workflow.md#login](workflow.md#login)。登入結果不寫入 JSON。
-8. **驗證**：執行 `pnpm run validate`，通過後告知使用者專案已建立、資料夾在哪裡（用「文件 > acme-video」這種說法），並直接問他是否要開始分析產品（即 analyze 步驟），不必要求他輸入指令。
+8. **驗證**：執行 `pnpm run validate`，通過後告知使用者專案已建立、資料夾在哪裡（用「文件 > acme-video」這種說法；網頁準備的資料夾就說「網頁上準備的『<資料夾名稱>』資料夾」，不必說出完整路徑），並直接問他是否要開始分析產品（即 analyze 步驟），不必要求他輸入指令。
 
 ## 3. 各步驟的做法
 

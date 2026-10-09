@@ -369,7 +369,7 @@ export interface VideoProjectJson {
       };
     };
     /**
-     * 字幕設定，只在 assemble 階段使用，不納入 scene 的 inputHash（SPEC §7.5）。
+     * 字幕設定。`srt` 只在 assemble 階段使用，不納入 scene 的 inputHash；`burn` 時字幕在 render:scene 畫進每個 scene，設定納入 inputHash，改了要重新渲染（SPEC §7.5）。
      */
     captions?: {
       mode?: "srt" | "burn" | "none";

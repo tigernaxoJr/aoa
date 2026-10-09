@@ -36,15 +36,15 @@ description: 在使用者本機把故事做成 SVG 動畫影片：引導使用�
    - `project.sources`：`{ "story": "<原文>" }`（不需要 `productUrl` 等產品欄位）
    - `project.customMotion`：`"allow"`（故事的每一段都是你畫的動畫，不逐段詢問）
    - `project.language`、`project.targetAudience`、`project.style`、`project.format`、`project.captions`
-   - `project.tts`：旁白的聲音；使用 CosyVoice 3 時設為 `{ "provider": "cosyvoice3", "voice": "中文女 <用溫暖柔和的繪本旁白語氣>" }`，角色的聲音在美術步驟由你自動依角色性格配置，寫在 `project.cast`（§4）
+   - `project.tts`：旁白的聲音，先依 `ttsProvider`（沒有就是 `cosyvoice3`）填；第 7 點使用者改選其他引擎時，以 `pnpm run state` 改寫。使用 CosyVoice 3 時設為 `{ "provider": "cosyvoice3", "voice": "中文女 <用溫暖柔和的繪本旁白語氣>" }`，角色的聲音在美術步驟由你自動依角色性格配置，寫在 `project.cast`（§4）
    - `updatedAt`：目前時間
    新專案沒有其他寫入者，這一次可以直接編輯 `video.project.json`；之後一律依 `AGENTS.md` 透過 `pnpm run state` 修改。
 6. **安裝與檢查**：照 [product-video SKILL.md §2 第 6 點](../product-video/SKILL.md#init)（Node.js、pnpm、`pnpm install`、瀏覽器）。故事影片不錄網頁，但渲染動畫仍需要瀏覽器。
 7. **Gate `onlineTtsConsent`、`asrConsent` 與語音引擎**：
    - 故事影片推薦使用 **CosyVoice 3 智慧角色配音**；`video.start.json` 的 `ttsProvider` 是 `edge-tts` 時改用微軟語音，照 [product-video SKILL.md](../product-video/SKILL.md#init) 的 `onlineTtsConsent` 問法確認，不要再推薦 CosyVoice 3。使用 CosyVoice 3 時向使用者確認（括號裡的例子換成**這個故事**的角色，不要沿用下面的佔位文字）：
-     「影片中的旁白與角色對白，預計會使用 **CosyVoice 3 智慧語音** 產生自然生動的聲音，在後續角色設計階段，我會**自動配合每位角色的年齡、個性與情境配上專屬語氣指令**（例如〈角色甲〉用〈適合他的語氣〉、〈角色乙〉用〈適合他的語氣〉），亦支援自行錄音克隆。若環境連線至遠端語音服務，台詞會傳送至該端點轉換：
+     「影片中的旁白與角色對白，預計會使用 **CosyVoice 3 智慧語音** 產生自然生動的聲音，在後續角色設計階段，我會**自動配合每位角色的年齡、個性與情境配上專屬語氣指令**（例如〈角色甲〉用〈適合他的語氣〉、〈角色乙〉用〈適合他的語氣〉），亦支援自行錄音克隆。〔這台電腦還沒裝過時加這句：第一次使用要先安裝語音程式與模型，約需下載數 GB、佔用數 GB 硬碟空間，之後每部影片共用；製作時會在背景開一個本機語音服務。〕〔連到遠端語音服務時改說：台詞會傳送至該服務轉換。〕
      • 請問可以使用嗎？（若想使用微軟 Edge-TTS 或電腦內建離線語音，也可以告訴我改用）」
-   - 使用者同意（回覆「可以」或「好」）時，以 `pnpm run state` 記錄 `project.tts.consent.onlineTts: true`。故事影片沒有 `productLogin`、`domEditConsent`。
+   - 使用者同意（回覆「可以」或「好」）時：用本機 CosyVoice 3 不必記錄 `onlineTts`（資料不出電腦），依 `AGENTS.md` 取得安裝同意後執行 `pnpm run cosyvoice:setup`；用遠端服務或 Edge-TTS 時以 `pnpm run state` 記錄 `project.tts.consent.onlineTts: true`。故事影片沒有 `productLogin`、`domEditConsent`。
    - **`asrConsent`（自動檢查發音）**：若欲啟用發音自我校正，向使用者說明：「系統具備語音合成後自動以本地 ASR 回聽檢查發音的功能。這需要使用本機開源模型，我會依您的硬體規格自動挑選：具備獨立顯卡（VRAM ≥ 4GB）預設推薦 **Qwen/Qwen3-ASR-1.7B**；無獨立顯卡或 CPU 輕量環境預設推薦 **Qwen/Qwen3-ASR-0.6B**（佔用小於 1.5GB、推論極快）。全程在本機執行、完全無雲端隱私疑慮。請問是否同意啟用並安裝？」同意時以 `pnpm run state` 記錄 `project.asr`，不同意則設為 `none`。
 8. **驗證**：`pnpm run validate`，通過後告訴使用者專案建好了、資料夾在哪裡，並直接問他要不要開始整理故事。
 

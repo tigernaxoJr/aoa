@@ -504,7 +504,7 @@ Agent 重算所有 scene 的 inputHash，找出 stale / 不相符者
 
 ```json
 {
-  "name": "product-video-project",
+  "name": "video-project",
   "private": true,
   "type": "module",
   "scripts": {

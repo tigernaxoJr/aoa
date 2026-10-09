@@ -11,12 +11,12 @@
       "onDecline": "停下，請使用者選擇離線 provider 或 manual。"
     },
     "asrConsent": {
-      "appliesWhen": "欲啟用 ASR 自動檢查發音與校正時",
+      "appliesWhen": "project.asr.provider 不是 none（要用 ASR 自動檢查發音）時；使用者拒絕後 provider 為 none，tts 照常執行",
       "check": "project.asr.consent.installAsr == true",
       "blocks": ["tts"],
       "ask": "告知使用者：系統具備「AI 自動檢查與校正 TTS 發音」功能，需要使用本機語音辨識模型。我們會自動偵測您的電腦硬體配備：具備獨立顯卡且 VRAM 充裕時預設推薦 Qwen/Qwen3-ASR-1.7B（辨識能力最高）；無獨立顯卡或 CPU 輕量環境則預設推薦 Qwen/Qwen3-ASR-0.6B（佔用小於 1.5GB、推論極快）。模型完全在本地執行、零雲端隱私疑慮、無需任何 API key。請問是否同意安裝並啟用？",
       "record": "project.asr = { provider: 'qwen-asr', model: '<依硬體推薦的模型>', consent: { installAsr: true, grantedAt } }",
-      "onDecline": "設定 project.asr = { provider: 'none' }，不進行 ASR 自動檢驗，僅依賴腳本內的發音標記 [字幕](tts: 發音) 與發音字典。"
+      "onDecline": "以 pnpm run state 把 project.asr.provider 設為 'none'（其他欄位保留），不進行 ASR 自動檢驗，僅依賴腳本內的發音標記 [字幕](tts: 發音) 與發音字典。"
     }
   },
   "steps": [
@@ -43,7 +43,7 @@
         { "id": "fill_project", "do": "填入 project.id（新 UUID）、name、kind（story）、sources、language、format。需要 sources.story 或 sources.description。向使用者確認 targetAudience 與 style；targetDurationSec 未指定時先用預設，analyze 後再確認。" },
         { "id": "install", "do": "pnpm install" },
         { "id": "check_tools", "do": "檢查 ffmpeg / ffprobe、Playwright 瀏覽器、所選 TTS 是否可用；缺少時告知安裝方式，不自行以系統權限安裝。" },
-        { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 並記錄。" },
+        { "id": "gates", "do": "依 gates 詢問 onlineTtsConsent 與 asrConsent 並記錄。" },
         {
           "id": "validate",
           "do": "pnpm run validate",
@@ -127,7 +127,7 @@
         { "path": "video.project.json", "note": "scenes 陣列" }
       ],
       "actions": [
-        { "id": "plan", "do": "規劃 3–8 個 scene，依起承轉合：opening → setup → conflict → climax → resolution → ending，做法見 story-video Skill 的 story-guide.md#storyboard。" },
+        { "id": "plan", "do": "依目標長度規劃 scene（每段 4–8 秒，段數見 story-guide.md 的「長度與段數」），依起承轉合：opening → setup → conflict → climax → resolution → ending，做法見 story-video Skill 的 story-guide.md#storyboard。" },
         {
           "id": "revise",
           "do": "已有 scene 時改為修訂現有分鏡：只改使用者要求的部分，先提出逐段的保留／修改／新增／移除清單並等使用者確認，確認後才寫入；保留的 scene 沿用原 id 與目錄。此時 write 只建立新增的 scene，register 只更新 scenes 陣列，不設定 project 狀態（state 會依 scene 自動重算）。最後執行 sync，只重做有變更的 scene 並重新合成。做法見 script-guide.md#revise。",
@@ -146,7 +146,7 @@
         { "id": "validate", "do": "pnpm run validate" }
       ],
       "checkpoint": "列出分鏡總覽（每個 scene 的標題、purpose、畫面、預估秒數），再逐段列出完整旁白稿與畫面文字，請使用者審閱。使用者明確確認前不得執行 tts 或 render；確認後才可進入 build_scene。重新規劃時，總覽多一欄標示每段是保留、修改、新增或移除，並在寫入任何檔案前請使用者確認；確認後寫入並執行 sync。",
-      "guide": "skills/product-video/script-guide.md"
+      "guide": "skills/story-video/story-guide.md#storyboard"
     },
     {
       "id": "build_scene",

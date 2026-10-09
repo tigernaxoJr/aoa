@@ -18,7 +18,7 @@ PyTorch、CosyVoice 與模型權重合計數 GB，而本機服務與專案無關
 └── pretrained_models/Fun-CosyVoice3-0.5B/ # 模型權重
 ```
 
-- 設定環境變數 `AOA_HOME` 可改放到其他位置（例如空間較大的磁碟）：`AOA_HOME=D:oa`。
+- 設定環境變數 `AOA_HOME` 可改放到其他位置（例如空間較大的磁碟）：`AOA_HOME=D:\aoa`。
 - 第二個專案起執行 `pnpm run cosyvoice:setup` 會沿用已安裝的環境與權重，不會重複下載。
 - 一個 `pnpm run cosyvoice:serve` 可同時供所有專案使用；聲音克隆的 `@/` 參考音檔由各專案的 `pnpm run tts` 換成絕對路徑後送出。
 - 舊版範本把權重下載在專案內的 `scripts/cosyvoice/pretrained_models/`；執行 `cosyvoice:setup` 或 `cosyvoice:serve` 時會自動搬到共用位置（共用位置已有時則刪除專案內的重複副本）。

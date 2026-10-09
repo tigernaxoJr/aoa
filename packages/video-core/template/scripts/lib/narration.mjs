@@ -85,6 +85,7 @@ export function parseScript(script, options = {}) {
 }
 
 const CJK = /[぀-ヿ㐀-鿿가-힯]/
+const LATIN = /[A-Za-z0-9]/
 
 /** Max caption length: 16 characters for CJK text, 42 otherwise. */
 export function captionLimit(text) {
@@ -100,6 +101,14 @@ const weight = (text) => text.replace(/\s+/g, '').length || 1
  */
 export function splitCaption(text, limit = captionLimit(text)) {
   if (text.length <= limit) return [text]
+  // A cut never splits a Latin word; in CJK text it also keeps a run of Latin words (a name such as
+  // "Slide Studio") together, since the space inside it is not where a CJK reader expects a break.
+  const cjk = CJK.test(text)
+  const splits = (s, at) => {
+    const before = cjk ? s.slice(0, at).trimEnd().slice(-1) : s[at - 1]
+    const after = cjk ? s.slice(at).trimStart()[0] : s[at]
+    return LATIN.test(before ?? '') && LATIN.test(after ?? '')
+  }
   const pieces = []
   let rest = text
   while (rest.length > limit) {
@@ -112,14 +121,24 @@ export function splitCaption(text, limit = captionLimit(text)) {
       for (const m of rest.matchAll(re)) {
         const at = m.index + 1
         const distance = Math.abs(at - ideal)
-        if (at <= limit && distance <= reach && distance < best) {
+        if (at <= limit && distance <= reach && distance < best && !splits(rest, at)) {
           best = distance
           cut = at
         }
       }
       if (cut > 0) break
     }
-    if (cut <= 0) cut = Math.min(ideal, limit)
+    if (cut <= 0) {
+      // Hard cut: move to whichever edge of the word (or run of words) is nearer the ideal and still
+      // fits the line; a word longer than the line goes whole.
+      const hard = Math.min(ideal, limit)
+      let back = hard
+      while (back > 0 && splits(rest, back)) back--
+      let ahead = hard
+      while (ahead < rest.length && splits(rest, ahead)) ahead++
+      const fits = [back, ahead].filter((at) => at > 0 && at <= limit)
+      cut = fits.length ? fits.reduce((a, b) => (Math.abs(b - ideal) < Math.abs(a - ideal) ? b : a)) : ahead
+    }
     pieces.push(rest.slice(0, cut).trim())
     rest = rest.slice(cut).trim()
   }

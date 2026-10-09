@@ -23,7 +23,7 @@
    ```bash
    pnpm run capture --url <網址> --out brief/screens/
    ```
-   會輸出整頁截圖、首屏截圖、頁面文字，以及 `<slug>.elements.txt`：頁面上可見的標題、按鈕、連結、輸入框與它們的 selector，寫分鏡時用來挑選要 highlight 的元素（見 [script-guide.md#highlight](script-guide.md#highlight)）。`sources.requiresLogin` 為 true 時，擷取前先依 [login](#login) 請使用者自己登入；擷取時出現 `gate productLogin`（被導到登入頁）也一樣。
+   會輸出整頁截圖、首屏截圖、頁面文字，以及 `<slug>.elements.txt`：頁面上可見的標題、按鈕、連結、輸入框與它們的 selector，寫分鏡時用來挑選要 highlight 的元素（見 [script-guide.md#highlight](script-guide.md#highlight)）。`sources.requiresLogin` 為 true 時，擷取前先依 [login](#login) 請使用者自己登入；擷取時出現 `gate productLogin`（被導到登入頁）也一樣。產品的功能畫面要使用者在瀏覽器按允許才看得到（例如選本機資料夾、開相機、通知權限）時，錄不到那些畫面：在 brief 的不確定處寫明，分鏡改用原始碼裡的介面文字與配色重畫（自訂動畫，依 `customMotion` 處理），或請使用者提供截圖。
 
 **產品原始碼**（`sources.sourceCodePath`，唯讀）
 
