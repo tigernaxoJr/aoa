@@ -6,7 +6,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { launchBrowser } from './browser.mjs'
+import { closeBrowser, launchBrowser } from './browser.mjs'
 
 export const SAMPLE_RATE = 48000
 
@@ -105,7 +105,7 @@ export async function renderWebAudio(song, { seed = 1, mix = {} }, outFile) {
     const b64 = await page.evaluate(synth, { events: song.events, duration: song.duration + 1, sr: SAMPLE_RATE, seed, mix })
     writeFileSync(outFile, wav(Buffer.from(b64, 'base64'), SAMPLE_RATE, 2))
   } finally {
-    await browser.close()
+    await closeBrowser(browser)
   }
 }
 

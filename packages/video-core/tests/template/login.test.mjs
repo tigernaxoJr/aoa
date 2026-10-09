@@ -9,6 +9,11 @@ import { baseProject, baseScene, makeProject } from './helpers.mjs'
 
 let p
 afterEach(() => p?.cleanup())
+/**
+ * Tests that start browsers: each script run is already killed after a few minutes (runAsync), so a
+ * stuck browser fails the test rather than holding up the suite.
+ */
+const BROWSER = { timeout: 15 * 60_000 }
 
 test('isLoginUrl spots sign-in pages and identity providers, not ordinary pages', () => {
   for (const url of [
@@ -62,7 +67,7 @@ test('a product marked requiresLogin cannot be captured before the user signs in
   }
 })
 
-test('capture opens the page with the saved sign-in', async (t) => {
+test('capture opens the page with the saved sign-in', BROWSER, async (t) => {
   await withProduct(async (origin) => {
     const project = baseProject()
     project.project.sources.requiresLogin = true
@@ -75,7 +80,7 @@ test('capture opens the page with the saved sign-in', async (t) => {
   })
 })
 
-test('a redirect to a sign-in page stops capture and asks for login, saved or not', async (t) => {
+test('a redirect to a sign-in page stops capture and asks for login, saved or not', BROWSER, async (t) => {
   await withProduct(async (origin) => {
     p = makeProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene: shotScene(`${origin}/app`) }] })
     let r = await p.runAsync('capture.mjs', ['scene-001'])
@@ -144,7 +149,7 @@ async function withSelfSigningProduct(fn) {
 
 const HIDDEN = { VIDEO_AGENT_HEADLESS: '1', VIDEO_AGENT_LOGIN_WAIT_SEC: '7' }
 
-test('login keeps the sign-in once the user is past the sign-in page, and the note says so', async (t) => {
+test('login keeps the sign-in once the user is past the sign-in page, and the note says so', BROWSER, async (t) => {
   await withSelfSigningProduct(async (origin, notes) => {
     const project = baseProject()
     project.project.sources = { productUrl: `${origin}/app`, requiresLogin: true }
@@ -162,7 +167,7 @@ test('login keeps the sign-in once the user is past the sign-in page, and the no
   })
 })
 
-test('closing the sign-in window without signing in keeps nothing', async (t) => {
+test('closing the sign-in window without signing in keeps nothing', BROWSER, async (t) => {
   await withSelfSigningProduct(async (origin) => {
     p = makeProject()
     const r = await p.runAsync('login.mjs', [`${origin}/app?giveup`], HIDDEN)

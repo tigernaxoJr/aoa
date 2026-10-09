@@ -5,7 +5,7 @@
 import { mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
-import { launchBrowser } from './lib/browser.mjs'
+import { closeBrowser, launchBrowser } from './lib/browser.mjs'
 import { AUTH_FILE, isLoginUrl, signInNote } from './lib/login.mjs'
 import { UsageError, findRoot, loadProject } from './lib/project.mjs'
 
@@ -54,7 +54,7 @@ run(async (argv) => {
       await new Promise((r) => setTimeout(r, POLL_MS))
     }
   } finally {
-    await browser.close().catch(() => {})
+    await closeBrowser(browser)
   }
   if (!kept) throw new UsageError('login: the window was closed before the user signed in; nothing was kept')
   if (!signedIn) {

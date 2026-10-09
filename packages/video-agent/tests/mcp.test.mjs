@@ -9,6 +9,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { build as buildProduct } from '../../../apps/product/tools/build-api.mjs'
 import { build as buildStory } from '../../../apps/story/tools/build-api.mjs'
+import { killTree } from '../../video-core/tests/template/helpers.mjs'
 import { FAKE_TTS, agentBin, fullProject, motionScene, repo } from './helpers.mjs'
 
 let guide
@@ -18,24 +19,42 @@ before(() => {
 })
 after(() => rmSync(guide, { recursive: true, force: true }))
 
-async function connect(t, projectDir) {
+/**
+ * Tool calls that run the project's scripts (tts, browsers, ffmpeg). On a busy machine they take longer
+ * than the SDK's 60 s default; when that runs out the client cancels and the server drops the answer.
+ */
+const SLOW = { timeout: 5 * 60_000 }
+/** A test that renders: a few slow calls, with room to spare. */
+const RENDERS = { timeout: 15 * 60_000 }
+
+/** Connects to a server for project `p`; the test's teardown stops the server, then removes `p`. */
+async function connect(t, p) {
   const client = new Client({ name: 'test', version: '1.0.0' })
   const transport = new StdioClientTransport({
     command: process.execPath,
-    args: [agentBin, 'mcp', '--project', projectDir],
+    args: [agentBin, 'mcp', '--project', p.root],
     env: { ...process.env, ...FAKE_TTS, VIDEO_AGENT_GUIDE_DIR: join(guide, 'api') },
     stderr: 'pipe',
   })
+  let stderr = ''
+  transport.stderr.on('data', (d) => (stderr += d)) // read, or a chatty server would block on a full pipe
+  // One hook, in this order: a failed test can leave a script running in the project, which on Windows
+  // keeps its files from being removed. With separate hooks the throwing cleanup made node:test skip
+  // client.close(), and the server left running kept this file, and the whole suite, waiting forever.
+  t.after(async () => {
+    if (transport.pid) killTree(transport.pid) // with the scripts it is still running
+    await client.close()
+    p.cleanup()
+    if (stderr) t.diagnostic(`server stderr: ${stderr}`)
+  })
   await client.connect(transport)
-  t.after(() => client.close())
   return client
 }
 const json = (result) => JSON.parse(result.content[0].text)
 
 test('guide resources and prompts come from the Guide API', async (t) => {
   const p = fullProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene: motionScene('scene-001') }] })
-  t.after(p.cleanup)
-  const client = await connect(t, p.root)
+  const client = await connect(t, p)
   const uris = (await client.listResources()).resources.map((r) => r.uri)
   for (const uri of ['video://guide', 'video://workflow', 'video://schemas/project', 'video://schemas/scene', 'video://rules/script', 'video://rules/visual', 'video://templates/product-introduction', 'video://project/current']) {
     assert.ok(uris.includes(uri), uri)
@@ -55,11 +74,10 @@ test('guide resources and prompts come from the Guide API', async (t) => {
   assert.match(prompt.messages[0].content.text, /寫旁白/)
 })
 
-test('create_scene, update_scene, render_scene, assemble_video drive a project to completed', async (t) => {
+test('create_scene, update_scene, render_scene, assemble_video drive a project to completed', RENDERS, async (t) => {
   const p = fullProject()
-  t.after(p.cleanup)
-  const client = await connect(t, p.root)
-  const call = (name, args = {}) => client.callTool({ name, arguments: args })
+  const client = await connect(t, p)
+  const call = (name, args = {}) => client.callTool({ name, arguments: args }, undefined, SLOW)
 
   let r = await call('create_scene', { dir: 'scenes/001-hook', scene: motionScene('scene-001'), script: '一二三四。' })
   assert.ok(!r.isError, r.content[0].text)
@@ -92,8 +110,7 @@ test('create_scene, update_scene, render_scene, assemble_video drive a project t
 
 test('invalid changes are refused and leave no trace', async (t) => {
   const p = fullProject({ scenes: [{ id: 'scene-001', dir: 'scenes/001-hook', scene: motionScene('scene-001') }] })
-  t.after(p.cleanup)
-  const client = await connect(t, p.root)
+  const client = await connect(t, p)
   const bad = motionScene('scene-002', { purpose: 'not-a-purpose' })
   let r = await client.callTool({ name: 'create_scene', arguments: { dir: 'scenes/002-bad', scene: bad, script: 'x' } })
   assert.equal(r.isError, true)
@@ -110,8 +127,7 @@ test('invalid changes are refused and leave no trace', async (t) => {
 
 test('create_project unpacks the checksum-verified template and rejects a tampered one', async (t) => {
   const p = fullProject()
-  t.after(p.cleanup)
-  const client = await connect(t, p.root)
+  const client = await connect(t, p)
   const target = join(p.root, 'new-project')
   const r = await client.callTool({ name: 'create_project', arguments: { directory: target, name: '新影片', productUrl: 'https://acme.test', language: 'en-US' } })
   assert.ok(!r.isError, r.content[0].text)

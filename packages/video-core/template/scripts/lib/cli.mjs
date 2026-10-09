@@ -1,4 +1,5 @@
 // Shared entry-point wrapper: expected failures print a message; anything else prints a stack.
+import { browserAbandoned } from './browser.mjs'
 import { UsageError } from './project.mjs'
 
 export async function run(main) {
@@ -9,6 +10,8 @@ export async function run(main) {
     console.error(err instanceof UsageError ? `error: ${err.message}` : err)
     process.exitCode = 1
   }
+  // A browser that would not close keeps the process alive; exiting has Playwright kill it.
+  if (browserAbandoned()) process.exit()
 }
 
 /** Minimal flag parser: positional args plus `--flag`, `--flag value`. Values listed in `takes` consume the next arg. */

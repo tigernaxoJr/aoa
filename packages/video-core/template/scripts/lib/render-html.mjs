@@ -2,7 +2,7 @@
 // frame with Playwright and encoded by FFmpeg. No recordVideo: every frame is deterministic.
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { launchBrowser } from './browser.mjs'
+import { closeBrowser, launchBrowser } from './browser.mjs'
 import { AUDIO_ENCODE, RGB_TO_BT709, VIDEO_ENCODE, ffmpeg, ffmpegStream } from './media.mjs'
 import { TRANSITION_SEC } from './timeline.mjs'
 
@@ -91,7 +91,7 @@ export async function renderHtml({ root, plan, work, server, out, log, subtitles
     encoder.kill()
     throw err
   } finally {
-    await Promise.all(browsers.map((b) => b.close()))
+    await Promise.all(browsers.map(closeBrowser))
   }
 }
 

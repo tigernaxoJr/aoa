@@ -85,17 +85,41 @@ export function makeProject({ project = baseProject(), scenes = [] } = {}) {
       })
       return { code: r.status, stdout: r.stdout, stderr: r.stderr }
     },
-    /** Like run(), but does not block the event loop (needed when the test process also serves HTTP). */
-    runAsync: (script, args = [], env = {}) =>
+    /**
+     * Like run(), but does not block the event loop (needed when the test process also serves HTTP).
+     * A script still running after `timeoutMs` is killed with its browsers and fails (code null), so a
+     * stuck script fails its test instead of holding up the suite.
+     */
+    runAsync: (script, args = [], env = {}, { timeoutMs = RUN_TIMEOUT_MS } = {}) =>
       new Promise((resolve) => {
         const child = spawn(process.execPath, [join(scriptsDir, script), ...args], { cwd: root, env: { ...process.env, ...env } })
         let stdout = ''
         let stderr = ''
         child.stdout.on('data', (d) => (stdout += d))
         child.stderr.on('data', (d) => (stderr += d))
-        child.on('close', (code) => resolve({ code, stdout, stderr }))
+        const timer = setTimeout(() => {
+          if (child.exitCode === null && child.signalCode === null) killTree(child.pid)
+          resolve({ code: null, stdout, stderr: `${stderr}\n[test] ${script} ${args.join(' ')} still running after ${timeoutMs / 1000}s; killed` })
+        }, timeoutMs)
+        child.on('close', (code) => {
+          clearTimeout(timer)
+          resolve({ code, stdout, stderr })
+        })
       }),
-    cleanup: () => rmSync(root, { recursive: true, force: true }),
+    cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 10 }),
+  }
+}
+
+/** runAsync's limit: far above a busy machine's slowest script run here (a few renders), well below forever. */
+const RUN_TIMEOUT_MS = 5 * 60_000
+
+/** Kills a process with the scripts, browsers and encoders it started (they would outlive it on Windows). */
+export function killTree(pid) {
+  if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true })
+  else {
+    try {
+      process.kill(pid, 'SIGKILL')
+    } catch {}
   }
 }
 

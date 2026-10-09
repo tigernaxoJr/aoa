@@ -26,7 +26,7 @@ export function fullProject({ scenes = [] } = {}) {
     writeJson(join(root, s.dir, 'scene.json'), s.scene ?? baseScene(s.id))
     writeFileSync(join(root, s.dir, 'script.md'), s.script ?? '一二三四。\n')
   }
-  return { root, path: (...p) => join(root, ...p), cleanup: () => rmSync(root, { recursive: true, force: true }) }
+  return { root, path: (...p) => join(root, ...p), cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 10 }) }
 }
 
 export const motionScene = (id, extra = {}) =>

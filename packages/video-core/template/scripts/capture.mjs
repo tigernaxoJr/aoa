@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs, run } from './lib/cli.mjs'
-import { launchBrowser as launch } from './lib/browser.mjs'
+import { closeBrowser, launchBrowser as launch } from './lib/browser.mjs'
 import { checkSignedIn, signInOptions } from './lib/login.mjs'
 import { cutFilter, ffmpeg, VIDEO_ENCODE } from './lib/media.mjs'
 import { UsageError, findRoot, findSceneRef, isInside, loadProject, readJson, resolveProjectPath, sceneFile } from './lib/project.mjs'
@@ -63,7 +63,7 @@ async function capturePage(root, flags) {
     writeFileSync(join(outDir, `${slug}.elements.txt`), `# selector\ttext (${flags.url})\n${elements.map((e) => `${e.selector}\t${e.text}`).join('\n')}\n`)
     console.log(`captured ${flags.url} → ${flags.out}/${slug}-{top,full}.png, ${slug}.txt, ${slug}.elements.txt`)
   } finally {
-    await browser.close()
+    await closeBrowser(browser)
   }
   return 0
 }
@@ -165,7 +165,7 @@ async function captureScene(root, id) {
     console.log(`${id}: recording → ${ref.dir}/assets/capture.mp4`)
     return 0
   } finally {
-    await browser.close()
+    await closeBrowser(browser)
     rmSync(videoDir, { recursive: true, force: true })
   }
 }
