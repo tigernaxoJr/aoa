@@ -21,17 +21,17 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
         <span
           v-if="i > 0"
           class="absolute top-3.5 right-1/2 h-0.5 w-full"
-          :class="i <= current || current === -1 ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'"
+          :class="i <= current || current === -1 ? 'bg-stone-900 dark:bg-stone-300' : 'bg-stone-200 dark:bg-stone-700'"
           aria-hidden="true"
         />
         <span
-          class="relative flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold"
+          class="relative flex h-7 w-7 items-center justify-center rounded-full border-2 font-mono text-xs"
           :class="
             i < current || current === -1
-              ? 'border-emerald-500 bg-emerald-500 text-white'
+              ? 'border-stone-900 bg-stone-900 text-white dark:border-stone-200 dark:bg-stone-200 dark:text-stone-900'
               : i === current
-                ? 'border-sky-600 bg-white text-sky-700 ring-4 ring-sky-600/15 dark:border-sky-400 dark:bg-slate-900 dark:text-sky-300'
-                : 'border-slate-300 bg-white text-slate-400 dark:border-slate-600 dark:bg-slate-900'
+                ? 'border-accent bg-white text-accent-ink ring-4 ring-accent/15 dark:bg-stone-900'
+                : 'border-stone-300 bg-white text-stone-400 dark:border-stone-600 dark:bg-stone-900'
           "
         >
           <Icon v-if="i < current || current === -1" name="check" :size="14" />
@@ -39,7 +39,7 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
         </span>
         <span
           class="mt-2 px-1 text-xs sm:text-sm"
-          :class="[i === current ? 'font-semibold whitespace-nowrap text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400', i === current ? '' : 'hidden sm:block']"
+          :class="[i === current ? 'font-semibold whitespace-nowrap text-stone-900 dark:text-white' : 'text-stone-500 dark:text-stone-400', i === current ? '' : 'hidden sm:block']"
         >
           {{ step.label }}
         </span>
@@ -48,11 +48,11 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
 
     <div
       class="mt-5 flex flex-col gap-4 border-t px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between"
-      :class="next.command ? 'border-sky-100 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/30' : 'border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/60'"
+      :class="next.command ? 'border-stone-200 bg-stone-50 dark:border-stone-800 dark:bg-stone-950/40' : 'border-stone-100 bg-stone-50/60 dark:border-stone-800 dark:bg-stone-900/60'"
     >
       <div class="min-w-0 lg:max-w-[45%]">
         <p class="font-semibold">{{ plain.title }}</p>
-        <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{{ plain.hint }}</p>
+        <p class="mt-0.5 text-sm text-stone-600 dark:text-stone-400">{{ plain.hint }}</p>
         <p v-if="state!.lock.active" class="mt-1 flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400">
           <Icon name="lock" :size="14" />{{ state!.lock.writer ?? 'Agent' }} 正在寫入，網頁上的修改會稍候再存
         </p>

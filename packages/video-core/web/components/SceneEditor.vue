@@ -116,7 +116,7 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
   <section v-if="s && scene" class="card relative p-4 sm:p-5" :data-testid="`editor-${id}`">
     <header>
       <div class="-mt-1 -mr-1 -ml-1 flex items-center justify-between gap-2">
-        <nav class="flex items-center gap-0.5 text-xs text-slate-500 dark:text-slate-400" aria-label="切換段落" data-testid="scene-nav">
+        <nav class="flex items-center gap-0.5 text-xs text-stone-500 dark:text-stone-400" aria-label="切換段落" data-testid="scene-nav">
           <button type="button" class="icon-btn" :disabled="!prev" aria-label="上一段" :title="prev ? `上一段：${prev.scene?.title ?? prev.id}（K）` : '已是第一段'" @click="prev && emit('go', prev.id)">
             <Icon name="back" />
           </button>
@@ -127,12 +127,12 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
         </nav>
         <button type="button" class="icon-btn" aria-label="關閉編輯" title="回到完整影片（Esc）" @click="emit('close')"><Icon name="x" /></button>
       </div>
-      <h2 class="mt-2 flex min-w-0 items-center gap-2 text-lg font-semibold">
+      <h2 class="mt-2 flex min-w-0 items-center gap-2 font-serif text-xl font-bold">
         <span class="truncate">{{ scene.title }}</span>
         <span v-if="badge" class="chip" :class="TONE_CLASS[badge.tone]">{{ badge.text }}</span>
-        <Icon v-if="scene.locked" name="lock" :size="14" class="text-slate-400" />
+        <Icon v-if="scene.locked" name="lock" :size="14" class="text-stone-400" />
       </h2>
-      <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+      <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
         {{ PURPOSE_LABEL[scene.purpose] ?? scene.purpose }} · {{ VISUAL_LABEL[scene.visual.type] ?? scene.visual.type }} ·
         <span class="font-mono">{{ id }}</span>
       </p>
@@ -142,7 +142,7 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
       <Icon name="alert" class="mt-0.5" />
       <p>{{ scene.error.step }} 失敗：{{ scene.error.message }}<span v-if="scene.error.hint" class="mt-1 block">建議：{{ scene.error.hint }}</span></p>
     </div>
-    <div v-if="scene.locked" class="callout mt-3 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+    <div v-if="scene.locked" class="callout mt-3 bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
       <Icon name="lock" class="mt-0.5" />
       <p>已鎖定：Agent 不會修改或重做這一段。你仍可以編輯，但要解除鎖定後，修改才會被套用。</p>
     </div>
@@ -183,9 +183,9 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
       </div>
     </SceneFeedback>
 
-    <form ref="form" class="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800" @submit.prevent="save">
+    <form ref="form" class="mt-5 border-t border-stone-100 pt-5 dark:border-stone-800" @submit.prevent="save">
       <fieldset class="space-y-4">
-        <legend class="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">內容</legend>
+        <legend class="mb-3 text-xs font-semibold tracking-wide text-stone-500 uppercase dark:text-stone-400">內容</legend>
         <label class="block">
           <span class="label">標題</span>
           <input v-model="draft.title" required maxlength="120" class="field" />
@@ -205,39 +205,39 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
       </fieldset>
 
       <fieldset class="mt-6 space-y-4">
-        <legend class="mb-3 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">聲音與時長</legend>
+        <legend class="mb-3 text-xs font-semibold tracking-wide text-stone-500 uppercase dark:text-stone-400">聲音與時長</legend>
         <div class="grid gap-4 sm:grid-cols-3">
           <label class="block sm:col-span-2">
             <span class="label">聲音</span>
             <input v-model="draft.voice" :placeholder="state!.project.project.tts.voice ?? '專案預設'" class="field" />
           </label>
           <label class="block">
-            <span class="label">語速 <span class="font-mono text-sky-700 dark:text-sky-400">{{ Number(draft.speed).toFixed(1) }}×</span></span>
-            <input v-model.number="draft.speed" type="range" min="0.5" max="2" step="0.1" class="mt-3 w-full accent-sky-600" />
+            <span class="label">語速 <span class="font-mono text-accent-ink">{{ Number(draft.speed).toFixed(1) }}×</span></span>
+            <input v-model.number="draft.speed" type="range" min="0.5" max="2" step="0.1" class="mt-3 w-full accent-stone-900 dark:accent-stone-200" />
           </label>
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <label class="flex items-center gap-2 text-sm">
-            <input v-model="draft.forced" type="checkbox" class="h-4 w-4 accent-sky-600" />
+            <input v-model="draft.forced" type="checkbox" class="h-4 w-4 accent-stone-900 dark:accent-stone-200" />
             固定時長
           </label>
           <span v-if="draft.forced" class="flex items-center gap-2 text-sm">
             <input v-model.number="draft.durationSec" type="number" min="0.5" max="120" step="0.5" class="field mt-0 w-24" aria-label="秒數" />秒
           </span>
-          <span v-else class="text-sm text-slate-500 dark:text-slate-400">依旁白長度 + 0.5 秒</span>
+          <span v-else class="text-sm text-stone-500 dark:text-stone-400">依旁白長度 + 0.5 秒</span>
         </div>
       </fieldset>
 
       <!-- Save bar: sticks to the bottom of the screen while there are unsaved edits. -->
       <div
         class="-mx-4 mt-6 flex flex-wrap items-center gap-2 border-t px-4 py-3 sm:-mx-5 sm:px-5"
-        :class="dirty ? 'sticky bottom-0 z-10 rounded-b-2xl border-sky-200 bg-sky-50/95 backdrop-blur dark:border-sky-900 dark:bg-slate-900/95' : 'border-slate-100 dark:border-slate-800'"
+        :class="dirty ? 'sticky bottom-0 z-10 rounded-b-md border-stone-300 bg-stone-100/95 backdrop-blur dark:border-vermilion-900 dark:bg-stone-900/95' : 'border-stone-100 dark:border-stone-800'"
       >
         <p v-if="dirty" class="mr-auto text-sm">
           <span class="font-medium">有尚未儲存的修改</span>
           <span v-if="rendered" class="block text-xs text-amber-700 dark:text-amber-400">儲存後這一段會標為「需要重做」，再請 Agent 套用修改。</span>
         </p>
-        <p v-else class="mr-auto text-sm text-slate-500 dark:text-slate-400">修改會存回專案資料夾。</p>
+        <p v-else class="mr-auto text-sm text-stone-500 dark:text-stone-400">修改會存回專案資料夾。</p>
         <button v-if="dirty" type="button" class="btn-ghost" @click="discard">放棄修改</button>
         <button type="submit" class="btn-primary" :disabled="!dirty || ui.saving" data-testid="save">
           儲存 <span class="kbd hidden border-white/30 bg-white/10 text-white sm:inline dark:border-white/30 dark:bg-white/10 dark:text-white">{{ os === 'mac' ? '⌘S' : 'Ctrl+S' }}</span>

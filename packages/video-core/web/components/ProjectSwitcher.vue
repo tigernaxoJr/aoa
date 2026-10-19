@@ -53,42 +53,42 @@ function act(fn: () => void) {
     <button
       ref="button"
       type="button"
-      class="flex max-w-full min-w-0 items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+      class="flex max-w-full min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium hover:bg-stone-100 dark:hover:bg-stone-800"
       :aria-expanded="open"
       aria-haspopup="menu"
       title="切換專案"
       @click="open = !open"
     >
       <span class="min-w-0 truncate" data-testid="project-name">{{ name }}</span>
-      <Icon name="down" :size="14" class="shrink-0 text-slate-400 transition-transform" :class="open ? 'rotate-180' : ''" />
+      <Icon name="down" :size="14" class="shrink-0 text-stone-400 transition-transform" :class="open ? 'rotate-180' : ''" />
     </button>
 
     <div
       v-if="open"
-      class="fixed inset-x-4 top-14 z-40 overflow-hidden sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-1.5 sm:w-80 rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900"
+      class="fixed inset-x-4 top-14 z-40 overflow-hidden sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-1.5 sm:w-80 rounded-md border border-stone-200 bg-white shadow-lg dark:border-stone-800 dark:bg-stone-900"
       role="menu"
       aria-label="切換專案"
       @keydown.down="move($event, 1)"
       @keydown.up="move($event, -1)"
     >
       <template v-if="ui.recent.length">
-        <p class="px-3 pt-2.5 pb-1 text-xs font-medium text-slate-500 dark:text-slate-400">最近的專案</p>
+        <p class="px-3 pt-2.5 pb-1 text-xs font-medium text-stone-500 dark:text-stone-400">最近的專案</p>
       <ul class="max-h-80 overflow-y-auto pb-1">
         <li v-for="r in ui.recent" :key="`${r.handle.name}-${r.openedAt}`" class="group flex items-center">
           <button
             type="button"
             role="menuitem"
-            class="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50 focus:outline-none disabled:cursor-default dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60"
-            :class="r.last ? 'bg-sky-50/60 dark:bg-sky-950/30' : ''"
+            class="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-stone-50 focus:bg-stone-50 focus:outline-none disabled:cursor-default dark:hover:bg-stone-800/60 dark:focus:bg-stone-800/60"
+            :class="r.last ? 'bg-vermilion-50/60 dark:bg-vermilion-950/30' : ''"
             :aria-current="r.last ? 'true' : undefined"
             :disabled="ui.loading"
             data-testid="switch-project"
             @click="r.last ? (open = false) : act(() => emit('switch', r.handle))"
           >
-            <Icon :name="r.last ? 'check' : 'folder'" :size="16" class="shrink-0" :class="r.last ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400'" />
+            <Icon :name="r.last ? 'check' : 'folder'" :size="16" class="shrink-0" :class="r.last ? 'text-vermilion-600 dark:text-vermilion-400' : 'text-stone-400'" />
             <span class="min-w-0 flex-1">
               <span class="block truncate font-medium">{{ r.projectName ?? '還沒建立專案' }}</span>
-              <span class="block truncate text-xs text-slate-500 dark:text-slate-400">資料夾「{{ r.handle.name }}」· {{ r.last ? '開啟中' : when(r.openedAt) }}</span>
+              <span class="block truncate text-xs text-stone-500 dark:text-stone-400">資料夾「{{ r.handle.name }}」· {{ r.last ? '開啟中' : when(r.openedAt) }}</span>
             </span>
           </button>
           <button
@@ -104,23 +104,23 @@ function act(fn: () => void) {
         </li>
       </ul>
       </template>
-      <div class="border-t border-slate-100 py-1 dark:border-slate-800">
+      <div class="border-t border-stone-100 py-1 dark:border-stone-800">
         <button
           type="button"
           role="menuitem"
-          class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60"
+          class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-stone-50 focus:bg-stone-50 focus:outline-none dark:hover:bg-stone-800/60 dark:focus:bg-stone-800/60"
           @click="act(() => emit('pick'))"
         >
-          <Icon name="folder" :size="16" class="text-slate-400" />開啟其他資料夾…
+          <Icon name="folder" :size="16" class="text-stone-400" />開啟其他資料夾…
         </button>
         <button
           type="button"
           role="menuitem"
-          class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50 focus:outline-none dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60"
+          class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-stone-50 focus:bg-stone-50 focus:outline-none dark:hover:bg-stone-800/60 dark:focus:bg-stone-800/60"
           title="關閉專案（檔案會留在資料夾）"
           @click="act(() => emit('close'))"
         >
-          <Icon name="logout" :size="16" class="text-slate-400" />關閉專案
+          <Icon name="logout" :size="16" class="text-stone-400" />關閉專案
         </button>
       </div>
     </div>

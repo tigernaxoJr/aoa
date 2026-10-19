@@ -1,0 +1,40 @@
+/* The AOA site's look (apps/portal) for every workbench: stone neutrals on paper, serif headings, mono
+   labels, and one vermilion accent. Import after "tailwindcss". `accent`/`accent-ink`/`paper` are the
+   portal's tokens; the vermilion-* scale gives the tints (selected rows, notices) the workbenches need,
+   with vermilion-600 equal to the light accent. */
+@theme {
+  --font-sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+  --font-serif: "Noto Serif TC", "Source Han Serif TC", "Songti TC", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+
+  --color-vermilion-50: oklch(0.976 0.013 52);
+  --color-vermilion-100: oklch(0.947 0.032 47);
+  --color-vermilion-200: oklch(0.895 0.065 43);
+  --color-vermilion-300: oklch(0.83 0.1 41);
+  --color-vermilion-400: oklch(0.74 0.14 40);
+  --color-vermilion-500: oklch(0.64 0.17 37);
+  --color-vermilion-600: oklch(0.56 0.18 36);
+  --color-vermilion-700: oklch(0.48 0.155 36);
+  --color-vermilion-800: oklch(0.41 0.13 36);
+  --color-vermilion-900: oklch(0.35 0.1 36);
+  --color-vermilion-950: oklch(0.25 0.07 36);
+}
+
+:root {
+  color-scheme: light dark;
+  --accent: oklch(0.56 0.18 36);
+  --accent-ink: oklch(0.46 0.15 36);
+  --paper: oklch(0.985 0.004 85);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: oklch(0.74 0.14 45);
+    --accent-ink: oklch(0.8 0.12 50);
+    --paper: oklch(0.17 0.004 60);
+  }
+}
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-paper: var(--paper);
+}

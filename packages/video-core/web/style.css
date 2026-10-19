@@ -1,75 +1,73 @@
-@theme {
-  --font-sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
-}
-
-:root {
-  color-scheme: light dark;
-}
+/* The AOA site's look (packages/web-shared/src/theme.css): stone on paper, serif headings, mono labels,
+   vermilion for the current step, the selection and links. Primary actions are dark, as on the site. */
+@import "../../web-shared/src/theme.css";
 
 @layer components {
   .field {
-    @apply mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-xs outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-3 focus:ring-sky-500/25 dark:border-slate-700 dark:bg-slate-950 dark:placeholder:text-slate-500;
+    @apply mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none transition placeholder:text-stone-400 focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-stone-700 dark:bg-stone-950 dark:placeholder:text-stone-500;
   }
   .label {
-    @apply text-sm font-medium text-slate-800 dark:text-slate-200;
+    @apply text-sm font-medium text-stone-800 dark:text-stone-200;
   }
   .hint {
-    @apply mt-1.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400;
+    @apply mt-1.5 block text-xs leading-relaxed text-stone-500 dark:text-stone-400;
   }
   .btn,
   .btn-primary,
   .btn-success,
   .btn-secondary,
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition outline-none focus-visible:ring-3 focus-visible:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium transition outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply bg-sky-700 font-semibold text-white shadow-sm hover:bg-sky-800 dark:bg-sky-600 dark:hover:bg-sky-500;
+    @apply bg-stone-900 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white;
   }
   .btn-success {
-    @apply bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500;
+    @apply bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500;
   }
   .btn-secondary {
-    @apply border border-slate-300 bg-white text-slate-800 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800;
+    @apply border border-stone-300 bg-white text-stone-800 hover:border-stone-400 hover:text-stone-950 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:hover:border-stone-500;
   }
   .btn-ghost {
-    @apply px-2.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
+    @apply px-2.5 text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100;
   }
   .btn-sm {
     @apply px-2.5 py-1 text-xs;
   }
   .icon-btn {
-    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition outline-none hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-3 focus-visible:ring-sky-500/40 disabled:pointer-events-none disabled:opacity-30 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 transition outline-none hover:bg-stone-100 hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-accent/40 disabled:pointer-events-none disabled:opacity-30 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100;
   }
   .step-no {
-    @apply relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 bg-white text-sm font-bold text-slate-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400;
+    @apply relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-white font-mono text-xs text-stone-500 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-400;
   }
   .step-current {
-    @apply border-sky-600 bg-sky-600 text-white ring-4 ring-sky-600/15 dark:border-sky-500 dark:bg-sky-500 dark:text-white;
+    @apply border-accent bg-accent text-white ring-4 ring-accent/15 dark:text-stone-950;
   }
   .step-done {
-    @apply border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-white;
+    @apply border-stone-900 bg-stone-900 text-white dark:border-stone-200 dark:bg-stone-200 dark:text-stone-900;
   }
   .link {
-    @apply text-sky-700 underline-offset-2 hover:underline dark:text-sky-400;
+    @apply text-accent-ink underline decoration-1 underline-offset-[3px] hover:decoration-2;
   }
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900;
+    @apply rounded-md border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900;
   }
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap;
+    @apply inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-medium whitespace-nowrap;
   }
   .kbd {
-    @apply rounded border border-slate-300 bg-slate-50 px-1 font-mono text-[11px] text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300;
+    @apply rounded-sm border border-stone-300 bg-stone-50 px-1 font-mono text-[11px] text-stone-600 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-300;
   }
   .callout {
-    @apply flex items-start gap-3 rounded-xl p-3.5 text-sm;
+    @apply flex items-start gap-3 rounded-md p-3.5 text-sm;
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] tracking-[0.1em] text-stone-500 uppercase dark:text-stone-400;
   }
 }
 
 body {
-  @apply min-h-screen bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  @apply min-h-screen bg-paper text-stone-900 antialiased selection:bg-accent selection:text-white dark:text-stone-100;
 }
 
 /* Show code exactly as typed: e.g. "<!-- pause -->" must not turn "--" into a dash. */

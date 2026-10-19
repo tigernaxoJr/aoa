@@ -96,9 +96,9 @@ async function submit() {
 
 <template>
   <div class="relative mt-4">
-    <video v-if="videoUrl" ref="video" :key="videoUrl" :src="videoUrl" controls class="aspect-video w-full rounded-xl bg-black" data-testid="scene-video" @loadedmetadata="onMeta" />
-    <div v-else class="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-      <Icon name="film" :size="28" class="text-slate-300 dark:text-slate-600" />
+    <video v-if="videoUrl" ref="video" :key="videoUrl" :src="videoUrl" controls class="aspect-video w-full rounded-md bg-black" data-testid="scene-video" @loadedmetadata="onMeta" />
+    <div v-else class="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-md bg-stone-100 text-sm text-stone-500 dark:bg-stone-800/60 dark:text-stone-400">
+      <Icon name="film" :size="28" class="text-stone-300 dark:text-stone-600" />
       尚未渲染
     </div>
     <span
@@ -107,20 +107,20 @@ async function submit() {
       :style="spotStyle"
       data-testid="feedback-spot"
     />
-    <div v-if="pointing" class="absolute inset-0 cursor-crosshair rounded-xl bg-black/20" data-testid="feedback-overlay" @click="pick">
-      <span class="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/80 px-3 py-1 text-xs whitespace-nowrap text-white">點一下畫面上要改的地方</span>
+    <div v-if="pointing" class="absolute inset-0 cursor-crosshair rounded-md bg-black/20" data-testid="feedback-overlay" @click="pick">
+      <span class="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-stone-950/80 px-3 py-1 text-xs whitespace-nowrap text-white">點一下畫面上要改的地方</span>
     </div>
   </div>
 
   <slot />
 
-  <section v-if="scene" class="mt-4 rounded-xl border border-slate-200 p-3 sm:p-4 dark:border-slate-800" data-testid="feedback">
+  <section v-if="scene" class="mt-4 rounded-md border border-stone-200 p-3 sm:p-4 dark:border-stone-800" data-testid="feedback">
     <h3 class="flex items-center gap-2 text-sm font-semibold">
       <Icon name="message" :size="14" />意見
       <span v-if="open.length" class="chip" :class="TONE_CLASS.warn">{{ open.length }} 則待處理</span>
     </h3>
 
-    <p v-if="scene.locked" class="mt-2 text-sm text-slate-500 dark:text-slate-400">已鎖定的段落不能留意見；要改請先解除鎖定。</p>
+    <p v-if="scene.locked" class="mt-2 text-sm text-stone-500 dark:text-stone-400">已鎖定的段落不能留意見；要改請先解除鎖定。</p>
     <form v-else class="mt-2 space-y-2" @submit.prevent="submit">
       <div v-if="videoUrl || draft.atSec !== null || draft.point" class="flex flex-wrap items-center gap-2">
         <button v-if="videoUrl" type="button" class="btn-secondary btn-sm" :aria-pressed="pointing" data-testid="feedback-point" @click="togglePointing">
@@ -143,13 +143,13 @@ async function submit() {
         @focus="onFocus"
       />
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <span class="text-xs text-slate-500 dark:text-slate-400">{{ rendered ? '送出後這一段會標為「需要重做」，Agent 套用修改時一起處理。' : scene.status === 'stale' ? 'Agent 套用修改時會一起處理。' : 'Agent 製作這一段時會一起處理。' }}</span>
+        <span class="text-xs text-stone-500 dark:text-stone-400">{{ rendered ? '送出後這一段會標為「需要重做」，Agent 套用修改時一起處理。' : scene.status === 'stale' ? 'Agent 套用修改時會一起處理。' : 'Agent 製作這一段時會一起處理。' }}</span>
         <button type="submit" class="btn-primary btn-sm" :disabled="!draft.text.trim() || ui.saving" data-testid="feedback-submit">送出意見</button>
       </div>
     </form>
 
     <ul v-if="open.length" class="mt-3 space-y-1.5" data-testid="feedback-open">
-      <li v-for="n in open" :key="n.id" class="flex items-start gap-2 rounded-lg bg-amber-50 px-2.5 py-2 text-sm dark:bg-amber-950/40">
+      <li v-for="n in open" :key="n.id" class="flex items-start gap-2 rounded-md bg-amber-50 px-2.5 py-2 text-sm dark:bg-amber-950/40">
         <button
           v-if="n.atSec !== undefined || n.point"
           type="button"
@@ -175,10 +175,10 @@ async function submit() {
     </ul>
 
     <details v-if="done.length" class="mt-3 text-sm" :open="!open.length" data-testid="feedback-done">
-      <summary class="cursor-pointer text-slate-500 select-none dark:text-slate-400">Agent 已處理 {{ done.length }} 則</summary>
+      <summary class="cursor-pointer text-stone-500 select-none dark:text-stone-400">Agent 已處理 {{ done.length }} 則</summary>
       <ul class="mt-2 space-y-1.5">
-        <li v-for="n in done" :key="n.id" class="rounded-lg bg-slate-50 px-2.5 py-2 dark:bg-slate-800/60">
-          <p class="text-slate-500 dark:text-slate-400">
+        <li v-for="n in done" :key="n.id" class="rounded-md bg-stone-50 px-2.5 py-2 dark:bg-stone-800/60">
+          <p class="text-stone-500 dark:text-stone-400">
             <button v-if="n.atSec !== undefined || n.point" type="button" class="mr-1 underline-offset-2 hover:underline" @click="show(n)">{{ n.atSec !== undefined ? clock(n.atSec) : '位置' }}</button>{{ n.text }}
           </p>
           <p class="mt-0.5 flex items-start gap-1.5 text-emerald-800 dark:text-emerald-300"><Icon name="check" :size="14" class="mt-0.5" />{{ n.reply ?? '已處理' }}</p>

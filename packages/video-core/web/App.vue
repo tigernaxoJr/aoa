@@ -89,23 +89,15 @@ watch(state, (st) => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-    <div class="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
-      <a
-        :href="portalHome()"
-        class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-        title="返回平台總覽"
-      >
-        <span>←</span>
-        <span>平台總覽</span>
+  <header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+    <div class="mx-auto flex h-14 max-w-7xl items-center gap-2.5 px-4 sm:gap-3 sm:px-6">
+      <a :href="portalHome()" class="flex shrink-0 items-baseline gap-2" title="回到 AOA 首頁">
+        <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+        <span class="font-mono text-[11px] text-stone-500">/ {{ VIDEO_KIND }}</span>
       </a>
-      <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">/</span>
-      <span class="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap">
-        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white" aria-hidden="true"><Icon name="play" :size="13" /></span>
-        <span :class="state ? 'hidden sm:inline' : ''">{{ TITLE }}</span>
-      </span>
+      <span v-if="!state" class="hidden truncate text-sm text-stone-600 sm:inline dark:text-stone-400">{{ TITLE }}</span>
       <template v-if="state">
-        <span class="hidden text-slate-300 sm:inline dark:text-slate-700" aria-hidden="true">/</span>
+        <span class="text-stone-300 dark:text-stone-700" aria-hidden="true">/</span>
         <ProjectSwitcher
           :name="state.project.project.name"
           @switch="(h) => leave(() => switchTo(h))"
@@ -164,7 +156,7 @@ watch(state, (st) => {
       <WorkflowBar />
 
       <!-- Tabs: the scene board, plus the app's own (e.g. the story's cast studio) -->
-      <div class="-mx-4 flex items-center gap-1 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:px-0 dark:border-slate-800" role="tablist">
+      <div class="-mx-4 flex items-center gap-1 overflow-x-auto border-b border-stone-200 px-4 sm:mx-0 sm:px-0 dark:border-stone-800" role="tablist">
         <button
           v-for="tab in tabBar"
           :key="tab.id"
@@ -172,7 +164,7 @@ watch(state, (st) => {
           role="tab"
           :aria-selected="activeTab === tab.id"
           class="-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition"
-          :class="activeTab === tab.id ? 'border-sky-600 text-sky-700 dark:border-sky-400 dark:text-sky-300' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200'"
+          :class="activeTab === tab.id ? 'border-accent font-semibold text-stone-900 dark:text-white' : 'border-transparent text-stone-500 hover:border-stone-300 hover:text-stone-800 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-200'"
           :data-testid="tab.testid"
           @click="activeTab = tab.id"
         >
@@ -181,7 +173,7 @@ watch(state, (st) => {
           <span
             v-if="tab.count !== null"
             class="rounded-full px-1.5 text-xs font-medium tabular-nums"
-            :class="activeTab === tab.id ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'"
+            :class="activeTab === tab.id ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'"
             >{{ tab.count }}</span
           >
         </button>
@@ -193,7 +185,7 @@ watch(state, (st) => {
 
       <!-- Default Scenes Board View -->
       <div v-else class="grid items-start gap-4 lg:grid-cols-[minmax(320px,2fr)_3fr]">
-        <div class="lg:sticky lg:top-18 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:rounded-2xl">
+        <div class="lg:sticky lg:top-18 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:rounded-md">
           <SceneBoard v-model:selected="selected" />
         </div>
         <div ref="detail" class="scroll-mt-18">
@@ -207,10 +199,10 @@ watch(state, (st) => {
   <div class="pointer-events-none fixed inset-x-4 bottom-4 z-40 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:items-end">
     <div
       v-if="ui.notice"
-      class="pointer-events-auto flex w-full max-w-md items-start gap-2.5 rounded-xl px-4 py-3 text-sm shadow-lg"
+      class="pointer-events-auto flex w-full max-w-md items-start gap-2.5 rounded-md px-4 py-3 text-sm shadow-lg"
       :class="{
         'bg-emerald-700 text-white': ui.notice.kind === 'ok',
-        'bg-amber-400 text-slate-950': ui.notice.kind === 'warn',
+        'bg-amber-400 text-stone-950': ui.notice.kind === 'warn',
         'bg-red-700 text-white': ui.notice.kind === 'error',
       }"
       role="status"

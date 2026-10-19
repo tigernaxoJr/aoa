@@ -246,19 +246,19 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+  <div class="space-y-4 rounded-md border border-stone-200 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-900/60">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
           <Icon name="sparkles" :size="15" />
         </span>
-        <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200">聲音工坊 (Voice Studio)</h4>
+        <h4 class="text-sm font-semibold text-stone-800 dark:text-stone-200">聲音工坊 (Voice Studio)</h4>
       </div>
-      <div class="flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-medium dark:border-slate-700 dark:bg-slate-800">
+      <div class="flex rounded-md border border-stone-200 bg-white p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-800">
         <button
           type="button"
           class="rounded-md px-2.5 py-1 transition"
-          :class="activeMode === 'clone' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+          :class="activeMode === 'clone' ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white'"
           @click="switchMode('clone')"
         >
           🎤 線上錄音克隆
@@ -266,7 +266,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="rounded-md px-2.5 py-1 transition"
-          :class="activeMode === 'instruct' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+          :class="activeMode === 'instruct' ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white'"
           @click="switchMode('instruct')"
         >
           ⚡ CosyVoice 3 語氣指令
@@ -274,7 +274,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="rounded-md px-2.5 py-1 transition"
-          :class="activeMode === 'edge' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+          :class="activeMode === 'edge' ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white'"
           @click="switchMode('edge')"
         >
           🔊 Edge-TTS
@@ -283,7 +283,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Mode A: Clone / Recording -->
-    <div v-if="activeMode === 'clone'" class="space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/50 p-3.5 dark:border-emerald-950/60 dark:bg-emerald-950/20">
+    <div v-if="activeMode === 'clone'" class="space-y-3 rounded-md border border-emerald-100 bg-emerald-50/50 p-3.5 dark:border-emerald-950/60 dark:bg-emerald-950/20">
       <div class="flex items-start justify-between">
         <div>
           <p class="text-xs font-semibold text-emerald-900 dark:text-emerald-200">3-5 秒麥克風線上錄音（CosyVoice 3 零樣本克隆）</p>
@@ -298,7 +298,7 @@ onBeforeUnmount(() => {
         <button
           v-if="!recording"
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition"
+          class="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition"
           @click="startRecording"
         >
           <Icon name="mic" :size="14" />
@@ -307,7 +307,7 @@ onBeforeUnmount(() => {
         <button
           v-else
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 animate-pulse transition"
+          class="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 animate-pulse transition"
           @click="stopRecording"
         >
           <Icon name="square" :size="14" />
@@ -319,54 +319,54 @@ onBeforeUnmount(() => {
         <button
           v-if="recordedBlob"
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 shadow-xs hover:bg-emerald-50 dark:bg-slate-800 dark:text-emerald-300 dark:border-emerald-500 transition"
+          class="inline-flex items-center gap-1.5 rounded-md border border-emerald-600 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:bg-stone-800 dark:text-emerald-300 dark:border-emerald-500 transition"
           @click="saveRecordedSample"
         >
           <Icon name="check" :size="13" />
           <span>儲存為克隆樣本</span>
         </button>
       </div>
-      <p class="text-[11px] text-slate-500 dark:text-slate-400">儲存路徑：<code>assets/cast/{{ castId }}/voice-sample.wav</code></p>
+      <p class="text-[11px] text-stone-500 dark:text-stone-400">儲存路徑：<code>assets/cast/{{ castId }}/voice-sample.wav</code></p>
     </div>
 
     <!-- Mode B: CosyVoice 3 Instruct -->
-    <div v-else-if="activeMode === 'instruct'" class="space-y-3 rounded-lg border border-sky-100 bg-sky-50/50 p-3.5 dark:border-sky-950/60 dark:bg-sky-950/20">
+    <div v-else-if="activeMode === 'instruct'" class="space-y-3 rounded-md border border-vermilion-100 bg-vermilion-50/50 p-3.5 dark:border-vermilion-950/60 dark:bg-vermilion-950/20">
       <div>
-        <p class="text-xs font-semibold text-sky-950 dark:text-sky-200">CosyVoice 3 自然語言語氣／方言指令</p>
-        <p class="mt-0.5 text-xs text-sky-700 dark:text-sky-400">選擇基礎發音人，並用自然語言描述口氣、情緒或方言（支援台語、粵語、情緒表現）。</p>
+        <p class="text-xs font-semibold text-vermilion-950 dark:text-vermilion-200">CosyVoice 3 自然語言語氣／方言指令</p>
+        <p class="mt-0.5 text-xs text-vermilion-700 dark:text-vermilion-400">選擇基礎發音人，並用自然語言描述口氣、情緒或方言（支援台語、粵語、情緒表現）。</p>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div>
-          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">基礎發音人</label>
+          <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">基礎發音人</label>
           <select
             v-model="instructBaseVoice"
-            class="input-sm mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs dark:border-stone-700 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
             @change="updateInstruct"
           >
             <option v-for="v in BASE_VOICES" :key="v.id" :value="v.id">{{ v.label }}</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">語氣 / 情緒 / 方言指令</label>
+          <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">語氣 / 情緒 / 方言指令</label>
           <input
             v-model="instructPrompt"
             type="text"
             placeholder="例如：用熱情開朗的大學生語氣、用台語說"
-            class="input-sm mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs dark:border-stone-700 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
             @input="updateInstruct"
           />
         </div>
       </div>
 
       <div>
-        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">快速填入範本：</span>
+        <span class="text-[11px] font-medium text-stone-500 dark:text-stone-400">快速填入範本：</span>
         <div class="mt-1 flex flex-wrap gap-1.5">
           <button
             v-for="tag in QUICK_INSTRUCTS"
             :key="tag"
             type="button"
-            class="rounded bg-sky-100 px-2 py-0.5 text-[11px] text-sky-800 hover:bg-sky-200 dark:bg-sky-900/60 dark:text-sky-300 transition"
+            class="rounded bg-vermilion-100 px-2 py-0.5 text-[11px] text-vermilion-800 hover:bg-vermilion-200 dark:bg-vermilion-900/60 dark:text-vermilion-300 transition"
             @click="applyQuickInstruct(tag)"
           >
             {{ tag }}
@@ -374,21 +374,21 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <p class="text-[11px] text-slate-500 dark:text-slate-400">合成規格：<code>cosyvoice3: {{ modelValue.voice }}</code></p>
+      <p class="text-[11px] text-stone-500 dark:text-stone-400">合成規格：<code>cosyvoice3: {{ modelValue.voice }}</code></p>
     </div>
 
     <!-- Mode C: Edge-TTS -->
-    <div v-else class="space-y-3 rounded-lg border border-slate-200 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
+    <div v-else class="space-y-3 rounded-md border border-stone-200 bg-white p-3.5 dark:border-stone-800 dark:bg-stone-900">
       <div>
-        <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">Edge-TTS 雲端標準發音人</p>
-        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">微軟 Edge 免費高音質神經網路語音，無需本機 GPU。</p>
+        <p class="text-xs font-semibold text-stone-800 dark:text-stone-200">Edge-TTS 雲端標準發音人</p>
+        <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">微軟 Edge 免費高音質神經網路語音，無需本機 GPU。</p>
       </div>
 
       <div>
-        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">發音人選單</label>
+        <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">發音人選單</label>
         <select
           :value="modelValue.voice || 'zh-TW-HsiaoChenNeural'"
-          class="input-sm mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+          class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs dark:border-stone-700 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
           @change="selectEdgeVoice(($event.target as HTMLSelectElement).value)"
         >
           <option v-for="v in EDGE_VOICES" :key="v.id" :value="v.id">{{ v.label }}</option>
@@ -397,17 +397,17 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Audition Bar (試聽音檔) -->
-    <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-3 dark:border-stone-800">
       <div class="flex items-center gap-2">
-        <span class="text-xs font-medium text-slate-700 dark:text-slate-300">角色試聽 ({{ castName }})：</span>
+        <span class="text-xs font-medium text-stone-700 dark:text-stone-300">角色試聽 ({{ castName }})：</span>
         <audio v-if="auditionUrl" :src="auditionUrl" controls class="h-8 max-w-[260px]" />
-        <span v-else class="text-xs text-slate-400 dark:text-slate-500">尚無試聽檔</span>
+        <span v-else class="text-xs text-stone-400 dark:text-stone-500">尚無試聽檔</span>
         <span v-if="voiceUnsaved" class="text-[11px] text-amber-600 dark:text-amber-400" data-testid="audition-unsaved">聲音設定尚未儲存，儲存角色後才能試聽</span>
       </div>
 
       <button
         type="button"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
+        class="inline-flex items-center gap-1.5 rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 transition"
         :disabled="auditionLoading || voiceUnsaved"
         :title="voiceUnsaved ? '試聽使用已儲存的聲音設定，請先儲存角色' : ''"
         data-testid="audition"

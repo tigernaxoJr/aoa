@@ -54,7 +54,7 @@ onMounted(() => {
 
 <template>
 <h2 class="font-semibold">告訴 Agent 產品是什麼</h2>
-<p class="mt-1 text-sm text-slate-600 dark:text-slate-400">至少填一項；給得越多，影片越準確。</p>
+<p class="mt-1 text-sm text-stone-600 dark:text-stone-400">至少填一項；給得越多，影片越準確。</p>
 <div class="mt-5 space-y-5">
   <div>
     <label class="block">
@@ -63,10 +63,10 @@ onMounted(() => {
     </label>
     <div v-if="form.productUrl" class="mt-2">
       <label class="flex items-start gap-2 text-sm">
-        <input v-model="form.requiresLogin" type="checkbox" class="mt-0.5 h-4 w-4 accent-sky-600" data-testid="requires-login" />
+        <input v-model="form.requiresLogin" type="checkbox" class="mt-0.5 h-4 w-4 accent-vermilion-600" data-testid="requires-login" />
         <span>這個網站要登入才看得到</span>
       </label>
-      <p v-if="form.requiresLogin" class="callout mt-2 bg-slate-50 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300" data-testid="requires-login-help">
+      <p v-if="form.requiresLogin" class="callout mt-2 bg-stone-50 text-xs leading-relaxed text-stone-600 dark:bg-stone-800/60 dark:text-stone-300" data-testid="requires-login-help">
         <Icon name="shield" :size="14" class="mt-0.5 text-emerald-600" />
         <span>不用在這裡填帳號密碼。錄影前，Agent 會打開一個瀏覽器視窗，請你像平常一樣登入，登入完關掉視窗就好；帳號密碼只在那個視窗輸入，Agent 看不到。建議用展示用的帳號，因為錄影會拍到登入後畫面上的內容。</span>
       </p>
@@ -74,7 +74,7 @@ onMounted(() => {
   </div>
 
   <div>
-    <label for="source-path" class="label">產品原始碼資料夾 <span class="font-normal text-slate-500">（選填）</span></label>
+    <label for="source-path" class="label">產品原始碼資料夾 <span class="font-normal text-stone-500">（選填）</span></label>
     <div class="mt-1 flex flex-wrap items-center gap-2">
       <input
         id="source-path"
@@ -87,8 +87,8 @@ onMounted(() => {
       <button v-if="canPick" type="button" class="btn-secondary" data-testid="pick-source" @click="pickSource"><Icon name="folder" />選擇資料夾…</button>
     </div>
     <p class="hint">如果這個產品是你們自己開發的，填它的程式資料夾能讓影片更準確。Agent 只會讀取，不會修改。取得完整路徑：{{ pathHelp(os) }}</p>
-    <div v-if="form.sourceFolder" class="mt-2 flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700" data-testid="source-folder">
-      <Icon name="folder" class="text-slate-500" />
+    <div v-if="form.sourceFolder" class="mt-2 flex items-center gap-3 rounded-md border border-stone-200 px-3 py-2 dark:border-stone-700" data-testid="source-folder">
+      <Icon name="folder" class="text-stone-500" />
       <span class="min-w-0 flex-1 truncate text-sm">已讀取「<span class="font-medium">{{ form.sourceFolder }}</span>」</span>
       <button type="button" class="btn-ghost btn-sm" @click="clearSource">移除</button>
     </div>
@@ -102,7 +102,7 @@ onMounted(() => {
   </div>
 
   <label class="block">
-    <span class="label">產品說明 <span class="font-normal text-slate-500">（選填）</span></span>
+    <span class="label">產品說明 <span class="font-normal text-stone-500">（選填）</span></span>
     <textarea v-model="form.description" rows="3" placeholder="一兩句話：產品做什麼、給誰用" class="field" />
   </label>
 </div>

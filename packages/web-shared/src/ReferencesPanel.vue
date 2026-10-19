@@ -190,11 +190,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="space-y-3" data-testid="references">
-    <p v-if="intro" class="text-sm text-slate-600 dark:text-slate-400">{{ intro }}</p>
+    <p v-if="intro" class="text-sm text-stone-600 dark:text-stone-400">{{ intro }}</p>
 
     <div
-      class="rounded-xl border-2 border-dashed px-4 py-5 text-center text-sm transition-colors"
-      :class="dragging ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40' : 'border-slate-300 dark:border-slate-700'"
+      class="rounded-md border-2 border-dashed px-4 py-5 text-center text-sm transition-colors"
+      :class="dragging ? 'border-vermilion-500 bg-vermilion-50 dark:bg-vermilion-950/40' : 'border-stone-300 dark:border-stone-700'"
       tabindex="0"
       data-testid="references-drop"
       @dragover.prevent="dragging = true"
@@ -202,11 +202,11 @@ onBeforeUnmount(() => {
       @drop.prevent="onDrop"
       @paste="onPaste"
     >
-      <p class="text-slate-600 dark:text-slate-300">把文件、圖片拖到這裡，或</p>
+      <p class="text-stone-600 dark:text-stone-300">把文件、圖片拖到這裡，或</p>
       <div class="mt-2 flex flex-wrap justify-center gap-2">
         <button
           type="button"
-          class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+          class="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
           :disabled="busy || !root"
           data-testid="references-pick"
           @click="input?.click()"
@@ -215,7 +215,7 @@ onBeforeUnmount(() => {
         </button>
         <button
           type="button"
-          class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800"
           :disabled="busy || !root"
           :aria-expanded="textOpen"
           data-testid="references-text-toggle"
@@ -224,28 +224,28 @@ onBeforeUnmount(() => {
           貼上文字
         </button>
       </div>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">PDF、Word、PowerPoint、Excel、圖片、文字檔都可以；也能在這個框裡按 Ctrl+V 貼上截圖。</p>
+      <p class="mt-2 text-xs text-stone-500 dark:text-stone-400">PDF、Word、PowerPoint、Excel、圖片、文字檔都可以；也能在這個框裡按 Ctrl+V 貼上截圖。</p>
       <input ref="input" type="file" multiple class="hidden" data-testid="references-input" @change="onPick" />
     </div>
 
     <label class="block">
-      <span class="text-xs font-medium text-slate-700 dark:text-slate-300">接下來加入的資料是做什麼用的？（選填）</span>
+      <span class="text-xs font-medium text-stone-700 dark:text-stone-300">接下來加入的資料是做什麼用的？（選填）</span>
       <input
         v-model="note"
         type="text"
         placeholder="例如：公司 logo 放在封面；這份報告的數據要做成圖表；照這張圖的配色"
-        class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        class="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-vermilion-500 focus:ring-2 focus:ring-vermilion-500/25 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
         data-testid="references-note"
         @keydown.enter.prevent
       />
     </label>
 
-    <div v-if="textOpen" class="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700" data-testid="references-text">
+    <div v-if="textOpen" class="space-y-2 rounded-md border border-stone-200 p-3 dark:border-stone-700" data-testid="references-text">
       <input
         v-model="textTitle"
         type="text"
         placeholder="標題（例如：會議紀錄、產品規格）"
-        class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        class="block w-full rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-vermilion-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
         data-testid="references-text-title"
         @keydown.enter.prevent
       />
@@ -253,14 +253,14 @@ onBeforeUnmount(() => {
         v-model="textBody"
         rows="5"
         placeholder="貼上文章、筆記、數據或任何想讓 Agent 參考的文字"
-        class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        class="block w-full rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-vermilion-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
         data-testid="references-text-body"
       ></textarea>
       <div class="flex justify-end gap-2">
-        <button type="button" class="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" @click="textOpen = false">取消</button>
+        <button type="button" class="cursor-pointer rounded-md px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800" @click="textOpen = false">取消</button>
         <button
           type="button"
-          class="cursor-pointer rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+          class="cursor-pointer rounded-md bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900"
           :disabled="busy"
           data-testid="references-text-save"
           @click="saveText"
@@ -272,32 +272,32 @@ onBeforeUnmount(() => {
 
     <p v-if="error" class="text-sm font-medium text-rose-600 dark:text-rose-400" role="alert">{{ error }}</p>
 
-    <ul v-if="items.length" class="divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-700" data-testid="references-list">
+    <ul v-if="items.length" class="divide-y divide-stone-100 rounded-md border border-stone-200 dark:divide-stone-800 dark:border-stone-700" data-testid="references-list">
       <li v-for="item in items" :key="item.name" class="flex items-start gap-3 px-3 py-2.5" data-testid="reference-item">
-        <img v-if="thumb(item)" :src="thumb(item)" alt="" class="h-10 w-10 shrink-0 rounded-md border border-slate-200 object-cover dark:border-slate-700" />
-        <span v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-100 text-lg dark:bg-slate-800" aria-hidden="true">{{ ICON[item.kind] }}</span>
+        <img v-if="thumb(item)" :src="thumb(item)" alt="" class="h-10 w-10 shrink-0 rounded-md border border-stone-200 object-cover dark:border-stone-700" />
+        <span v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-stone-100 text-lg dark:bg-stone-800" aria-hidden="true">{{ ICON[item.kind] }}</span>
         <div class="min-w-0 flex-1">
           <p class="flex items-baseline gap-2 text-sm">
-            <span class="truncate font-medium text-slate-900 dark:text-slate-100" :title="item.path">{{ item.name }}</span>
-            <span class="shrink-0 text-xs text-slate-400">{{ formatSize(item.size) }}</span>
+            <span class="truncate font-medium text-stone-900 dark:text-stone-100" :title="item.path">{{ item.name }}</span>
+            <span class="shrink-0 text-xs text-stone-400">{{ formatSize(item.size) }}</span>
           </p>
           <div v-if="editing === item.name" class="mt-1 flex gap-2">
             <input
               v-model="editNote"
               type="text"
               placeholder="這份資料是做什麼用的"
-              class="block w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              class="block w-full rounded-md border border-stone-300 bg-white px-2 py-1 text-xs outline-none focus:border-vermilion-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
               data-testid="reference-note-input"
               @keydown.enter.prevent="saveNote(item)"
               @keydown.esc="editing = null"
             />
-            <button type="button" class="shrink-0 cursor-pointer text-xs font-medium text-sky-700 dark:text-sky-400" data-testid="reference-note-save" @click="saveNote(item)">儲存</button>
+            <button type="button" class="shrink-0 cursor-pointer text-xs font-medium text-vermilion-700 dark:text-vermilion-400" data-testid="reference-note-save" @click="saveNote(item)">儲存</button>
           </div>
           <button
             v-else
             type="button"
             class="mt-0.5 block max-w-full cursor-pointer truncate text-left text-xs hover:underline"
-            :class="item.note ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400 italic'"
+            :class="item.note ? 'text-stone-600 dark:text-stone-300' : 'text-stone-400 italic'"
             data-testid="reference-note"
             @click="startEdit(item)"
           >
@@ -306,7 +306,7 @@ onBeforeUnmount(() => {
         </div>
         <button
           type="button"
-          class="shrink-0 cursor-pointer rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
+          class="shrink-0 cursor-pointer rounded-md px-2 py-1 text-xs text-stone-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50 dark:text-stone-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
           :disabled="busy"
           :aria-label="`刪除 ${item.name}`"
           data-testid="reference-remove"
@@ -316,14 +316,14 @@ onBeforeUnmount(() => {
         </button>
       </li>
     </ul>
-    <p v-else class="text-xs text-slate-500 dark:text-slate-400">還沒有參考資料。檔案會複製到專案資料夾的 <code>{{ REFERENCES_DIR }}/</code>，Agent 從那裡讀取。</p>
+    <p v-else class="text-xs text-stone-500 dark:text-stone-400">還沒有參考資料。檔案會複製到專案資料夾的 <code>{{ REFERENCES_DIR }}/</code>，Agent 從那裡讀取。</p>
 
-    <div v-if="ask && added.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm text-sky-950 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100" data-testid="references-ask">
+    <div v-if="ask && added.length" class="flex flex-wrap items-center gap-2 rounded-md border border-vermilion-200 bg-vermilion-50 px-3 py-2.5 text-sm text-vermilion-950 dark:border-vermilion-900 dark:bg-vermilion-950/40 dark:text-vermilion-100" data-testid="references-ask">
       <span class="min-w-0 flex-1">把這句話交給 Agent：{{ referencesAddedSay(added, ask) }}</span>
-      <button type="button" class="shrink-0 cursor-pointer rounded-lg border border-sky-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-sky-100 dark:border-sky-800 dark:bg-slate-900 dark:hover:bg-slate-800" @click="copyAsk">
+      <button type="button" class="shrink-0 cursor-pointer rounded-md border border-vermilion-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-vermilion-100 dark:border-vermilion-800 dark:bg-stone-900 dark:hover:bg-stone-800" @click="copyAsk">
         {{ copied ? '已複製' : '複製' }}
       </button>
     </div>
-    <p v-if="items.length" class="text-xs text-slate-400">用途說明存在 {{ REFERENCES_INDEX }}，Agent 會一起讀。</p>
+    <p v-if="items.length" class="text-xs text-stone-400">用途說明存在 {{ REFERENCES_INDEX }}，Agent 會一起讀。</p>
   </div>
 </template>

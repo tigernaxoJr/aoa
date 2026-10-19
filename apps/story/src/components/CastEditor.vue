@@ -99,18 +99,18 @@ function handleDelete() {
 </script>
 
 <template>
-  <div class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+  <div class="space-y-5 rounded-md border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+    <div class="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
+        <span class="flex h-8 w-8 items-center justify-center rounded-md bg-vermilion-500/10 text-vermilion-600 dark:text-vermilion-400">
           <Icon name="user" :size="16" />
         </span>
         <div>
-          <h3 class="text-base font-semibold text-slate-800 dark:text-slate-100">
+          <h3 class="text-base font-semibold text-stone-800 dark:text-stone-100">
             {{ isNew ? '新增角色' : `編輯角色：${cast.name}` }}
           </h3>
-          <p class="text-xs text-slate-400 dark:text-slate-500">識別碼：{{ localMember.id || '尚未設定' }}</p>
+          <p class="text-xs text-stone-400 dark:text-stone-500">識別碼：{{ localMember.id || '尚未設定' }}</p>
         </div>
       </div>
 
@@ -138,34 +138,34 @@ function handleDelete() {
     <!-- Basic Info -->
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
-        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">角色名稱 (劇本【】中使用的稱呼)</label>
+        <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">角色名稱 (劇本【】中使用的稱呼)</label>
         <input
           v-model="localMember.name"
           type="text"
           placeholder="例如：志明"
-          class="input-sm mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+          class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
         />
       </div>
       <div>
-        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">識別碼 (ID / 資料夾名稱)</label>
+        <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">識別碼 (ID / 資料夾名稱)</label>
         <input
           v-model="localMember.id"
           type="text"
           placeholder="例如：zhiming"
           :disabled="!isNew"
-          class="input-sm mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-mono dark:border-slate-700 dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-60"
+          class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-mono dark:border-stone-700 dark:bg-stone-800 text-stone-900 dark:text-stone-100 disabled:opacity-60"
         />
-        <p v-if="!isNew" class="mt-0.5 text-[11px] text-slate-400">建立後識別碼固定，若需修改請先確認相關檔案。</p>
+        <p v-if="!isNew" class="mt-0.5 text-[11px] text-stone-400">建立後識別碼固定，若需修改請先確認相關檔案。</p>
       </div>
     </div>
 
     <div>
-      <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">角色外觀與個性描述 (供畫圖與配音參考)</label>
+      <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">角色外觀與個性描述 (供畫圖與配音參考)</label>
       <textarea
         v-model="localMember.description"
         rows="2"
         placeholder="例如：20歲熱血青年，個性樂觀開朗，穿著紅色連帽外套與休閒牛仔褲。"
-        class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+        class="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
       />
     </div>
 

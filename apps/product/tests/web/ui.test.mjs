@@ -136,7 +136,7 @@ test('opened project shows scenes; browser inputHash matches the Node scripts', 
   assert.ok(at[0] >= 0 && at[0] < at[1] && at[1] < at[2], script)
   await page.getByTestId('script-view').getByText('立即試用。').click()
   await page.getByTestId('view-list').click()
-  assert.match(await page.getByTestId('scene-scene-002').getAttribute('class'), /border-sky-500/, 'clicking a script entry selects that scene')
+  assert.equal(await page.getByTestId('scene-scene-002').getAttribute('aria-current'), 'true', 'clicking a script entry selects that scene')
 })
 
 test('editing a rendered scene marks it stale, re-derives the project, and asks the agent to apply it', async (t) => {

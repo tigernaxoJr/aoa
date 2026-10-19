@@ -1,32 +1,7 @@
 @import "tailwindcss";
+/* Same look as the AOA site (apps/portal); the accent marks the current step, the selected slide and links. */
+@import "../../../packages/web-shared/src/theme.css";
 @source "../../../packages/web-shared/src";
-
-/* Same look as the AOA site (apps/portal): stone neutrals on paper, serif headings, mono labels, and one
-   vermilion accent used sparingly for the current step, the selected slide and links. */
-@theme {
-  --font-sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
-  --font-serif: "Noto Serif TC", "Source Han Serif TC", "Songti TC", Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
-}
-
-:root {
-  color-scheme: light dark;
-  --accent: oklch(0.56 0.18 36);
-  --accent-ink: oklch(0.46 0.15 36);
-  --paper: oklch(0.985 0.004 85);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --accent: oklch(0.74 0.14 45);
-    --accent-ink: oklch(0.8 0.12 50);
-    --paper: oklch(0.17 0.004 60);
-  }
-}
-@theme inline {
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
-  --color-paper: var(--paper);
-}
 
 @layer components {
   .card {

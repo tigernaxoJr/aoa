@@ -9,7 +9,7 @@ const form = props.form
 
 <template>
   <h2 class="font-semibold">告訴 Agent 你的故事</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">貼上整篇故事、寫個大綱，或只寫一個點子都可以；不完整的地方，Agent 會一題一題問你。</p>
+  <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">貼上整篇故事、寫個大綱，或只寫一個點子都可以；不完整的地方，Agent 會一題一題問你。</p>
   <div class="mt-5 space-y-5">
     <label class="block">
       <span class="label">故事</span>
@@ -22,7 +22,7 @@ const form = props.form
       />
     </label>
     <label class="block">
-      <span class="label">給誰看 <span class="font-normal text-slate-500">（選填）</span></span>
+      <span class="label">給誰看 <span class="font-normal text-stone-500">（選填）</span></span>
       <input v-model.trim="form.audience" type="text" placeholder="例如：4–7 歲的小朋友、社群上的大人" class="field" data-testid="story-audience" />
     </label>
     <div class="block">
@@ -30,29 +30,29 @@ const form = props.form
       <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button
           type="button"
-          class="flex flex-col items-start rounded-xl border p-3 text-left transition cursor-pointer"
-          :class="(form.ttsProvider === 'cosyvoice3' || !form.ttsProvider) ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-500/20 dark:bg-sky-950/40' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'"
+          class="flex flex-col items-start rounded-md border p-3 text-left transition cursor-pointer"
+          :class="(form.ttsProvider === 'cosyvoice3' || !form.ttsProvider) ? 'border-vermilion-500 bg-vermilion-50 ring-2 ring-vermilion-500/20 dark:bg-vermilion-950/40' : 'border-stone-200 bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900'"
           data-testid="tts-cosyvoice3"
           @click="form.ttsProvider = 'cosyvoice3'"
         >
-          <span class="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-white">
-            <Icon name="sparkles" :size="15" class="text-sky-600" />CosyVoice 3（AI 角色配音）
+          <span class="flex items-center gap-1.5 text-sm font-semibold text-stone-900 dark:text-white">
+            <Icon name="sparkles" :size="15" class="text-vermilion-600" />CosyVoice 3（AI 角色配音）
           </span>
-          <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <span class="mt-1 text-xs text-stone-500 dark:text-stone-400">
             AI 依角色性格與年齡自動配音色（自然語言語氣指令），亦支援錄音克隆
           </span>
         </button>
         <button
           type="button"
-          class="flex flex-col items-start rounded-xl border p-3 text-left transition cursor-pointer"
-          :class="form.ttsProvider === 'edge-tts' ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-500/20 dark:bg-sky-950/40' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'"
+          class="flex flex-col items-start rounded-md border p-3 text-left transition cursor-pointer"
+          :class="form.ttsProvider === 'edge-tts' ? 'border-vermilion-500 bg-vermilion-50 ring-2 ring-vermilion-500/20 dark:bg-vermilion-950/40' : 'border-stone-200 bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900'"
           data-testid="tts-edge-tts"
           @click="form.ttsProvider = 'edge-tts'"
         >
-          <span class="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-white">
-            <Icon name="film" :size="15" class="text-slate-600" />微軟 Edge-TTS
+          <span class="flex items-center gap-1.5 text-sm font-semibold text-stone-900 dark:text-white">
+            <Icon name="film" :size="15" class="text-stone-600" />微軟 Edge-TTS
           </span>
-          <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <span class="mt-1 text-xs text-stone-500 dark:text-stone-400">
             微軟雲端標準發音人庫（曉臻、雲哲等），免設定本地模型
           </span>
         </button>

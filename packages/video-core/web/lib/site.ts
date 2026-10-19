@@ -248,16 +248,16 @@ export function nextStep(next: { command: string | null; reason: string }, scene
 export type Tone = 'neutral' | 'info' | 'success' | 'warn' | 'danger'
 
 export const TONE_CLASS: Record<Tone, string> = {
-  neutral: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  info: 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200',
+  neutral: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300',
+  info: 'bg-vermilion-100 text-vermilion-900 dark:bg-vermilion-950 dark:text-vermilion-200',
   success: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200',
   warn: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
   danger: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
 }
 
 export const TONE_DOT: Record<Tone, string> = {
-  neutral: 'bg-slate-300 dark:bg-slate-600',
-  info: 'bg-sky-500',
+  neutral: 'bg-stone-300 dark:bg-stone-600',
+  info: 'bg-vermilion-500',
   success: 'bg-emerald-500',
   warn: 'bg-amber-500',
   danger: 'bg-red-500',

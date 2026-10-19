@@ -22,19 +22,19 @@ const act = useActivity(activity)
   </div>
   <div
     v-else-if="act?.current"
-    class="callout border border-sky-200 bg-sky-50 text-sky-950 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-100"
+    class="callout border border-stone-200 bg-white text-stone-800 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200"
     role="status"
     data-testid="activity"
     data-state="working"
   >
     <span class="relative mt-1.5 flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
-      <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-60" />
-      <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
+      <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+      <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
     </span>
-    <p class="min-w-0"><span class="font-semibold">Agent 正在工作：</span>{{ act.message }} <span class="text-sky-700 dark:text-sky-300">（{{ act.ago }}）</span></p>
+    <p class="min-w-0"><span class="font-semibold">Agent 正在工作：</span>{{ act.message }} <span class="font-mono text-xs text-stone-500">{{ act.ago }}</span></p>
   </div>
-  <p v-else-if="act" class="flex items-center gap-2 px-1 text-sm text-slate-500 dark:text-slate-400" data-testid="activity" data-state="idle">
-    <span class="h-2 w-2 shrink-0 rounded-full bg-slate-300 dark:bg-slate-600" aria-hidden="true" />
+  <p v-else-if="act" class="flex items-center gap-2 px-1 text-sm text-stone-500 dark:text-stone-400" data-testid="activity" data-state="idle">
+    <span class="h-2 w-2 shrink-0 rounded-full bg-stone-300 dark:bg-stone-600" aria-hidden="true" />
     <span class="min-w-0">Agent 最後的動態（{{ act.ago }}）：{{ act.message }}</span>
   </p>
 </template>

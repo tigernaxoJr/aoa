@@ -30,19 +30,19 @@ const outdated = computed(() => scenes.value.filter((s) => !s.upToDate || (final
       <span v-else class="chip" :class="TONE_CLASS.success"><Icon name="check" :size="12" />最新</span>
     </header>
 
-    <video v-if="url" :key="url" :src="url" controls class="mt-4 aspect-video w-full rounded-xl bg-black" data-testid="final-video" />
+    <video v-if="url" :key="url" :src="url" controls class="mt-4 aspect-video w-full rounded-md bg-black" data-testid="final-video" />
     <!-- No video yet: a compact progress box, not an empty 16:9 frame that pushes the to-do list off screen. -->
-    <div v-else class="mt-4 flex w-full flex-col items-center justify-center gap-3 rounded-xl bg-slate-100 px-6 py-8 text-center dark:bg-slate-800/60">
-      <Icon name="film" :size="32" class="text-slate-300 dark:text-slate-600" />
-      <p class="text-sm text-slate-600 dark:text-slate-400">
+    <div v-else class="mt-4 flex w-full flex-col items-center justify-center gap-3 rounded-md bg-stone-100 px-6 py-8 text-center dark:bg-stone-800/60">
+      <Icon name="film" :size="32" class="text-stone-300 dark:text-stone-600" />
+      <p class="text-sm text-stone-600 dark:text-stone-400">
         <template v-if="ready">所有段落都完成了，可以合成影片。</template>
         <template v-else>每一段都完成後，就能合成完整影片。</template>
       </p>
       <div v-if="scenes.length" class="w-48">
-        <div class="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-          <div class="h-full rounded-full bg-sky-500 transition-all" :style="{ width: `${(done / scenes.length) * 100}%` }" />
+        <div class="h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+          <div class="h-full rounded-full bg-vermilion-500 transition-all" :style="{ width: `${(done / scenes.length) * 100}%` }" />
         </div>
-        <p class="mt-1.5 text-xs text-slate-500">{{ done }} / {{ scenes.length }} 段完成</p>
+        <p class="mt-1.5 text-xs text-stone-500">{{ done }} / {{ scenes.length }} 段完成</p>
       </div>
     </div>
 
@@ -50,12 +50,12 @@ const outdated = computed(() => scenes.value.filter((s) => !s.upToDate || (final
 
     <div v-if="outdated.length" class="mt-5" data-testid="final-outdated">
       <p class="text-sm font-medium">{{ final.exists ? '影片合成後有變動的段落' : '尚未完成的段落' }}</p>
-      <ul class="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+      <ul class="mt-2 divide-y divide-stone-100 rounded-md border border-stone-200 dark:divide-stone-800 dark:border-stone-800">
         <li v-for="s in outdated" :key="s.id">
-          <button type="button" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/60" @click="emit('select', s.id)">
-            <span class="min-w-0 flex-1 truncate">{{ s.scene?.title ?? s.id }} <span class="text-slate-400">（{{ s.id }}）</span></span>
+          <button type="button" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-stone-50 dark:hover:bg-stone-800/60" @click="emit('select', s.id)">
+            <span class="min-w-0 flex-1 truncate">{{ s.scene?.title ?? s.id }} <span class="text-stone-400">（{{ s.id }}）</span></span>
             <span class="chip" :class="TONE_CLASS[sceneBadge(s).tone]">{{ sceneBadge(s).text }}</span>
-            <Icon name="chevron" :size="14" class="text-slate-400" />
+            <Icon name="chevron" :size="14" class="text-stone-400" />
           </button>
         </li>
       </ul>
