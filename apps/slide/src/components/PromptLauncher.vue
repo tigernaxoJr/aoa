@@ -52,36 +52,34 @@ function requestLines() {
 </script>
 
 <template>
-  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-    <div class="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
-      <div>
-        <h3 class="font-semibold text-slate-900 dark:text-white">Coding Agent 啟動指令</h3>
-        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          複製以下提示詞貼至本機 Claude Code、Cursor、Windsurf 等 Coding Agent。還沒有 Agent？看<a href="../docs/setup.zh-TW.html" target="_blank" rel="noopener" class="text-sky-700 underline underline-offset-2 hover:text-sky-900 dark:text-sky-300">準備你的 Agent</a>
-        </p>
-      </div>
-      <CopyButton :text="agentPrompt" label="複製完整提示詞" />
+  <section class="card overflow-hidden">
+    <div class="border-b border-stone-200 px-5 py-4 dark:border-stone-800">
+      <p class="eyebrow"><span class="text-accent">下一步</span> · 交給 Coding Agent</p>
+      <h2 class="mt-2 font-serif text-xl font-bold">把這段提示詞貼給你的 Agent</h2>
+      <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
+        Claude Code、Codex、Cursor、Gemini CLI 都可以。還沒有 Agent？看<a href="../docs/setup.zh-TW.html" target="_blank" rel="noopener" class="link">準備你的 Agent</a>。
+      </p>
     </div>
 
-    <!-- Instructions banner -->
-    <div class="mt-4 rounded-xl border border-sky-200 bg-sky-50/70 p-3.5 text-xs text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200">
-      <div class="flex items-start gap-2">
-        <span class="font-semibold shrink-0">💡 提示：</span>
-        <span>請在 Agent 中開啟與網頁相同的<strong>「{{ folderName }}」</strong>資料夾（若 Agent 詢問路徑，請選取或貼上該資料夾），再貼上下方的提示詞開始執行。</span>
-      </div>
-    </div>
+    <ol class="grid gap-px bg-stone-200 sm:grid-cols-2 dark:bg-stone-800">
+      <li class="bg-white px-5 py-4 dark:bg-stone-900">
+        <span class="font-mono text-[11px] text-accent">01</span>
+        <p class="mt-1 text-sm leading-relaxed">在 Agent 開啟和網頁相同的<strong class="font-semibold">「{{ folderName }}」</strong>資料夾（Agent 問路徑時，選取或貼上它）。</p>
+      </li>
+      <li class="bg-white px-5 py-4 dark:bg-stone-900">
+        <span class="font-mono text-[11px] text-accent">02</span>
+        <p class="mt-1 text-sm leading-relaxed">複製下面的提示詞，貼給 Agent 開始製作。</p>
+        <CopyButton :text="agentPrompt" label="複製提示詞" primary class="mt-3" />
+      </li>
+    </ol>
 
-    <!-- Prompt Box -->
-    <div class="mt-3">
-      <div class="relative">
-        <textarea
-          readonly
-          rows="10"
-          data-testid="agent-prompt"
-          :value="agentPrompt"
-          class="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-relaxed text-slate-800 focus:outline-hidden dark:border-slate-700/60 dark:bg-slate-950/50 dark:text-slate-200"
-        ></textarea>
-      </div>
-    </div>
-  </div>
+    <textarea
+      readonly
+      rows="10"
+      data-testid="agent-prompt"
+      :value="agentPrompt"
+      aria-label="給 Agent 的提示詞"
+      class="block w-full resize-y border-t border-stone-200 bg-stone-50 p-5 font-mono text-xs leading-relaxed text-stone-800 focus:outline-hidden dark:border-stone-800 dark:bg-stone-950/50 dark:text-stone-200"
+    ></textarea>
+  </section>
 </template>

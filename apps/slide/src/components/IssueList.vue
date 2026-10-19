@@ -16,15 +16,12 @@ const LABELS: Record<SlideIssue['type'], string> = {
 </script>
 
 <template>
-  <ul
-    v-if="issues.length"
-    class="space-y-1.5 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs dark:border-rose-900/60 dark:bg-rose-950/30"
-  >
+  <ul v-if="issues.length" class="space-y-1.5 rounded-md border border-rose-200 bg-rose-50/70 p-3 text-xs dark:border-rose-900/60 dark:bg-rose-950/30">
     <li v-for="(issue, i) in issues" :key="i" class="flex items-start gap-2">
-      <span class="shrink-0 rounded bg-rose-100 px-1.5 py-0.5 font-semibold text-rose-700 dark:bg-rose-900/60 dark:text-rose-300">
+      <span class="shrink-0 rounded-sm bg-rose-100 px-1.5 py-0.5 font-semibold text-rose-700 dark:bg-rose-900/60 dark:text-rose-300">
         {{ LABELS[issue.type] }}
       </span>
-      <span class="leading-relaxed text-rose-900 break-all dark:text-rose-200">{{ issue.message }}</span>
+      <span class="leading-relaxed break-all text-rose-900 dark:text-rose-200">{{ issue.message }}</span>
     </li>
   </ul>
 </template>

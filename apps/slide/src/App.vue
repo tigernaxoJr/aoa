@@ -9,6 +9,7 @@ import ProjectSwitcher from './components/ProjectSwitcher.vue'
 import PromptLauncher from './components/PromptLauncher.vue'
 import SlideDeckView from './components/SlideDeckView.vue'
 import {
+  activity,
   dirHandle,
   folderError,
   hasHtml,
@@ -16,15 +17,18 @@ import {
   isPolling,
   lastSync,
   needsSetup,
+  parsedDeck,
   pollFiles,
   project,
   referenceCount,
   restore,
   slidesMarkdown,
   start,
+  STARTER_MESSAGE,
 } from './lib/store'
 
-const activeTab = ref<'slides' | 'pdf' | 'references'>('slides')
+type Tab = 'slides' | 'pdf' | 'references'
+const activeTab = ref<Tab>('slides')
 
 const folderName = computed(() => dirHandle.value?.name || '')
 const projectTitle = computed(() => project.value?.title || start.value?.title || folderName.value || '未命名簡報')
@@ -33,6 +37,12 @@ const syncTimeStr = computed(() => {
   if (!lastSync.value) return ''
   return lastSync.value.toLocaleTimeString('zh-TW', { hour12: false })
 })
+
+const tabs = computed(() => [
+  { id: 'slides' as const, label: '投影片', count: parsedDeck.value.slides.length || null, ready: false },
+  { id: 'pdf' as const, label: '成果', count: null, ready: hasPdf.value || hasHtml.value },
+  { id: 'references' as const, label: '參考資料', count: referenceCount.value || null, ready: false },
+])
 
 async function reload() {
   await pollFiles()
@@ -44,172 +54,90 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-    <!-- Navbar -->
-    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div class="flex min-w-0 items-center gap-3">
-          <a
-            :href="portalHome()"
-            class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-            title="返回平台總覽"
-          >
-            <span>←</span>
-            <span>平台總覽</span>
+  <div class="min-h-screen">
+    <header class="sticky top-0 z-30 border-b border-stone-200 bg-paper/90 backdrop-blur-sm dark:border-stone-800">
+      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <a :href="portalHome()" class="flex shrink-0 items-baseline gap-2" title="回到 AOA 首頁">
+            <span class="font-serif text-lg font-bold tracking-tight">AOA</span>
+            <span class="font-mono text-[11px] text-stone-500">/ slide</span>
           </a>
-          <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">/</span>
-          <span class="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap">
-            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 font-mono text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs" aria-hidden="true">S</span>
-            <span class="hidden sm:inline">Slide Studio</span>
-            <span class="hidden rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 md:inline text-[11px] font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
-              Slidev + AOA
-            </span>
-          </span>
           <template v-if="dirHandle">
-            <span class="text-slate-300 dark:text-slate-700" aria-hidden="true">/</span>
+            <span class="text-stone-300 dark:text-stone-700" aria-hidden="true">/</span>
             <ProjectSwitcher :name="projectTitle" />
           </template>
         </div>
 
-        <!-- Right Side: Directory status & Actions -->
-        <div v-if="dirHandle" class="flex shrink-0 items-center gap-3">
-          <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span
-              class="h-2 w-2 rounded-full"
-              :class="isPolling ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"
-              title="本機檔案即時輪詢中"
-            ></span>
-            <span class="font-mono truncate max-w-[150px]">{{ folderName }}</span>
-            <span v-if="syncTimeStr" class="text-[11px] text-slate-400">({{ syncTimeStr }})</span>
-          </div>
-
-          <button
-            type="button"
-            title="手動重新整理本機檔案"
-            @click="reload"
-            class="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
-          >
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <div v-if="dirHandle" class="flex shrink-0 items-center gap-2 sm:gap-3">
+          <span class="hidden items-center gap-2 font-mono text-[11px] text-stone-500 sm:flex" :title="`本機資料夾「${folderName}」，每幾秒自動讀取一次`">
+            <span class="h-1.5 w-1.5 rounded-full" :class="isPolling ? 'animate-pulse bg-emerald-500' : 'bg-stone-400'" aria-hidden="true" />
+            <span class="max-w-[160px] truncate">{{ folderName }}</span>
+            <span v-if="syncTimeStr" class="text-stone-400">{{ syncTimeStr }}</span>
+          </span>
+          <button type="button" class="icon-btn" title="重新讀取資料夾" aria-label="重新讀取資料夾" @click="reload">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M21 4v5h-5M3 20v-5h5" />
             </svg>
           </button>
         </div>
       </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="mx-auto max-w-7xl px-4 py-5 sm:py-6">
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       <!-- No folder yet, or an empty folder that still needs the setup form -->
       <ProjectPicker v-if="!dirHandle || needsSetup" />
 
-      <!-- Workspace when folder is selected -->
       <div v-else class="space-y-6">
-        <div v-if="folderError" class="flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300" role="alert">
+        <div v-if="folderError" class="flex items-start justify-between gap-3 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300" role="alert">
           <span>{{ folderError }}</span>
-          <button type="button" class="shrink-0 text-xs font-medium underline cursor-pointer" @click="folderError = null">關閉</button>
-        </div>
-        <!-- Project Title Header -->
-        <div class="flex flex-wrap items-baseline justify-between gap-2">
-          <div>
-            <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              {{ projectTitle }}
-            </h2>
-            <p v-if="project?.description" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {{ project.description }}
-            </p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <span
-              v-if="hasHtml"
-              class="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-950/60 dark:text-sky-400"
-            >
-              ✓ HTML 已匯出
-            </span>
-            <span
-              v-if="hasPdf"
-              class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
-            >
-              ✓ PDF 已匯出
-            </span>
-          </div>
+          <button type="button" class="shrink-0 cursor-pointer text-xs font-medium underline" @click="folderError = null">關閉</button>
         </div>
 
-        <!-- Activity & Step Progress -->
-        <ActivityBanner />
+        <div>
+          <p class="eyebrow"><span class="text-accent">Slide</span> · 簡報專案</p>
+          <h1 class="mt-2 font-serif text-2xl font-bold tracking-tight sm:text-3xl">{{ projectTitle }}</h1>
+          <p v-if="project?.description" class="mt-1.5 text-sm text-stone-600 dark:text-stone-400">{{ project.description }}</p>
+        </div>
 
-        <!-- Awaiting Agent setup: show PromptLauncher prominently -->
+        <!-- Before the project exists the Agent may already be asking something (e.g. what the deck is about). -->
+        <ActivityBanner v-if="project || slidesMarkdown || (activity && activity.message !== STARTER_MESSAGE)" />
+
+        <!-- Awaiting the Agent: the prompt is the only thing to do -->
         <div v-if="!project && !slidesMarkdown" class="space-y-4">
           <PromptLauncher />
-          <details class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="pending-references">
+          <details class="card p-5" data-testid="pending-references">
             <summary class="cursor-pointer text-sm font-semibold select-none">參考資料{{ referenceCount ? `（${referenceCount} 份）` : '（選填）' }}</summary>
             <ReferencesPanel class="mt-3" :root="dirHandle" intro="還可以補充文件、圖片或文字；上方的提示詞會告訴 Agent 去讀 references/。" />
           </details>
         </div>
 
-        <!-- Agent has initialized project or generated slides: show workbench tabs -->
-        <div v-else class="space-y-4">
-          <!-- Navigation Tabs -->
-          <div class="border-b border-slate-200 dark:border-slate-800">
-            <nav class="flex gap-6">
-              <button
-                type="button"
-                data-testid="tab-slides"
-                @click="activeTab = 'slides'"
-                class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
-                :class="[
-                  activeTab === 'slides'
-                    ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                ]"
-              >
-                簡報內容預覽 (Slides)
-              </button>
+        <div v-else class="space-y-5">
 
-              <button
-                type="button"
-                @click="activeTab = 'pdf'"
-                class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
-                :class="[
-                  activeTab === 'pdf'
-                    ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                ]"
-              >
-                成果放映 (PDF &amp; HTML)
-                <span
-                  v-if="hasPdf || hasHtml"
-                  class="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500"
-                ></span>
-              </button>
+          <nav class="flex gap-6 border-b border-stone-200 dark:border-stone-800" aria-label="工作台分頁">
+            <button
+              v-for="t in tabs"
+              :key="t.id"
+              type="button"
+              class="-mb-px flex cursor-pointer items-center gap-1.5 border-b-2 pt-1 pb-2.5 text-sm transition-colors"
+              :class="activeTab === t.id ? 'border-accent font-semibold text-stone-900 dark:text-white' : 'border-transparent text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white'"
+              :aria-current="activeTab === t.id ? 'page' : undefined"
+              :data-testid="`tab-${t.id}`"
+              @click="activeTab = t.id"
+            >
+              {{ t.label }}
+              <span v-if="t.count" class="font-mono text-[11px] text-stone-400" data-testid="tab-count">{{ t.count }}</span>
+              <span v-if="t.ready" class="h-1.5 w-1.5 rounded-full bg-emerald-500" title="已匯出" />
+            </button>
+          </nav>
 
-              <button
-                type="button"
-                @click="activeTab = 'references'"
-                class="border-b-2 py-3 text-sm font-semibold transition-colors cursor-pointer"
-                :class="[
-                  activeTab === 'references'
-                    ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                ]"
-                data-testid="tab-references"
-              >
-                參考資料<span v-if="referenceCount" class="ml-1 text-xs text-slate-400">({{ referenceCount }})</span>
-              </button>
-            </nav>
-          </div>
-
-          <!-- Tab Panels -->
-          <div>
-            <SlideDeckView v-if="activeTab === 'slides'" />
-            <PdfViewer v-else-if="activeTab === 'pdf'" />
-            <div v-else class="max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <ReferencesPanel
-                :root="dirHandle"
-                ask="簡報"
-                intro="想讓 Agent 參考的文件、圖片或文字放在這裡（存進專案資料夾的 references/）。加入後把下方那句話交給 Agent，它會讀過、說明打算怎麼用，再修改簡報。"
-              />
-            </div>
+          <SlideDeckView v-if="activeTab === 'slides'" />
+          <PdfViewer v-else-if="activeTab === 'pdf'" />
+          <div v-else class="card max-w-3xl p-5 sm:p-6">
+            <ReferencesPanel
+              :root="dirHandle"
+              ask="簡報"
+              intro="想讓 Agent 參考的文件、圖片或文字放在這裡（存進專案資料夾的 references/）。加入後把下方那句話交給 Agent，它會讀過、說明打算怎麼用，再修改簡報。"
+            />
           </div>
         </div>
       </div>

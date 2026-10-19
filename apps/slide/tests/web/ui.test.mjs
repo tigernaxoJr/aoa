@@ -104,6 +104,8 @@ test('workbench: the project from the Agent replaces the prompt; the references 
   assert.equal(await page.getByTestId('agent-prompt').count(), 0)
   await page.getByTestId('project-name').getByText('Q3 業績報告').waitFor()
   await page.getByText('營收成長').first().waitFor()
+  // The page's own starter activity is not the Agent working: the next request follows the status.
+  assert.equal(await page.getByTestId('next-say').textContent(), '請繼續撰寫簡報文案。')
 
   await page.getByTestId('tab-references').click()
   assert.equal(await page.getByTestId('references-ask').count(), 0, 'nothing to say before anything is added')
@@ -114,13 +116,45 @@ test('workbench: the project from the Agent replaces the prompt; the references 
   await page.getByTestId('references-ask').waitFor()
   assert.equal(await readOpfs(page, 'q3-deck/references/講者筆記.md'), '第二頁補上去年同期數字\n')
   assert.match(await page.getByTestId('references-ask').textContent(), /我在 references\/ 新增了參考資料：講者筆記\.md。.*再更新簡報。/)
-  await page.getByTestId('tab-references').getByText('(1)').waitFor()
+  await page.getByTestId('tab-references').getByTestId('tab-count').getByText('1').waitFor()
 
   page.once('dialog', (d) => d.accept())
   await page.getByTestId('reference-remove').click()
   await page.getByTestId('references-ask').waitFor({ state: 'detached' })
   assert.equal(await readOpfs(page, 'q3-deck/references/講者筆記.md'), null)
   assert.deepEqual(JSON.parse(await readOpfs(page, 'q3-deck/references/index.json')).files, [])
+})
+
+test('workbench: the next step follows the Agent and the render check; slides page by keys, arrows and the check summary', async (t) => {
+  const page = await web.newPage(t)
+  if (!page) return
+  const later = new Date(Date.now() + 60_000).toISOString()
+  const check = JSON.stringify({ checkedAt: later, total: 2, ok: false, errors: [], slides: [{ no: 1, issues: [] }, { no: 2, issues: [{ type: 'overflow', message: '內容超出版面（下方 48px）' }] }] })
+  const waiting = JSON.stringify({ message: '文案完成，請在對話中確認', step: 'draft', waitingForUser: true, updatedAt: new Date().toISOString() })
+  await openFolder(page, 'nav-deck', { 'slide.project.json': project({ status: 'drafted' }), 'slides.md': SLIDES, 'slide.activity.json': waiting, 'output/check.json': check })
+
+  // The Agent is waiting at a checkpoint: the sentence approves that step.
+  await page.getByTestId('next-say').getByText('文案沒問題，請開始視覺升級。').waitFor()
+  assert.match(await page.getByTestId('next-step').textContent(), /Agent 在等你確認.*文案完成/)
+
+  assert.match(await page.getByTestId('slide-position').textContent(), /01\s*\/\s*02/)
+  assert.equal(await page.getByTestId('slide-fix').count(), 0)
+  await page.keyboard.press('ArrowRight')
+  await page.getByTestId('slide-title').getByText('營收成長').waitFor()
+  assert.ok(await page.getByTestId('slide-next').isDisabled(), 'the last slide has no next')
+  assert.match(await page.getByTestId('slide-fix').textContent(), /超出版面/)
+  await page.keyboard.press('k')
+  await page.getByTestId('slide-title').getByText('Q3 業績報告').waitFor()
+  await page.getByTestId('slide-next').click()
+  await page.getByTestId('slide-title').getByText('營收成長').waitFor()
+  await page.getByTestId('slide-1').click()
+  await page.getByTestId('check-summary').click()
+  await page.getByTestId('slide-title').getByText('營收成長').waitFor()
+
+  // Once the Agent stops waiting, the render problems come first, naming the slide.
+  const old = new Date(Date.now() - 3_600_000).toISOString()
+  await putFiles(page, 'nav-deck', { 'slide.activity.json': JSON.stringify({ message: '完成', step: 'idle', updatedAt: old }) })
+  await page.getByTestId('next-say').getByText(/渲染檢查第 2 頁有問題/).waitFor({ timeout: 10_000 })
 })
 
 test('recent projects: a reload reopens the last project; a closed one stays one click away', async (t) => {

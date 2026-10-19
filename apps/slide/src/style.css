@@ -1,10 +1,53 @@
 @import "tailwindcss";
 @source "../../../packages/web-shared/src";
 
+/* Same look as the AOA site (apps/portal): stone neutrals on paper, serif headings, mono labels, and one
+   vermilion accent used sparingly for the current step, the selected slide and links. */
 @theme {
   --font-sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+  --font-serif: "Noto Serif TC", "Source Han Serif TC", "Songti TC", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 }
 
 :root {
   color-scheme: light dark;
+  --accent: oklch(0.56 0.18 36);
+  --accent-ink: oklch(0.46 0.15 36);
+  --paper: oklch(0.985 0.004 85);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: oklch(0.74 0.14 45);
+    --accent-ink: oklch(0.8 0.12 50);
+    --paper: oklch(0.17 0.004 60);
+  }
+}
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-paper: var(--paper);
+}
+
+@layer components {
+  .card {
+    @apply rounded-md border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900;
+  }
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:border-stone-400 hover:text-stone-900 disabled:cursor-default disabled:opacity-40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:border-stone-500 dark:hover:text-white;
+  }
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-stone-700 disabled:cursor-default disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white;
+  }
+  .icon-btn {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white;
+  }
+  .field {
+    @apply mt-1.5 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-hidden dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100;
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] tracking-[0.1em] text-stone-500 uppercase dark:text-stone-400;
+  }
+  .link {
+    @apply text-accent-ink underline decoration-1 underline-offset-[3px] hover:decoration-2;
+  }
 }

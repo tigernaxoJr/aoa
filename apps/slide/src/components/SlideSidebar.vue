@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { nextTick, ref, watch } from 'vue'
+import { layoutLabel, visualLabel } from '../lib/labels'
 import type { ParsedSlide } from '../lib/slide-parser'
 import { issuesOf, slideImages } from '../lib/store'
 
@@ -12,96 +13,74 @@ const emit = defineEmits<{
   (e: 'select', index: number): void
 }>()
 
-const visualSlidesCount = computed(() => {
-  return props.slides.filter((s) => s.hasVisuals).length
-})
+// Keep the selected slide in view when it changes from the keyboard or the detail pane's arrows; only the
+// list scrolls (a strip on narrow screens, a column on wide ones), never the page.
+const list = ref<HTMLElement | null>(null)
+watch(
+  () => props.selectedSlideIndex,
+  (no) =>
+    nextTick(() => {
+      const box = list.value
+      const item = box?.querySelector<HTMLElement>(`[data-slide="${no}"]`)
+      if (!box || !item) return
+      const left = item.offsetLeft - box.offsetLeft
+      const top = item.offsetTop - box.offsetTop
+      box.scrollTo({
+        left: left < box.scrollLeft ? left : Math.max(box.scrollLeft, left + item.offsetWidth - box.clientWidth),
+        top: top < box.scrollTop ? top : Math.max(box.scrollTop, top + item.offsetHeight - box.clientHeight),
+        behavior: 'smooth',
+      })
+    }),
+)
 </script>
 
 <template>
-  <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-    <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-      <div>
-        <h3 class="text-sm font-semibold text-slate-900 dark:text-white">簡報分頁清單</h3>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400">
-          共 {{ slides.length }} 頁 · {{ visualSlidesCount }} 頁有視覺組件
-        </p>
-      </div>
-    </div>
+  <nav class="card min-w-0 p-2" aria-label="投影片清單">
+    <p v-if="!slides.length" class="py-8 text-center text-xs text-stone-400">尚未解析到分頁內容</p>
 
-    <!-- Empty slides list -->
-    <div
-      v-if="!slides.length"
-      class="py-8 text-center text-xs text-slate-400 dark:text-slate-500"
+    <ol
+      v-else
+      ref="list"
+      class="flex gap-2 overflow-x-auto pb-1 lg:block lg:max-h-[calc(100vh-11rem)] lg:space-y-1 lg:overflow-x-visible lg:overflow-y-auto lg:pb-0"
     >
-      尚未解析到分頁內容
-    </div>
-
-    <!-- Slide items -->
-    <div v-else class="space-y-2 max-h-[calc(100vh-13rem)] overflow-y-auto pr-1">
-      <div
-        v-for="slide in slides"
-        :key="slide.index"
-        @click="emit('select', slide.index)"
-        class="group relative flex cursor-pointer flex-col justify-between rounded-xl border p-3 transition-all text-left min-h-[115px]"
-        :class="[
-          selectedSlideIndex === slide.index
-            ? 'border-sky-500 bg-sky-50/60 shadow-xs dark:border-sky-400 dark:bg-sky-950/40'
-            : 'border-slate-200 bg-slate-50/70 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-slate-700 dark:hover:bg-slate-800'
-        ]"
-      >
-        <div>
-          <div class="flex items-center justify-between gap-1">
+      <li v-for="slide in slides" :key="slide.index" class="w-40 shrink-0 lg:w-auto" :data-slide="slide.index">
+        <button
+          type="button"
+          class="relative flex h-full w-full cursor-pointer flex-col gap-1 rounded-md border px-3 py-2.5 text-left transition-colors"
+          :class="
+            selectedSlideIndex === slide.index
+              ? 'border-stone-300 bg-stone-100 dark:border-stone-700 dark:bg-stone-800'
+              : 'border-transparent hover:bg-stone-50 dark:hover:bg-stone-800/50'
+          "
+          :aria-current="selectedSlideIndex === slide.index ? 'true' : undefined"
+          :data-testid="`slide-${slide.index}`"
+          @click="emit('select', slide.index)"
+        >
+          <span v-if="selectedSlideIndex === slide.index" class="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" aria-hidden="true" />
+          <span class="flex items-center gap-2">
+            <span class="font-mono text-[11px]" :class="selectedSlideIndex === slide.index ? 'text-accent' : 'text-stone-400'">{{ String(slide.index).padStart(2, '0') }}</span>
+            <span class="min-w-0 flex-1 truncate text-sm font-medium">{{ slide.title }}</span>
             <span
-              class="font-mono text-xs font-bold"
-              :class="selectedSlideIndex === slide.index ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400'"
+              v-if="issuesOf(slide.index).length"
+              class="shrink-0 rounded-sm bg-rose-100 px-1 font-mono text-[10px] font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+              :title="issuesOf(slide.index).map((i) => i.message).join('\n')"
+              data-testid="slide-issues"
             >
-              #{{ slide.index }}
+              {{ issuesOf(slide.index).length }}
             </span>
-
-            <div class="flex flex-wrap items-center gap-1">
-              <span
-                v-if="issuesOf(slide.index).length"
-                class="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-900/60 dark:text-rose-300"
-                :title="issuesOf(slide.index).map((i) => i.message).join('\n')"
-              >
-                {{ issuesOf(slide.index).length }} 個問題
-              </span>
-              <span class="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                {{ slide.layout }}
-              </span>
-              <span
-                v-for="vt in slide.visualTypes"
-                :key="vt"
-                class="rounded border border-sky-200 bg-sky-50 px-1 py-0.5 text-[9px] font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300"
-              >
-                {{ vt }}
-              </span>
-            </div>
-          </div>
-
-          <h4
-            class="mt-1.5 text-xs font-semibold line-clamp-1"
-            :class="selectedSlideIndex === slide.index ? 'text-sky-900 dark:text-sky-100' : 'text-slate-900 dark:text-white'"
-          >
-            {{ slide.title }}
-          </h4>
-
+          </span>
           <img
             v-if="slideImages.get(slide.index)"
             :src="slideImages.get(slide.index)!.url"
             :alt="`第 ${slide.index} 頁縮圖`"
             loading="lazy"
-            class="mt-2 w-full rounded-md border border-slate-200 dark:border-slate-700"
+            class="mt-1 hidden w-full rounded-sm border border-stone-200 lg:block dark:border-stone-700"
           />
-          <p v-else class="mt-1 text-[11px] leading-relaxed text-slate-500 line-clamp-2 dark:text-slate-400 font-mono">
-            {{ slide.content }}
-          </p>
-        </div>
-
-        <div v-if="slide.notes" class="mt-2 text-[10px] text-amber-700 dark:text-amber-400 line-clamp-1 border-t border-slate-200/50 pt-1 dark:border-slate-700/50">
-          備忘錄：{{ slide.notes }}
-        </div>
-      </div>
-    </div>
-  </div>
+          <span class="truncate pl-[26px] text-[11px] text-stone-500 dark:text-stone-400">
+            {{ [layoutLabel(slide.layout), ...slide.visualTypes.map(visualLabel)].join(' · ') }}<template v-if="slide.notes"> · 備忘錄</template>
+          </span>
+        </button>
+      </li>
+    </ol>
+  </nav>
 </template>

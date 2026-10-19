@@ -19,6 +19,13 @@ const pagesCount = ref(8)
 const theme = ref('default')
 const notes = ref('')
 
+/** What the workbench does, for the start page. */
+const FEATURES = [
+  ['01', 'Slidev Markdown', '以 Markdown 與 Vue 為核心，多種版型與逐步顯示動畫。'],
+  ['02', '圖解、流程圖與 3D', 'Agent 依內容畫出 SVG 架構圖、Mermaid 流程圖或 Three.js 立體畫面。'],
+  ['03', 'PDF 與互動 HTML', '在你的電腦上匯出；PDF 保持向量，HTML 可離線全螢幕放映。'],
+] as const
+
 const when = (t: number) => new Date(t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
 
 async function run(fn: () => Promise<void>) {
@@ -59,149 +66,97 @@ async function handleCreate() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-2xl py-8">
+  <div class="mx-auto max-w-3xl py-4 sm:py-10">
     <!-- Browser Support Check -->
-    <div
-      v-if="!supported"
-      class="rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-200"
-    >
-      <h3 class="font-semibold text-lg">瀏覽器不支援 File System Access API</h3>
-      <p class="mt-2 text-sm leading-relaxed">
-        Slide Studio 遵循 AOA 架構，完全零後端且不儲存資料，必須直接透過標準 File System Access API 存取您的本機簡報專案資料夾。
-      </p>
-      <p class="mt-2 text-sm">請使用最新版 <strong>Google Chrome</strong> 或 <strong>Microsoft Edge</strong> 瀏覽器。</p>
+    <div v-if="!supported" class="rounded-md border border-amber-300 bg-amber-50 p-6 text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-200">
+      <h2 class="font-serif text-lg font-bold">這個瀏覽器無法開啟本機資料夾</h2>
+      <p class="mt-2 text-sm leading-relaxed">Slide 沒有後端、不上傳檔案，直接讀寫你電腦上的簡報資料夾，需要 File System Access API。</p>
+      <p class="mt-2 text-sm">請改用最新版 <strong>Google Chrome</strong> 或 <strong>Microsoft Edge</strong>。</p>
     </div>
 
-    <!-- Main Pick Directory Card -->
-    <div
-      v-else-if="!dirHandle"
-      class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-    >
-      <div class="text-center">
-        <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200">
-          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-          </svg>
-        </div>
-        <h2 class="mt-4 text-xl font-semibold tracking-tight text-slate-900 dark:text-white">選擇或建立簡報目錄</h2>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-          選擇本機空資料夾開始新專案，或選取既有的 Slidev 專案目錄進行即時預覽與 PDF 產物監控。
-        </p>
+    <!-- Start: pick a folder or reopen a recent one -->
+    <div v-else-if="!dirHandle">
+      <p class="eyebrow"><span class="text-accent">AOA</span> · Slide</p>
+      <h1 class="mt-5 font-serif text-3xl leading-tight font-bold tracking-tight sm:text-5xl">交給你的 Agent 做簡報</h1>
+      <p class="mt-5 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg dark:text-stone-300">
+        選一個空資料夾、寫下想講什麼，網頁會產生一段提示詞；你的 Coding Agent 照著做出 Slidev 簡報，這裡即時顯示每一頁、檢查結果與匯出的 PDF。
+      </p>
 
-        <div class="mt-6 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            :disabled="loading"
-            @click="run(pickFolder)"
-            data-testid="pick-folder"
-            class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-sm hover:bg-slate-800 active:bg-slate-950 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:active:bg-slate-200 cursor-pointer disabled:opacity-50 transition-colors"
-          >
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            選擇本機資料夾
-          </button>
-          <span class="text-xs text-slate-400">所有檔案直接讀寫本機，全程零後端無雲端傳輸</span>
-        </div>
+      <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <button type="button" :disabled="loading" data-testid="pick-folder" class="btn-primary px-5 py-3" @click="run(pickFolder)">
+          選擇資料夾 <span aria-hidden="true">→</span>
+        </button>
+        <span class="text-xs text-stone-500">檔案只在你的電腦上讀寫，不經過任何伺服器</span>
+      </div>
 
-        <p v-if="folderError" data-testid="folder-error" class="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400" role="alert">
-          {{ folderError }}
-        </p>
+      <p v-if="folderError" data-testid="folder-error" class="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400" role="alert">
+        {{ folderError }}
+      </p>
 
-        <!-- Recent projects: one click to reopen (the browser may ask for access again) -->
-        <div v-if="recentList.length" class="mx-auto mt-8 max-w-md text-left" data-testid="recent">
-          <p class="text-sm font-medium text-slate-900 dark:text-slate-100">最近的專案</p>
-          <ul class="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-            <li v-for="r in recentList" :key="`${r.handle.name}-${r.openedAt}`" class="flex items-center">
-              <button
-                type="button"
-                class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-slate-50 cursor-pointer disabled:opacity-50 dark:hover:bg-slate-800/60"
-                :disabled="loading"
-                data-testid="recent-open"
-                @click="run(() => reopen(r.handle))"
-              >
-                <svg class="h-4 w-4 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-                <span class="min-w-0 flex-1">
-                  <span class="block truncate font-medium text-slate-900 dark:text-slate-100">{{ r.projectName ?? '還沒建立專案' }}</span>
-                  <span class="block truncate text-xs text-slate-500 dark:text-slate-400">資料夾「{{ r.handle.name }}」· {{ when(r.openedAt) }}</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                class="mr-1.5 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                :aria-label="`從清單移除 ${r.handle.name}`"
-                title="從清單移除（不會刪除檔案）"
-                @click="forgetRecent(r.handle)"
-              >
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </li>
-          </ul>
-          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">瀏覽器詢問存取權限時選「每次造訪時都允許」，下次打開網頁就會直接回到上次的專案。</p>
-        </div>
+      <!-- Recent projects: one click to reopen (the browser may ask for access again) -->
+      <div v-if="recentList.length" class="mt-12" data-testid="recent">
+        <p class="eyebrow">最近的專案</p>
+        <ul class="mt-3 divide-y divide-stone-200 border-y border-stone-200 dark:divide-stone-800 dark:border-stone-800">
+          <li v-for="r in recentList" :key="`${r.handle.name}-${r.openedAt}`" class="group flex items-center">
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 cursor-pointer items-baseline gap-3 py-3 text-left disabled:opacity-50"
+              :disabled="loading"
+              data-testid="recent-open"
+              @click="run(() => reopen(r.handle))"
+            >
+              <span class="min-w-0 truncate font-medium decoration-accent underline-offset-4 group-hover:underline">{{ r.projectName ?? '還沒建立專案' }}</span>
+              <span class="min-w-0 truncate font-mono text-[11px] text-stone-500">{{ r.handle.name }} · {{ when(r.openedAt) }}</span>
+            </button>
+            <button type="button" class="icon-btn" :aria-label="`從清單移除 ${r.handle.name}`" title="從清單移除（不會刪除檔案）" @click="forgetRecent(r.handle)">
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 6 6 18M6 6l12 12" /></svg>
+            </button>
+          </li>
+        </ul>
+        <p class="mt-2 text-xs text-stone-500 dark:text-stone-400">瀏覽器詢問存取權限時選「每次造訪時都允許」，下次打開網頁就會直接回到上次的專案。</p>
       </div>
 
       <!-- Feature Highlights -->
-      <div class="mt-10 grid grid-cols-1 gap-4 border-t border-slate-100 pt-8 sm:grid-cols-3 dark:border-slate-800">
-        <div class="text-left">
-          <h4 class="font-medium text-sm text-slate-900 dark:text-slate-100">Slidev Markdown</h4>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">以 Markdown 與 Vue 3 為核心，支援多種版型與 v-click 動效。</p>
-        </div>
-        <div class="text-left">
-          <h4 class="font-medium text-sm text-slate-900 dark:text-slate-100">SVG & Three.js 3D</h4>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Coding Agent 動態生成高質感向量架構圖與 WebGL 立體視覺。</p>
-        </div>
-        <div class="text-left">
-          <h4 class="font-medium text-sm text-slate-900 dark:text-slate-100">PDF 輸出</h4>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">本機 Playwright 一鍵匯出；文字與 SVG 保持向量，3D 畫面為高解析點陣圖。</p>
+      <div class="mt-12 grid gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 sm:grid-cols-3 dark:border-stone-700 dark:bg-stone-700">
+        <div v-for="[n, heading, body] in FEATURES" :key="n" class="bg-paper p-5">
+          <p class="font-mono text-[11px] text-accent">{{ n }}</p>
+          <h3 class="mt-2 text-sm font-semibold">{{ heading }}</h3>
+          <p class="mt-1 text-xs leading-relaxed text-stone-500 dark:text-stone-400">{{ body }}</p>
         </div>
       </div>
     </div>
 
     <!-- Create Project Form if directory has no slide.project.json -->
-    <div
-      v-else-if="needsSetup"
-      class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-    >
-      <div class="border-b border-slate-100 pb-5 dark:border-slate-800">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">初始化簡報專案</h2>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          「{{ dirHandle?.name }}」是空資料夾。填寫需求後，網頁會寫入 <code>slide.start.json</code> 並產生給 Agent 的指令，由 Agent 下載範本並建立專案。
+    <div v-else-if="needsSetup" class="card">
+      <div class="border-b border-stone-200 px-5 py-5 sm:px-7 dark:border-stone-800">
+        <p class="eyebrow"><span class="text-accent">新簡報</span> · {{ dirHandle?.name }}</p>
+        <h2 class="mt-2 font-serif text-2xl font-bold">這份簡報要講什麼？</h2>
+        <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
+          填好後網頁會寫入 <code class="font-mono text-xs">slide.start.json</code>，並產生給 Agent 的提示詞；Agent 會下載範本、建立專案。
         </p>
       </div>
 
-      <form @submit.prevent="handleCreate" class="mt-6 space-y-4">
+      <form class="space-y-5 px-5 py-6 sm:px-7" @submit.prevent="handleCreate">
         <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">簡報主題 / 名稱 *</label>
-          <input
-            v-model="title"
-            type="text"
-            required
-            data-testid="setup-title"
-            placeholder="例如：雲端微服務架構遷移策略"
-            class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
-          />
+          <label for="slide-title" class="block text-sm font-medium">簡報主題 <span class="text-accent">*</span></label>
+          <input id="slide-title" v-model="title" type="text" required data-testid="setup-title" placeholder="例如：雲端微服務架構遷移策略" class="field" />
         </div>
 
         <div>
-          <label for="slide-content" class="block text-sm font-medium text-slate-700 dark:text-slate-300">簡報內容</label>
+          <label for="slide-content" class="block text-sm font-medium">簡報內容</label>
           <textarea
             id="slide-content"
             v-model="content"
             rows="6"
             data-testid="slide-content"
             placeholder="想講的重點、章節順序、要放的數據或案例。可以直接貼上文章、會議紀錄，或寫下本機檔案的路徑讓 Agent 讀取。"
-            class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
+            class="field"
           ></textarea>
-          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">留空也可以：Agent 會先在對話中問你要講什麼，再開始規劃大綱。</p>
+          <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">留空也可以：Agent 會先在對話中問你要講什麼，再開始規劃大綱。</p>
         </div>
 
         <div data-testid="setup-references">
-          <span class="block text-sm font-medium text-slate-700 dark:text-slate-300">參考資料（選填）</span>
+          <span class="block text-sm font-medium">參考資料 <span class="font-normal text-stone-500">（選填）</span></span>
           <ReferencesPanel
             class="mt-1.5"
             :root="dirHandle"
@@ -210,26 +165,15 @@ async function handleCreate() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">目標受眾與場合</label>
-          <input
-            v-model="audience"
-            type="text"
-            data-testid="setup-audience"
-            placeholder="例如：技術長、資深工程師、投資人"
-            class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
-          />
+          <label for="slide-audience" class="block text-sm font-medium">目標受眾與場合</label>
+          <input id="slide-audience" v-model="audience" type="text" data-testid="setup-audience" placeholder="例如：技術長、資深工程師、投資人" class="field" />
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid gap-5 sm:grid-cols-2">
           <div>
-            <label for="slide-pages-mode" class="block text-sm font-medium text-slate-700 dark:text-slate-300">頁數</label>
+            <label for="slide-pages-mode" class="block text-sm font-medium">頁數</label>
             <div class="flex gap-2">
-              <select
-                id="slide-pages-mode"
-                v-model="pagesMode"
-                data-testid="pages-mode"
-                class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
-              >
+              <select id="slide-pages-mode" v-model="pagesMode" data-testid="pages-mode" class="field">
                 <option value="auto">由 AI 依內容評估</option>
                 <option value="fixed">指定頁數</option>
               </select>
@@ -241,53 +185,32 @@ async function handleCreate() {
                 max="50"
                 aria-label="指定頁數"
                 data-testid="pages-count"
-                class="mt-1.5 block w-20 shrink-0 rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
+                class="field w-20 shrink-0"
               />
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">簡報主題風格</label>
-            <select
-              v-model="theme"
-              class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
-            >
-              <option value="default">預設深淺自適應 (default)</option>
-              <option value="seriph">優雅襯線風 (seriph)</option>
-              <option value="apple-basic">極簡科技 (apple-basic)</option>
+            <label for="slide-theme" class="block text-sm font-medium">簡報主題風格</label>
+            <select id="slide-theme" v-model="theme" class="field">
+              <option value="default">預設，深淺自適應（default）</option>
+              <option value="seriph">優雅襯線（seriph）</option>
+              <option value="apple-basic">極簡科技（apple-basic）</option>
             </select>
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">視覺偏好（選填）</label>
-          <textarea
-            v-model="notes"
-            rows="2"
-            placeholder="例如：正式簡潔、用公司藍色系；流程用圖表呈現；不要 3D 動畫"
-            class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-400"
-          ></textarea>
+          <label for="slide-notes" class="block text-sm font-medium">視覺偏好 <span class="font-normal text-stone-500">（選填）</span></label>
+          <textarea id="slide-notes" v-model="notes" rows="2" placeholder="例如：正式簡潔、用公司藍色系；流程用圖表呈現；不要 3D 動畫" class="field"></textarea>
         </div>
 
-        <p v-if="error" class="text-sm font-medium text-rose-600 dark:text-rose-400">
-          {{ error }}
-        </p>
+        <p v-if="error" class="text-sm font-medium text-rose-600 dark:text-rose-400">{{ error }}</p>
 
-        <div class="flex items-center justify-end gap-3 pt-4">
-          <button
-            type="button"
-            @click="abandonFolder"
-            class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 cursor-pointer dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-          >
+        <div class="flex flex-col-reverse gap-3 border-t border-stone-200 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-stone-800">
+          <button type="button" class="cursor-pointer text-sm text-stone-500 underline decoration-stone-300 underline-offset-4 hover:text-stone-900 dark:hover:text-white" @click="abandonFolder">
             換一個資料夾
           </button>
-          <button
-            type="submit"
-            :disabled="loading"
-            data-testid="setup-create"
-            class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-slate-800 active:bg-slate-950 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:active:bg-slate-200 cursor-pointer disabled:opacity-50 transition-colors"
-          >
-            建立專案並生成 Agent 指令
-          </button>
+          <button type="submit" :disabled="loading" data-testid="setup-create" class="btn-primary px-5 py-2.5">建立專案，產生提示詞 <span aria-hidden="true">→</span></button>
         </div>
       </form>
     </div>

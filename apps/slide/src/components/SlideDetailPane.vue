@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { layoutLabel, visualLabel } from '../lib/labels'
 import type { ParsedSlide } from '../lib/slide-parser'
 import { issuesOf, rendersStale, slideImages } from '../lib/store'
 import CopyButton from './CopyButton.vue'
@@ -31,6 +32,13 @@ const issues = computed(() => (props.slide ? issuesOf(props.slide.index) : []))
 const canPrev = computed(() => !!props.slide && props.slide.index > 1)
 const canNext = computed(() => !!props.slide && props.slide.index < props.totalSlides)
 
+/** What to tell the Agent about this slide's render problems. */
+const fixRequest = computed(() => {
+  if (!props.slide || !issues.value.length) return ''
+  const what = issues.value.map((i) => i.message).join('；')
+  return `第 ${props.slide.index} 頁「${props.slide.title}」渲染檢查有問題：${what}。請修正後再執行 pnpm run check。`
+})
+
 const slideBackgroundStyle = computed(() => {
   if (!props.slide?.background) return {}
   const bg = props.slide.background
@@ -48,189 +56,97 @@ const slideBackgroundStyle = computed(() => {
 
 const slideThemeGradient = computed(() => {
   if (props.slide?.background) return ''
-  if (props.slide?.layout === 'cover') {
-    return 'bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950'
-  }
-  return 'bg-gradient-to-br from-slate-900 to-slate-800'
+  if (props.slide?.layout === 'cover') return 'bg-gradient-to-br from-stone-950 via-stone-900 to-stone-800'
+  return 'bg-stone-900'
 })
 </script>
 
 <template>
-  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-    <div v-if="!slide" class="py-16 text-center text-slate-400 dark:text-slate-500">
-      <svg class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
-      <p class="mt-3 text-sm font-medium">請從左側點選分頁以檢視詳細內容</p>
-    </div>
+  <article class="card min-w-0">
+    <div v-if="!slide" class="py-16 text-center text-sm text-stone-400">從清單點選一頁來檢視</div>
 
-    <div v-else class="space-y-6">
-      <!-- Header: Controls & Navigation -->
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
-        <div class="flex items-center gap-2">
-          <span class="rounded-md bg-slate-100 px-2.5 py-1 font-mono text-sm font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-            #{{ slide.index }}
-          </span>
-          <span class="text-xs text-slate-400">/ {{ totalSlides }}</span>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white line-clamp-1 ml-1">
-            {{ slide.title }}
-          </h3>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <!-- Prev / Next navigation -->
-          <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
-            <button
-              type="button"
-              :disabled="!canPrev"
-              @click="emit('prev')"
-              title="上一頁"
-              class="rounded-md p-1.5 text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent dark:text-slate-400 dark:hover:bg-slate-700 cursor-pointer"
-            >
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              :disabled="!canNext"
-              @click="emit('next')"
-              title="下一頁"
-              class="rounded-md p-1.5 text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent dark:text-slate-400 dark:hover:bg-slate-700 cursor-pointer"
-            >
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            @click="downloadMarkdown(slide.rawMarkdown, `slide-${slide.index}.md`)"
-            title="下載此頁 Markdown"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            下載單頁 .md
+    <template v-else>
+      <!-- Header: position, title, page actions -->
+      <header class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-stone-200 px-4 py-3 sm:px-5 dark:border-stone-800">
+        <div class="flex min-w-0 items-center gap-1">
+          <button type="button" class="icon-btn" :disabled="!canPrev" title="上一頁（← 或 K）" aria-label="上一頁" data-testid="slide-prev" @click="emit('prev')">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" /></svg>
           </button>
-
-          <CopyButton
-            :text="slide.rawMarkdown"
-            label="複製本頁"
-          />
-        </div>
-      </div>
-
-      <!-- Metadata Badges -->
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs text-slate-500">版面配置 (Layout)：</span>
-        <span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          {{ slide.layout }}
-        </span>
-
-        <span v-if="slide.visualTypes.length" class="text-xs text-slate-500 ml-2">視覺元素：</span>
-        <span
-          v-for="vt in slide.visualTypes"
-          :key="vt"
-          class="rounded border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300"
-        >
-          {{ vt }}
-        </span>
-
-        <span
-          v-if="slide.background"
-          class="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
-          :title="slide.background"
-        >
-          🖼️ 背景已設定
-        </span>
-      </div>
-
-      <IssueList :issues="issues" />
-
-      <!-- Real render from `pnpm run check` / `pnpm run export:png` -->
-      <div v-if="image">
-        <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span class="font-semibold text-slate-500 dark:text-slate-400">實際渲染畫面</span>
-          <span
-            v-if="rendersStale"
-            class="rounded bg-amber-50 px-2 py-0.5 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
-          >
-            slides.md 在截圖後有修改，畫面可能不是最新；請 Agent 執行 pnpm run check
+          <span class="font-mono text-xs text-stone-500 tabular-nums" data-testid="slide-position">
+            <span class="text-accent">{{ String(slide.index).padStart(2, '0') }}</span> / {{ String(totalSlides).padStart(2, '0') }}
           </span>
+          <button type="button" class="icon-btn" :disabled="!canNext" title="下一頁（→ 或 J）" aria-label="下一頁" data-testid="slide-next" @click="emit('next')">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" /></svg>
+          </button>
+          <h2 class="ml-2 min-w-0 truncate font-serif text-lg font-bold" data-testid="slide-title">{{ slide.title }}</h2>
         </div>
-        <img
-          :src="image.url"
-          :alt="`第 ${slide.index} 頁渲染畫面`"
-          class="w-full rounded-xl border border-slate-200 shadow-md dark:border-slate-800"
-        />
-      </div>
 
-      <!-- Markdown approximation until there is a real render -->
-      <div v-else>
-        <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-          Markdown 近似預覽（不含版型、組件與主題；請 Agent 執行 <code>pnpm run check</code> 產生實際畫面）：
+        <div class="flex items-center gap-1.5">
+          <CopyButton :text="slide.rawMarkdown" label="複製本頁" title="複製這一頁的 Markdown" />
+          <button type="button" class="icon-btn" title="下載這一頁的 Markdown" aria-label="下載這一頁的 Markdown" @click="downloadMarkdown(slide.rawMarkdown, `slide-${slide.index}.md`)">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16" /></svg>
+          </button>
         </div>
-        <!-- 16:9 Presentation Stage Mockup -->
-        <div
-          class="aspect-16/9 w-full min-h-[340px] max-h-[520px] overflow-hidden rounded-xl border border-slate-200/80 p-6 sm:p-8 text-white shadow-md flex flex-col justify-between transition-colors relative"
-          :class="slideThemeGradient"
-          :style="slideBackgroundStyle"
-        >
-          <!-- Background image overlay if background image exists -->
+      </header>
+
+      <div class="space-y-5 p-4 sm:p-5">
+        <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
+          <span :title="`layout: ${slide.layout}`">版型：<span class="text-stone-800 dark:text-stone-200">{{ layoutLabel(slide.layout) }}</span></span>
+          <span v-if="slide.visualTypes.length">視覺：<span class="text-stone-800 dark:text-stone-200">{{ slide.visualTypes.map(visualLabel).join('、') }}</span></span>
+          <span v-if="slide.background" :title="slide.background">已設定背景</span>
+        </p>
+
+        <div v-if="issues.length" class="space-y-2" data-testid="slide-fix">
+          <IssueList :issues="issues" />
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <p class="min-w-0 flex-1 text-xs text-stone-500 dark:text-stone-400">把這句話交給 Agent，請它修正這一頁：</p>
+            <CopyButton :text="fixRequest" label="複製修正請求" />
+          </div>
+        </div>
+
+        <!-- Real render from `pnpm run check` / `pnpm run export:png` -->
+        <figure v-if="image">
+          <img :src="image.url" :alt="`第 ${slide.index} 頁渲染畫面`" class="w-full rounded-md border border-stone-200 dark:border-stone-800" />
+          <figcaption class="mt-2 flex flex-wrap items-center gap-2 text-xs text-stone-500">
+            <span class="eyebrow">實際畫面</span>
+            <span v-if="rendersStale" class="text-amber-700 dark:text-amber-400">slides.md 在截圖後改過，畫面可能不是最新的</span>
+          </figcaption>
+        </figure>
+
+        <!-- Markdown approximation until there is a real render -->
+        <figure v-else>
           <div
-            v-if="slide.background"
-            class="absolute inset-0 bg-slate-950/65 backdrop-blur-[1px] -z-0 pointer-events-none"
-          ></div>
-
-          <!-- Slide content scrollable body with flex-1 -->
-          <div class="flex-1 overflow-y-auto pr-2 relative z-10 min-h-0 flex flex-col">
-            <div class="flex items-center justify-between text-xs text-slate-400 mb-3 border-b border-slate-800 pb-2 shrink-0">
-              <span class="font-mono uppercase tracking-wider text-[11px]">{{ slide.layout }}</span>
-              <span class="font-mono text-slate-400">#{{ slide.index }}</span>
-            </div>
-            
-            <div
-              v-if="slide.renderedHtml"
-              class="slide-preview-html text-slate-200 text-sm leading-relaxed"
-              v-html="slide.renderedHtml"
-            ></div>
-            <div v-else>
-              <h2 class="text-2xl font-bold tracking-tight text-white mb-2">
-                {{ slide.title }}
-              </h2>
-              <div class="text-xs leading-relaxed text-slate-300">
-                {{ slide.content }}
+            class="relative flex aspect-video w-full flex-col overflow-hidden rounded-md border border-stone-200 p-6 dark:border-stone-700 text-white sm:p-8"
+            :class="slideThemeGradient"
+            :style="slideBackgroundStyle"
+          >
+            <div v-if="slide.background" class="pointer-events-none absolute inset-0 bg-stone-950/65" />
+            <div class="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto">
+              <div v-if="slide.renderedHtml" class="slide-preview-html text-sm leading-relaxed text-stone-200" v-html="slide.renderedHtml"></div>
+              <div v-else>
+                <h2 class="mb-2 text-2xl font-bold tracking-tight">{{ slide.title }}</h2>
+                <div class="text-xs leading-relaxed text-stone-300">{{ slide.content }}</div>
               </div>
             </div>
           </div>
+          <figcaption class="mt-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
+            <span class="eyebrow mr-2">近似預覽</span>只有文字，不含版型、組件與主題。請 Agent 執行 <code class="font-mono">pnpm run check</code> 就會換成實際畫面。
+          </figcaption>
+        </figure>
 
-          <div v-if="slide.visualTypes.length" class="mt-3 flex items-center gap-2 pt-2 border-t border-slate-700/60 shrink-0 relative z-10">
-            <span class="text-[10px] text-slate-400">視覺組件:</span>
-            <span v-for="vt in slide.visualTypes" :key="vt" class="rounded bg-sky-500/20 px-2 py-0.5 text-[10px] text-sky-300">
-              {{ vt }}
-            </span>
-          </div>
-        </div>
-      </div>
+        <!-- Speaker Notes -->
+        <section v-if="slide.notes" class="border-l-2 border-accent pl-4">
+          <h3 class="eyebrow">講者備忘錄</h3>
+          <p class="mt-1.5 text-sm leading-relaxed whitespace-pre-wrap text-stone-700 dark:text-stone-300">{{ slide.notes }}</p>
+        </section>
 
-      <!-- Speaker Notes -->
-      <div v-if="slide.notes" class="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs dark:border-amber-900/60 dark:bg-amber-950/40">
-        <span class="font-semibold text-amber-800 dark:text-amber-300">演講者備忘錄 (Speaker Notes)：</span>
-        <p class="mt-1.5 leading-relaxed text-amber-900 dark:text-amber-200 whitespace-pre-wrap">{{ slide.notes }}</p>
+        <details class="group">
+          <summary class="eyebrow cursor-pointer select-none hover:text-stone-900 dark:hover:text-white">本頁原始碼</summary>
+          <pre class="mt-2 max-h-[300px] overflow-auto rounded-md bg-stone-50 p-4 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-stone-800 dark:bg-stone-950/60 dark:text-stone-200"><code>{{ slide.rawMarkdown }}</code></pre>
+        </details>
       </div>
-
-      <!-- Raw Markdown Content -->
-      <div>
-        <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-          本頁 Markdown 原始語法：
-        </div>
-        <pre class="max-h-[250px] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-relaxed text-slate-800 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200 whitespace-pre-wrap break-words"><code>{{ slide.rawMarkdown }}</code></pre>
-      </div>
-    </div>
-  </div>
+    </template>
+  </article>
 </template>
 
 <style scoped>
@@ -250,42 +166,41 @@ const slideThemeGradient = computed(() => {
 .slide-preview-html :deep(h3) {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #38bdf8;
+  color: var(--color-accent);
   margin-top: 0.5rem;
   margin-bottom: 0.25rem;
 }
 .slide-preview-html :deep(p) {
   margin-bottom: 0.5rem;
-  color: #cbd5e1;
+  color: var(--color-stone-300);
 }
 .slide-preview-html :deep(ul) {
   list-style-type: disc;
   padding-left: 1.25rem;
   margin-bottom: 0.5rem;
-  color: #cbd5e1;
+  color: var(--color-stone-300);
 }
 .slide-preview-html :deep(ol) {
   list-style-type: decimal;
   padding-left: 1.25rem;
   margin-bottom: 0.5rem;
-  color: #cbd5e1;
+  color: var(--color-stone-300);
 }
 .slide-preview-html :deep(li) {
   margin-bottom: 0.25rem;
 }
 .slide-preview-html :deep(code) {
-  background-color: rgba(30, 41, 59, 0.8);
+  background-color: rgb(255 255 255 / 0.08);
   padding: 0.15rem 0.35rem;
   border-radius: 0.25rem;
   font-size: 0.8em;
-  color: #38bdf8;
-  font-family: monospace;
+  color: var(--color-stone-100);
+  font-family: var(--font-mono);
 }
 .slide-preview-html :deep(blockquote) {
-  border-left: 3px solid #38bdf8;
+  border-left: 2px solid var(--color-accent);
   padding-left: 0.75rem;
   margin: 0.5rem 0;
-  color: #94a3b8;
-  font-style: italic;
+  color: var(--color-stone-400);
 }
 </style>

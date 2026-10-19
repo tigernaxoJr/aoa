@@ -354,8 +354,9 @@ export async function restore() {
 /** Closes the project: it stays in the recent list but is not reopened on the next visit. */
 export async function closeProject() {
   folderError.value = null
-  resetDirectory()
+  // Saved before the page changes: a reload right after closing must not reopen the project.
   await recent.forgetLast()
+  resetDirectory()
   await refreshRecent()
 }
 
@@ -399,6 +400,9 @@ export async function folderEntries(handle: FileSystemDirectoryHandle): Promise<
   return names
 }
 
+/** The first activity the page writes; until the Agent replaces it, nothing is happening yet. */
+export const STARTER_MESSAGE = '資料夾已準備好，等待 Agent 讀取 slide.start.json 開始製作'
+
 /**
  * Writes slide.start.json (the user's request) and a first activity. The Agent unpacks the template and
  * writes slide.project.json from it; the page never writes the project file, so the template's copy is
@@ -413,7 +417,7 @@ export async function initializeProject(config: SlideStartConfig) {
   start.value = startData
 
   const starterActivity: SlideActivity = {
-    message: '資料夾已準備好，等待 Agent 讀取 slide.start.json 開始製作',
+    message: STARTER_MESSAGE,
     step: 'init',
     currentSlide: null,
     totalSlides: config.pagesCount ?? null,
