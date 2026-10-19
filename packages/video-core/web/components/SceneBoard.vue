@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { openFeedback } from '@core'
-import { PURPOSE_LABEL, TONE_CLASS, TONE_DOT, sceneBadge } from '../lib/site'
+import { PURPOSE_LABEL, TONE_CLASS, TONE_DOT, awaitingReview, sceneBadge } from '../lib/site'
 import { useActivity } from '@aoa/web-shared/activity'
 import { activity, state, write } from '../lib/store'
 import type { SceneState } from '../lib/project'
@@ -32,6 +32,9 @@ const summary = computed(() => {
   const total = known.length ? ` · 約 ${known.reduce((a, b) => a + b, 0).toFixed(1)} 秒` : ''
   return `已完成 ${done}/${scenes.value.length}${total}${known.length && unknown ? `（另 ${unknown} 段依旁白）` : ''}`
 })
+
+/** Rendered scenes the user has not approved yet: the review the page is waiting for. */
+const toReview = computed(() => scenes.value.filter(awaitingReview))
 
 const final = computed(() => state.value!.final)
 const finalOutdated = computed(() => final.value.exists && scenes.value.some((s) => !s.upToDate || s.outputMtime > final.value.mtime))
@@ -66,7 +69,7 @@ function drop(target: string) {
   <section class="card p-4 sm:p-5">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="flex flex-wrap items-baseline gap-x-2 font-semibold">
-        Scene
+        段落
         <span v-if="scenes.length" class="text-sm font-normal text-slate-500 dark:text-slate-400" data-testid="scene-summary">{{ summary }}</span>
       </h2>
       <div v-if="scenes.length" class="flex rounded-lg bg-slate-100 p-0.5 text-xs dark:bg-slate-800" role="group" aria-label="檢視方式">
@@ -117,6 +120,17 @@ function drop(target: string) {
     </ol>
 
     <template v-else>
+      <button
+        v-if="toReview.length"
+        type="button"
+        class="mt-3 flex w-full items-center gap-2 rounded-lg bg-sky-50 px-3 py-2 text-left text-sm text-sky-900 transition hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-100 dark:hover:bg-sky-950/70"
+        data-testid="review-next"
+        @click="selected = toReview[0].id"
+      >
+        <Icon name="play" :size="14" class="text-sky-600 dark:text-sky-400" />
+        <span class="min-w-0 flex-1"><span class="font-medium">{{ toReview.length }} 段等你檢查</span>：看過沒問題就核准，有問題就留意見。</span>
+        <Icon name="chevron" :size="14" class="text-sky-600 dark:text-sky-400" />
+      </button>
       <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">點選一段預覽與修改；拖曳或用箭頭調整播放順序。</p>
       <ol class="mt-2 space-y-1.5">
         <li

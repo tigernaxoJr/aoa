@@ -31,7 +31,8 @@ const outdated = computed(() => scenes.value.filter((s) => !s.upToDate || (final
     </header>
 
     <video v-if="url" :key="url" :src="url" controls class="mt-4 aspect-video w-full rounded-xl bg-black" data-testid="final-video" />
-    <div v-else class="mt-4 flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl bg-slate-100 px-6 text-center dark:bg-slate-800/60">
+    <!-- No video yet: a compact progress box, not an empty 16:9 frame that pushes the to-do list off screen. -->
+    <div v-else class="mt-4 flex w-full flex-col items-center justify-center gap-3 rounded-xl bg-slate-100 px-6 py-8 text-center dark:bg-slate-800/60">
       <Icon name="film" :size="32" class="text-slate-300 dark:text-slate-600" />
       <p class="text-sm text-slate-600 dark:text-slate-400">
         <template v-if="ready">所有段落都完成了，可以合成影片。</template>

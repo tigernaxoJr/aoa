@@ -32,8 +32,13 @@ const dirty = ref(false)
 const detail = ref<HTMLElement | null>(null)
 const activeTab = ref('scenes')
 /** The app's own tabs, then the references every project has. */
-const allTabs = computed<WorkbenchTab[]>(() => [...props.tabs, { id: 'references', icon: 'paperclip', label: () => '📎 參考資料', component: ReferencesTab }])
+const allTabs = computed<WorkbenchTab[]>(() => [...props.tabs, { id: 'references', icon: 'paperclip', label: '參考資料', component: ReferencesTab }])
 const extraTab = computed(() => allTabs.value.find((t) => t.id === activeTab.value) ?? null)
+/** Every tab as shown: the scene board first. */
+const tabBar = computed(() => [
+  { id: 'scenes', icon: 'film' as const, label: '分鏡故事板', count: state.value?.scenes.length ?? 0, testid: undefined },
+  ...allTabs.value.map((t) => ({ id: t.id, icon: t.icon, label: t.label, count: state.value && t.count ? t.count(state.value) : null, testid: `tab-${t.id}` })),
+])
 
 /** The scene in the detail pane (null: the full video). Leaving unsaved edits asks first. */
 const selected = computed<string | null>({
@@ -159,31 +164,26 @@ watch(state, (st) => {
       <WorkflowBar />
 
       <!-- Tabs: the scene board, plus the app's own (e.g. the story's cast studio) -->
-      <div class="flex items-center gap-2 border-b border-slate-200 pb-1 dark:border-slate-800" role="tablist">
+      <div class="-mx-4 flex items-center gap-1 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:px-0 dark:border-slate-800" role="tablist">
         <button
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === 'scenes'"
-          class="inline-flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-semibold transition"
-          :class="activeTab === 'scenes' ? 'border-sky-600 text-sky-600 dark:border-sky-400 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'"
-          @click="activeTab = 'scenes'"
-        >
-          <Icon name="film" :size="16" />
-          <span>🎬 分鏡故事板 ({{ state.scenes.length }} 幕)</span>
-        </button>
-        <button
-          v-for="tab in allTabs"
+          v-for="tab in tabBar"
           :key="tab.id"
           type="button"
           role="tab"
           :aria-selected="activeTab === tab.id"
-          class="inline-flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-semibold transition"
-          :class="activeTab === tab.id ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'"
-          :data-testid="`tab-${tab.id}`"
+          class="-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition"
+          :class="activeTab === tab.id ? 'border-sky-600 text-sky-700 dark:border-sky-400 dark:text-sky-300' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200'"
+          :data-testid="tab.testid"
           @click="activeTab = tab.id"
         >
           <Icon :name="tab.icon" :size="16" />
-          <span>{{ tab.label(state) }}</span>
+          <span>{{ tab.label }}</span>
+          <span
+            v-if="tab.count !== null"
+            class="rounded-full px-1.5 text-xs font-medium tabular-nums"
+            :class="activeTab === tab.id ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'"
+            >{{ tab.count }}</span
+          >
         </button>
       </div>
 
@@ -197,7 +197,7 @@ watch(state, (st) => {
           <SceneBoard v-model:selected="selected" />
         </div>
         <div ref="detail" class="scroll-mt-18">
-          <SceneEditor v-if="selected" :id="selected" v-model:dirty="dirty" @close="selected = null" />
+          <SceneEditor v-if="selected" :id="selected" v-model:dirty="dirty" @close="selected = null" @go="selected = $event" />
           <FinalPanel v-else @select="selected = $event" />
         </div>
       </div>

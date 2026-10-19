@@ -7,6 +7,8 @@ import type { ProjectState } from './project'
 export interface WorkbenchTab {
   id: string
   icon: IconName
-  label: (state: ProjectState) => string
+  label: string
+  /** A number shown beside the label, e.g. how many characters the cast has. */
+  count?: (state: ProjectState) => number
   component: Component
 }

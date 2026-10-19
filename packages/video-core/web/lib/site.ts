@@ -185,6 +185,15 @@ export const PURPOSE_LABEL: Record<string, string> = {
   custom: '自訂',
 }
 
+/** How a scene's picture is made, in plain words. */
+export const VISUAL_LABEL: Record<string, string> = {
+  'web-capture': '網頁錄影',
+  screenshot: '截圖動效',
+  'motion-graphic': '動畫',
+  code: '程式碼展示',
+  'user-asset': '你提供的素材',
+}
+
 const SAY: Record<string, string> = {
   '/video-analyze': '請繼續做影片：分析產品，整理影片要講的重點。',
   '/video-story': '請繼續做影片：整理故事。',
@@ -255,6 +264,10 @@ export const TONE_DOT: Record<Tone, string> = {
 }
 
 const STATUS_TONE: Record<string, Tone> = { approved: 'success', rendered: 'info', stale: 'warn', failed: 'danger', rendering: 'info', assets_ready: 'neutral' }
+
+/** Rendered, unchanged and not approved yet: the scene waits for the user to review it. */
+export const awaitingReview = (s: { scene: { status: string; locked: boolean } | null; outdated: boolean }) =>
+  s.scene?.status === 'rendered' && !s.outdated && !s.scene.locked
 
 /** A scene's status as shown to the user: its label and color. */
 export function sceneBadge(s: { scene: { status: string } | null; outdated: boolean }): { text: string; tone: Tone } {

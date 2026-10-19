@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { PURPOSE_LABEL, TONE_CLASS, sceneBadge } from '../lib/site'
+import { PURPOSE_LABEL, TONE_CLASS, VISUAL_LABEL, awaitingReview, sceneBadge } from '../lib/site'
 import { state, ui, write } from '../lib/store'
 import { useFileUrl } from '../lib/useFileUrl'
 import { approve, markStale, saveSceneFields, saveScript, setLocked } from '../lib/writes'
@@ -8,7 +8,7 @@ import Icon from './Icon.vue'
 import SceneFeedback from './SceneFeedback.vue'
 
 const props = defineProps<{ id: string }>()
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; go: [id: string] }>()
 /** Unsaved edits, so the page can ask before they are thrown away. */
 const dirtyModel = defineModel<boolean>('dirty', { default: false })
 
@@ -79,14 +79,33 @@ function discard() {
   Object.assign(draft, fromDisk())
 }
 
+/** Where this scene sits in the video, and its neighbours: review one after another without the list. */
+const scenes = computed(() => state.value!.scenes)
+const index = computed(() => scenes.value.findIndex((x) => x.id === props.id))
+const prev = computed(() => scenes.value[index.value - 1] ?? null)
+const next = computed(() => scenes.value[index.value + 1] ?? null)
+
+/** Approving moves on to the next scene still waiting for the user's review, if there is one. */
+async function approveAndNext() {
+  if (!(await write((root, st) => approve(root, st, props.id), '已核准'))) return
+  const after = [...scenes.value.slice(index.value + 1), ...scenes.value.slice(0, index.value)].find(awaitingReview)
+  if (after && !dirty.value) emit('go', after.id)
+}
+
 const form = ref<HTMLFormElement | null>(null)
 const os = /Mac|iPhone|iPad/.test(navigator.platform) ? 'mac' : 'other'
-// ⌘S / Ctrl+S saves (instead of the browser's "save page"); Esc closes when nothing is being typed into a menu.
+const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT', 'VIDEO'].includes(t.tagName))
+// ⌘S / Ctrl+S saves (instead of the browser's "save page"); Esc closes when nothing is being typed into a menu;
+// J / K go to the next / previous scene when not typing.
 function onKey(e: KeyboardEvent) {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
     e.preventDefault()
     if (dirty.value && !ui.saving) form.value?.requestSubmit()
   } else if (e.key === 'Escape' && !e.defaultPrevented && !(e.target instanceof HTMLVideoElement)) emit('close')
+  else if (!e.metaKey && !e.ctrlKey && !e.altKey && !typing(e.target) && (e.key === 'j' || e.key === 'k')) {
+    const to = e.key === 'j' ? next.value : prev.value
+    if (to) emit('go', to.id)
+  }
 }
 onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
@@ -95,16 +114,28 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
 
 <template>
   <section v-if="s && scene" class="card relative p-4 sm:p-5" :data-testid="`editor-${id}`">
-    <header class="flex items-start justify-between gap-3">
-      <div class="min-w-0">
-        <p class="text-xs text-slate-500 dark:text-slate-400">{{ id }} · {{ PURPOSE_LABEL[scene.purpose] ?? scene.purpose }} · {{ scene.visual.type }}</p>
-        <h2 class="mt-0.5 flex items-center gap-2 text-lg font-semibold">
-          <span class="truncate">{{ scene.title }}</span>
-          <span v-if="badge" class="chip" :class="TONE_CLASS[badge.tone]">{{ badge.text }}</span>
-          <Icon v-if="scene.locked" name="lock" :size="14" class="text-slate-400" />
-        </h2>
+    <header>
+      <div class="-mt-1 -mr-1 -ml-1 flex items-center justify-between gap-2">
+        <nav class="flex items-center gap-0.5 text-xs text-slate-500 dark:text-slate-400" aria-label="切換段落" data-testid="scene-nav">
+          <button type="button" class="icon-btn" :disabled="!prev" aria-label="上一段" :title="prev ? `上一段：${prev.scene?.title ?? prev.id}（K）` : '已是第一段'" @click="prev && emit('go', prev.id)">
+            <Icon name="back" />
+          </button>
+          <span class="px-1 tabular-nums">第 {{ index + 1 }} / {{ scenes.length }} 段</span>
+          <button type="button" class="icon-btn" :disabled="!next" aria-label="下一段" :title="next ? `下一段：${next.scene?.title ?? next.id}（J）` : '已是最後一段'" @click="next && emit('go', next.id)">
+            <Icon name="chevron" />
+          </button>
+        </nav>
+        <button type="button" class="icon-btn" aria-label="關閉編輯" title="回到完整影片（Esc）" @click="emit('close')"><Icon name="x" /></button>
       </div>
-      <button type="button" class="icon-btn -mt-1 -mr-1" aria-label="關閉編輯" title="關閉（Esc）" @click="emit('close')"><Icon name="x" /></button>
+      <h2 class="mt-2 flex min-w-0 items-center gap-2 text-lg font-semibold">
+        <span class="truncate">{{ scene.title }}</span>
+        <span v-if="badge" class="chip" :class="TONE_CLASS[badge.tone]">{{ badge.text }}</span>
+        <Icon v-if="scene.locked" name="lock" :size="14" class="text-slate-400" />
+      </h2>
+      <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+        {{ PURPOSE_LABEL[scene.purpose] ?? scene.purpose }} · {{ VISUAL_LABEL[scene.visual.type] ?? scene.visual.type }} ·
+        <span class="font-mono">{{ id }}</span>
+      </p>
     </header>
 
     <div v-if="scene.status === 'failed' && scene.error" class="callout mt-3 bg-red-50 text-red-900 dark:bg-red-950/60 dark:text-red-200">
@@ -125,7 +156,8 @@ const badge = computed(() => (s.value ? sceneBadge(s.value) : null))
           class="btn-success"
           :disabled="ui.saving"
           data-testid="approve"
-          @click="write((root, st) => approve(root, st, id), '已核准')"
+          title="核准後自動前往下一段待檢查的段落"
+          @click="approveAndNext"
         >
           <Icon name="check" :size="14" />核准
         </button>

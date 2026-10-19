@@ -6,7 +6,7 @@ import StorySource from './StorySource.vue'
 import './style.css'
 
 const tabs: WorkbenchTab[] = [
-  { id: 'cast', icon: 'user', label: (st) => `🎭 角色工坊 (${st.project.project.cast?.length ?? 0} 人)`, component: CastPanel },
+  { id: 'cast', icon: 'user', label: '角色工坊', count: (st) => st.project.project.cast?.length ?? 0, component: CastPanel },
 ]
 
 createApp(App, { sourceForm: StorySource, tabs }).mount('#app')

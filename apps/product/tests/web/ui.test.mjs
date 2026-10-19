@@ -301,9 +301,21 @@ test('approve and reorder follow the UI write rules', async (t) => {
   if (!app) return
   const { page, read } = app
   await page.getByTestId('scene-scene-002').getByRole('button', { name: /行動呼籲/ }).click()
+  assert.match(await page.getByTestId('review-next').textContent(), /2 段等你檢查/)
   await page.getByTestId('approve').click()
   await page.getByTestId('notice').filter({ hasText: '已核准' }).waitFor()
   assert.equal(JSON.parse(await read('scenes/002-cta/scene.json')).status, 'approved')
+  // Approving moves on to the scene still waiting for review (wrapping past the end).
+  await page.getByTestId('editor-scene-001').waitFor()
+  assert.match(await page.getByTestId('review-next').textContent(), /1 段等你檢查/)
+  // The editor steps through scenes without going back to the list.
+  await page.getByTestId('scene-nav').getByRole('button', { name: '下一段' }).click()
+  await page.getByTestId('editor-scene-002').waitFor()
+  await page.keyboard.press('j')
+  await page.getByTestId('editor-scene-003').waitFor()
+  assert.equal(await page.getByTestId('scene-nav').getByRole('button', { name: '下一段' }).isDisabled(), true, 'no scene after the last')
+  await page.getByTestId('scene-nav').getByRole('button', { name: '上一段' }).click()
+  await page.getByTestId('editor-scene-002').waitFor()
 
   await page.getByRole('button', { name: '下移 scene-001' }).click()
   await page.getByTestId('notice').filter({ hasText: '順序' }).waitFor()

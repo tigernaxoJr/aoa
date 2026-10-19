@@ -39,22 +39,25 @@ const stale = computed(() => state.value!.scenes.filter((s) => (s.outdated || s.
         </span>
         <span
           class="mt-2 px-1 text-xs sm:text-sm"
-          :class="[i === current ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400', i === current ? '' : 'hidden sm:block']"
+          :class="[i === current ? 'font-semibold whitespace-nowrap text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400', i === current ? '' : 'hidden sm:block']"
         >
           {{ step.label }}
         </span>
       </li>
     </ol>
 
-    <div class="mt-5 flex flex-col gap-4 border-t border-slate-100 bg-slate-50/60 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-900/60">
-      <div class="min-w-0">
+    <div
+      class="mt-5 flex flex-col gap-4 border-t px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between"
+      :class="next.command ? 'border-sky-100 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/30' : 'border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/60'"
+    >
+      <div class="min-w-0 lg:max-w-[45%]">
         <p class="font-semibold">{{ plain.title }}</p>
         <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{{ plain.hint }}</p>
         <p v-if="state!.lock.active" class="mt-1 flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400">
           <Icon name="lock" :size="14" />{{ state!.lock.writer ?? 'Agent' }} 正在寫入，網頁上的修改會稍候再存
         </p>
       </div>
-      <AgentSay v-if="next.command" :command="next.command" class="md:max-w-[55%]" data-testid="next-command" />
+      <AgentSay v-if="next.command" :command="next.command" primary class="lg:w-[52%]" data-testid="next-command" />
     </div>
 
     <div
