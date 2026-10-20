@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { portalHome } from '@aoa/web-shared/lang'
+import ThemeToggle from '@aoa/web-shared/ThemeToggle.vue'
 import ReferencesPanel from '@aoa/web-shared/ReferencesPanel.vue'
 import ActivityBanner from './components/ActivityBanner.vue'
 import PdfViewer from './components/PdfViewer.vue'
@@ -68,7 +69,8 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
           </template>
         </div>
 
-        <div v-if="dirHandle" class="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+          <template v-if="dirHandle">
           <span class="hidden items-center gap-2 font-mono text-[11px] text-stone-500 sm:flex" :title="`本機資料夾「${folderName}」，每幾秒自動讀取一次`">
             <span class="h-1.5 w-1.5 rounded-full" :class="isPolling ? 'animate-pulse bg-emerald-500' : 'bg-stone-400'" aria-hidden="true" />
             <span class="max-w-[160px] truncate">{{ folderName }}</span>
@@ -79,6 +81,8 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M21 4v5h-5M3 20v-5h5" />
             </svg>
           </button>
+          </template>
+          <ThemeToggle />
         </div>
       </div>
     </header>

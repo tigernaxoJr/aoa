@@ -3,6 +3,7 @@
 // (step 2 of the start page) and any extra tabs beside the scene board (the story's cast studio).
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Component } from 'vue'
 import { portalHome } from '@aoa/web-shared/lang'
+import ThemeToggle from '@aoa/web-shared/ThemeToggle.vue'
 import FinalPanel from './components/FinalPanel.vue'
 import HomeView from './components/HomeView.vue'
 import Icon from './components/Icon.vue'
@@ -106,6 +107,7 @@ watch(state, (st) => {
         />
       </template>
       <span class="ml-auto" />
+      <ThemeToggle />
     </div>
   </header>
 

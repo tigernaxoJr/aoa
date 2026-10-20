@@ -7,18 +7,20 @@
 }
 
 /* One accent (vermilion), used sparingly: links, numbers, the AOFA column. Neutrals are Tailwind stone. */
+/* Dark follows the `dark` class on <html> (packages/web-shared/src/theme.ts), not the media query alone. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --accent: oklch(0.56 0.18 36);
   --accent-ink: oklch(0.46 0.15 36);
   --paper: oklch(0.985 0.004 85);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --accent: oklch(0.74 0.14 45);
-    --accent-ink: oklch(0.8 0.12 50);
-    --paper: oklch(0.17 0.004 60);
-  }
+:root.dark {
+  color-scheme: dark;
+  --accent: oklch(0.74 0.14 45);
+  --accent-ink: oklch(0.8 0.12 50);
+  --paper: oklch(0.17 0.004 60);
 }
 @theme inline {
   --color-accent: var(--accent);
@@ -39,16 +41,14 @@
   font-size: 1.0625rem;
   line-height: 1.85;
 }
-@media (prefers-color-scheme: dark) {
-  .article-body {
-    --prose-fg: var(--color-stone-300);
-    --prose-heading: var(--color-stone-50);
-    --prose-muted: var(--color-stone-400);
-    --prose-line: var(--color-stone-800);
-    --prose-surface: var(--color-stone-900);
-    --prose-code-bg: var(--color-stone-800);
-    --prose-link: var(--accent-ink);
-  }
+.dark .article-body {
+  --prose-fg: var(--color-stone-300);
+  --prose-heading: var(--color-stone-50);
+  --prose-muted: var(--color-stone-400);
+  --prose-line: var(--color-stone-800);
+  --prose-surface: var(--color-stone-900);
+  --prose-code-bg: var(--color-stone-800);
+  --prose-link: var(--accent-ink);
 }
 .article-body > * + * { margin-top: 1.25em; }
 .article-body h2,

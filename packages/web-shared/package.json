@@ -9,6 +9,8 @@
     "./activity": "./src/activity.ts",
     "./recent": "./src/recent.ts",
     "./lang": "./src/lang.ts",
+    "./theme": "./src/theme.ts",
+    "./ThemeToggle.vue": "./src/ThemeToggle.vue",
     "./references": "./src/references.ts",
     "./ReferencesPanel.vue": "./src/ReferencesPanel.vue"
   }
