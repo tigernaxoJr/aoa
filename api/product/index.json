@@ -1,0 +1,32 @@
+{
+  "specVersion": "1.0.0",
+  "siteUrl": "https://aoa.tigernaxo.com",
+  "workbench": "https://aoa.tigernaxo.com/product/",
+  "entry": "https://aoa.tigernaxo.com/api/product/agent-guide.md",
+  "workflow": "https://aoa.tigernaxo.com/api/product/workflow.json",
+  "schemas": {
+    "common": "https://aoa.tigernaxo.com/api/product/schemas/common.schema.json",
+    "project": "https://aoa.tigernaxo.com/api/product/schemas/project.schema.json",
+    "scene": "https://aoa.tigernaxo.com/api/product/schemas/scene.schema.json",
+    "activity": "https://aoa.tigernaxo.com/api/product/schemas/activity.schema.json",
+    "workflow": "https://aoa.tigernaxo.com/api/product/schemas/workflow.schema.json"
+  },
+  "prompts": {
+    "analyze-product": "https://aoa.tigernaxo.com/api/product/prompts/analyze-product.md",
+    "analyze-style": "https://aoa.tigernaxo.com/api/product/prompts/analyze-style.md",
+    "storyboard": "https://aoa.tigernaxo.com/api/product/prompts/storyboard.md",
+    "scene-script": "https://aoa.tigernaxo.com/api/product/prompts/scene-script.md"
+  },
+  "rules": {
+    "script": "https://aoa.tigernaxo.com/api/product/rules/script.md",
+    "visual": "https://aoa.tigernaxo.com/api/product/rules/visual.md"
+  },
+  "skill": "https://aoa.tigernaxo.com/api/product/skills/product-video.zip",
+  "skillDocs": "https://aoa.tigernaxo.com/api/product/skills/product-video/SKILL.md",
+  "template": "https://aoa.tigernaxo.com/api/product/templates/product-video.zip",
+  "templateManifest": "https://aoa.tigernaxo.com/api/product/templates/product-video/manifest.json",
+  "checksums": {
+    "skill": "2a71f6c12836017c39955ae8ed8c75a07b7408b52f0f97f02d00bff408bfd45d",
+    "template": "a57a976f4d189a1ff2e8965a2ad4bbcf5259982dff0860eaeb541cb7d7369edd"
+  }
+}

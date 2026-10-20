@@ -1,0 +1,19 @@
+{
+  "specVersion": "1.0.0",
+  "siteUrl": "https://aoa.tigernaxo.com",
+  "workbench": "https://aoa.tigernaxo.com/slide/",
+  "entry": "https://aoa.tigernaxo.com/api/slide/skills/slidev-deck/SKILL.md",
+  "workflow": "https://aoa.tigernaxo.com/api/slide/workflow.json",
+  "schemas": {
+    "project": "https://aoa.tigernaxo.com/api/slide/schemas/project.schema.json",
+    "activity": "https://aoa.tigernaxo.com/api/slide/schemas/activity.schema.json",
+    "check": "https://aoa.tigernaxo.com/api/slide/schemas/check.schema.json"
+  },
+  "skill": "https://aoa.tigernaxo.com/api/slide/skills/slidev-deck.zip",
+  "template": "https://aoa.tigernaxo.com/api/slide/templates/slidev-deck.zip",
+  "templateManifest": "https://aoa.tigernaxo.com/api/slide/templates/slidev-deck/manifest.json",
+  "checksums": {
+    "skill": "df6b1e6deb181760072dd914ec94a8470cc0f414235aaa6289869ef997ff7684",
+    "template": "c145789675613af57a152741757e614cfc9414546b3632b3a78ecf4d447e5c1d"
+  }
+}
