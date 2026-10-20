@@ -130,7 +130,7 @@ const slideThemeGradient = computed(() => {
             </div>
           </div>
           <figcaption class="mt-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
-            <span class="eyebrow mr-2">近似預覽</span>只有文字，不含版型、組件與主題。請 Agent 執行 <code class="font-mono">pnpm run check</code> 就會換成實際畫面。
+            <span class="eyebrow mr-2">近似預覽</span>只排出文字與欄位，不含主題；圖表與組件以框代替。請 Agent 執行 <code class="font-mono">pnpm run check</code> 就會換成實際畫面。
           </figcaption>
         </figure>
 
@@ -196,6 +196,39 @@ const slideThemeGradient = computed(() => {
   font-size: 0.8em;
   color: var(--color-stone-100);
   font-family: var(--font-mono);
+}
+.slide-preview-html :deep(pre) {
+  margin-bottom: 0.5rem;
+  overflow-x: auto;
+  border-radius: 0.375rem;
+  background-color: rgb(255 255 255 / 0.06);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.slide-preview-html :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+/* Slidev's named slots (::right::) side by side, as its two-column layouts place them. */
+.slide-preview-html :deep(.slide-cols) {
+  display: flex;
+  gap: 1.5rem;
+}
+.slide-preview-html :deep(.slide-cols > div) {
+  min-width: 0;
+  flex: 1 1 0;
+}
+/* What only the real render can draw (diagrams, components), named instead of shown as source. */
+.slide-preview-html :deep(.slide-placeholder) {
+  display: inline-flex;
+  align-items: center;
+  border: 1px dashed rgb(255 255 255 / 0.3);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-stone-400);
 }
 .slide-preview-html :deep(blockquote) {
   border-left: 2px solid var(--color-accent);

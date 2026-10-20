@@ -85,3 +85,40 @@ test('parseSlides: a hand-drawn <RoughSketch> counts as SVG', () => {
   const deck = parseSlides('# Sketch\n\n<RoughSketch viewBox="0 0 100 100"><rect x="0" y="0" width="10" height="10" /></RoughSketch>\n')
   assert.deepEqual(deck.slides[0].visualTypes, ['SVG'])
 })
+
+test('parseSlides: the text preview lays named slots out as columns and names what it cannot draw', () => {
+  const deck = parseSlides(`# Growth
+
+- 30% up
+
+::right::
+
+\`\`\`mermaid
+pie
+  "A": 40
+\`\`\`
+
+---
+layout: two-cols-header
+---
+
+# Plan
+
+::left::
+
+<ThreeGlobe :speed="2" />
+
+::right::
+
+\`\`\`ts
+// ::right:: here is code, not a slot
+const a = 1
+\`\`\`
+`)
+  const [cols, header] = deck.slides.map((s) => s.renderedHtml)
+  // two-cols: the default slot is the left column, ::right:: the right one; no marker or diagram source shows.
+  assert.match(cols, /^<div class="slide-cols"><div><h1>Growth<\/h1>[\s\S]*30% up[\s\S]*<\/div><div>[\s\S]*<span class="slide-placeholder">圖表 · 圓餅圖<\/span>/)
+  assert.doesNotMatch(cols, /::right::|&quot;A&quot;|pie\n/)
+  // two-cols-header: the default slot heads the slide above the left and right columns.
+  assert.match(header, /^<h1>Plan<\/h1>\n<div class="slide-cols"><div>[\s\S]*元件 · ThreeGlobe[\s\S]*<\/div><div><pre><code class="language-ts">\/\/ ::right:: here is code, not a slot/)
+})

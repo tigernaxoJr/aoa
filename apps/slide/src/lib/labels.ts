@@ -25,7 +25,7 @@ const LAYOUT: Record<string, string> = {
 const VISUAL: Record<string, string> = {
   SVG: '圖解',
   'Three.js / 3D': '3D',
-  Mermaid: '流程圖',
+  Mermaid: '圖表',
   'Motion / Clicks': '逐步顯示',
 }
 

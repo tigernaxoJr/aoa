@@ -126,7 +126,7 @@ export function parseSlides(markdown: string): ParsedDeck {
     // Render markdown to sanitized HTML using marked
     let renderedHtml = ''
     try {
-      renderedHtml = marked.parse(textWithoutComments, { async: false }) as string
+      renderedHtml = previewHtml(textWithoutComments)
     } catch {
       renderedHtml = bodyText
     }
@@ -150,6 +150,79 @@ export function parseSlides(markdown: string): ParsedDeck {
     slides,
     frontmatter: globalFrontmatter,
   }
+}
+
+/** What a Mermaid diagram draws, by its first word. */
+const DIAGRAM: Record<string, string> = {
+  pie: '圓餅圖',
+  flowchart: '流程圖',
+  graph: '流程圖',
+  sequenceDiagram: '時序圖',
+  classDiagram: '類別圖',
+  stateDiagram: '狀態圖',
+  'stateDiagram-v2': '狀態圖',
+  erDiagram: '關聯圖',
+  gantt: '甘特圖',
+  journey: '旅程圖',
+  mindmap: '心智圖',
+  timeline: '時間軸',
+  quadrantChart: '象限圖',
+  'xychart-beta': '座標圖',
+  gitGraph: '分支圖',
+}
+
+/** A box naming what only the real render can draw. Inline, so the markdown around it stays markdown. */
+const box = (label: string) => `<span class="slide-placeholder">${label}</span>`
+
+/** A Vue component the deck uses, e.g. `<ThreeGlobe />`. */
+const COMPONENT = /<([A-Z][\w-]*)\b[^>]*\/>/g
+
+/**
+ * The slide body as the text preview shows it, split at Slidev's named slots (a line like `::right::`;
+ * the text before the first one is the default slot). Mermaid diagrams and Vue components become boxes
+ * naming them instead of their source; code inside other fences is left as written.
+ */
+function previewSlots(body: string): { name: string; md: string }[] {
+  const slots: { name: string; lines: string[] }[] = [{ name: 'default', lines: [] }]
+  let fence: { mark: string; mermaid: boolean; lines: string[] } | null = null
+  for (const line of body.split('\n')) {
+    const at = slots[slots.length - 1].lines
+    const t = line.trim()
+    if (fence) {
+      if (t.startsWith(fence.mark) && /^(`{3,}|~{3,})$/.test(t)) {
+        if (fence.mermaid) {
+          const kind = fence.lines.slice(1).map((l) => l.trim()).find(Boolean)?.split(/\s/)[0] ?? ''
+          at.push('', box(`圖表 · ${DIAGRAM[kind] ?? 'Mermaid'}`), '')
+        } else at.push(...fence.lines, line)
+        fence = null
+      } else fence.lines.push(line)
+      continue
+    }
+    const open = /^(`{3,}|~{3,})\s*([\w-]*)/.exec(t)
+    if (open) {
+      fence = { mark: open[1], mermaid: open[2].toLowerCase() === 'mermaid', lines: [line] }
+      continue
+    }
+    const slot = /^::([\w-]+)::$/.exec(t)
+    if (slot) slots.push({ name: slot[1], lines: [] })
+    else at.push(line.replace(COMPONENT, (_, name: string) => box(`元件 · ${name}`)))
+  }
+  if (fence) slots[slots.length - 1].lines.push(...fence.lines)
+  return slots.map((s) => ({ name: s.name, md: s.lines.join('\n') }))
+}
+
+/**
+ * The slide as HTML for the text preview. With named slots the slide is laid out in columns, as Slidev's
+ * two-column layouts do: the default slot is the left column (two-cols), or the heading above the
+ * columns when they are named left and right (two-cols-header).
+ */
+function previewHtml(body: string): string {
+  const render = (md: string) => marked.parse(md, { async: false }) as string
+  const [main, ...named] = previewSlots(body)
+  if (!named.length) return render(main.md)
+  const header = named.some((s) => s.name === 'left') ? main : null
+  const columns = header ? named : [main, ...named]
+  return `${header ? render(header.md) : ''}<div class="slide-cols">${columns.map((c) => `<div>${render(c.md)}</div>`).join('')}</div>`
 }
 
 function isPureFrontmatter(lines: string[]): boolean {
