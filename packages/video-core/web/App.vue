@@ -11,10 +11,9 @@ import SceneBoard from './components/SceneBoard.vue'
 import SceneEditor from './components/SceneEditor.vue'
 import ProjectSwitcher from './components/ProjectSwitcher.vue'
 import WorkflowBar from './components/WorkflowBar.vue'
-import ActivityBanner from './components/ActivityBanner.vue'
 import AgentSay from './components/AgentSay.vue'
 import ReferencesTab from './components/ReferencesTab.vue'
-import { VIDEO_KIND, workbenchUrl } from './lib/site'
+import { VIDEO_KIND, awaitingReview, workbenchUrl } from './lib/site'
 import type { WorkbenchTab } from './lib/workbench'
 import { close, outdated, pickFolder, restore, root, state, switchTo, syncTemplate, ui } from './lib/store'
 
@@ -74,14 +73,24 @@ onMounted(() => {
   window.addEventListener('beforeunload', warnUnsaved)
 })
 onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnsaved))
-// Another project opened: start from its overview (scene ids repeat across projects).
+/** A project was just opened and has not been read yet. */
+let opening = false
+// Another project opened: start over (scene ids repeat across projects).
 watch(root, () => {
   current.value = null
   dirty.value = false
   activeTab.value = 'scenes'
+  opening = true
 })
-// Drop the selection when that scene leaves the project.
 watch(state, (st) => {
+  // Once read, it opens on the first scene waiting for the user's review: that is the thing to do
+  // here; with none, on the full video.
+  if (opening && st) {
+    opening = false
+    current.value = st.scenes.find(awaitingReview)?.id ?? null
+    return
+  }
+  // Drop the selection when that scene leaves the project.
   if (current.value && !st?.scenes.some((s) => s.id === current.value)) {
     current.value = null
     dirty.value = false
@@ -154,7 +163,6 @@ watch(state, (st) => {
           </details>
         </div>
       </div>
-      <ActivityBanner />
       <WorkflowBar />
 
       <!-- Tabs: the scene board, plus the app's own (e.g. the story's cast studio) -->

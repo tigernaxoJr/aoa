@@ -121,13 +121,14 @@ test('opened project shows scenes; browser inputHash matches the Node scripts', 
   await page.getByTestId('project-name').waitFor()
   assert.equal(await page.getByTestId('project-name').textContent(), '網頁測試專案')
   const status = (id) => page.getByTestId(`scene-${id}`).getByTestId('scene-status').textContent()
-  assert.equal(await status('scene-001'), '已渲染', 'rendered, not "內容已變更": hashes agree')
-  assert.equal(await status('scene-002'), '已渲染')
+  assert.equal(await status('scene-001'), '待你檢查', 'rendered, not "內容已變更": hashes agree')
+  assert.equal(await status('scene-002'), '待你檢查')
   assert.equal(await status('scene-003'), '草稿')
   const next = page.getByTestId('next-command')
   assert.equal(await next.getAttribute('data-command'), '/video-scene all')
   assert.equal(await next.getByTestId('agent-say-text').textContent(), '請繼續做影片：製作還沒完成的段落。（/video-scene all）', 'a plain request, not a bare command')
   assert.match(await page.getByTestId('scene-summary').textContent(), /^已完成 2\/3 · 約 \d+\.\d 秒$/)
+  await page.getByTestId('editor-scene-001').waitFor() // opens on the first scene waiting for review, not an empty full video
 
   // Script view: every scene's narration, in playback order.
   await page.getByTestId('view-script').click()
@@ -361,12 +362,19 @@ test('activity: the workbench shows current work, marks the scene, and fades an 
   await writeFile('video.activity.json', activityJson({ message: '正在錄第 2 段的畫面', step: 'build_scene', scene: 'scene-002' }))
   await page.locator('[data-testid="activity"][data-state="working"]').getByText('正在錄第 2 段的畫面').waitFor({ timeout: 10_000 })
   assert.equal(await page.getByTestId('scene-scene-002').getByTestId('scene-working').count(), 1)
+  assert.equal(await page.getByTestId('scene-scene-002').getByTestId('scene-status').count(), 0, 'working replaces the status it is about to change')
   assert.equal(await page.getByTestId('scene-scene-001').getByTestId('scene-working').count(), 0)
+  // While it works, the next step is not handed over again; the sentence stays one click away.
+  assert.equal(await page.getByTestId('next-command').isVisible(), false)
+  await page.getByTestId('next-command-later').locator('summary').click()
+  assert.equal(await page.getByTestId('next-command').isVisible(), true)
 
   const hourAgo = new Date(Date.now() - 3_600_000).toISOString()
   await writeFile('video.activity.json', activityJson({ message: '正在錄第 3 段的畫面', scene: 'scene-003', updatedAt: hourAgo }))
   await page.locator('[data-testid="activity"][data-state="idle"]', { hasText: '最後的動態（1 小時前）：正在錄第 3 段的畫面' }).waitFor({ timeout: 10_000 })
   assert.equal(await page.getByTestId('scene-working').count(), 0, 'an agent that went quiet is not shown as working')
+  assert.equal(await page.getByTestId('next-command-later').count(), 0, 'the next step is the user\'s again')
+  assert.equal(await page.getByTestId('next-command').isVisible(), true)
 
   await writeFile('video.activity.json', '{ "message": ')
   await page.getByTestId('activity').waitFor({ state: 'detached', timeout: 10_000 })
@@ -418,7 +426,7 @@ test('a project from an older template: one click updates its tools and drops re
   assert.match(await read('scripts/validate.mjs'), /validate/, 'template files are written')
   // The banner goes once the files are written; the page re-reads the project just after.
   await page.getByRole('alert').waitFor({ state: 'detached' }) // the project is valid again
-  await page.getByTestId('scene-scene-001').getByTestId('scene-status').filter({ hasText: /^已渲染$/ }).waitFor()
+  await page.getByTestId('scene-scene-001').getByTestId('scene-status').filter({ hasText: /^待你檢查$/ }).waitFor()
 })
 
 test('a story project opened here points to the story workbench', async (t) => {

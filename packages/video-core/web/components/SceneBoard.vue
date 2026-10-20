@@ -160,10 +160,11 @@ function drop(target: string) {
               <span v-if="openFeedback(s.scene).length" class="flex items-center gap-0.5 text-amber-700 dark:text-amber-400" title="還沒處理的意見" data-testid="scene-feedback-count"><Icon name="message" :size="11" />{{ openFeedback(s.scene).length }}</span>
             </span>
           </button>
-          <span v-if="working === s.id" class="flex shrink-0 items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400" data-testid="scene-working">
+          <!-- The agent's work in hand outranks the status it is about to change. -->
+          <span v-if="working === s.id" class="chip shrink-0 gap-1.5" :class="TONE_CLASS.success" data-testid="scene-working">
             <span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden="true" />製作中
           </span>
-          <span class="chip shrink-0" :class="TONE_CLASS[sceneBadge(s).tone]" data-testid="scene-status">{{ sceneBadge(s).text }}</span>
+          <span v-else class="chip shrink-0" :class="TONE_CLASS[sceneBadge(s).tone]" data-testid="scene-status">{{ sceneBadge(s).text }}</span>
           <span class="flex shrink-0 flex-col">
             <button type="button" class="icon-btn h-5 w-6" :disabled="i === 0" :aria-label="`上移 ${s.id}`" @click="moveBy(s.id, -1)"><Icon name="up" :size="14" /></button>
             <button type="button" class="icon-btn h-5 w-6" :disabled="i === scenes.length - 1" :aria-label="`下移 ${s.id}`" @click="moveBy(s.id, 1)"><Icon name="down" :size="14" /></button>

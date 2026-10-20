@@ -50,7 +50,7 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   const { page } = app
   await page.getByTestId('project-name').waitFor()
   const status = () => page.getByTestId('scene-scene-001').getByTestId('scene-status').textContent()
-  assert.equal(await status(), '已渲染', 'the browser hashes motion.uses folders and speaking voices like Node')
+  assert.equal(await status(), '待你檢查', 'the browser hashes motion.uses folders and speaking voices like Node')
   const bar = await page.getByRole('list', { name: '工作流程' }).textContent()
   assert.match(bar, /整理故事.*美術與角色.*分鏡與對白/)
   assert.doesNotMatch(bar, /分析產品/)

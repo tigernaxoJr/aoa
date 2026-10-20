@@ -160,7 +160,7 @@ export const STATUS_LABEL: Record<string, string> = {
   draft: '草稿',
   assets_ready: '素材完成',
   rendering: '渲染中',
-  rendered: '已渲染',
+  rendered: '待你檢查',
   approved: '已核准',
   stale: '需要重做',
   failed: '失敗',
@@ -269,9 +269,13 @@ const STATUS_TONE: Record<string, Tone> = { approved: 'success', rendered: 'info
 export const awaitingReview = (s: { scene: { status: string; locked: boolean } | null; outdated: boolean }) =>
   s.scene?.status === 'rendered' && !s.outdated && !s.scene.locked
 
-/** A scene's status as shown to the user: its label and color. */
-export function sceneBadge(s: { scene: { status: string } | null; outdated: boolean }): { text: string; tone: Tone } {
+/**
+ * A scene's status as shown to the user: its label and color. A rendered scene is named by what the
+ * user does with it (review it), not by the step the agent finished; a locked one is left as it is.
+ */
+export function sceneBadge(s: { scene: { status: string; locked: boolean } | null; outdated: boolean }): { text: string; tone: Tone } {
   if (!s.scene) return { text: STATUS_LABEL.missing, tone: 'danger' }
   if (s.outdated && s.scene.status !== 'stale') return { text: '內容已變更', tone: 'warn' }
+  if (s.scene.status === 'rendered' && !awaitingReview(s)) return { text: '已完成', tone: 'neutral' }
   return { text: STATUS_LABEL[s.scene.status] ?? s.scene.status, tone: STATUS_TONE[s.scene.status] ?? 'neutral' }
 }
