@@ -28,6 +28,11 @@ export const htmlUrl = ref<string | null>(null)
  * split SPA (index.html + assets/), which opens blank anywhere but a web server.
  */
 export const htmlStandalone = ref(true)
+/** Editable exports: output/slides.pptx (PowerPoint) and output/slides.odp (LibreOffice Impress). */
+export const pptxFile = shallowRef<File | null>(null)
+export const pptxUrl = ref<string | null>(null)
+export const odpFile = shallowRef<File | null>(null)
+export const odpUrl = ref<string | null>(null)
 export const isPolling = ref(false)
 export const lastSync = ref<Date | null>(null)
 export const syncError = ref<string | null>(null)
@@ -68,6 +73,8 @@ export const rendersStale = computed(() => {
 
 export const hasPdf = computed(() => !!pdfFile.value)
 export const hasHtml = computed(() => !!htmlFile.value)
+export const hasPptx = computed(() => !!pptxFile.value)
+export const hasOdp = computed(() => !!odpFile.value)
 
 /** The folder is open but holds neither a project nor a start request: show the setup form. */
 export const needsSetup = computed(() => !!dirHandle.value && loaded.value && !project.value && !start.value)
@@ -93,6 +100,11 @@ export function resetDirectory() {
     URL.revokeObjectURL(htmlUrl.value)
     htmlUrl.value = null
   }
+  for (const url of [pptxUrl.value, odpUrl.value]) if (url) URL.revokeObjectURL(url)
+  pptxUrl.value = null
+  odpUrl.value = null
+  pptxFile.value = null
+  odpFile.value = null
   for (const image of slideImages.value.values()) URL.revokeObjectURL(image.url)
   slideImages.value = new Map()
   check.value = null
@@ -187,6 +199,25 @@ export async function pollFiles() {
       }
     } catch {
       // Ignore PDF read error
+    }
+
+    // 4b. Editable exports, refreshed the same way as the PDF
+    try {
+      const pptx = await tryFile(root, 'output/slides.pptx')
+      const odp = await tryFile(root, 'output/slides.odp')
+      if (!live()) return
+      if (pptx?.lastModified !== pptxFile.value?.lastModified) {
+        if (pptxUrl.value) URL.revokeObjectURL(pptxUrl.value)
+        pptxFile.value = pptx
+        pptxUrl.value = pptx ? URL.createObjectURL(pptx) : null
+      }
+      if (odp?.lastModified !== odpFile.value?.lastModified) {
+        if (odpUrl.value) URL.revokeObjectURL(odpUrl.value)
+        odpFile.value = odp
+        odpUrl.value = odp ? URL.createObjectURL(odp) : null
+      }
+    } catch {
+      // Ignore Office read error
     }
 
     // 5. Check dist/index.html or output/dist/index.html

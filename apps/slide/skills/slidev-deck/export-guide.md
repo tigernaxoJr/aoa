@@ -81,7 +81,13 @@ pnpm run export:pptx
 pnpm exec slidev export --format pptx --no-with-clicks --output output/slides.pptx
 ```
 
-需要 ODP（LibreOffice Impress）時，以 LibreOffice 轉檔：`soffice --headless --convert-to odp --outdir output output/slides.pptx`。
+### ODP（LibreOffice Impress）
+
+```bash
+pnpm run export:odp
+```
+
+先匯出 `output/slides.pptx`，再以 `soffice --headless --convert-to odp` 轉成 `output/slides.odp`；需要本機已安裝 LibreOffice（找不到 `soffice` 時請使用者安裝）。版面可能與 PPTX 略有差異，匯出後說明。網頁工作台的「成果」頁會偵測 `output/slides.pptx` 與 `output/slides.odp` 並提供下載。
 
 ---
 

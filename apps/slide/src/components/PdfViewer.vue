@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { hasHtml, hasPdf, htmlFile, htmlStandalone, htmlUrl, pdfFile, pdfUrl } from '../lib/store'
+import { hasHtml, hasOdp, hasPdf, hasPptx, htmlFile, htmlStandalone, htmlUrl, odpFile, odpUrl, pdfFile, pdfUrl, pptxFile, pptxUrl } from '../lib/store'
 import CopyButton from './CopyButton.vue'
 
-const hasAnyOutput = computed(() => hasPdf.value || hasHtml.value)
+const hasAnyOutput = computed(() => hasPdf.value || hasHtml.value || hasPptx.value || hasOdp.value)
 /** Only a single-file build plays from the folder; a split build opens blank. */
 const playableHtml = computed(() => hasHtml.value && htmlStandalone.value)
 
@@ -27,7 +27,7 @@ const time = (file: File | null) => (file ? new Date(file.lastModified).toLocale
       <p class="eyebrow">成果</p>
       <p class="mt-3 font-serif text-lg font-bold">還沒有匯出檔案</p>
       <p class="mx-auto mt-1 max-w-md text-sm leading-relaxed text-stone-500 dark:text-stone-400">
-        投影片確認後，請 Agent 匯出 PDF 與單檔 HTML。檔案出現在資料夾後，這裡可以直接下載或全螢幕放映。
+        投影片確認後，請 Agent 匯出 PDF 與單檔 HTML；要 PowerPoint 或 ODP 也可以一併請 Agent 匯出。檔案出現在資料夾後，這裡可以直接下載或全螢幕放映。
       </p>
     </div>
 
@@ -65,6 +65,34 @@ const time = (file: File | null) => (file ? new Date(file.lastModified).toLocale
             <span class="font-mono text-[11px] text-stone-400">{{ size(pdfFile) }} · {{ time(pdfFile) }}</span>
           </div>
           <p v-else class="mt-auto text-xs text-stone-400">尚未匯出</p>
+        </section>
+
+        <!-- PowerPoint -->
+        <section class="flex flex-col gap-3 bg-white p-5 dark:bg-stone-900">
+          <p class="eyebrow">繼續編輯</p>
+          <div>
+            <h3 class="font-serif text-lg font-bold">PowerPoint（PPTX）</h3>
+            <p class="mt-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">文字可編輯，圖表為圖片，不保留逐步動畫。</p>
+          </div>
+          <div v-if="hasPptx" class="mt-auto flex flex-wrap items-center gap-2">
+            <a :href="pptxUrl!" download="slides.pptx" class="btn-primary" data-testid="download-pptx">下載 PPTX</a>
+            <span class="font-mono text-[11px] text-stone-400">{{ size(pptxFile) }} · {{ time(pptxFile) }}</span>
+          </div>
+          <p v-else class="mt-auto text-xs text-stone-400">尚未匯出（請 Agent 執行 pnpm run export:pptx）</p>
+        </section>
+
+        <!-- ODP -->
+        <section class="flex flex-col gap-3 bg-white p-5 dark:bg-stone-900">
+          <p class="eyebrow">開放格式</p>
+          <div>
+            <h3 class="font-serif text-lg font-bold">LibreOffice（ODP）</h3>
+            <p class="mt-1 text-sm leading-relaxed text-stone-600 dark:text-stone-400">由 PPTX 轉成開放文件格式，可用 LibreOffice Impress 開啟。</p>
+          </div>
+          <div v-if="hasOdp" class="mt-auto flex flex-wrap items-center gap-2">
+            <a :href="odpUrl!" download="slides.odp" class="btn-primary" data-testid="download-odp">下載 ODP</a>
+            <span class="font-mono text-[11px] text-stone-400">{{ size(odpFile) }} · {{ time(odpFile) }}</span>
+          </div>
+          <p v-else class="mt-auto text-xs text-stone-400">尚未匯出（請 Agent 執行 pnpm run export:odp）</p>
         </section>
       </div>
 
