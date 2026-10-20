@@ -98,9 +98,9 @@ function downloadDeck() {
   <div class="space-y-4">
     <!-- Empty State -->
     <div v-if="!slidesMarkdown" class="card px-6 py-16 text-center">
-      <p class="eyebrow">slides.md</p>
+      <p class="eyebrow">投影片</p>
       <p class="mt-3 font-serif text-lg font-bold">還沒有投影片</p>
-      <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Agent 寫好 slides.md 後，每一頁會自動出現在這裡。</p>
+      <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">Agent 寫好投影片後，每一頁會自動出現在這裡。</p>
     </div>
 
     <template v-else>
@@ -126,25 +126,25 @@ function downloadDeck() {
             type="button"
             class="inline-flex items-center gap-1.5 text-xs"
             :class="checkSummary.ok ? 'cursor-default text-emerald-700 dark:text-emerald-400' : 'cursor-pointer text-rose-700 hover:underline dark:text-rose-400'"
-            :title="`pnpm run check · ${checkSummary.time}${rendersStale ? '（slides.md 之後有修改）' : ''}${checkSummary.ok ? '' : '\n點一下跳到下一個有問題的頁面'}`"
+            :title="`檢查時間 ${checkSummary.time}${rendersStale ? '（之後簡報有修改）' : ''}${checkSummary.ok ? '' : '\n點一下跳到下一個有問題的頁面'}`"
             :disabled="checkSummary.ok"
             data-testid="check-summary"
             @click="nextFlagged"
           >
             <span class="h-1.5 w-1.5 rounded-full" :class="checkSummary.ok ? 'bg-emerald-500' : 'bg-rose-500'" aria-hidden="true" />
-            渲染檢查：{{ checkSummary.text }}
+            版面檢查：{{ checkSummary.text }}
             <span v-if="rendersStale" class="text-stone-400">（已過時）</span>
           </button>
         </div>
 
         <div class="flex items-center gap-2">
-          <button type="button" class="btn" title="下載整份 slides.md" @click="downloadDeck">
+          <button type="button" class="btn" title="下載整份簡報的原始碼（Markdown）" @click="downloadDeck">
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16" />
             </svg>
             下載 .md
           </button>
-          <CopyButton :text="slidesMarkdown" label="複製全部" title="複製整份 slides.md" />
+          <CopyButton :text="slidesMarkdown" label="複製全部" title="複製整份簡報的原始碼（Markdown）" />
         </div>
       </div>
 

@@ -22,7 +22,7 @@ async function handleFileDrop(e: DragEvent) {
   if (!root.value || !e.dataTransfer?.files.length) return
   const file = e.dataTransfer.files[0]
   if (!file.type.startsWith('image/')) {
-    notify('warn', '請上傳圖片格式（PNG / JPG / WebP）')
+    notify('warn', '請放圖片（PNG、JPG 或 WebP）')
     return
   }
   await saveReferenceImage(file)
@@ -40,7 +40,7 @@ async function saveReferenceImage(file: File) {
   try {
     const dest = `assets/cast/${props.castId}/reference.png`
     await writeFile(root.value, dest, file)
-    notify('ok', `已儲存參考概念圖至 ${dest}`)
+    notify('ok', '已儲存參考圖')
   } catch (err) {
     notify('error', `儲存參考圖失敗：${(err as Error).message}`)
   }
@@ -58,10 +58,18 @@ const hasFace = computed(() => detectedParts.value.some((p) => p.startsWith('eye
 const morphParts = ref<string[]>([])
 const morphHints = computed(() => {
   const hints: string[] = []
-  if (detectedParts.value.includes('tail') && !morphParts.value.includes('tail')) hints.push('tail 可加 data-morph-curl（尾巴捲起）')
-  if (hasBody.value && !morphParts.value.includes('body')) hints.push('body 可加 data-morph-squash（蹲下、落地壓扁）')
+  if (detectedParts.value.includes('tail') && !morphParts.value.includes('tail')) hints.push('尾巴捲起')
+  if (hasBody.value && !morphParts.value.includes('body')) hints.push('身體蹲下、落地時壓扁')
   return hints
 })
+/** The parts a scene can move separately, in plain words. */
+const moves = computed(() => [
+  { label: '頭', ok: hasHead.value },
+  { label: '身體', ok: hasBody.value },
+  { label: '手腳', ok: hasLimbs.value },
+  { label: '表情', ok: hasFace.value },
+])
+const MORPH_LABEL: Record<string, string> = { tail: '尾巴捲起', body: '身體壓扁' }
 
 async function loadSvg() {
   if (!root.value || !props.castId) {
@@ -106,7 +114,7 @@ function copyAgentPrompt() {
 - 變形形狀：有尾巴時在 tail 的 path 加 data-morph-curl；會跳、蹲或落地的角色在 body 的 path 加 data-morph-squash（與原形相同的指令與順序，只改座標）。`
 
   navigator.clipboard.writeText(prompt)
-  notify('ok', '已複製繪製提示詞，請直接貼給 Coding Agent！')
+  notify('ok', '已複製，請貼給 Agent；畫好後會出現在這裡。')
 }
 </script>
 
@@ -117,16 +125,17 @@ function copyAgentPrompt() {
         <span class="flex h-7 w-7 items-center justify-center rounded-md bg-vermilion-500/10 text-vermilion-600 dark:text-vermilion-400">
           <Icon name="film" :size="15" />
         </span>
-        <h4 class="text-sm font-semibold text-stone-800 dark:text-stone-200">視覺與美術設定 (Art Studio)</h4>
+        <h4 class="text-sm font-semibold text-stone-800 dark:text-stone-200">角色圖</h4>
       </div>
       <button
         type="button"
         class="inline-flex items-center gap-1.5 rounded-md border border-vermilion-200 bg-vermilion-50 px-2.5 py-1 text-xs font-semibold text-vermilion-700 hover:bg-vermilion-100 dark:border-vermilion-900/60 dark:bg-vermilion-950/40 dark:text-vermilion-300 transition"
-        title="複製提示詞請 Agent 繪製角色 SVG"
+        title="複製一段話，請 Agent 依參考圖和描述畫出會動的角色"
+        data-testid="draw-request"
         @click="copyAgentPrompt"
       >
         <Icon name="copy" :size="12" />
-        <span>請 Agent 繪製 SVG 骨骼</span>
+        <span>複製給 Agent：畫角色圖</span>
       </button>
     </div>
 
@@ -138,8 +147,8 @@ function copyAgentPrompt() {
         @drop="handleFileDrop"
       >
         <div v-if="refImgUrl" class="space-y-2 text-center">
-          <img :src="refImgUrl" alt="參考概念圖" class="mx-auto max-h-48 rounded-md object-contain" />
-          <p class="text-xs text-stone-500 dark:text-stone-400">概念參考圖已就緒 (reference.png)</p>
+          <img :src="refImgUrl" alt="參考圖" class="mx-auto max-h-48 rounded-md object-contain" />
+          <p class="text-xs text-stone-500 dark:text-stone-400">參考圖</p>
           <button
             type="button"
             class="text-xs font-medium text-vermilion-600 hover:underline dark:text-vermilion-400"
@@ -153,15 +162,15 @@ function copyAgentPrompt() {
             <Icon name="folder" :size="20" />
           </span>
           <div>
-            <p class="text-xs font-medium text-stone-700 dark:text-stone-300">拖曳或上傳參考概念圖</p>
-            <p class="text-[11px] text-stone-400 dark:text-stone-500">支援 PNG / JPG / WebP</p>
+            <p class="text-xs font-medium text-stone-700 dark:text-stone-300">把參考圖拖到這裡</p>
+            <p class="text-[11px] text-stone-400 dark:text-stone-500">草稿、照片或喜歡的畫風都可以（PNG、JPG、WebP）</p>
           </div>
           <button
             type="button"
             class="rounded-md border border-stone-300 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-200"
             @click="fileInput?.click()"
           >
-            選擇本機圖片
+            選擇圖片…
           </button>
         </div>
         <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
@@ -170,14 +179,15 @@ function copyAgentPrompt() {
       <!-- Card 2: AI Rigged SVG Gallery -->
       <div class="flex flex-col rounded-md border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-800">
         <div class="mb-2 flex items-center justify-between">
-          <span class="text-xs font-semibold text-stone-800 dark:text-stone-200">AI 生成向量骨骼 (Rigged SVG)</span>
+          <span class="text-xs font-semibold text-stone-800 dark:text-stone-200">Agent 畫的角色</span>
           <span
-            v-if="svgRaw"
+            v-if="svgRaw && detectedParts.length"
             class="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300"
           >
-            <Icon name="check" :size="12" /> 已建立骨骼
+            <Icon name="check" :size="12" />已畫好
           </span>
-          <span v-else class="text-[11px] text-amber-600 dark:text-amber-400">尚未繪製</span>
+          <span v-else-if="svgRaw" class="text-[11px] text-amber-600 dark:text-amber-400">已畫好，還不能動</span>
+          <span v-else class="text-[11px] text-amber-600 dark:text-amber-400">還沒畫</span>
         </div>
 
         <div class="flex flex-1 items-center justify-center rounded-md bg-stone-50 p-2 dark:bg-stone-900/50">
@@ -190,50 +200,37 @@ function copyAgentPrompt() {
             <span class="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-stone-200 text-stone-500 dark:bg-stone-800">
               <Icon name="sparkles" :size="18" />
             </span>
-            <p class="mt-2 text-xs text-stone-500 dark:text-stone-400">尚未找到 {{ castId }}.svg</p>
-            <p class="text-[11px] text-stone-400">點擊右上角「請 Agent 繪製 SVG 骨骼」</p>
+            <p class="mt-2 text-xs text-stone-500 dark:text-stone-400">還沒有角色圖</p>
+            <p class="text-[11px] text-stone-400">按上方「複製給 Agent：畫角色圖」，貼給 Agent。</p>
           </div>
         </div>
 
-        <!-- Rig Parts Status -->
-        <div v-if="svgRaw" class="mt-3 space-y-1.5 border-t border-stone-100 pt-2.5 dark:border-stone-700/60">
-          <div class="text-[11px] font-medium text-stone-600 dark:text-stone-400">部件檢測 ({{ detectedParts.length }} 個)：</div>
-          <div class="flex flex-wrap gap-1">
-            <span
-              class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium"
-              :class="hasHead ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-stone-100 text-stone-400'"
-            >
-              {{ hasHead ? '✔️ head' : '❌ head' }}
-            </span>
-            <span
-              class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium"
-              :class="hasBody ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-stone-100 text-stone-400'"
-            >
-              {{ hasBody ? '✔️ body' : '❌ body' }}
-            </span>
-            <span
-              class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium"
-              :class="hasLimbs ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-stone-100 text-stone-400'"
-            >
-              {{ hasLimbs ? '✔️ 四肢 (arm/leg)' : '❌ 四肢' }}
-            </span>
-            <span
-              class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium"
-              :class="hasFace ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-stone-100 text-stone-400'"
-            >
-              {{ hasFace ? '✔️ 表情 (eye/mouth)' : '❌ 表情' }}
-            </span>
-            <span
-              v-for="id in morphParts"
-              :key="id"
-              class="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
-            >
-              ✔️ 變形 {{ id }}
-            </span>
-          </div>
-          <ul v-if="morphHints.length" class="space-y-0.5 text-[11px] text-amber-700 dark:text-amber-400">
-            <li v-for="hint in morphHints" :key="hint">💡 {{ hint }}</li>
-          </ul>
+        <!-- The parts a scene can move; with none the character only moves as one picture. -->
+        <div v-if="svgRaw" class="mt-3 space-y-1.5 border-t border-stone-100 pt-2.5 dark:border-stone-700/60" data-testid="rig-parts">
+          <p v-if="!detectedParts.length" class="text-[11px] text-amber-700 dark:text-amber-400">
+            還沒有分出能動的部位，角色只能整張移動。要做動作，請 Agent 依規格重畫（再按一次上方的按鈕）。
+          </p>
+          <template v-else>
+            <div class="text-[11px] font-medium text-stone-600 dark:text-stone-400">能分開動的部位：</div>
+            <div class="flex flex-wrap gap-1">
+              <span
+                v-for="m in moves"
+                :key="m.label"
+                class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                :class="m.ok ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-stone-100 text-stone-400 line-through dark:bg-stone-900'"
+              >
+                <Icon :name="m.ok ? 'check' : 'x'" :size="10" />{{ m.label }}
+              </span>
+              <span
+                v-for="id in morphParts"
+                :key="id"
+                class="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+              >
+                <Icon name="check" :size="10" />{{ MORPH_LABEL[id] ?? `${id} 變形` }}
+              </span>
+            </div>
+            <p v-if="morphHints.length" class="text-[11px] text-amber-700 dark:text-amber-400">還可以請 Agent 補上：{{ morphHints.join('、') }}</p>
+          </template>
         </div>
       </div>
     </div>

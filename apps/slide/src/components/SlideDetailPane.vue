@@ -36,7 +36,7 @@ const canNext = computed(() => !!props.slide && props.slide.index < props.totalS
 const fixRequest = computed(() => {
   if (!props.slide || !issues.value.length) return ''
   const what = issues.value.map((i) => i.message).join('；')
-  return `第 ${props.slide.index} 頁「${props.slide.title}」渲染檢查有問題：${what}。請修正後再執行 pnpm run check。`
+  return `第 ${props.slide.index} 頁「${props.slide.title}」版面檢查有問題：${what}。請修正後更新預覽畫面。（pnpm run check）`
 })
 
 const slideBackgroundStyle = computed(() => {
@@ -106,10 +106,10 @@ const slideThemeGradient = computed(() => {
 
         <!-- Real render from `pnpm run check` / `pnpm run export:png` -->
         <figure v-if="image">
-          <img :src="image.url" :alt="`第 ${slide.index} 頁渲染畫面`" class="w-full rounded-md border border-stone-200 dark:border-stone-800" />
+          <img :src="image.url" :alt="`第 ${slide.index} 頁實際畫面`" class="w-full rounded-md border border-stone-200 dark:border-stone-800" />
           <figcaption class="mt-2 flex flex-wrap items-center gap-2 text-xs text-stone-500">
             <span class="eyebrow">實際畫面</span>
-            <span v-if="rendersStale" class="text-amber-700 dark:text-amber-400">slides.md 在截圖後改過，畫面可能不是最新的</span>
+            <span v-if="rendersStale" class="text-amber-700 dark:text-amber-400">簡報在截圖後改過，畫面可能不是最新的</span>
           </figcaption>
         </figure>
 
@@ -130,7 +130,7 @@ const slideThemeGradient = computed(() => {
             </div>
           </div>
           <figcaption class="mt-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
-            <span class="eyebrow mr-2">近似預覽</span>只排出文字與欄位，不含主題；圖表與組件以框代替。請 Agent 執行 <code class="font-mono">pnpm run check</code> 就會換成實際畫面。
+            <span class="eyebrow mr-2">近似預覽</span>只排出文字與欄位，不含主題；圖表與組件以框代替。請 Agent 更新預覽畫面，這裡就會換成實際畫面。
           </figcaption>
         </figure>
 

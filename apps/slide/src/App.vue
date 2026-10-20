@@ -111,7 +111,7 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
           <PromptLauncher />
           <details class="card p-5" data-testid="pending-references">
             <summary class="cursor-pointer text-sm font-semibold select-none">參考資料{{ referenceCount ? `（${referenceCount} 份）` : '（選填）' }}</summary>
-            <ReferencesPanel class="mt-3" :root="dirHandle" intro="還可以補充文件、圖片或文字；上方的提示詞會告訴 Agent 去讀 references/。" />
+            <ReferencesPanel class="mt-3" :root="dirHandle" intro="還可以補充文件、圖片或文字；上方那段話會請 Agent 讀這些資料。" />
           </details>
         </div>
 
@@ -140,7 +140,7 @@ watch(dirHandle, () => (activeTab.value = 'slides'))
             <ReferencesPanel
               :root="dirHandle"
               ask="簡報"
-              intro="想讓 Agent 參考的文件、圖片或文字放在這裡（存進專案資料夾的 references/）。加入後把下方那句話交給 Agent，它會讀過、說明打算怎麼用，再修改簡報。"
+              intro="想讓 Agent 參考的文件、圖片或文字放在這裡，會存進專案資料夾。加入後把下方那句話交給 Agent，它會讀過、說明打算怎麼用，再修改簡報。"
             />
           </div>
         </div>

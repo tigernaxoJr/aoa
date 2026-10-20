@@ -1,4 +1,5 @@
 // What the user should do next, in plain words, and the sentence to hand the Agent when there is one.
+// As in the video workbench, a sentence is a plain request; a command only follows in brackets, for the Agent.
 // Derived from slide.project.json, the activity and the render check; the Skill (skills/slidev-deck)
 // stops for the user after the outline, the draft and the visuals.
 import { computed } from 'vue'
@@ -51,14 +52,14 @@ export function useNextStep() {
     if (bad.length && !rendersStale.value) {
       const pages = bad.length > 3 ? `${bad.slice(0, 3).join('、')} 等 ${bad.length} 頁` : bad.join('、')
       return {
-        title: `${bad.length} 頁沒通過渲染檢查`,
+        title: `${bad.length} 頁沒通過版面檢查`,
         hint: '超出版面、找不到組件之類的問題，交給 Agent 修正。',
-        say: `渲染檢查第 ${pages} 頁有問題，請修正後再執行 pnpm run check。`,
+        say: `版面檢查第 ${pages} 頁有問題，請修正後更新預覽畫面。（pnpm run check）`,
         tone: 'warn',
       }
     }
     if (rendersStale.value) {
-      return { title: '預覽畫面不是最新的', hint: 'slides.md 在上次截圖後改過了，請 Agent 重新產生畫面。', say: '請執行 pnpm run check，更新每一頁的預覽畫面。', tone: 'act' }
+      return { title: '預覽畫面不是最新的', hint: '簡報在上次截圖後改過了，請 Agent 重新產生畫面。', say: '請更新每一頁的預覽畫面。（pnpm run check）', tone: 'act' }
     }
     const status = project.value?.status
     const step = status ? AFTER[status] : undefined

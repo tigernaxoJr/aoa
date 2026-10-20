@@ -78,6 +78,14 @@ function handleSaved(member: CastMember) {
   selectedId.value = member.id
 }
 
+/** How a member's voice is made, in the voice studio's words; without a provider of its own, the project's speaks. */
+function voiceKind(member: CastMember) {
+  if (!member.provider && !member.voice) return '預設聲音'
+  const provider = member.provider ?? state.value?.project.project.tts.provider
+  if (provider === 'cosyvoice3' || provider === 'cosyvoice') return member.voice?.endsWith('.wav') ? '模仿錄音' : '描述語氣'
+  return provider === 'edge-tts' ? '微軟標準聲音' : '其他語音服務'
+}
+
 function copyAllCastToAgent() {
   const list = castList.value
   if (!list.length) {
@@ -94,7 +102,7 @@ function copyAllCastToAgent() {
 
   const text = `以下是目前故事影片的登場角色名冊 (Cast)：\n\n${lines.join('\n\n')}\n\n請依據以上角色設定協助編寫後續分鏡與對白。`
   navigator.clipboard.writeText(text)
-  notify('ok', '已複製角色名冊，請直接貼給 Coding Agent！')
+  notify('ok', '已複製，請貼給 Agent。')
 }
 </script>
 
@@ -107,14 +115,14 @@ function copyAllCastToAgent() {
           <span class="flex h-7 w-7 items-center justify-center rounded-md bg-vermilion-500/10 text-vermilion-600 dark:text-vermilion-400">
             <Icon name="user" :size="15" />
           </span>
-          <h3 class="text-sm font-semibold text-stone-800 dark:text-stone-100">登場角色名冊 ({{ castList.length }} 人)</h3>
+          <h3 class="text-sm font-semibold text-stone-800 dark:text-stone-100">登場角色名冊（{{ castList.length }} 人）</h3>
         </div>
         <button
           type="button"
           class="btn-primary btn-sm"
           @click="startCreate"
         >
-          <span>➕ 新增角色</span>
+          <Icon name="plus" :size="14" />新增角色
         </button>
       </div>
 
@@ -135,7 +143,7 @@ function copyAllCastToAgent() {
           class="w-full text-left rounded-md border-2 border-dashed border-vermilion-400 bg-vermilion-50/60 p-3 dark:border-vermilion-700 dark:bg-vermilion-950/30"
         >
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-vermilion-800 dark:text-vermilion-200">✨ 正在新增角色...</span>
+            <span class="text-xs font-semibold text-vermilion-800 dark:text-vermilion-200">正在新增角色…</span>
             <span class="rounded bg-vermilion-200 px-1.5 py-0.5 text-[10px] font-medium text-vermilion-900 dark:bg-vermilion-900 dark:text-vermilion-300">草稿</span>
           </div>
           <p class="mt-1 text-xs text-vermilion-700 dark:text-vermilion-300">{{ draftNewMember.name || '未命名' }} ({{ draftNewMember.id }})</p>
@@ -153,33 +161,14 @@ function copyAllCastToAgent() {
           "
           @click="selectMember(member.id)"
         >
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-stone-900 dark:text-stone-100 group-hover:text-vermilion-600 dark:group-hover:text-vermilion-400">
-              👤 {{ member.name }}
-            </span>
-            <span class="font-mono text-[10px] text-stone-400 dark:text-stone-500">{{ member.id }}</span>
-          </div>
+          <span class="block text-xs font-semibold text-stone-900 group-hover:text-vermilion-600 dark:text-stone-100 dark:group-hover:text-vermilion-400">{{ member.name }}</span>
 
           <p v-if="member.description" class="mt-1 line-clamp-1 text-[11px] text-stone-500 dark:text-stone-400">
             {{ member.description }}
           </p>
 
           <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
-            <span
-              v-if="member.provider === 'cosyvoice3' || member.provider === 'cosyvoice'"
-              class="rounded bg-vermilion-100 px-1.5 py-0.5 font-medium text-vermilion-800 dark:bg-vermilion-900/60 dark:text-vermilion-300"
-            >
-              {{ member.voice?.endsWith('.wav') ? '🎤 錄音克隆' : '⚡ CosyVoice 3' }}
-            </span>
-            <span
-              v-else-if="member.provider === 'edge-tts'"
-              class="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-700 dark:bg-stone-800 dark:text-stone-300"
-            >
-              🔊 Edge-TTS
-            </span>
-            <span v-else class="rounded bg-stone-100 px-1.5 py-0.5 text-stone-500 dark:bg-stone-800">
-              {{ member.provider || '預設聲音' }}
-            </span>
+            <span class="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-700 dark:bg-stone-800 dark:text-stone-300">{{ voiceKind(member) }}</span>
           </div>
         </button>
       </div>
@@ -214,9 +203,9 @@ function copyAllCastToAgent() {
           <Icon name="user" :size="24" />
         </span>
         <h4 class="mt-3 text-sm font-semibold text-stone-700 dark:text-stone-300">請從左側選擇角色或新增角色</h4>
-        <p class="mt-1 text-xs text-stone-400">角色工坊支援自訂錄音、聲音克隆、AI 骨骼圖與參考概念圖管理。</p>
+        <p class="mt-1 text-xs text-stone-400">每個角色可以挑聲音、放參考圖，再請 Agent 畫出會動的角色。</p>
         <button type="button" class="btn-primary btn-sm mt-4" @click="startCreate">
-          <span>➕ 立即新增角色</span>
+          <Icon name="plus" :size="14" />新增角色
         </button>
       </div>
     </div>

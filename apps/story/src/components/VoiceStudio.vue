@@ -99,7 +99,7 @@ function stopRecording() {
 async function saveRecordedSample() {
   if (!root.value || !recordedBlob.value) return
   try {
-    notify('ok', '正在轉換標準 16kHz PCM WAV...')
+    notify('ok', '正在儲存錄音…')
     const wav = await audioBlobToWav(recordedBlob.value)
     const dest = `assets/cast/${props.castId}/voice-sample.wav`
     await writeFile(root.value, dest, wav)
@@ -108,9 +108,9 @@ async function saveRecordedSample() {
       provider: 'cosyvoice3',
       voice: `@/${dest}`,
     })
-    notify('ok', `已儲存聲音克隆樣本至 ${dest}`)
+    notify('ok', '已儲存錄音，配音會模仿它')
   } catch (err) {
-    notify('error', `儲存聲音樣本失敗：${(err as Error).message}`)
+    notify('error', `儲存錄音失敗：${(err as Error).message}`)
   }
 }
 
@@ -119,12 +119,12 @@ const instructBaseVoice = ref('中文男')
 const instructPrompt = ref('用熱情開朗的大學生語氣')
 
 const BASE_VOICES = [
-  { id: '中文男', label: '中文男聲 (沉穩青年)' },
-  { id: '中文女', label: '中文女聲 (溫和清晰)' },
-  { id: '粵語女', label: '粵語女聲 (生動地道)' },
-  { id: '英文男', label: '英文男聲 (自然流利)' },
-  { id: '英文女', label: '英文女聲 (清晰國際)' },
-  { id: 'default', label: '預設標準聲音' },
+  { id: '中文男', label: '中文男聲（沉穩青年）' },
+  { id: '中文女', label: '中文女聲（溫和清晰）' },
+  { id: '粵語女', label: '粵語女聲（生動地道）' },
+  { id: '英文男', label: '英文男聲（自然流利）' },
+  { id: '英文女', label: '英文女聲（清晰國際）' },
+  { id: 'default', label: '預設聲音' },
 ]
 
 const QUICK_INSTRUCTS = [
@@ -168,17 +168,39 @@ function applyQuickInstruct(text: string) {
 
 // --- Mode 3: Edge-TTS ---
 const EDGE_VOICES = [
-  { id: 'zh-TW-HsiaoChenNeural', label: '🇹🇼 曉晨（女，溫和自然，適合旁白與女性角色）' },
-  { id: 'zh-TW-HsiaoYuNeural', label: '🇹🇼 曉涵（女，年輕活力）' },
-  { id: 'zh-TW-YunJheNeural', label: '🇹🇼 雲哲（男，清朗自然）' },
-  { id: 'zh-CN-XiaoxiaoNeural', label: '🇨🇳 曉曉（女，溫柔）' },
-  { id: 'zh-CN-XiaoyiNeural', label: '🇨🇳 曉伊（女，生動活潑）' },
-  { id: 'zh-CN-YunxiNeural', label: '🇨🇳 雲希（男，陽光少年）' },
-  { id: 'zh-CN-YunxiaNeural', label: '🇨🇳 雲夏（男童童聲）' },
-  { id: 'zh-CN-YunjianNeural', label: '🇨🇳 雲健（男，沉穩大氣）' },
-  { id: 'en-US-JennyNeural', label: '🇺🇸 Jenny（美式女聲）' },
-  { id: 'en-US-GuyNeural', label: '🇺🇸 Guy（美式男聲）' },
-  { id: 'en-US-AnaNeural', label: '🇺🇸 Ana（美式女孩童聲）' },
+  {
+    region: '台灣華語',
+    voices: [
+      { id: 'zh-TW-HsiaoChenNeural', label: '曉晨（女，溫和自然，適合旁白與女性角色）' },
+      { id: 'zh-TW-HsiaoYuNeural', label: '曉涵（女，年輕活力）' },
+      { id: 'zh-TW-YunJheNeural', label: '雲哲（男，清朗自然）' },
+    ],
+  },
+  {
+    region: '中國普通話',
+    voices: [
+      { id: 'zh-CN-XiaoxiaoNeural', label: '曉曉（女，溫柔）' },
+      { id: 'zh-CN-XiaoyiNeural', label: '曉伊（女，生動活潑）' },
+      { id: 'zh-CN-YunxiNeural', label: '雲希（男，陽光少年）' },
+      { id: 'zh-CN-YunxiaNeural', label: '雲夏（男童）' },
+      { id: 'zh-CN-YunjianNeural', label: '雲健（男，沉穩大氣）' },
+    ],
+  },
+  {
+    region: '美式英語',
+    voices: [
+      { id: 'en-US-JennyNeural', label: 'Jenny（女）' },
+      { id: 'en-US-GuyNeural', label: 'Guy（男）' },
+      { id: 'en-US-AnaNeural', label: 'Ana（女童）' },
+    ],
+  },
+]
+
+/** The three ways to give a character a voice, as the toggle names them. */
+const MODES: { id: Mode; label: string }[] = [
+  { id: 'clone', label: '模仿錄音' },
+  { id: 'instruct', label: '描述語氣' },
+  { id: 'edge', label: '微軟標準聲音' },
 ]
 
 function selectEdgeVoice(voiceId: string) {
@@ -231,7 +253,7 @@ async function triggerAudition() {
   auditionLoading.value = true
   try {
     await navigator.clipboard.writeText(sampleRequest.value)
-    notify('ok', '已複製，請貼給 Agent；試聽檔做好後會出現在這裡。')
+    notify('ok', '已複製，請貼給 Agent；試聽做好後會出現在這裡。')
   } catch (err) {
     notify('error', (err as Error).message)
   } finally {
@@ -249,35 +271,22 @@ onBeforeUnmount(() => {
   <div class="space-y-4 rounded-md border border-stone-200 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-900/60">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-          <Icon name="sparkles" :size="15" />
+        <span class="flex h-7 w-7 items-center justify-center rounded-md bg-vermilion-500/10 text-vermilion-600 dark:text-vermilion-400">
+          <Icon name="mic" :size="15" />
         </span>
-        <h4 class="text-sm font-semibold text-stone-800 dark:text-stone-200">聲音工坊 (Voice Studio)</h4>
+        <h4 class="text-sm font-semibold text-stone-800 dark:text-stone-200">聲音</h4>
       </div>
-      <div class="flex rounded-md border border-stone-200 bg-white p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-800">
+      <div class="flex rounded-md bg-stone-100 p-0.5 text-xs dark:bg-stone-800" role="group" aria-label="聲音的做法">
         <button
+          v-for="m in MODES"
+          :key="m.id"
           type="button"
-          class="rounded-md px-2.5 py-1 transition"
-          :class="activeMode === 'clone' ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white'"
-          @click="switchMode('clone')"
+          class="rounded-md px-2.5 py-1 font-medium transition"
+          :class="activeMode === m.id ? 'bg-white text-stone-900 dark:bg-stone-950 dark:text-white' : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'"
+          :aria-pressed="activeMode === m.id"
+          @click="switchMode(m.id)"
         >
-          🎤 線上錄音克隆
-        </button>
-        <button
-          type="button"
-          class="rounded-md px-2.5 py-1 transition"
-          :class="activeMode === 'instruct' ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white'"
-          @click="switchMode('instruct')"
-        >
-          ⚡ CosyVoice 3 語氣指令
-        </button>
-        <button
-          type="button"
-          class="rounded-md px-2.5 py-1 transition"
-          :class="activeMode === 'edge' ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white'"
-          @click="switchMode('edge')"
-        >
-          🔊 Edge-TTS
+          {{ m.label }}
         </button>
       </div>
     </div>
@@ -286,8 +295,8 @@ onBeforeUnmount(() => {
     <div v-if="activeMode === 'clone'" class="space-y-3 rounded-md border border-emerald-100 bg-emerald-50/50 p-3.5 dark:border-emerald-950/60 dark:bg-emerald-950/20">
       <div class="flex items-start justify-between">
         <div>
-          <p class="text-xs font-semibold text-emerald-900 dark:text-emerald-200">3-5 秒麥克風線上錄音（CosyVoice 3 零樣本克隆）</p>
-          <p class="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">錄下一句角色說的話，CosyVoice 3 就會模仿你的音色與情緒進行配音。</p>
+          <p class="text-xs font-semibold text-emerald-900 dark:text-emerald-200">錄一句 3～5 秒的話</p>
+          <p class="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">用這個角色的口氣說一句話，配音會模仿你的音色和情緒（CosyVoice 3）。</p>
         </div>
         <span v-if="sampleExists" class="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
           <Icon name="check" :size="12" /> 已有錄音樣本
@@ -302,7 +311,7 @@ onBeforeUnmount(() => {
           @click="startRecording"
         >
           <Icon name="mic" :size="14" />
-          <span>{{ recordedBlob || sampleExists ? '重新錄音' : '開始錄音 (建議 3~5 秒)' }}</span>
+          <span>{{ recordedBlob || sampleExists ? '重新錄音' : '開始錄音' }}</span>
         </button>
         <button
           v-else
@@ -311,7 +320,7 @@ onBeforeUnmount(() => {
           @click="stopRecording"
         >
           <Icon name="square" :size="14" />
-          <span>停止錄音 ({{ recordDuration }}s)</span>
+          <span>停止錄音（{{ recordDuration }} 秒）</span>
         </button>
 
         <audio v-if="recordedAudioUrl" :src="recordedAudioUrl" controls class="h-8 max-w-[220px]" />
@@ -323,22 +332,21 @@ onBeforeUnmount(() => {
           @click="saveRecordedSample"
         >
           <Icon name="check" :size="13" />
-          <span>儲存為克隆樣本</span>
+          <span>使用這段錄音</span>
         </button>
       </div>
-      <p class="text-[11px] text-stone-500 dark:text-stone-400">儲存路徑：<code>assets/cast/{{ castId }}/voice-sample.wav</code></p>
     </div>
 
     <!-- Mode B: CosyVoice 3 Instruct -->
     <div v-else-if="activeMode === 'instruct'" class="space-y-3 rounded-md border border-vermilion-100 bg-vermilion-50/50 p-3.5 dark:border-vermilion-950/60 dark:bg-vermilion-950/20">
       <div>
-        <p class="text-xs font-semibold text-vermilion-950 dark:text-vermilion-200">CosyVoice 3 自然語言語氣／方言指令</p>
-        <p class="mt-0.5 text-xs text-vermilion-700 dark:text-vermilion-400">選擇基礎發音人，並用自然語言描述口氣、情緒或方言（支援台語、粵語、情緒表現）。</p>
+        <p class="text-xs font-semibold text-vermilion-950 dark:text-vermilion-200">用一句話描述語氣</p>
+        <p class="mt-0.5 text-xs text-vermilion-700 dark:text-vermilion-400">選一個基本聲音，再用白話說明口氣、情緒或方言，例如台語、粵語（CosyVoice 3）。</p>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div>
-          <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">基礎發音人</label>
+          <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">基本聲音</label>
           <select
             v-model="instructBaseVoice"
             class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs dark:border-stone-700 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
@@ -348,7 +356,7 @@ onBeforeUnmount(() => {
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">語氣 / 情緒 / 方言指令</label>
+          <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">語氣、情緒或方言</label>
           <input
             v-model="instructPrompt"
             type="text"
@@ -360,7 +368,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div>
-        <span class="text-[11px] font-medium text-stone-500 dark:text-stone-400">快速填入範本：</span>
+        <span class="text-[11px] font-medium text-stone-500 dark:text-stone-400">常用：</span>
         <div class="mt-1 flex flex-wrap gap-1.5">
           <button
             v-for="tag in QUICK_INSTRUCTS"
@@ -373,25 +381,25 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </div>
-
-      <p class="text-[11px] text-stone-500 dark:text-stone-400">合成規格：<code>cosyvoice3: {{ modelValue.voice }}</code></p>
     </div>
 
     <!-- Mode C: Edge-TTS -->
     <div v-else class="space-y-3 rounded-md border border-stone-200 bg-white p-3.5 dark:border-stone-800 dark:bg-stone-900">
       <div>
-        <p class="text-xs font-semibold text-stone-800 dark:text-stone-200">Edge-TTS 雲端標準發音人</p>
-        <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">微軟 Edge 免費高音質神經網路語音，無需本機 GPU。</p>
+        <p class="text-xs font-semibold text-stone-800 dark:text-stone-200">選一個現成的聲音</p>
+        <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">微軟 Edge 的線上語音（Edge-TTS），免費，電腦不需要額外設定。</p>
       </div>
 
       <div>
-        <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">發音人選單</label>
+        <label class="block text-xs font-medium text-stone-700 dark:text-stone-300">聲音</label>
         <select
           :value="modelValue.voice || 'zh-TW-HsiaoChenNeural'"
           class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs dark:border-stone-700 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
           @change="selectEdgeVoice(($event.target as HTMLSelectElement).value)"
         >
-          <option v-for="v in EDGE_VOICES" :key="v.id" :value="v.id">{{ v.label }}</option>
+          <optgroup v-for="g in EDGE_VOICES" :key="g.region" :label="g.region">
+            <option v-for="v in g.voices" :key="v.id" :value="v.id">{{ v.label }}</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -399,9 +407,9 @@ onBeforeUnmount(() => {
     <!-- Audition Bar (試聽音檔) -->
     <div class="flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-3 dark:border-stone-800">
       <div class="flex items-center gap-2">
-        <span class="text-xs font-medium text-stone-700 dark:text-stone-300">角色試聽 ({{ castName }})：</span>
+        <span class="text-xs font-medium text-stone-700 dark:text-stone-300">試聽：</span>
         <audio v-if="auditionUrl" :src="auditionUrl" controls class="h-8 max-w-[260px]" />
-        <span v-else class="text-xs text-stone-400 dark:text-stone-500">尚無試聽檔</span>
+        <span v-else class="text-xs text-stone-400 dark:text-stone-500">還沒有試聽</span>
         <span v-if="voiceUnsaved" class="text-[11px] text-amber-600 dark:text-amber-400" data-testid="audition-unsaved">聲音設定尚未儲存，儲存角色後才能試聽</span>
       </div>
 
@@ -413,8 +421,8 @@ onBeforeUnmount(() => {
         data-testid="audition"
         @click="triggerAudition"
       >
-        <Icon name="refresh" :size="13" :class="auditionLoading ? 'animate-spin' : ''" />
-        <span>📋 複製給 Agent：產生試聽</span>
+        <Icon name="copy" :size="13" />
+        <span>複製給 Agent：產生試聽</span>
       </button>
     </div>
   </div>

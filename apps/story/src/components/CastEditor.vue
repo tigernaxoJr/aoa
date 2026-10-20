@@ -56,12 +56,12 @@ async function handleSave() {
     return
   }
   if (!id) {
-    notify('warn', '請填寫角色識別碼 (id)')
+    notify('warn', '請填寫英文代號')
     return
   }
   // Same rule as project.schema.json cast[].id (it is also the art folder name).
   if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(id)) {
-    notify('warn', '角色識別碼須以英文小寫開頭，只能包含英文小寫、數字與連字號（例如 old-farmer）')
+    notify('warn', '英文代號須以英文小寫開頭，只能有英文小寫、數字與連字號（例如 old-farmer）')
     return
   }
 
@@ -106,12 +106,9 @@ function handleDelete() {
         <span class="flex h-8 w-8 items-center justify-center rounded-md bg-vermilion-500/10 text-vermilion-600 dark:text-vermilion-400">
           <Icon name="user" :size="16" />
         </span>
-        <div>
-          <h3 class="text-base font-semibold text-stone-800 dark:text-stone-100">
-            {{ isNew ? '新增角色' : `編輯角色：${cast.name}` }}
-          </h3>
-          <p class="text-xs text-stone-400 dark:text-stone-500">識別碼：{{ localMember.id || '尚未設定' }}</p>
-        </div>
+        <h3 class="text-base font-semibold text-stone-800 dark:text-stone-100">
+          {{ isNew ? '新增角色' : `編輯角色：${cast.name}` }}
+        </h3>
       </div>
 
       <div class="flex items-center gap-2">
@@ -138,16 +135,17 @@ function handleDelete() {
     <!-- Basic Info -->
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
-        <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">角色名稱 (劇本【】中使用的稱呼)</label>
+        <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">角色名稱</label>
         <input
           v-model="localMember.name"
           type="text"
           placeholder="例如：志明"
           class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800 text-stone-900 dark:text-stone-100"
         />
+        <p class="mt-0.5 text-[11px] text-stone-400">對白裡用【{{ localMember.name.trim() || '名字' }}】標出這個角色說的話。</p>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">識別碼 (ID / 資料夾名稱)</label>
+        <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">英文代號</label>
         <input
           v-model="localMember.id"
           type="text"
@@ -155,12 +153,12 @@ function handleDelete() {
           :disabled="!isNew"
           class="input-sm mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-mono dark:border-stone-700 dark:bg-stone-800 text-stone-900 dark:text-stone-100 disabled:opacity-60"
         />
-        <p v-if="!isNew" class="mt-0.5 text-[11px] text-stone-400">建立後識別碼固定，若需修改請先確認相關檔案。</p>
+        <p class="mt-0.5 text-[11px] text-stone-400">{{ isNew ? '角色的圖和聲音會放在以它命名的資料夾，建立後不能改。' : '建立後不能改：角色的圖和聲音放在以它命名的資料夾。' }}</p>
       </div>
     </div>
 
     <div>
-      <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">角色外觀與個性描述 (供畫圖與配音參考)</label>
+      <label class="block text-xs font-semibold text-stone-700 dark:text-stone-300">外觀與個性（畫圖和配音時參考）</label>
       <textarea
         v-model="localMember.description"
         rows="2"

@@ -154,7 +154,7 @@ test('workbench: the next step follows the Agent and the render check; slides pa
   // Once the Agent stops waiting, the render problems come first, naming the slide.
   const old = new Date(Date.now() - 3_600_000).toISOString()
   await putFiles(page, 'nav-deck', { 'slide.activity.json': JSON.stringify({ message: '完成', step: 'idle', updatedAt: old }) })
-  await page.getByTestId('next-say').getByText(/渲染檢查第 2 頁有問題/).waitFor({ timeout: 10_000 })
+  await page.getByTestId('next-say').getByText(/版面檢查第 2 頁有問題/).waitFor({ timeout: 10_000 })
 })
 
 test('recent projects: a reload reopens the last project; a closed one stays one click away', async (t) => {

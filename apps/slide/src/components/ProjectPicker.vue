@@ -132,7 +132,7 @@ async function handleCreate() {
         <p class="eyebrow"><span class="text-accent">新簡報</span> · {{ dirHandle?.name }}</p>
         <h2 class="mt-2 font-serif text-2xl font-bold">這份簡報要講什麼？</h2>
         <p class="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-          填好後網頁會寫入 <code class="font-mono text-xs">slide.start.json</code>，並產生給 Agent 的提示詞；Agent 會下載範本、建立專案。
+          填好後網頁會把需求存進這個資料夾，並產生一段給 Agent 的話；Agent 會照著建立簡報專案。
         </p>
       </div>
 
@@ -160,7 +160,7 @@ async function handleCreate() {
           <ReferencesPanel
             class="mt-1.5"
             :root="dirHandle"
-            intro="報告、規格、會議紀錄、數據表、logo、照片……放進來讓 Agent 參考；檔案會複製到這個資料夾的 references/。"
+            intro="報告、規格、會議紀錄、數據表、logo、照片……放進來讓 Agent 參考；檔案會複製到這個資料夾裡。"
           />
         </div>
 

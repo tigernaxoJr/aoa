@@ -11,7 +11,7 @@ const LABELS: Record<SlideIssue['type'], string> = {
   canvas: '空白畫布',
   compile: '無法編譯',
   runtime: '執行錯誤',
-  render: '未渲染',
+  render: '沒有畫面',
 }
 </script>
 

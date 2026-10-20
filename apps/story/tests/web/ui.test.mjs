@@ -74,6 +74,9 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   await page.getByText('登場角色名冊').waitFor()
   assert.match(await page.locator('main').innerText(), /小狐狸/)
   assert.match(await page.locator('main').innerText(), /貓頭鷹/)
+  // Plain words: no emoji, and a drawing without separate parts is not shown as ready to move.
+  assert.doesNotMatch(await page.locator('main').innerText(), /\p{Extended_Pictographic}/u)
+  assert.match(await page.getByTestId('rig-parts').textContent(), /還沒有分出能動的部位/)
 
   // Add a new character "志明"
   await page.getByRole('button', { name: /新增角色/ }).first().click()
@@ -82,7 +85,7 @@ test('story project: story steps, cast hint, and the browser hash covers shared 
   // The id follows project.schema.json (no underscores), since it is also the art folder name.
   await page.getByPlaceholder('例如：zhiming').fill('zhi_ming')
   await page.getByRole('button', { name: '儲存角色' }).click()
-  await page.getByText(/角色識別碼須以英文小寫開頭/).waitFor({ timeout: 5000 })
+  await page.getByText(/英文代號須以英文小寫開頭/).waitFor({ timeout: 5000 })
   await page.getByPlaceholder('例如：zhiming').fill('zhiming')
   await page.getByRole('button', { name: '儲存角色' }).click()
   await page.getByText('角色【志明】已儲存').waitFor({ timeout: 5000 })
