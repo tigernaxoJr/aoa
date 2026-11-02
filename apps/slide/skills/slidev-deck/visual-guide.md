@@ -111,6 +111,10 @@ flowchart LR
 
 [Remotion](https://github.com/remotion-dev/remotion) 是一套以 React 與 Web 技術打造程式化影片與動態視覺的強大框架。
 
+> **授權條款提醒（Remotion License）**：
+> Remotion 採用的授權條款（[remotion.dev/license](https://www.remotion.dev/license)）規定：個人、非營利專案，以及編制在 3 人（含）以下的小型團隊可免費使用；若組織編制大於 3 人，商業使用需取得官方商業授權。
+> **Agent 的提示義務**：向使用者提議使用 Remotion、安裝套件或執行渲染前，**必須主動以白話向使用者提示此授權條件**，確認使用者了解並同意後再進行製作。
+
 當簡報需要高度客製化的演算法視覺化、精準到影格（frame-level）的時間軸動畫、複雜 UI 互動還原或具科技感的宣傳動態卡片時，可善用 Remotion 製作高品質的動態展示。
 
 ### 做法 A：以 Remotion CLI 預渲染為視訊嵌入（最推薦、最穩定）
@@ -139,3 +143,23 @@ flowchart LR
 
 若要在投影片中製作由使用者點擊或事件驅動的即時動效，可安裝 `remotion`（`pnpm add remotion`），在 `components/*.vue` 中直接引入其核心數學運算函數（如 `spring`、`interpolate`、`interpolateColors`）：
 - 純函數計算，無額外執行時副作用，能精確計算出具彈性（spring physics）的平滑補間值，驅動 SVG 或 HTML 元素的縮放與移動。
+
+---
+
+## 7. 生圖需求與 AI Prompt 提供（單張插圖與 Spritesheet）
+
+當投影片需要概念配圖、視覺意象、科技氛圍背景、或逐步變化的微動畫序列，而既有向量庫或素材無法滿足時：
+
+- **主動提議提供 Prompt**：Agent 可以主動向使用者確認：「是否需要我為你撰寫生圖用的 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Flux 等）生成圖片？」
+- **單張整張圖（Single Image）**：
+  - 適合封面意象、滿版背景底圖、重要概念示意插圖。
+  - 圖片產生後放置於 `public/images/`，在 `slides.md` 直接引用：`<img src="/images/ai-concept.png" class="rounded-xl shadow-lg" />`。
+- **精靈圖序列（Spritesheet）**：
+  - 適合步進式圖解、連環動作分解、微表情或逐幀視覺變化。
+  - Agent 撰寫 Prompt 時指定等距網格連續幀（例如：`flat 2D vector sequence, 6 steps animation sprite sheet of data transformation, transparent background`）。
+  - 在 Slidev 頁面中，可搭配 `<div class="steps-animation">` 以 CSS `animation: play steps(6) infinite` 或結合 `v-click` 逐格展示變換效果。
+- **直接使用 CC0 免費素材庫**：
+  若需要快速獲取高品質素材，亦可直接從 CC0（公有領域 / 免授權）素材庫抓取檔案存入 `public/` 使用：
+  - **向量圖形與圖示**：[SVG Repo](https://www.svgrepo.com/)（可篩選 CC0 License）、[Openclipart](https://openclipart.org/)（CC0 向量庫）。
+  - **2D 精靈圖、UI 與動畫素材**：[Kenney.nl](https://kenney.nl/)（全站完全 CC0，含大量圖示、精靈圖 spritesheet 與 UI）。
+  - **高解析度照片與情境背景**：[Unsplash](https://unsplash.com/)、[Pexels](https://www.pexels.com/)、[Pixabay](https://pixabay.com/)。

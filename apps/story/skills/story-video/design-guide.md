@@ -156,6 +156,11 @@
    - 使用者可將喜歡的風格參考圖拖曳上傳至網頁（自動存為 `assets/cast/<id>/reference.png`）。
    - 點擊「請 Agent 繪製 SVG 骨骼」複製格式化提示詞給 Agent。
    - Agent 在 `assets/cast/<id>/<id>.svg` 繪製符合骨骼規範的分層向量部件（`<g id="head" data-pivot="...">` 等），網頁端即時渲染預覽並檢測骨骼完整度。
+4. **生圖需求與 AI Prompt 提供（單張圖與 Spritesheet）**：
+   - 若故事需要更細緻的背景場景、道具插圖、或角色的動作/表情序列幀，Agent **可主動詢問使用者**：「是否需要我為你撰寫生圖 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Flux 等）產圖？」
+   - **單張整張圖**：產生滿版場景底圖（存至 `assets/sets/`）或獨立道具圖。
+   - **精靈圖（Spritesheet）**：若需要逐格動作（如走動、跑步、飛行或表情連續變化），Agent 可撰寫指定等寬格網的 Spritesheet Prompt；產圖後在動畫模組以時間 `t` 透過 Canvas `drawImage` 或 CSS `steps()` 切換幀。
+   - **直接使用 CC0 素材庫**：若不想自己畫或生圖，亦可直接至 [Kenney.nl](https://kenney.nl/)（全站皆 CC0，有海量精緻的 2D 角色精靈圖 spritesheet、道具與場景）或 [OpenGameArt.org](https://opengameart.org/)（過濾 CC0）搜尋抓取現成素材直接使用。
 
 ## 6. <a id="voices"></a>挑聲音與試聽
 
@@ -182,7 +187,7 @@
 
 ## 7. <a id="animate"></a>寫每一段的動畫模組（`/video-scene`）
 
-每段的 `assets/motion.js` 是一個動畫模組，基本規則（預設匯出 `setup(ctx)`、回傳 `seek(t)`、畫面只能由 `t` 決定、不用 `requestAnimationFrame` 與 CSS 動畫、亂數要固定種子、可結合 GSAP / Rough.js / Remotion 等動效工具）見 [rendering-guide.md#motion](rendering-guide.md#motion)。故事專案的 `ctx` 另外有：
+每段的 `assets/motion.js` 是一個動畫模組，基本規則（預設匯出 `setup(ctx)`、回傳 `seek(t)`、畫面只能由 `t` 決定、不用 `requestAnimationFrame` 與 CSS 動畫、亂數要固定種子、可結合 GSAP / Rough.js / Remotion 等動效工具，使用 Remotion 前須提示其授權條款）見 [rendering-guide.md#motion](rendering-guide.md#motion)。故事專案的 `ctx` 另外有：
 
 | 欄位 | 內容 |
 |---|---|

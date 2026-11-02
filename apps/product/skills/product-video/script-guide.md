@@ -135,7 +135,7 @@ ShipIt 讓你推送程式碼，[App](tts: ㄟㄆ) 立即上線。
   - `at` 對齊旁白中提到該關鍵字的時間點（依語速估算）。
   - 品牌 logo 用 `@/assets/brand/…`。
   - **字級 `size`**：`normal`（預設）、`large`、`xl`。只有短而重要的字才放大：hook 的提問、benefit 的數字、cta 的網址，或風格是活潑短片、直式影片時。渲染器會把放大的字自動縮回到不超過兩行、不超出畫面，所以不會嚴重跑版；但字太長時縮回後就和 `normal` 差不多，放大前先把文字精簡到 8 字以內。疊在網頁錄影上、或同一畫面已有兩則文字時維持 `normal`。
-- <a id="custom-motion"></a>**自訂動畫與 SVG 插圖**：`motion-graphic` 除了用 `elements` 排文字和圖片，還可以由你寫一支動畫模組（`visual.motion`，用 SVG、Canvas、GSAP、Three.js、GLSL shader、Rough.js 手繪風格、Remotion 程式化動效、粒子特效畫出整個畫面），或使用 Remotion CLI 渲染獨立視訊片段作為素材，或畫 SVG 插圖存成檔案當 `image` 元素。做法見 [rendering-guide.md#motion](rendering-guide.md#motion) 與 [#svg](rendering-guide.md#svg)。
+- <a id="custom-motion"></a>**自訂動畫與 SVG 插圖**：`motion-graphic` 除了用 `elements` 排文字和圖片，還可以由你寫一支動畫模組（`visual.motion`，用 SVG、Canvas、GSAP、Three.js、GLSL shader、Rough.js 手繪風格、Remotion 程式化動效、粒子特效畫出整個畫面），或使用 Remotion CLI 渲染獨立視訊片段作為素材（使用 Remotion 前須提示其授權條款：≤3 人團隊免費，>3 人企業需商業授權），或畫 SVG 插圖存成檔案當 `image` 元素。做法見 [rendering-guide.md#motion](rendering-guide.md#motion) 與 [#svg](rendering-guide.md#svg)。
   - **適合**：抽象概念或看不到的過程（資料流動、架構、前後對比、數字成長）、沒有產品畫面可錄的 hook / benefit、品牌感的開場與結尾。能錄到真實產品畫面時仍優先錄影。
   - **耗用量**：寫動畫模組或畫新的 SVG 插圖要花較多 token 與時間，所以依 `project.customMotion` 決定能不能用：
 
@@ -146,6 +146,7 @@ ShipIt 讓你推送程式碼，[App](tts: ㄟㄆ) 立即上線。
     | `deny` | 不寫 `visual.motion`，也不畫新的 SVG 插圖；只用 `elements`、現有的圖檔與 logo |
 
   - 不算自訂動畫、不必問的：重複使用 `@/assets/svg/` 已存好的 SVG、複製產品原始碼裡現成的 svg/png、簡單的形狀或圖示（幾行 SVG，例如箭頭、勾勾、圓點）。
+  - **生圖需求與 Prompt 提供**：當展示需要情境插圖、產品示意概念圖、或逐格動作/特效精靈圖（spritesheet）而無現成圖檔時，Agent 可主動向使用者確認是否需要由你撰寫生圖 Prompt（包含單張圖或 spritesheet），交由使用者以生圖 AI 產出後放進專案目錄使用；亦可直接從 CC0 免費素材庫（如 Unsplash、Pixabay、SVG Repo CC0、Kenney.nl 等）搜尋抓取現成素材。
   - 製作途中（`/video-scene`、`/video-sync`）才想加分鏡沒列出的自訂動畫時，`ask` 先問、`deny` 不加。
   - 一部影片的自訂動畫段落沿用同一套配色與畫法（`ctx.theme`、同一組 SVG 圖示），看起來才像同一支影片。
 - **`transitionIn`**：預設 `none`（直接切換）；同一段落內的 scene 之間可用 `fade`。全片不超過兩種轉場。

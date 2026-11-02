@@ -175,7 +175,15 @@ export default function setup({ root, theme }) {
 
 Remotion 的寫法（[remotion-dev/remotion](https://github.com/remotion-dev/remotion)）：
 
-Remotion 是以 React 與 Web 技術打造程式化影片與動態視覺的強大框架。在影片工作台中，有兩種使用 Remotion 的方式：
+Remotion 是以 React 與 Web 技術打造程式化影片與動態視覺的強大框架。
+
+> **授權條款提醒（Remotion License）**：
+> Remotion 採用的授權條款（[remotion.dev/license](https://www.remotion.dev/license)）規定：
+> - **免費**：個人、非營利專案，以及編制在 3 人（含）以下的小型團隊或公司可免費使用。
+> - **需購買授權**：超過 3 人的公司或企業在商業使用時，需取得官方商業授權。
+> **Agent 的提示義務**：在提議使用 Remotion、安裝套件或執行 Remotion 渲染前，**必須主動向使用者簡要說明此授權條款**，確認使用者了解並同意後再繼續。
+
+在影片工作台中，有兩種使用 Remotion 的方式：
 
 #### 方式 A：運用 Remotion 的受控動效數學於 `motion.js`（推薦）
 
@@ -310,6 +318,32 @@ export default function setup({ root, width, height, fps, theme }) {
 - 檔案內不放 `<script>`、SMIL / CSS 動畫、外部連結與外部字型；要動就用元素的 `animation`，或在動畫模組中依 `t` 控制。文字盡量轉成路徑或交給 `elements`，避免字型不同。
 - 配色沿用 `THEME`（深色背景、白字、強調色 `#38bdf8`），同一部影片的圖示線條粗細、圓角一致。
 - 繪製新的插圖算[自訂動畫](script-guide.md#custom-motion)，受 `project.customMotion` 限制；重複使用已存的 SVG 與簡單圖形不受限。
+
+### <a id="ai-images"></a>生圖需求與 Prompt 提供（單張圖與 Spritesheet）
+
+若場景需要高質感插圖、寫實背景、風格化場景底圖、角色立繪、道具圖示或動畫序列，而專案中沒有現成素材時，Agent **可以主動詢問使用者**：「是否需要我為你撰寫生圖用的 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Stable Diffusion、Flux、Recraft 等）生成圖片？」
+
+可支援兩種形式：
+
+1. **單張整張圖（Single Image）**：
+   - 適合滿版場景背景（16:9）、概念圖、插圖、重要情境圖。
+   - 生成後作為 `user-asset` 背景底圖（`"asset": { "src": "assets/bg.png", "fit": "cover" }`）或 `elements` 的 `image` 元素。
+2. **精靈圖序列（Spritesheet）**：
+   - 適合角色走動、揮手、跳躍、表情變換等逐格連續動畫。
+   - Agent 撰寫 Prompt 時指明等寬網格排列（例如：`2D character walk cycle, 8 frames animation sprite sheet, transparent background, evenly spaced grid`）。
+   - 產出後在動畫模組（`motion.js`）或 CSS 中，以目前時間 `t` 算出當前影格（`frameIndex = Math.floor(t * fps) % totalFrames`），透過 Canvas 的 `drawImage` 截取特定區塊，或透過 `background-position` / `steps()` 切換幀，即可實現精緻的幀動畫。
+
+Agent 產生 Prompt 時，應包含畫面主題、藝術風格、色彩光影、構圖視角與負向提示，並引導使用者將生成的檔案放入專案目錄以供引用。
+
+#### 直接使用 CC0 免費素材庫
+
+除了自己寫程式畫圖或請 AI 生圖之外，若需要現成素材，**也可以直接從 CC0（公眾領域 / 無版權限制）素材庫抓取使用**：
+
+- **2D 動畫 Spritesheet、角色與場景**：[Kenney.nl](https://kenney.nl/)（全站皆為 CC0，有豐富的角色連續動作精靈圖、場景物件、UI 與道具）、[OpenGameArt.org](https://opengameart.org/)（可篩選 CC0）。
+- **SVG 向量圖與圖示**：[SVG Repo](https://www.svgrepo.com/)（可篩選 CC0 License）、[Openclipart](https://openclipart.org/)（CC0 公有領域向量圖庫）。
+- **照片、情境圖與背景底圖**：[Unsplash](https://unsplash.com/)、[Pexels](https://www.pexels.com/)、[Pixabay](https://pixabay.com/)、[Wikimedia Commons](https://commons.wikimedia.org/)。
+
+使用 CC0 素材零授權風險且省時，下載後直接存入 scene 的 `assets/` 或專案 `assets/` 即可直接引用。
 
 ## <a id="elements"></a>4. 疊加元素 `visual.elements`
 
