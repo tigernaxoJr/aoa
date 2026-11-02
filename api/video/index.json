@@ -1,0 +1,48 @@
+{
+  "specVersion": "1.0.0",
+  "siteUrl": "https://aoa.tigernaxo.com",
+  "workbench": "https://aoa.tigernaxo.com/video/",
+  "entry": "https://aoa.tigernaxo.com/api/video/agent-guide.md",
+  "workflow": "https://aoa.tigernaxo.com/api/video/workflow.json",
+  "schemas": {
+    "common": "https://aoa.tigernaxo.com/api/video/schemas/common.schema.json",
+    "project": "https://aoa.tigernaxo.com/api/video/schemas/project.schema.json",
+    "scene": "https://aoa.tigernaxo.com/api/video/schemas/scene.schema.json",
+    "activity": "https://aoa.tigernaxo.com/api/video/schemas/activity.schema.json",
+    "workflow": "https://aoa.tigernaxo.com/api/video/schemas/workflow.schema.json"
+  },
+  "prompts": {
+    "analyze-product": "https://aoa.tigernaxo.com/api/video/prompts/analyze-product.md",
+    "analyze-style": "https://aoa.tigernaxo.com/api/video/prompts/analyze-style.md",
+    "storyboard": "https://aoa.tigernaxo.com/api/video/prompts/storyboard.md",
+    "scene-script": "https://aoa.tigernaxo.com/api/video/prompts/scene-script.md"
+  },
+  "rules": {
+    "script": "https://aoa.tigernaxo.com/api/video/rules/script.md",
+    "visual": "https://aoa.tigernaxo.com/api/video/rules/visual.md"
+  },
+  "skill": "https://aoa.tigernaxo.com/api/video/skills/product-video.zip",
+  "skillDocs": "https://aoa.tigernaxo.com/api/video/skills/product-video/SKILL.md",
+  "template": "https://aoa.tigernaxo.com/api/video/templates/product-video.zip",
+  "templateManifest": "https://aoa.tigernaxo.com/api/video/templates/product-video/manifest.json",
+  "checksums": {
+    "skill": "18b3255c6a568d31189a79bd3d6ab11399456e27a4687c54ce06ea31a5dbfa59",
+    "template": "068ed8dc73aaea8b0dfae75c0bae20e69645bcb4d807521f1183ff3fc1795faa",
+    "storySkill": "53a0087e317efd216ae425e453e168dab6ede60614375a40e8a9935154af0f44"
+  },
+  "deprecated": "Video Studio split into https://aoa.tigernaxo.com/product/ and https://aoa.tigernaxo.com/story/; use https://aoa.tigernaxo.com/api/product/index.json and https://aoa.tigernaxo.com/api/story/index.json.",
+  "entries": {
+    "product": "https://aoa.tigernaxo.com/api/video/agent-guide.md",
+    "story": "https://aoa.tigernaxo.com/api/video/story-guide.md"
+  },
+  "skills": {
+    "product": {
+      "zip": "https://aoa.tigernaxo.com/api/video/skills/product-video.zip",
+      "docs": "https://aoa.tigernaxo.com/api/video/skills/product-video/SKILL.md"
+    },
+    "story": {
+      "zip": "https://aoa.tigernaxo.com/api/video/skills/story-video.zip",
+      "docs": "https://aoa.tigernaxo.com/api/video/skills/story-video/SKILL.md"
+    }
+  }
+}

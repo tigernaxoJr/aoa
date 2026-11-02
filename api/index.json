@@ -1,0 +1,26 @@
+{
+  "platform": "AOA",
+  "name": "Agent-Offloaded Architecture",
+  "siteUrl": "https://aoa.tigernaxo.com",
+  "description": "A catalog of AOA reference tools and their agent specification endpoints.",
+  "tools": {
+    "story": {
+      "name": "Story Video Studio",
+      "mode": "Mode A (Pure workbench)",
+      "workbench": "https://aoa.tigernaxo.com/story/",
+      "index": "https://aoa.tigernaxo.com/api/story/index.json"
+    },
+    "product": {
+      "name": "Product Video Studio",
+      "mode": "Mode A (Pure workbench)",
+      "workbench": "https://aoa.tigernaxo.com/product/",
+      "index": "https://aoa.tigernaxo.com/api/product/index.json"
+    },
+    "slide": {
+      "name": "Slide Studio",
+      "mode": "Mode A (Pure workbench)",
+      "workbench": "https://aoa.tigernaxo.com/slide/",
+      "index": "https://aoa.tigernaxo.com/api/slide/index.json"
+    }
+  }
+}
