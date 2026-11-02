@@ -104,3 +104,38 @@ flowchart LR
   ```
 - **單一元素**：在元素上加 `v-click`，例如 `<div v-click>第二步才出現</div>`。
 - **指定步驟**：`v-click="2"` 在第 2 次點擊時出現；`v-after` 與前一個元素同時出現。
+
+---
+
+## 6. Remotion 程式化動效與影片整合
+
+[Remotion](https://github.com/remotion-dev/remotion) 是一套以 React 與 Web 技術打造程式化影片與動態視覺的強大框架。
+
+當簡報需要高度客製化的演算法視覺化、精準到影格（frame-level）的時間軸動畫、複雜 UI 互動還原或具科技感的宣傳動態卡片時，可善用 Remotion 製作高品質的動態展示。
+
+### 做法 A：以 Remotion CLI 預渲染為視訊嵌入（最推薦、最穩定）
+
+這是與 Slidev 結合的最佳實踐：由 Agent 編寫 Remotion Composition，渲染為輕量 MP4 / WebM 後直接嵌入投影片。
+
+1. **撰寫 Remotion Composition**：
+   使用 React + Remotion 的 `spring`、`interpolate`、`Sequence` 編寫動效。
+2. **渲染視訊至 `public/`**：
+   ```bash
+   npx remotion render src/index.ts <CompositionName> public/remotion/feature-demo.mp4
+   ```
+3. **在 `slides.md` 嵌入播放**（Slidev 會自動提供 `public/` 下的檔案）：
+   ```html
+   <div class="rounded-xl overflow-hidden shadow-2xl border border-slate-700/50 max-w-xl mx-auto">
+     <video autoplay loop muted playsinline class="w-full">
+       <source src="/remotion/feature-demo.mp4" type="video/mp4" />
+     </video>
+   </div>
+   ```
+
+- **優點**：播放流暢零負擔；在執行 `pnpm run check` 與匯出 PDF（`pnpm run export`）時 Playwright 能夠穩定捕捉畫面。
+- **PDF 匯出提醒**：匯出 PDF 時視訊會呈現為靜態影格，投影片的關鍵數據或結論仍建議放在 Markdown / HTML 文字中。
+
+### 做法 B：在自訂 Vue 組件中運用 Remotion 動效運算
+
+若要在投影片中製作由使用者點擊或事件驅動的即時動效，可安裝 `remotion`（`pnpm add remotion`），在 `components/*.vue` 中直接引入其核心數學運算函數（如 `spring`、`interpolate`、`interpolateColors`）：
+- 純函數計算，無額外執行時副作用，能精確計算出具彈性（spring physics）的平滑補間值，驅動 SVG 或 HTML 元素的縮放與移動。

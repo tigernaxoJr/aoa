@@ -1,6 +1,6 @@
 ---
 name: slidev-deck
-description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML/Tailwind、SVG 向量圖、Three.js 3D 視覺並匯出 PDF。使用者要求製作簡報、或資料夾中有 slide.start.json / slide.project.json 時使用。
+description: 協助使用者在本機建立高質感 Slidev 簡報，結合 HTML/Tailwind、SVG 向量圖、Three.js 3D 視覺、Remotion 程式化動效並匯出 PDF。使用者要求製作簡報、或資料夾中有 slide.start.json / slide.project.json 時使用。
 ---
 
 # Slidev Deck Skill
@@ -63,7 +63,7 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
      | `style` | 適合 | 視覺工具 |
      |---|---|---|
      | `formal` 正式 | 對外報告、提案、管理層 | 簡潔排版、內嵌 SVG 圖、Mermaid（範本配色）、Iconify 圖示；不用手繪與 3D |
-     | `tech` 科技 | 技術分享、架構介紹、新人訓練 | 深色卡片、SVG 架構圖、Mermaid 流程圖與 `sequenceDiagram`、程式碼區塊；開場或氛圍頁可用 `<ThreeGlobe />` |
+     | `tech` 科技 | 技術分享、架構介紹、新人訓練 | 深色卡片、SVG 架構圖、Mermaid 流程圖與 `sequenceDiagram`、程式碼區塊；開場或氛圍頁可用 `<ThreeGlobe />`、複雜動態視覺可用 Remotion 渲染為影片嵌入 |
      | `whiteboard` 白板手繪 | 工作坊、腦力激盪、教學、輕鬆分享 | 圖一律用 `<RoughSketch>` 手繪，Mermaid 區塊都加 `{look: 'handDrawn'}`；不用 3D 與漸層卡片 |
 
    - **每頁的呈現方式**：在大綱中逐頁寫出（文字、SVG 圖、Mermaid 圖表類型、手繪圖、3D、引言）。有步驟、流程、先後順序的內容用 Mermaid `flowchart`；有角色之間來回呼叫（服務、API、人與系統）的用 `sequenceDiagram`；時程用 `gantt` / `timeline`（見 [visual-guide.md](visual-guide.md)）。
@@ -73,7 +73,7 @@ pnpm run state activity --step visual --slide 3 --total 8 --message "正在畫�
    - `cover`：首頁與大標題；`two-cols`：左右雙欄（右欄以 `::right::` 開始）；`center`：聚焦單一重點；`quote`：引言。
    - **講者備忘錄**：寫在該頁**最後一個** HTML 註解裡（Slidev 的規則），例如 `<!-- 這裡先停頓，問聽眾是否用過 Agent -->`。不要寫成 `<!-- notes -->` 這種標籤；頁中其他註解不會被當成備忘錄。
    `pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status drafted`。
-3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。先看 `slide.project.json` 的 `style`，照上表選工具：內嵌 SVG 架構圖、以 Mermaid 畫流程圖與時序圖、`whiteboard` 風格用 `<RoughSketch>` 手繪並在 Mermaid 加 `{look: 'handDrawn'}`、`tech` 風格可在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件、以 `v-click` 逐步揭示。`pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status visualized`。
+3. **視覺升級（`/slide-visual`）**：見 [visual-guide.md](visual-guide.md)。先看 `slide.project.json` 的 `style`，照上表選工具：內嵌 SVG 架構圖、以 Mermaid 畫流程圖與時序圖、`whiteboard` 風格用 `<RoughSketch>` 手繪並在 Mermaid 加 `{look: 'handDrawn'}`、`tech` 風格可在關鍵頁使用 `<ThreeGlobe />` 等 3D 組件或 Remotion 程式化動效、以 `v-click` 逐步揭示。`pnpm run check` 通過後展示給使用者確認，`pnpm run state project --status visualized`。
 4. **匯出簡報（`/slide-export`）**：見 [export-guide.md](export-guide.md)。通常在 `visualized` 之後；使用者不要視覺升級時也可以從 `drafted` 直接匯出。匯出前先確認 `pnpm run check` 通過。
    - **匯出 PDF**：`pnpm run export` 產出 `output/slides.pdf`。
    - **匯出網頁簡報**：`pnpm run build` 產出單檔網頁簡報 `dist/index.html`（雙擊即可離線放映；不要刪 `vite.config.ts` 或 `slides.md` 的 `routerMode: hash`）。

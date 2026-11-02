@@ -111,6 +111,7 @@ export default async function setup({ root, width, height, fps, durationSec, the
 | Three.js | 3D 物件、產品展示、空間感 | `new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })`，`seek` 依 `t` 設定位置與相機後 `renderer.render(scene, camera)` |
 | GLSL shader | 光線流動、漸層波紋、背景質感 | Three.js 的 `ShaderMaterial` 或原生 WebGL，把 `t` 傳進 uniform（例如 `uTime`） |
 | Rough.js | 手繪、草圖風格的圖形、流程圖、白板說明 | `rough.svg(svg)` 或 `rough.canvas(canvas)` 畫圖形，**一定要給 `seed`**，寫法見下方 |
+| Remotion | 程式化動效、Spring 物理彈簧、React 動態視覺、獨立影片渲染 | 支援以 Remotion 數學函式驅動 `seek(t)`，或以 Remotion CLI 渲染獨立視訊片段作為素材，寫法見下方 |
 
 GSAP、Three.js、Rough.js 不在範本裡，要用時先在專案安裝（`pnpm add gsap`、`pnpm add three`、`pnpm add roughjs`，依硬性規則 11 先用白話取得同意），模組裡直接 `import { gsap } from 'gsap'`、`import * as THREE from 'three'`、`import { OrbitControls } from 'three/addons/controls/OrbitControls.js'`、`import rough from 'roughjs'`，渲染器會從專案的 `node_modules` 提供，不需要網路。其他函式庫不支援 bare import；需要時把單一 ES module 檔放在 `assets/` 以相對路徑匯入。
 
@@ -171,6 +172,85 @@ export default function setup({ root, theme }) {
 - **要變形的元素必須有尺寸**：`scale`、`x` 對 inline 的 `<span>` 無效，寬度為 0 的元素放大也看不到；給 `display: block` 或 `inline-block` 以及實際寬高。
 - **會彈出去的動畫要留空間**：`back.out`、來回放大的元素，以最大時的大小留邊界，不要壓在 `overflow: hidden` 的邊緣，否則會被裁掉或蓋到旁邊。
 - 退場用 `opacity` 淡出；要整個消失時在最後補一個 `tl.set(el, { visibility: 'hidden' }, 時間)`。
+
+Remotion 的寫法（[remotion-dev/remotion](https://github.com/remotion-dev/remotion)）：
+
+Remotion 是以 React 與 Web 技術打造程式化影片與動態視覺的強大框架。在影片工作台中，有兩種使用 Remotion 的方式：
+
+#### 方式 A：運用 Remotion 的受控動效數學於 `motion.js`（推薦）
+
+Remotion 的核心動畫工具（如物理彈簧 `spring`、數值插值 `interpolate`）是純函數，完全由 `frame` 與 `fps` 決定，與渲染器的 `seek(t)` 逐幀機制 100% 契合。
+
+可安裝 `remotion`（`pnpm add remotion`）或將動畫算式實現在模組中：
+
+```js
+// assets/motion.js
+import { spring, interpolate } from 'remotion'
+
+export default function setup({ root, width, height, fps, theme }) {
+  Object.assign(root.style, { display: 'grid', placeItems: 'center' })
+
+  const card = document.createElement('div')
+  Object.assign(card.style, {
+    width: '480px',
+    padding: '40px',
+    borderRadius: '24px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+    textAlign: 'center',
+    color: theme.text,
+    fontFamily: theme.fontFamily,
+  })
+  card.innerHTML = `<h2 style="font-size: 32px; font-weight: 700; margin-bottom: 12px; color: ${theme.accent}">Remotion 動態視覺</h2><p style="font-size: 18px; opacity: 0.8">以受控 Spring 彈簧物理呈現</p>`
+  root.append(card)
+
+  return (t) => {
+    const frame = Math.round(t * fps)
+
+    // 使用 Remotion 的 spring 模擬真實物理彈性進場
+    const scale = spring({
+      frame,
+      fps,
+      config: { damping: 12, mass: 0.6, stiffness: 120 },
+    })
+
+    // 使用 interpolate 計算平滑淡入與位移
+    const opacity = interpolate(frame, [0, 15], [0, 1], {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+    })
+    const translateY = interpolate(frame, [0, 25], [40, 0], {
+      extrapolateRight: 'clamp',
+    })
+
+    card.style.transform = `translateY(${translateY}px) scale(${scale})`
+    card.style.opacity = String(opacity)
+  }
+}
+```
+
+#### 方式 B：使用 Remotion CLI 獨立渲染動態視訊作為素材
+
+當需要利用完整 React 生態系、現成 Remotion 範本或複雜組件排版時，Agent 可以建立獨立的 Remotion Composition 並渲染為 MP4：
+
+1. 撰寫 Remotion Composition（以 React 編寫畫面與動態時序）。
+2. 在終端執行 Remotion CLI 渲染指令：
+   ```bash
+   npx remotion render src/index.ts <CompositionId> scenes/scene-001/assets/remotion.mp4
+   ```
+3. 在該 scene 的 `scene.json` 中，將 `visual` 設為 `user-asset` 指向該影片：
+   ```json
+   "visual": {
+     "type": "user-asset",
+     "description": "以 Remotion 渲染的高質感 3D 動態圖表",
+     "asset": {
+       "src": "assets/remotion.mp4",
+       "fit": "cover"
+     }
+   }
+   ```
+4. 後續執行 `pnpm run render:scene <id>` 與 `pnpm run assemble`，即會將 Remotion 渲染的動態視訊無縫整合至完整影片中。
 
 寫完先渲染這一段確認畫面（短的 scene 可以先把 `durationSec` 設短測試，確認後改回）。`motion.js` 與 scene `assets/` 內的檔案都納入 `inputHash`，修改後該 scene 會自動變成需要重做；模組匯入的共用檔案（`@/assets/` 下）不在內，改了要自己把用到它的 scene 標為 `stale`。
 

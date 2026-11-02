@@ -182,7 +182,7 @@
 
 ## 7. <a id="animate"></a>寫每一段的動畫模組（`/video-scene`）
 
-每段的 `assets/motion.js` 是一個動畫模組，基本規則（預設匯出 `setup(ctx)`、回傳 `seek(t)`、畫面只能由 `t` 決定、不用 `requestAnimationFrame` 與 CSS 動畫、亂數要固定種子）見 [rendering-guide.md#motion](rendering-guide.md#motion)。故事專案的 `ctx` 另外有：
+每段的 `assets/motion.js` 是一個動畫模組，基本規則（預設匯出 `setup(ctx)`、回傳 `seek(t)`、畫面只能由 `t` 決定、不用 `requestAnimationFrame` 與 CSS 動畫、亂數要固定種子、可結合 GSAP / Rough.js / Remotion 等動效工具）見 [rendering-guide.md#motion](rendering-guide.md#motion)。故事專案的 `ctx` 另外有：
 
 | 欄位 | 內容 |
 |---|---|

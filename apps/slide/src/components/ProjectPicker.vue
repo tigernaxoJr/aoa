@@ -22,7 +22,7 @@ const notes = ref('')
 /** What the workbench does, for the start page. */
 const FEATURES = [
   ['01', 'Slidev Markdown', '以 Markdown 與 Vue 為核心，多種版型與逐步顯示動畫。'],
-  ['02', '圖解、流程圖與 3D', 'Agent 依內容畫出 SVG 架構圖、Mermaid 流程圖或 Three.js 立體畫面。'],
+  ['02', '圖解、流程圖與動態視覺', 'Agent 依內容畫出 SVG 架構圖、Mermaid 流程圖、Three.js 立體畫面或 Remotion 程式化動效。'],
   ['03', 'PDF 與互動 HTML', '在你的電腦上匯出；PDF 保持向量，HTML 可離線全螢幕放映。'],
 ] as const
 
