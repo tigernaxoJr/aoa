@@ -157,7 +157,7 @@
    - 點擊「請 Agent 繪製 SVG 骨骼」複製格式化提示詞給 Agent。
    - Agent 在 `assets/cast/<id>/<id>.svg` 繪製符合骨骼規範的分層向量部件（`<g id="head" data-pivot="...">` 等），網頁端即時渲染預覽並檢測骨骼完整度。
 4. **生圖需求與 AI Prompt 提供（單張圖與 Spritesheet）**：
-   - 若故事需要更細緻的背景場景、道具插圖、或角色的動作/表情序列幀，Agent **可主動詢問使用者**：「是否需要我為你撰寫生圖 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Flux 等）產圖？」
+   - 製作動畫時，若某些元素（如角色精緻動作、流暢表情、魔法/光影特效、動態道具圖示）**透過 Spritesheet 取得高品質圖示能大幅提高整部動畫的視覺質感**，Agent **應主動詢問使用者**：「這部分的動畫如果使用 Spritesheet 能呈現更細膩高級的質感，是否需要我為你撰寫生圖 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Flux 等）產圖？」
    - **單張整張圖**：產生滿版場景底圖（存至 `assets/sets/`）或獨立道具圖。
    - **精靈圖（Spritesheet）**：若需要逐格動作（如走動、跑步、飛行或表情連續變化），Agent 可撰寫指定等寬格網的 Spritesheet Prompt；產圖後在動畫模組以時間 `t` 透過 Canvas `drawImage` 或 CSS `steps()` 切換幀。
    - **直接使用 CC0 素材庫**：若不想自己畫或生圖，亦可直接至 [Kenney.nl](https://kenney.nl/)（全站皆 CC0，有海量精緻的 2D 角色精靈圖 spritesheet、道具與場景）或 [OpenGameArt.org](https://opengameart.org/)（過濾 CC0）搜尋抓取現成素材直接使用。

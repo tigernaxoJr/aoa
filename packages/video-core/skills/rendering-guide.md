@@ -323,14 +323,18 @@ export default function setup({ root, width, height, fps, theme }) {
 
 若場景需要高質感插圖、寫實背景、風格化場景底圖、角色立繪、道具圖示或動畫序列，而專案中沒有現成素材時，Agent **可以主動詢問使用者**：「是否需要我為你撰寫生圖用的 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Stable Diffusion、Flux、Recraft 等）生成圖片？」
 
+> **以 Spritesheet 主動提升動畫質感**：
+> 在製作動畫模組時，若畫面中的特定元素（例如：精細的動態圖示、角色微表情與肢體動作、流暢的科技光效、魔法/火焰/粒子特效或介面微動效）**如果透過 Spritesheet 取得高品質圖示能大幅提升整體的動畫細緻度與視覺質感**，Agent **應主動向使用者提議**：
+> 「這段動畫裡的 [某元素/特效] 如果使用 Spritesheet 能呈現更細膩高級的動畫質感。是否需要我為你撰寫生圖 Prompt，讓你拿去給生圖 AI 生成 Spritesheet 來用？」
+
 可支援兩種形式：
 
 1. **單張整張圖（Single Image）**：
    - 適合滿版場景背景（16:9）、概念圖、插圖、重要情境圖。
    - 生成後作為 `user-asset` 背景底圖（`"asset": { "src": "assets/bg.png", "fit": "cover" }`）或 `elements` 的 `image` 元素。
 2. **精靈圖序列（Spritesheet）**：
-   - 適合角色走動、揮手、跳躍、表情變換等逐格連續動畫。
-   - Agent 撰寫 Prompt 時指明等寬網格排列（例如：`2D character walk cycle, 8 frames animation sprite sheet, transparent background, evenly spaced grid`）。
+   - 適合高品質動態圖示、特效動畫、角色走動、揮手、跳躍、表情變換等逐格連續動畫。
+   - Agent 撰寫 Prompt 時指明等寬網格排列（例如：`2D character walk cycle, 8 frames animation sprite sheet, transparent background, evenly spaced grid` 或 `neon glow tech icon rotating, 12 frames sprite sheet`）。
    - 產出後在動畫模組（`motion.js`）或 CSS 中，以目前時間 `t` 算出當前影格（`frameIndex = Math.floor(t * fps) % totalFrames`），透過 Canvas 的 `drawImage` 截取特定區塊，或透過 `background-position` / `steps()` 切換幀，即可實現精緻的幀動畫。
 
 Agent 產生 Prompt 時，應包含畫面主題、藝術風格、色彩光影、構圖視角與負向提示，並引導使用者將生成的檔案放入專案目錄以供引用。

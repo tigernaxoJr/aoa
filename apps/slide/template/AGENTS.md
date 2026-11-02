@@ -44,7 +44,7 @@
 
    **停下確認**，確認後 `pnpm run state project --status outlined --pages <頁數> --style <風格>`。
 2. **撰寫內文（`/slide-draft`）**：編寫 `slides.md`，善用 Slidev 版型（`cover`、`two-cols`、`center`、`quote`）。講者備忘錄寫在每頁**最後一個** HTML 註解裡，例如 `<!-- 這裡停頓，先問聽眾 -->`。`pnpm run check` 通過後**停下確認**，確認後狀態改為 `drafted`。
-3. **注入視覺（`/slide-visual`）**：先讀 `slide.project.json` 的 `style`，依上面的對應選工具。SVG 架構圖、Mermaid 流程圖與時序圖、`<RoughSketch>` 手繪風格、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、Remotion 程式化動效或預渲染影片（使用前須向使用者提示其授權條款：≤3 人團隊免費，>3 人企業需商業授權）、`v-click` 動畫。若有素材或生圖需求，可主動確認是否由你提供生圖 Prompt（整張圖或 spritesheet），亦可直接從 CC0 素材庫（如 Kenney.nl、SVG Repo、Unsplash 等）抓取使用。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。`pnpm run check` 通過後**停下確認**，確認後狀態改為 `visualized`。
+3. **注入視覺（`/slide-visual`）**：先讀 `slide.project.json` 的 `style`，依上面的對應選工具。SVG 架構圖、Mermaid 流程圖與時序圖、`<RoughSketch>` 手繪風格、Iconify 圖示、`<ThreeGlobe />` 等 3D 組件、Remotion 程式化動效或預渲染影片（使用前須向使用者提示其授權條款：≤3 人團隊免費，>3 人企業需商業授權）、`v-click` 動畫。若畫面元素透過 Spritesheet 能取得高品質圖示以拉高動畫質感，應主動確認是否由你提供生圖 Prompt（整張圖或 spritesheet），亦可直接從 CC0 素材庫（如 Kenney.nl、SVG Repo、Unsplash 等）抓取使用。WebGL 畫面在 PDF 中是點陣圖，需要閱讀的資訊放在 HTML / SVG。`pnpm run check` 通過後**停下確認**，確認後狀態改為 `visualized`。
 4. **匯出簡報（`/slide-export`）**：`pnpm run export` 產生 `output/slides.pdf`；需要放映網頁時以 `pnpm run build` 打包為單檔網頁簡報（`dist/index.html`）；使用者要 PowerPoint 時 `pnpm run export:pptx` 產生 `output/slides.pptx`（文字可編輯、圖表是圖片，匯出後說明）；要 ODP 時 `pnpm run export:odp` 產生 `output/slides.odp`（需要 LibreOffice）。成功後 `pnpm run state project --status exported --pdf output/slides.pdf`，失敗改為 `failed` 並告知使用者原因。
 
 ---

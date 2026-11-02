@@ -94,7 +94,7 @@
 13. **自訂動畫依 `project.customMotion` 處理。** 寫動畫模組（`visual.motion`：SVG、Canvas、GSAP、Three.js、GLSL、Rough.js、Remotion）或畫新的 SVG 插圖會耗用較多 token：`allow` 可自行使用，`ask` 在分鏡審閱時逐段請使用者決定，`deny` 不使用。重複使用 `assets/svg/` 已存的 SVG 不受限。模組寫法見 Skill `rendering-guide.md#motion`；亦可使用 Remotion CLI 獨立渲染動態視訊作為素材。使用 Remotion 前必須先向使用者提示其授權條款（≤3 人團隊或個人免費，>3 人企業需商業授權，見 https://remotion.dev/license ），取得使用者確認。
    何時值得用自訂動畫，見 Skill `script-guide.md#custom-motion`。 <!-- kind:product -->
    `story` 專案每段都是自訂動畫，`customMotion` 設為 `allow`，不逐段詢問；角色動畫寫法見 Skill `design-guide.md#animate`。 <!-- kind:story -->
-14. **生圖需求可提供 Prompt，亦可直接使用 CC0 素材庫。** 當專案需要插圖、角色立繪、場景底圖或連續動作精靈圖（spritesheet）而無現成素材時，可主動詢問使用者是否需要由你撰寫生圖用的 Prompt，讓使用者拿去餵給生圖 AI（如 Midjourney、DALL-E、Flux 等）產生圖片；不管是單張整張圖或連續動作 spritesheet 均可。需要現成免費素材時，亦可直接從 CC0 公有領域素材庫（如 Kenney.nl 的 spritesheet 與場景、SVG Repo CC0 向量圖、Unsplash 照片等）抓取使用，無版權顧慮（見 Skill `rendering-guide.md#ai-images`）。
+14. **生圖需求可提供 Prompt，亦可直接使用 CC0 素材庫。** 製作動畫時，若畫面中的元素（如動態圖示、光影粒子特效、連續動作幀）透過 Spritesheet 能取得更高品質的圖示並大幅提升整體動畫質感，應主動向使用者提議並確認是否由你撰寫生圖 Prompt 拿去生成 Spritesheet；專案需要單張插圖、角色立繪或背景時亦同。若需要現成免費素材，亦可直接從 CC0 公有領域素材庫（如 Kenney.nl 的 spritesheet 與場景、SVG Repo CC0 向量圖、Unsplash 照片等）抓取使用，無版權顧慮（見 Skill `rendering-guide.md#ai-images`）。
 15. **假設使用者不懂電腦操作。** 所有指令由你執行，不要求使用者開終端機或打指令；使用者用白話下指示（「繼續」「第三段改成…」），由你對應到工作流程步驟。說明避免術語，回報檔案位置用「文件 > 專案 > output > final.mp4」這類資料夾順序，並可建議用網頁工作台預覽。
 16. **隨時更新 `video.activity.json`。** 網頁工作台用它顯示你正在做什麼、是否在等使用者。每開始一個步驟或 scene、每次停下來等使用者回覆（checkpoint、gate、提問）之前，直接覆寫整個檔案（格式見 `schemas/activity.schema.json`）：`message` 是一句白話，等使用者時 `waitingForUser: true` 並說明要他回答什麼，`step` 為 `workflow.json` 的步驟 id，`scene` 為正在處理的 scene id（沒有時為 `null`），`updatedAt` 為現在時間。它不經過 `pnpm run state`、不需要鎖、不納入版本控制。
 

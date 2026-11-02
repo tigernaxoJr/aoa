@@ -150,7 +150,7 @@ flowchart LR
 
 當投影片需要概念配圖、視覺意象、科技氛圍背景、或逐步變化的微動畫序列，而既有向量庫或素材無法滿足時：
 
-- **主動提議提供 Prompt**：Agent 可以主動向使用者確認：「是否需要我為你撰寫生圖用的 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Flux 等）生成圖片？」
+- **主動提議提供 Prompt**：特別是在製作動態視覺或步驟圖解時，**若元素透過 Spritesheet 取得高品質圖示能大幅提升整體動畫質感**，Agent 應主動向使用者確認：「這頁的動態元素如果使用 Spritesheet 能呈現更細膩高級的質感，是否需要我為你撰寫生圖用的 Prompt，讓你拿去給生圖 AI（如 Midjourney、DALL-E、Flux 等）生成圖片？」
 - **單張整張圖（Single Image）**：
   - 適合封面意象、滿版背景底圖、重要概念示意插圖。
   - 圖片產生後放置於 `public/images/`，在 `slides.md` 直接引用：`<img src="/images/ai-concept.png" class="rounded-xl shadow-lg" />`。

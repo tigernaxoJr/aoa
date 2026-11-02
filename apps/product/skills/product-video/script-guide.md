@@ -146,7 +146,7 @@ ShipIt 讓你推送程式碼，[App](tts: ㄟㄆ) 立即上線。
     | `deny` | 不寫 `visual.motion`，也不畫新的 SVG 插圖；只用 `elements`、現有的圖檔與 logo |
 
   - 不算自訂動畫、不必問的：重複使用 `@/assets/svg/` 已存好的 SVG、複製產品原始碼裡現成的 svg/png、簡單的形狀或圖示（幾行 SVG，例如箭頭、勾勾、圓點）。
-  - **生圖需求與 Prompt 提供**：當展示需要情境插圖、產品示意概念圖、或逐格動作/特效精靈圖（spritesheet）而無現成圖檔時，Agent 可主動向使用者確認是否需要由你撰寫生圖 Prompt（包含單張圖或 spritesheet），交由使用者以生圖 AI 產出後放進專案目錄使用；亦可直接從 CC0 免費素材庫（如 Unsplash、Pixabay、SVG Repo CC0、Kenney.nl 等）搜尋抓取現成素材。
+  - **生圖需求與 Prompt 提供**：製作動畫時，若關鍵元素（如功能動態圖示、科技光效、數據流動動態）透過 Spritesheet 能取得高品質圖示並顯著提升整體動畫質感，Agent 應主動向使用者提議由你撰寫生圖 Prompt 拿去生成 Spritesheet；專案需要情境插圖或概念示意圖時亦同。亦可直接從 CC0 免費素材庫（如 Unsplash、Pixabay、SVG Repo CC0、Kenney.nl 等）搜尋抓取現成素材。
   - 製作途中（`/video-scene`、`/video-sync`）才想加分鏡沒列出的自訂動畫時，`ask` 先問、`deny` 不加。
   - 一部影片的自訂動畫段落沿用同一套配色與畫法（`ctx.theme`、同一組 SVG 圖示），看起來才像同一支影片。
 - **`transitionIn`**：預設 `none`（直接切換）；同一段落內的 scene 之間可用 `fade`。全片不超過兩種轉場。
